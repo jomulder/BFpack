@@ -31,8 +31,8 @@ bic_oc(salfit0)
 bicvec <- c(bic_oc(salfit,"sxmale>0"),bic_oc(salfit,"sxmale<0"),bic_oc(salfit0))
 postprob(bicvec)
 
-
-#testing an ordered effect that an associate professor has a higher salary than an assistent professor, and the a full professor has a higher salary than an associate professor in this population
+#testing for an ordered effect that salary increases from assistent to associate, and from
+# associate to full professor
 bic_oc(salfit,"rkfull>rkassociate>0")
 bic_oc(salfit,"rkfull>rkassociate>0",complement=TRUE)
 ```
