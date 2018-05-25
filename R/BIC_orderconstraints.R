@@ -213,7 +213,7 @@ bic_oc <- function(object, constraints=NULL, complement=F, numdraws=1e4){
   if(is.null(constraints)){ #compute regular BIC
     margLike <- logLike.unc - numpara/2*log(N)
   }else{
-    if(length(constraints)==1){
+    if(length(constraints)[1]==1){
       #one set of order constraints is formulated
       RrIN <- create_matrices_oc(object, constraints)
 
@@ -297,7 +297,7 @@ bic_oc <- function(object, constraints=NULL, complement=F, numdraws=1e4){
         for(c in 1:length(constraints)){
           RI <- RrIN[[c]]$R
           rI <- RrIN[[c]]$r
-          if(rankMatrix(RrI)[1]==nrow(RrI)){
+          if(Matrix::rankMatrix(RrI)[1]==nrow(RrI)){
             #use pmvnorm for computing prior and posterior probabilities
             means <- RI%*%estimates
             covm <- RI%*%Sigma%*%t(RI)
@@ -362,7 +362,7 @@ postprob <- function(bic,priorprob=1){
   if(length(priorprob)!=length(bic) && length(priorprob)!=1) stop("number of prior probabilities does not match number of bic's")
   if(length(priorprob)==1) priorprob = 1
   priorprob <- priorprob/sum(priorprob) #normalize prior probabilities if necessary
-  logmarglike <- -2*bic
+  logmarglike <- -bic/2
   marglike_scaled <- exp(logmarglike - max(logmarglike))
   postprob <- marglike_scaled*priorprob/sum(marglike_scaled*priorprob)
   return(round(postprob,3))
