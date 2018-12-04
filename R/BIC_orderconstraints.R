@@ -194,7 +194,7 @@ create_matrices_oc <- function(object, constraints){
 #' # the effect of 'x2' on 'y' is larger than the effect of 'x1' on 'y', and both effects
 #' # are assumed positive.
 #' bic_oc(glm1,"x2 > x1 > 0")
-bic_oc <- function(object, constraints=NULL, complement=F, numdraws=1e4){
+bic_oc <- function(object, constraints=NULL, complement=F, numdraws=1e5){
 
   # The function 'bic_oc' can be used for computing the order-constrained BIC
   # for a model-object (e.g., glm, coxph) with additional order constraints on
