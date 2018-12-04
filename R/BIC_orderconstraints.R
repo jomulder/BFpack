@@ -212,6 +212,8 @@ bic_oc <- function(object, constraints=NULL, complement=F, numdraws=1e4){
 
   if(is.null(constraints)){ #compute regular BIC
     margLike <- logLike.unc - numpara/2*log(N)
+    post.prob <- 1
+    prior.prob <- 1
   }else{
     if(length(constraints)[1]==1){
       #one set of order constraints is formulated
@@ -335,7 +337,7 @@ bic_oc <- function(object, constraints=NULL, complement=F, numdraws=1e4){
   }
 
   BIC <- -2 * margLike
-  return(BIC)
+  return(list(BIC,post.prob,prior.prob))
 }
 
 #' Compute posterior model probabilities for given BIC values
