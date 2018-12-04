@@ -241,9 +241,9 @@ bic_oc <- function(object, constraints=NULL, complement=F, numdraws=1e4){
 
         priormean <- ginv(RI)%*%rI
         postmean <- estimates
-        draws <- rmvnorm(numdraws,mean=priormean,sigma=Sigma*N)
+        draws <- mvtnorm::rmvnorm(numdraws,mean=priormean,sigma=Sigma*N)
         prior.prob <- mean(apply(draws%*%t(RI) > t(matrix(rep(rI,numdraws),ncol=numdraws)),1,prod))
-        draws <- rmvnorm(numdraws,mean=postmean,sigma=Sigma)
+        draws <- mvtnorm::rmvnorm(numdraws,mean=postmean,sigma=Sigma)
         post.prob <- mean(apply(draws%*%t(RI) > t(matrix(rep(rI,numdraws),ncol=numdraws)),1,prod))
 
         ##use Bain for computing probabilities
@@ -265,7 +265,7 @@ bic_oc <- function(object, constraints=NULL, complement=F, numdraws=1e4){
       #check if the order-constrained models overlap
       estimates <- object$coefficients
       Sigma <- vcov(object)[1:length(estimates),1:length(estimates)]
-      draws <- rmvnorm(numdraws,sigma=Sigma*N)
+      draws <- mvtnorm::rmvnorm(numdraws,sigma=Sigma*N)
       checks <- rep(1,numdraws)
       for(c in 1:length(constraints)){
         checks <- checks*apply(draws%*%t(RrIN[[c]]$R)>
@@ -274,7 +274,7 @@ bic_oc <- function(object, constraints=NULL, complement=F, numdraws=1e4){
       if(max(checks)==1){
         #at least two order-constrained models partially overlap
         #compute posterior probability
-        thetadraws <- rmvnorm(numdraws,mean=estimates,sigma=Sigma)
+        thetadraws <- mvtnorm::rmvnorm(numdraws,mean=estimates,sigma=Sigma)
         checks <- rep(0,numdraws)
         for(c in 1:length(constraints)){
           checks <- checks + apply(thetadraws%*%t(RrIN[[c]]$R)>
@@ -285,7 +285,7 @@ bic_oc <- function(object, constraints=NULL, complement=F, numdraws=1e4){
         rAll <- RrAll[,length(estimates)+1]
         RAll <- RrAll[,1:length(estimates)]
         priormean <- c(ginv(RAll)%*%rAll)
-        thetadraws <- rmvnorm(numdraws,mean=priormean,sigma=Sigma*N)
+        thetadraws <- mvtnorm::rmvnorm(numdraws,mean=priormean,sigma=Sigma*N)
         checks <- rep(0,numdraws)
         for(c in 1:length(constraints)){
           checks <- checks + apply(thetadraws%*%t(RrIN[[c]]$R)>
@@ -312,9 +312,9 @@ bic_oc <- function(object, constraints=NULL, complement=F, numdraws=1e4){
 
             priormean <- ginv(RI)%*%rI
             postmean <- estimates
-            draws <- rmvnorm(numdraws,mean=priormean,sigma=Sigma*N)
+            draws <- mvtnorm::rmvnorm(numdraws,mean=priormean,sigma=Sigma*N)
             prior.prob <- prior.prob + mean(apply(draws%*%t(RI) > t(matrix(rep(rI,numdraws),ncol=numdraws)),1,prod))
-            draws <- rmvnorm(numdraws,mean=postmean,sigma=Sigma)
+            draws <- mvtnorm::rmvnorm(numdraws,mean=postmean,sigma=Sigma)
             post.prob <- post.prob + mean(apply(draws%*%t(RI) > t(matrix(rep(rI,numdraws),ncol=numdraws)),1,prod))
 
             ##use Bain for computing probabilities
