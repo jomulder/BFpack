@@ -182,7 +182,7 @@ create_matrices_oc <- function(object, constraints){
 #' @param constraints A string specifying order constraints on certain effects of the modeling object. If the value is NULL the ordinary BIC is computed.
 #' @param complement A logical scalar that specifies if the order-constrained subspace is considered (FALSE) or its complement (TRUE). Default is FALSE.
 #' @param numdraws A number specifying the number of draws that are used to compute the posterior and prior probability that the order constraints hold. This setting is only when the number of \code{constraints} is larger than the rank of the coefficient matrix corresponding to the \code{constraints}.
-#' @return The order-constrained BIC of modeling \code{object} with \code{constraints} based on the local unit-information prior. If \code{complement} is TRUE then the complement of the order-constrained subspace is considered.
+#' @return Return a list of which the order-constrained BIC of modeling \code{object} with \code{constraints} based on the local unit-information prior as first element, the posterior probability that the constraints hold as second element, and the prior probability that the constraints hold as third element. If \code{complement} is TRUE then the complement of the order-constrained subspace is considered.
 #' @examples
 #' n <- 100
 #' x1 <- rnorm(n)
@@ -337,7 +337,7 @@ bic_oc <- function(object, constraints=NULL, complement=F, numdraws=1e4){
   }
 
   BIC <- -2 * margLike
-  return(list(BIC,post.prob,prior.prob))
+  return(list(OC_BIC=BIC,post_prob=post.prob,prior_prob=prior.prob))
 }
 
 #' Compute posterior model probabilities for given BIC values
