@@ -16,7 +16,7 @@ bic_oc(object, constraints = NULL, complement = F, numdraws = 10000)
 \item{numdraws}{A number specifying the number of draws that are used to compute the posterior and prior probability that the order constraints hold. This setting is only when the number of \code{constraints} is larger than the rank of the coefficient matrix corresponding to the \code{constraints}.}
 }
 \value{
-The order-constrained BIC of modeling \code{object} with \code{constraints} based on the local unit-information prior. If \code{complement} is TRUE then the complement of the order-constrained subspace is considered.
+Return a list of which the order-constrained BIC of modeling \code{object} with \code{constraints} based on the local unit-information prior as first element, the posterior probability that the constraints hold as second element, and the prior probability that the constraints hold as third element. If \code{complement} is TRUE then the complement of the order-constrained subspace is considered.
 }
 \description{
 \code{bic_oc} computes the order-constrained BIC for a fitted model object (e.g., lm-object, a glm-object, or a coxph-object) with order constraints on certain effects.
