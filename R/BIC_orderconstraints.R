@@ -1,5 +1,5 @@
 
-# The function 'bic_oc' can xxx be used for computing the order-constrained BIC
+# The function 'bic_oc' can be used for computing the order-constrained BIC
 # for a model-object (e.g., glm, coxph) with additional order constraints on
 # certain parameters. The order-constrained BIC is based on the local unit-
 # information prior. Please refer to Mulder & Raftery's "BIC extensions for
