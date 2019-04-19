@@ -186,6 +186,10 @@ BFregression <- function(lm1,constraints="exploratory",priorprob="default"){
               priorprob=priorprob))
 }
 
+BFregressionUpdate <- function(){
+
+}
+
 # compute relative meausures (fit or complexity) under a multivariate Student t distribution
 Student_measures <- function(mean1,scale1,df1,RrE1,RrO1){
   K <- length(mean1)
