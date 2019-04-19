@@ -187,7 +187,7 @@ BFregression <- function(lm1,constraints="exploratory",priorprob="default"){
 }
 
 BFregressionUpdate <- function(){
-
+  stop("REMINDER. This situation should still be implemented.")
 }
 
 # compute relative meausures (fit or complexity) under a multivariate Student t distribution
