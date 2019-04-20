@@ -3,9 +3,9 @@
 
 
 # BF test for a univariate normal linear regression type model
-BFregression <- function(lm1,constraints="exploratory",priorprob="default"){
+BFreg <- function(lm1,constraints="exploratory",priorprob="default"){
   # default BF on location parameters in a univarite normal linear model
-
+  # Note that it is recommended that the fitten model is based on standardized covariates.
   K <- length(lm1$coefficients)
   N <- length(lm1$residuals)
   P <- 1 # dimension of outcome variable
@@ -30,8 +30,6 @@ BFregression <- function(lm1,constraints="exploratory",priorprob="default"){
     J <- 1
     nointercept <- T
   }
-  #standardize X
-  Xmat[,!dummyX] <- scale(Xmat[,!dummyX])
   # group membership of each observation
   dvec <- unlist(lapply(1:N,function(i){
     which(rowSums(abs(t(matrix(rep(Xmat[i,dummyX],J),ncol=J)) - groupcode))==0)
@@ -39,12 +37,6 @@ BFregression <- function(lm1,constraints="exploratory",priorprob="default"){
   Nj <- c(table(dvec))
   #set minimal fractions for each group
   bj <- ((1+K)/J)/Nj
-  # Xj <- lapply(1:J,function(j){
-  #   Xmat[dvec==j,]
-  #   })
-  # yj <- lapply(1:J,function(j){
-  #   yvec[dvec==j]
-  # })
   #Compute sufficient statistics for all groups
   tXXj <- lapply(1:J,function(j){
     t(Xmat[dvec==j,])%*%Xmat[dvec==j,]
@@ -183,11 +175,195 @@ BFregression <- function(lm1,constraints="exploratory",priorprob="default"){
 
   return(list(BFtu=BFtu,PHP=PHP,BFmatrix=BFmatrix,relfit=relfit,relcomp=relcomp,
               Nj=Nj,bj=bj,tXXj=tXXj,tXyj=tXyj,tyyj=tyyj,constraints=constraints,
-              priorprob=priorprob))
+              priorprob=priorprob,groupcode=groupcode,dummyX=dummyX))
 }
 
-BFregressionUpdate <- function(){
-  stop("REMINDER. This situation should still be implemented.")
+# update BF test for a univariate normal linear regression type model
+BFregUpdate <- function(BFreg1,lm1,Xy=NULL){
+  # update of default BF on location parameters in a univarite normal linear model
+
+  Nj <- BFreg1$Nj
+  tXXj <- BFreg1$tXXj
+  tXyj <- BFreg1$tXyj
+  tyyj <- BFreg1$tyyj
+  constraints <- BFreg1$constraints
+  priorprob <- BFreg1$priorprob
+  groupcode <- BFreg1$groupcode
+  dummyX <- BFreg1$dummyX
+
+  K <- nrow(tXXj[[1]])
+  J <- nrow(groupcode)
+  P <- 1 # dimension of outcome variable
+
+  # check if dimensions of model in historical data (BFreg) is same as in new data
+  if(length(lm1$coefficients) != K){
+    stop("Dimensions of the model based on historical data and new data do not match.")
+  }
+
+  if(!is.null(Xy)){ #Get Xmat and yvec from Xy instead of lm1. Useful when only one observation is added for instance.
+    if(ncol(Xy)!=K+1){# Dimension of new data does not match
+      stop("Dimensions of the model based on historical data and new data do not match.")
+    }
+    Xmat <- Xy[,-(K+1)]
+    yvec <- Xy[,K+1]
+  }else{
+    Xmat <- model.matrix(lm1)
+    yvec <- c(model.matrix(lm1)%*%lm1$coefficients + lm1$residuals)
+  }
+  dummyX_new <- rep(F,K)
+  for(k in 1:K){ # Check which are dummy variables corresponding to (adjusted) mean parameters
+    uniquek <- sort(unique(Xmat[,k]))
+    if(length(uniquek)<=2){dummyX_new[k]<-T} #group index of intercept
+  }
+  groupcode_new <- unique(Xmat[,dummyX_new])
+  # Check if categorical/group covariates of new data do not match with historical data
+  for(j in 1:nrow(groupcode_new)){
+    if(nrow(unique(rbind(groupcode,groupcode_new[j,])))!=nrow(groupcode)){
+      stop("Dummy variables of categorical/group covariates of new data do not match with historical data.")
+    }
+  }
+  # group membership of each observation of new data
+  dvec <- unlist(lapply(1:nrow(Xmat),function(i){
+    which(rowSums(abs(t(matrix(rep(Xmat[i,dummyX],J),ncol=J)) - groupcode))==0)
+  }))
+  Nj_new <- c(table(dvec))
+  Nj <- Nj + Nj_new
+  N <- sum(Nj)
+  #set minimal fractions for each group
+  bj <- ((1+K)/J)/Nj
+  #Update sufficient statistics for all groups
+  tXXj <- lapply(1:J,function(j){
+    t(Xmat[dvec==j,])%*%Xmat[dvec==j,] + tXXj[[j]]
+  })
+  tXXj_b <- lapply(1:J,function(j){
+    (t(Xmat[dvec==j,])%*%Xmat[dvec==j,] + tXXj[[j]]) * bj[j]
+  })
+  tXyj <- lapply(1:J,function(j){
+    t(Xmat[dvec==j,])%*%yvec[dvec==j] + tXyj[[j]]
+  })
+  tXyj_b <- lapply(1:J,function(j){
+    (t(Xmat[dvec==j,])%*%yvec[dvec==j] + tXyj[[j]]) * bj[j]
+  })
+  tyyj <- lapply(1:J,function(j){
+    t(yvec[dvec==j])%*%yvec[dvec==j] + tyyj[[j]]
+  })
+  tyyj_b <- lapply(1:J,function(j){
+    (t(yvec[dvec==j])%*%yvec[dvec==j] + tyyj[[j]]) * bj[j]
+  })
+  tXX <- Reduce("+",tXXj)
+  tXy <- Reduce("+",tXyj)
+  tyy <- Reduce("+",tyyj)
+  tXX_b <- Reduce("+",tXXj_b)
+  tXy_b <- Reduce("+",tXyj_b)
+  tyy_b <- Reduce("+",tyyj_b)
+  betaHat <- solve(tXX)%*%tXy           # same as lm1$coefficients
+  s2 <- tyy - t(tXy)%*%solve(tXX)%*%tXy # same as sum((lm1$residuals)**2)
+  # sufficient statistics based on fraction of the data
+  betaHat_b <- solve(tXX_b)%*%tXy_b
+  s2_b <- tyy_b - t(tXy_b)%*%solve(tXX_b)%*%tXy_b
+
+  if(constraints=="exploratory"){
+
+    # prior hyperparameters
+    scale0 <- c(s2_b)*solve(tXX_b)
+    df0 <- 1
+    mean0 <- as.matrix(rep(0,K))
+    # posterior hyperparameters
+    scaleN <- c(s2)*solve(tXX)/(N-K)
+    dfN <- N-K
+    meanN <- betaHat
+
+    # Hypotheses for exploraotyr test
+    # H0: beta = 0
+    # H1: beta < 0
+    # H2: beta < 0
+    relfit <- t(matrix(unlist(lapply(1:K,function(k){
+      c(dt((0-meanN[k,1])/sqrt(scaleN[k,k]),df=dfN)/sqrt(scaleN[k,k]),
+        pt((0-meanN[k,1])/sqrt(scaleN[k,k]),df=dfN,lower.tail = TRUE),
+        pt((0-meanN[k,1])/sqrt(scaleN[k,k]),df=dfN,lower.tail = FALSE))
+    })),nrow=3))
+    relcomp <- t(matrix(unlist(lapply(1:K,function(k){
+      c(dt((0-mean0[k,1])/sqrt(scale0[k,k]),df=df0)/sqrt(scale0[k,k]),
+        pt((0-mean0[k,1])/sqrt(scale0[k,k]),df=df0,lower.tail = TRUE),
+        pt((0-mean0[k,1])/sqrt(scale0[k,k]),df=df0,lower.tail = FALSE))
+    })),nrow=3))
+
+    BFtu <- relfit / relcomp
+    PHP <- round(BFtu / apply(BFtu,1,sum),3)
+    BFmatrix <- NULL
+
+  }else{
+
+    #read constraints. FOR NOW AN EXAMPLE. Use Caspar's function here.
+    RrE1 <- matrix(0,ncol=7,nrow=2)
+    RrE1[1,c(4,5)] <- c(1,-1)
+    RrE1[2,c(4,6)] <- c(1,-1)
+    RrE <- list(NULL,RrE1,NULL)
+
+    RrO1 <- matrix(0,ncol=7,nrow=1)
+    RrO1[1,c(3,4)] <- c(1,-1)
+    RrO2 <- matrix(0,ncol=7,nrow=3)
+    RrO2[1,c(1,2)] <- c(-1,1)
+    RrO2[2,c(1,3)] <- c(-1,1)
+    RrO2[3,c(3,4)] <- c(1,-1)
+    RrO3 <- matrix(0,ncol=7,nrow=2)
+    RrO3[1,c(1,2)] <- c(1,-1)
+    RrO3[2,c(1,3)] <- c(1,-1)
+    RrO <- list(RrO1,NULL,RrO2)
+    #######
+
+    RrStack <- rbind(do.call(rbind,RrE),do.call(rbind,RrO))
+    RStack <- RrStack[,-(K+1)]
+    rStack <- RrStack[,(K+1)]
+
+    # check if a common boundary exists for prior location under all constrained hypotheses
+    if(nrow(RrStack) > 1){
+      rref_ei <- pracma::rref(RrStack)
+      nonzero <- RrStack[,K+1]!=0
+      if(max(nonzero)>0){
+        row1 <- max(which(nonzero==T))
+        if(sum(abs(RrStack[row1,1:K]))==0){
+          stop("No common boundary point for prior location. Conflicting constraints.")
+        }
+      }
+    }
+    # prior hyperparameters
+    scale0 <- c(s2_b)*solve(tXX_b)
+    df0 <- 1
+    mean0 <- MASS::ginv(RStack)%*%rStack
+    # posterior hyperparameters
+    scaleN <- c(s2)*solve(tXX)/(N-K)
+    dfN <- N-K
+    meanN <- betaHat
+    numhyp <- length(RrO)
+
+    relcomp <- t(matrix(unlist(lapply(1:numhyp,function(h){
+      Student_measures(mean0,scale0,df0,RrE[[h]],RrO[[h]])
+    })),nrow=2))
+
+    relfit <- t(matrix(unlist(lapply(1:numhyp,function(h){
+      Student_measures(meanN,scaleN,dfN,RrE[[h]],RrO[[h]])
+    })),nrow=2))
+
+    relfit <- Student_prob_Hc(meanN,scaleN,dfN,relfit,constraints)
+    relcomp <- Student_prob_Hc(mean0,scale0,df0,relcomp,constraints)
+
+    # the BF for the complement hypothesis vs Hu needs to be computed.
+    BFtu <- c(apply(relfit / relcomp, 1, prod))
+    # Check input of prior probabilies
+    if(!(priorprob == "default" || (length(priorprob)==nrow(relfit) && min(priorprob)>0) )){
+      stop("'probprob' must be a vector of positive values or set to 'default'.")
+    }
+    # Change prior probs in case of default setting
+    if(priorprob=="default"){priorprobs <- rep(1,length(BFtu))}
+    PHP <- round(BFtu*priorprobs / sum(BFtu*priorprobs),3)
+    BFmatrix <- matrix(rep(BFtu,length(BFtu)),ncol=length(BFtu))/
+      t(matrix(rep(BFtu,length(BFtu)),ncol=length(BFtu)))
+  }
+
+  return(list(BFtu=BFtu,PHP=PHP,BFmatrix=BFmatrix,relfit=relfit,relcomp=relcomp,
+              Nj=Nj,bj=bj,tXXj=tXXj,tXyj=tXyj,tyyj=tyyj,constraints=constraints,
+              priorprob=priorprob,groupcode=groupcode,dummyX=dummyX))
 }
 
 # compute relative meausures (fit or complexity) under a multivariate Student t distribution
@@ -561,18 +737,20 @@ mtcars0 <- mtcars
 mtcars0$vs[1:6] <- 2
 mtcars0$vs <- as.factor(mtcars0$vs)
 mtcars0$am <- as.factor(mtcars0$am)
+# standardize nonfactor variables
+mtcars0[,(names(mtcars0)!="vs")*(names(mtcars0)!="am")==1] <-
+  scale(mtcars0[,(names(mtcars0)!="vs")*(names(mtcars0)!="am")==1])
 summary(mtcars0)
 
 lm1 <- lm(wt ~ -1 + disp + vs + hp + drat, mtcars0)
 model.matrix(lm1)
 summary(lm1)
 
-BFregression(lm1,constraints="exploratory")
+BFreg1 <- BFreg(lm1,constraints="1")
+BFreg1update <- BFregUpdate(BFreg1,lm1)
 
-
-
-
-
+BFreg1$PHP
+BFreg1update$PHP
 
 
 
