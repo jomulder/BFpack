@@ -1,17 +1,18 @@
 
-
-
+# The functions below can be used for Bayesian hypothesis testing under univariate
+# and multivariate linear regression models. Also grouping variables (factors) are
+# properly dealt with using group specific fractions for the default priors.
 
 # BF test for a univariate normal linear regression type model
 BFreg <- function(lm1,constraints="exploratory",priorprob="default"){
   # default BF on location parameters in a univarite normal linear model
   # Note that it is recommended that the fitten model is based on standardized covariates.
-  K <- length(lm1$coefficients)
-  N <- length(lm1$residuals)
-  P <- 1 # dimension of outcome variable
+  P <- ifelse(!is.matrix(lm1$coefficients),1,ncol(lm1$residuals)) # dimension of dependent variable
+  K <- length(lm1$coefficients)/P # dimension of predictors per dependent variable
+  N <- ifelse(!is.matrix(lm1$coefficients),length(lm1$residuals),nrow(lm1$residuals))
 
   Xmat <- model.matrix(lm1)
-  yvec <- c(model.matrix(lm1)%*%lm1$coefficients + lm1$residuals)
+  Ymat <- model.matrix(lm1)%*%lm1$coefficients + lm1$residuals
   dummyX <- rep(F,K)
   for(k in 1:K){ # Check which are dummy variables corresponding to (adjusted) mean parameters
     uniquek <- sort(unique(Xmat[,k]))
@@ -36,7 +37,7 @@ BFreg <- function(lm1,constraints="exploratory",priorprob="default"){
   }))
   Nj <- c(table(dvec))
   #set minimal fractions for each group
-  bj <- ((1+K)/J)/Nj
+  bj <- ((P+K)/J)/Nj
   #Compute sufficient statistics for all groups
   tXXj <- lapply(1:J,function(j){
     t(Xmat[dvec==j,])%*%Xmat[dvec==j,]
@@ -44,79 +45,80 @@ BFreg <- function(lm1,constraints="exploratory",priorprob="default"){
   tXXj_b <- lapply(1:J,function(j){
     t(Xmat[dvec==j,])%*%Xmat[dvec==j,]*bj[j]
   })
-  tXyj <- lapply(1:J,function(j){
-    t(Xmat[dvec==j,])%*%yvec[dvec==j]
+  tXYj <- lapply(1:J,function(j){
+    t(Xmat[dvec==j,])%*%Ymat[dvec==j,]
   })
-  tXyj_b <- lapply(1:J,function(j){
-    t(Xmat[dvec==j,])%*%yvec[dvec==j]*bj[j]
+  tXYj_b <- lapply(1:J,function(j){
+    t(Xmat[dvec==j,])%*%Ymat[dvec==j,]*bj[j]
   })
-  tyyj <- lapply(1:J,function(j){
-    t(yvec[dvec==j])%*%yvec[dvec==j]
+  tYYj <- lapply(1:J,function(j){
+    t(Ymat[dvec==j,])%*%Ymat[dvec==j,]
   })
-  tyyj_b <- lapply(1:J,function(j){
-    t(yvec[dvec==j])%*%yvec[dvec==j]*bj[j]
+  tYYj_b <- lapply(1:J,function(j){
+    t(Ymat[dvec==j,])%*%Ymat[dvec==j,]*bj[j]
   })
   tXX <- Reduce("+",tXXj)
-  tXy <- Reduce("+",tXyj)
-  tyy <- Reduce("+",tyyj)
+  tXXi <- solve(tXX)
+  tXY <- Reduce("+",tXYj)
+  tYY <- Reduce("+",tYYj)
   tXX_b <- Reduce("+",tXXj_b)
-  tXy_b <- Reduce("+",tXyj_b)
-  tyy_b <- Reduce("+",tyyj_b)
-  betaHat <- solve(tXX)%*%tXy           # same as lm1$coefficients
-  s2 <- tyy - t(tXy)%*%solve(tXX)%*%tXy # same as sum((lm1$residuals)**2)
+  tXXi_b <- solve(tXX_b)
+  tXY_b <- Reduce("+",tXYj_b)
+  tYY_b <- Reduce("+",tYYj_b)
+  BetaHat <- solve(tXX)%*%tXY           # same as lm1$coefficients
+  S <- tYY - t(tXY)%*%solve(tXX)%*%tXY # same as sum((lm1$residuals)**2)
   # sufficient statistics based on fraction of the data
-  betaHat_b <- solve(tXX_b)%*%tXy_b
-  s2_b <- tyy_b - t(tXy_b)%*%solve(tXX_b)%*%tXy_b
+  BetaHat_b <- solve(tXX_b)%*%tXY_b
+  S_b <- tYY_b - t(tXY_b)%*%solve(tXX_b)%*%tXY_b
 
   if(constraints=="exploratory"){
 
     # prior hyperparameters
-    scale0 <- c(s2_b)*solve(tXX_b)
-    df0 <- 1
-    mean0 <- as.matrix(rep(0,K))
+    df0 <- 1 # should be the same as sum(rep(bj,times=Nj))-K-P+1
+    Scale0 <- kronecker(S_b,tXXi_b)
+    mean0 <- as.matrix(rep(0,K*P))
     # posterior hyperparameters
-    scaleN <- c(s2)*solve(tXX)/(N-K)
-    dfN <- N-K
-    meanN <- betaHat
+    dfN <- N-K-P+1
+    ScaleN <- kronecker(S,tXXi)/(N-K-P+1) # off-diagonal elements have no meaning
+    meanN <- as.matrix(c(BetaHat))
 
-    # Hypotheses for exploraotyr test
+    # Hypotheses for exploratory test
     # H0: beta = 0
     # H1: beta < 0
     # H2: beta < 0
     relfit <- t(matrix(unlist(lapply(1:K,function(k){
-        c(dt((0-meanN[k,1])/sqrt(scaleN[k,k]),df=dfN)/sqrt(scaleN[k,k]),
-                           pt((0-meanN[k,1])/sqrt(scaleN[k,k]),df=dfN,lower.tail = TRUE),
-                           pt((0-meanN[k,1])/sqrt(scaleN[k,k]),df=dfN,lower.tail = FALSE))
-      })),nrow=3))
+      c(dt((0-meanN[k,1])/sqrt(ScaleN[k,k]),df=dfN)/sqrt(ScaleN[k,k]),
+        pt((0-meanN[k,1])/sqrt(ScaleN[k,k]),df=dfN,lower.tail = TRUE),
+        pt((0-meanN[k,1])/sqrt(ScaleN[k,k]),df=dfN,lower.tail = FALSE))
+    })),nrow=3))
     relcomp <- t(matrix(unlist(lapply(1:K,function(k){
-        c(dt((0-mean0[k,1])/sqrt(scale0[k,k]),df=df0)/sqrt(scale0[k,k]),
-          pt((0-mean0[k,1])/sqrt(scale0[k,k]),df=df0,lower.tail = TRUE),
-          pt((0-mean0[k,1])/sqrt(scale0[k,k]),df=df0,lower.tail = FALSE))
-      })),nrow=3))
+      c(dt((0-mean0[k,1])/sqrt(Scale0[k,k]),df=df0)/sqrt(Scale0[k,k]),
+        pt((0-mean0[k,1])/sqrt(Scale0[k,k]),df=df0,lower.tail = TRUE),
+        pt((0-mean0[k,1])/sqrt(Scale0[k,k]),df=df0,lower.tail = FALSE))
+    })),nrow=3))
 
     BFtu <- relfit / relcomp
     PHP <- round(BFtu / apply(BFtu,1,sum),3)
     BFmatrix <- NULL
 
   }else{
-
-    #read constraints. FOR NOW AN EXAMPLE. Use Caspar's function here.
-    RrE1 <- matrix(0,ncol=7,nrow=2)
-    RrE1[1,c(4,5)] <- c(1,-1)
-    RrE1[2,c(4,6)] <- c(1,-1)
-    RrE <- list(NULL,RrE1,NULL)
-
-    RrO1 <- matrix(0,ncol=7,nrow=1)
-    RrO1[1,c(3,4)] <- c(1,-1)
-    RrO2 <- matrix(0,ncol=7,nrow=3)
-    RrO2[1,c(1,2)] <- c(-1,1)
-    RrO2[2,c(1,3)] <- c(-1,1)
-    RrO2[3,c(3,4)] <- c(1,-1)
-    RrO3 <- matrix(0,ncol=7,nrow=2)
-    RrO3[1,c(1,2)] <- c(1,-1)
-    RrO3[2,c(1,3)] <- c(1,-1)
-    RrO <- list(RrO1,NULL,RrO2)
-    #######
+    #read constraints
+    if(P==1){
+      names_coef <- names(lm1$coefficients)
+    }else{
+      names_coef1 <- names(lm1$coefficients[,1])
+      names_coef2 <- names(lm1$coefficients[1,])
+      names_coef <- unlist(lapply(1:P,function(p){
+        lapply(1:K,function(k){
+          paste(names_coef1[k],".",names_coef2[p],sep="")
+        })
+      }))
+    }
+    # translate named constraints to matrices with coefficients for constraints
+    parse_hyp <- parse_hypothesis(names_coef,constraints)
+    RrList <- make_RrList(parse_hyp)
+    RrE <- RrList[[1]]
+    RrO <- RrList[[2]]
 
     RrStack <- rbind(do.call(rbind,RrE),do.call(rbind,RrO))
     RStack <- RrStack[,-(K+1)]
@@ -133,32 +135,127 @@ BFreg <- function(lm1,constraints="exploratory",priorprob="default"){
         }
       }
     }
-    # prior hyperparameters
-    scale0 <- c(s2_b)*solve(tXX_b)
-    df0 <- 1
-    mean0 <- MASS::ginv(RStack)%*%rStack
-    # posterior hyperparameters
-    scaleN <- c(s2)*solve(tXX)/(N-K)
-    dfN <- N-K
-    meanN <- betaHat
-    numhyp <- length(RrO)
 
-    relcomp <- t(matrix(unlist(lapply(1:numhyp,function(h){
-      Student_measures(mean0,scale0,df0,RrE[[h]],RrO[[h]])
-    })),nrow=2))
+    if(P==1){ # then the unconstrained prior and posterior have multivariate Student t distributions
 
-    relfit <- t(matrix(unlist(lapply(1:numhyp,function(h){
-      Student_measures(meanN,scaleN,dfN,RrE[[h]],RrO[[h]])
-    })),nrow=2))
+      # prior hyperparameters
+      df0 <- 1 # should be the same as sum(rep(bj,times=Nj))-K-P+1
+      Scale0 <- kronecker(S_b,tXXi_b)
+      mean0 <- as.matrix(rep(0,K*P))
+      # posterior hyperparameters
+      dfN <- N-K-P+1
+      ScaleN <- kronecker(S,tXXi)/(N-K-P+1) # off-diagonal elements have no meaning
+      meanN <- as.matrix(c(BetaHat))
 
-    # ######## ### ######## # ##### # ###
-    # Use complement hypothesis function from correlation_testing
-    # Alter this function such that the prob is computed given a N(m,Sigma)
-    # and a t(m,S,df) instead of giving both relcomp and relfit in one run.
-    # ###### ########## # ## ###### #####
+      #number of hypotheses that are specified
+      numhyp <- length(RrO)
 
-    relfit <- Student_prob_Hc(meanN,scaleN,dfN,relfit,constraints)
-    relcomp <- Student_prob_Hc(mean0,scale0,df0,relcomp,constraints)
+      relcomp <- t(matrix(unlist(lapply(1:numhyp,function(h){
+        Student_measures(mean0,Scale0,df0,RrE[[h]],RrO[[h]])
+      })),nrow=2))
+
+      relfit <- t(matrix(unlist(lapply(1:numhyp,function(h){
+        Student_measures(meanN,ScaleN,dfN,RrE[[h]],RrO[[h]])
+      })),nrow=2))
+
+      # Compute relative fit/complexity for the complement hypothesis
+      relfit <- Student_prob_Hc(meanN,scaleN,dfN,relfit,constraints)
+      relcomp <- Student_prob_Hc(mean0,scale0,df0,relcomp,constraints)
+    }else{
+
+      #number of hypotheses that are specified
+      numhyp <- length(RrO)
+      Mean0 <- matrix(0,nrow=K,ncol=P)
+
+      relmeas <- unlist(lapply(1:numhyp,function(h){
+        # Check whether the constraints are on a single row or column, if so
+        # use the analytic expression, else using a Monte Carlo estimate.
+        RrStack <- rbind(RrE[[h]],RrO[[h]])
+        Rcheck <- Reduce("+",lapply(1:nrow(RrStack),function(row1){
+          abs(matrix(RrStack[row1,-(K*P+1)],nrow=K))
+        }))
+        RcheckRow <- apply(Rcheck,1,sum)
+        RcheckCol <- apply(Rcheck,2,sum)
+        if(sum(RcheckRow!=0)==1){ # use multivariate Student distributions
+          K1 <- which(RcheckRow!=0)
+          # posterior hyperparameters
+          dfN <- N-K-P+1
+          ScaleN <- S*tXXi[K1,K1]/(N-K-P+1) # off-diagonal elements have no meaning
+          meanN <- as.matrix(c(BetaHat[K1,]))
+          # exclude inactive rows
+          if(is.null(RrE[[h]])){RrE_h=NULL
+          }else{
+            if(nrow(RrE[[h]])==1){
+              RrE_h <- t(as.matrix(RrE[[h]][,c((0:(P-1))*K+K1,P*K+1)]))
+            }else{
+              RrE_h <- RrE[[h]][,c((0:(P-1))*K+K1,P*K+1)]
+            }
+          }
+          if(is.null(RrO[[h]])){RrO_h=NULL
+          }else{
+            if(nrow(RrO[[h]])==1){
+              RrO_h <- t(as.matrix(RrO[[h]][,c((0:(P-1))*K+K1,P*K+1)]))
+            }else{
+              RrO_h <- RrO[[h]][,c((0:(P-1))*K+K1,P*K+1)]
+            }
+          }
+          # prior hyperparameters
+          df0 <- 1 # should be the same as sum(rep(bj,times=Nj))-K-P+1
+          Scale0 <- S_b*tXXi_b[K1,K1]
+          mean0 <- Mean0[K1,]
+          # compute relative measures of fit and complexity
+          relcomp_h <- Student_measures(mean0,Scale0,df0,RrE_h,RrO_h)
+          relfit_h <- Student_measures(meanN,ScaleN,dfN,RrE_h,RrO_h)
+
+        }else if(sum(RcheckCol!=0)==1){ # use multivariate Student distributions
+          P1 <- which(RcheckCol!=0)
+          # prior hyperparameters
+          df0 <- 1 # should be the same as sum(rep(bj,times=Nj))-K-P+1
+          Scale0 <- S_b[P1,P1]*tXXi_b
+          mean0 <- Mean0[,P1]
+          # posterior hyperparameters
+          dfN <- N-K-P+1
+          ScaleN <- S[P1,P1]*tXXi/(N-K-P+1) # off-diagonal elements have no meaning
+          meanN <- as.matrix(c(BetaHat[,P1]))
+          # exclude inactive rows
+          if(is.null(RrE[[h]])){RrE_h=NULL
+          }else{
+            if(nrow(RrE[[h]])==1){
+              RrE_h <- t(as.matrix(RrE[[h]][,c((P1-1)*K+1:K,P*K+1)]))
+            }else{
+              RrE_h <- RrE[[h]][,c((P1-1)*K+1:K,P*K+1)]
+            }
+          }
+          if(is.null(RrO[[h]])){RrO_h=NULL
+          }else{
+            if(nrow(RrO[[h]])==1){
+              RrO_h <- t(as.matrix(RrO[[h]][,c((P1-1)*K+1:K,P*K+1)]))
+            }else{
+              RrO_h <- RrO[[h]][,c((P1-1)*K+1:K,P*K+1)]
+            }
+          }
+          # compute relative measures of fit and complexity
+          relcomp_h <- Student_measures(mean0,Scale0,df0,RrE_h,RrO_h)
+          relfit_h <- Student_measures(meanN,ScaleN,dfN,RrE_h,RrO_h)
+
+        }else{ #use Matrix-Student distributions with Monte Carlo estimate
+
+          df0 <- 1
+          dfN <- N-K-P+1
+          relfit_h <- MatrixStudent_measures(BetaHat,S,tXXi,dfN,RrE[[h]],RrO[[h]],MCdraws=1e4)
+          relcomp_h <- MatrixStudent_measures(Mean0,S_b,tXXi_b,df0,RrE[[h]],RrO[[h]],MCdraws=1e4)
+
+        }
+        return(list(relfit_h,relcomp_h))
+      }))
+
+      relfit <- t(matrix(unlist(relmeas)[rep((0:(numhyp-1))*4,each=2)+rep(1:2,numhyp)],nrow=2))
+      relcomp <- t(matrix(unlist(relmeas)[rep((0:(numhyp-1))*4,each=2)+rep(3:4,numhyp)],nrow=2))
+
+      # Compute relative fit/complexity for the complement hypothesis
+      relfit <- MatrixStudent_prob_Hc(BetaHat,S,tXXi,N-K-P+1,relfit,RrO)
+      relcomp <- MatrixStudent_prob_Hc(Mean0,S_b,tXXi_b,1,relcomp,RrO)
+    }
 
     # the BF for the complement hypothesis vs Hu needs to be computed.
     BFtu <- c(apply(relfit / relcomp, 1, prod))
@@ -174,18 +271,18 @@ BFreg <- function(lm1,constraints="exploratory",priorprob="default"){
   }
 
   return(list(BFtu=BFtu,PHP=PHP,BFmatrix=BFmatrix,relfit=relfit,relcomp=relcomp,
-              Nj=Nj,bj=bj,tXXj=tXXj,tXyj=tXyj,tyyj=tyyj,constraints=constraints,
+              Nj=Nj,bj=bj,tXXj=tXXj,tXYj=tXYj,tYYj=tYYj,constraints=constraints,
               priorprob=priorprob,groupcode=groupcode,dummyX=dummyX))
 }
 
 # update BF test for a univariate normal linear regression type model
-BFregUpdate <- function(BFreg1,lm1,Xy=NULL){
+BFregUpdate <- function(BFreg1,lm1,XY=NULL){
   # update of default BF on location parameters in a univarite normal linear model
 
   Nj <- BFreg1$Nj
   tXXj <- BFreg1$tXXj
-  tXyj <- BFreg1$tXyj
-  tyyj <- BFreg1$tyyj
+  tXYj <- BFreg1$tXYj
+  tYYj <- BFreg1$tYYj
   constraints <- BFreg1$constraints
   priorprob <- BFreg1$priorprob
   groupcode <- BFreg1$groupcode
@@ -193,22 +290,24 @@ BFregUpdate <- function(BFreg1,lm1,Xy=NULL){
 
   K <- nrow(tXXj[[1]])
   J <- nrow(groupcode)
-  P <- 1 # dimension of outcome variable
+  P <- nrow(tYYj[[1]])
+
+  Pnew <- ifelse(!is.matrix(lm1$coefficients),1,ncol(lm1$residuals))
 
   # check if dimensions of model in historical data (BFreg) is same as in new data
-  if(length(lm1$coefficients) != K){
+  if(length(lm1$coefficients)/P != K || Pnew != P){
     stop("Dimensions of the model based on historical data and new data do not match.")
   }
 
-  if(!is.null(Xy)){ #Get Xmat and yvec from Xy instead of lm1. Useful when only one observation is added for instance.
-    if(ncol(Xy)!=K+1){# Dimension of new data does not match
+  if(!is.null(XY)){ #Get Xmat and yvec from Xy instead of lm1. Useful when only one observation is added for instance.
+    if(ncol(XY)!=K+P){# Dimension of new data does not match
       stop("Dimensions of the model based on historical data and new data do not match.")
     }
-    Xmat <- Xy[,-(K+1)]
-    yvec <- Xy[,K+1]
+    Xmat <- XY[,-(K+1:P)]
+    Ymat <- XY[,K+1:P]
   }else{
     Xmat <- model.matrix(lm1)
-    yvec <- c(model.matrix(lm1)%*%lm1$coefficients + lm1$residuals)
+    Ymat <- model.matrix(lm1)%*%lm1$coefficients + lm1$residuals
   }
   dummyX_new <- rep(F,K)
   for(k in 1:K){ # Check which are dummy variables corresponding to (adjusted) mean parameters
@@ -238,54 +337,56 @@ BFregUpdate <- function(BFreg1,lm1,Xy=NULL){
   tXXj_b <- lapply(1:J,function(j){
     (t(Xmat[dvec==j,])%*%Xmat[dvec==j,] + tXXj[[j]]) * bj[j]
   })
-  tXyj <- lapply(1:J,function(j){
-    t(Xmat[dvec==j,])%*%yvec[dvec==j] + tXyj[[j]]
+  tXYj <- lapply(1:J,function(j){
+    t(Xmat[dvec==j,])%*%Ymat[dvec==j,] + tXYj[[j]]
   })
-  tXyj_b <- lapply(1:J,function(j){
-    (t(Xmat[dvec==j,])%*%yvec[dvec==j] + tXyj[[j]]) * bj[j]
+  tXYj_b <- lapply(1:J,function(j){
+    (t(Xmat[dvec==j,])%*%Ymat[dvec==j,] + tXYj[[j]]) * bj[j]
   })
-  tyyj <- lapply(1:J,function(j){
-    t(yvec[dvec==j])%*%yvec[dvec==j] + tyyj[[j]]
+  tYYj <- lapply(1:J,function(j){
+    t(Ymat[dvec==j,])%*%Ymat[dvec==j,] + tYYj[[j]]
   })
-  tyyj_b <- lapply(1:J,function(j){
-    (t(yvec[dvec==j])%*%yvec[dvec==j] + tyyj[[j]]) * bj[j]
+  tYYj_b <- lapply(1:J,function(j){
+    (t(Ymat[dvec==j,])%*%Ymat[dvec==j,] + tYYj[[j]]) * bj[j]
   })
   tXX <- Reduce("+",tXXj)
-  tXy <- Reduce("+",tXyj)
-  tyy <- Reduce("+",tyyj)
+  tXXi <- solve(tXX)
+  tXY <- Reduce("+",tXYj)
+  tYY <- Reduce("+",tYYj)
   tXX_b <- Reduce("+",tXXj_b)
-  tXy_b <- Reduce("+",tXyj_b)
-  tyy_b <- Reduce("+",tyyj_b)
-  betaHat <- solve(tXX)%*%tXy           # same as lm1$coefficients
-  s2 <- tyy - t(tXy)%*%solve(tXX)%*%tXy # same as sum((lm1$residuals)**2)
+  tXXi_b <- solve(tXX_b)
+  tXY_b <- Reduce("+",tXYj_b)
+  tYY_b <- Reduce("+",tYYj_b)
+  BetaHat <- solve(tXX)%*%tXY           # same as lm1$coefficients
+  S <- tYY - t(tXY)%*%solve(tXX)%*%tXY # same as sum((lm1$residuals)**2)
   # sufficient statistics based on fraction of the data
-  betaHat_b <- solve(tXX_b)%*%tXy_b
-  s2_b <- tyy_b - t(tXy_b)%*%solve(tXX_b)%*%tXy_b
+  BetaHat_b <- solve(tXX_b)%*%tXY_b
+  S_b <- tYY_b - t(tXY_b)%*%solve(tXX_b)%*%tXY_b
 
   if(constraints=="exploratory"){
 
     # prior hyperparameters
-    scale0 <- c(s2_b)*solve(tXX_b)
-    df0 <- 1
-    mean0 <- as.matrix(rep(0,K))
+    df0 <- 1 # should be the same as sum(rep(bj,times=Nj))-K-P+1
+    Scale0 <- kronecker(S_b,tXXi_b)
+    mean0 <- as.matrix(rep(0,K*P))
     # posterior hyperparameters
-    scaleN <- c(s2)*solve(tXX)/(N-K)
-    dfN <- N-K
-    meanN <- betaHat
+    dfN <- N-K-P+1
+    ScaleN <- kronecker(S,tXXi)/(N-K-P+1) # off-diagonal elements have no meaning
+    meanN <- as.matrix(c(BetaHat))
 
-    # Hypotheses for exploraotyr test
+    # Hypotheses for exploratory test
     # H0: beta = 0
     # H1: beta < 0
     # H2: beta < 0
     relfit <- t(matrix(unlist(lapply(1:K,function(k){
-      c(dt((0-meanN[k,1])/sqrt(scaleN[k,k]),df=dfN)/sqrt(scaleN[k,k]),
-        pt((0-meanN[k,1])/sqrt(scaleN[k,k]),df=dfN,lower.tail = TRUE),
-        pt((0-meanN[k,1])/sqrt(scaleN[k,k]),df=dfN,lower.tail = FALSE))
+      c(dt((0-meanN[k,1])/sqrt(ScaleN[k,k]),df=dfN)/sqrt(ScaleN[k,k]),
+        pt((0-meanN[k,1])/sqrt(ScaleN[k,k]),df=dfN,lower.tail = TRUE),
+        pt((0-meanN[k,1])/sqrt(ScaleN[k,k]),df=dfN,lower.tail = FALSE))
     })),nrow=3))
     relcomp <- t(matrix(unlist(lapply(1:K,function(k){
-      c(dt((0-mean0[k,1])/sqrt(scale0[k,k]),df=df0)/sqrt(scale0[k,k]),
-        pt((0-mean0[k,1])/sqrt(scale0[k,k]),df=df0,lower.tail = TRUE),
-        pt((0-mean0[k,1])/sqrt(scale0[k,k]),df=df0,lower.tail = FALSE))
+      c(dt((0-mean0[k,1])/sqrt(Scale0[k,k]),df=df0)/sqrt(Scale0[k,k]),
+        pt((0-mean0[k,1])/sqrt(Scale0[k,k]),df=df0,lower.tail = TRUE),
+        pt((0-mean0[k,1])/sqrt(Scale0[k,k]),df=df0,lower.tail = FALSE))
     })),nrow=3))
 
     BFtu <- relfit / relcomp
@@ -293,24 +394,23 @@ BFregUpdate <- function(BFreg1,lm1,Xy=NULL){
     BFmatrix <- NULL
 
   }else{
-
-    #read constraints. FOR NOW AN EXAMPLE. Use Caspar's function here.
-    RrE1 <- matrix(0,ncol=7,nrow=2)
-    RrE1[1,c(4,5)] <- c(1,-1)
-    RrE1[2,c(4,6)] <- c(1,-1)
-    RrE <- list(NULL,RrE1,NULL)
-
-    RrO1 <- matrix(0,ncol=7,nrow=1)
-    RrO1[1,c(3,4)] <- c(1,-1)
-    RrO2 <- matrix(0,ncol=7,nrow=3)
-    RrO2[1,c(1,2)] <- c(-1,1)
-    RrO2[2,c(1,3)] <- c(-1,1)
-    RrO2[3,c(3,4)] <- c(1,-1)
-    RrO3 <- matrix(0,ncol=7,nrow=2)
-    RrO3[1,c(1,2)] <- c(1,-1)
-    RrO3[2,c(1,3)] <- c(1,-1)
-    RrO <- list(RrO1,NULL,RrO2)
-    #######
+    #read constraints
+    if(P==1){
+      names_coef <- names(lm1$coefficients)
+    }else{
+      names_coef1 <- names(lm1$coefficients[,1])
+      names_coef2 <- names(lm1$coefficients[1,])
+      names_coef <- unlist(lapply(1:P,function(p){
+        lapply(1:K,function(k){
+          paste(names_coef1[k],".",names_coef2[p],sep="")
+        })
+      }))
+    }
+    # translate named constraints to matrices with coefficients for constraints
+    parse_hyp <- parse_hypothesis(names_coef,constraints)
+    RrList <- make_RrList(parse_hyp)
+    RrE <- RrList[[1]]
+    RrO <- RrList[[2]]
 
     RrStack <- rbind(do.call(rbind,RrE),do.call(rbind,RrO))
     RStack <- RrStack[,-(K+1)]
@@ -327,26 +427,127 @@ BFregUpdate <- function(BFreg1,lm1,Xy=NULL){
         }
       }
     }
-    # prior hyperparameters
-    scale0 <- c(s2_b)*solve(tXX_b)
-    df0 <- 1
-    mean0 <- MASS::ginv(RStack)%*%rStack
-    # posterior hyperparameters
-    scaleN <- c(s2)*solve(tXX)/(N-K)
-    dfN <- N-K
-    meanN <- betaHat
-    numhyp <- length(RrO)
 
-    relcomp <- t(matrix(unlist(lapply(1:numhyp,function(h){
-      Student_measures(mean0,scale0,df0,RrE[[h]],RrO[[h]])
-    })),nrow=2))
+    if(P==1){ # then the unconstrained prior and posterior have multivariate Student t distributions
 
-    relfit <- t(matrix(unlist(lapply(1:numhyp,function(h){
-      Student_measures(meanN,scaleN,dfN,RrE[[h]],RrO[[h]])
-    })),nrow=2))
+      # prior hyperparameters
+      df0 <- 1 # should be the same as sum(rep(bj,times=Nj))-K-P+1
+      Scale0 <- kronecker(S_b,tXXi_b)
+      mean0 <- as.matrix(rep(0,K*P))
+      # posterior hyperparameters
+      dfN <- N-K-P+1
+      ScaleN <- kronecker(S,tXXi)/(N-K-P+1) # off-diagonal elements have no meaning
+      meanN <- as.matrix(c(BetaHat))
 
-    relfit <- Student_prob_Hc(meanN,scaleN,dfN,relfit,constraints)
-    relcomp <- Student_prob_Hc(mean0,scale0,df0,relcomp,constraints)
+      #number of hypotheses that are specified
+      numhyp <- length(RrO)
+
+      relcomp <- t(matrix(unlist(lapply(1:numhyp,function(h){
+        Student_measures(mean0,Scale0,df0,RrE[[h]],RrO[[h]])
+      })),nrow=2))
+
+      relfit <- t(matrix(unlist(lapply(1:numhyp,function(h){
+        Student_measures(meanN,ScaleN,dfN,RrE[[h]],RrO[[h]])
+      })),nrow=2))
+
+      # Compute relative fit/complexity for the complement hypothesis
+      relfit <- Student_prob_Hc(meanN,scaleN,dfN,relfit,constraints)
+      relcomp <- Student_prob_Hc(mean0,scale0,df0,relcomp,constraints)
+    }else{
+
+      #number of hypotheses that are specified
+      numhyp <- length(RrO)
+      Mean0 <- matrix(0,nrow=K,ncol=P)
+
+      relmeas <- unlist(lapply(1:numhyp,function(h){
+        # Check whether the constraints are on a single row or column, if so
+        # use the analytic expression, else using a Monte Carlo estimate.
+        RrStack <- rbind(RrE[[h]],RrO[[h]])
+        Rcheck <- Reduce("+",lapply(1:nrow(RrStack),function(row1){
+          abs(matrix(RrStack[row1,-(K*P+1)],nrow=K))
+        }))
+        RcheckRow <- apply(Rcheck,1,sum)
+        RcheckCol <- apply(Rcheck,2,sum)
+        if(sum(RcheckRow!=0)==1){ # use multivariate Student distributions
+          K1 <- which(RcheckRow!=0)
+          # posterior hyperparameters
+          dfN <- N-K-P+1
+          ScaleN <- S*tXXi[K1,K1]/(N-K-P+1) # off-diagonal elements have no meaning
+          meanN <- as.matrix(c(BetaHat[K1,]))
+          # exclude inactive rows
+          if(is.null(RrE[[h]])){RrE_h=NULL
+          }else{
+            if(nrow(RrE[[h]])==1){
+              RrE_h <- t(as.matrix(RrE[[h]][,c((0:(P-1))*K+K1,P*K+1)]))
+            }else{
+              RrE_h <- RrE[[h]][,c((0:(P-1))*K+K1,P*K+1)]
+            }
+          }
+          if(is.null(RrO[[h]])){RrO_h=NULL
+          }else{
+            if(nrow(RrO[[h]])==1){
+              RrO_h <- t(as.matrix(RrO[[h]][,c((0:(P-1))*K+K1,P*K+1)]))
+            }else{
+              RrO_h <- RrO[[h]][,c((0:(P-1))*K+K1,P*K+1)]
+            }
+          }
+          # prior hyperparameters
+          df0 <- 1 # should be the same as sum(rep(bj,times=Nj))-K-P+1
+          Scale0 <- S_b*tXXi_b[K1,K1]
+          mean0 <- Mean0[K1,]
+          # compute relative measures of fit and complexity
+          relcomp_h <- Student_measures(mean0,Scale0,df0,RrE_h,RrO_h)
+          relfit_h <- Student_measures(meanN,ScaleN,dfN,RrE_h,RrO_h)
+
+        }else if(sum(RcheckCol!=0)==1){ # use multivariate Student distributions
+          P1 <- which(RcheckCol!=0)
+          # prior hyperparameters
+          df0 <- 1 # should be the same as sum(rep(bj,times=Nj))-K-P+1
+          Scale0 <- S_b[P1,P1]*tXXi_b
+          mean0 <- Mean0[,P1]
+          # posterior hyperparameters
+          dfN <- N-K-P+1
+          ScaleN <- S[P1,P1]*tXXi/(N-K-P+1) # off-diagonal elements have no meaning
+          meanN <- as.matrix(c(BetaHat[,P1]))
+          # exclude inactive rows
+          if(is.null(RrE[[h]])){RrE_h=NULL
+          }else{
+            if(nrow(RrE[[h]])==1){
+              RrE_h <- t(as.matrix(RrE[[h]][,c((P1-1)*K+1:K,P*K+1)]))
+            }else{
+              RrE_h <- RrE[[h]][,c((P1-1)*K+1:K,P*K+1)]
+            }
+          }
+          if(is.null(RrO[[h]])){RrO_h=NULL
+          }else{
+            if(nrow(RrO[[h]])==1){
+              RrO_h <- t(as.matrix(RrO[[h]][,c((P1-1)*K+1:K,P*K+1)]))
+            }else{
+              RrO_h <- RrO[[h]][,c((P1-1)*K+1:K,P*K+1)]
+            }
+          }
+          # compute relative measures of fit and complexity
+          relcomp_h <- Student_measures(mean0,Scale0,df0,RrE_h,RrO_h)
+          relfit_h <- Student_measures(meanN,ScaleN,dfN,RrE_h,RrO_h)
+
+        }else{ #use Matrix-Student distributions with Monte Carlo estimate
+
+          df0 <- 1
+          dfN <- N-K-P+1
+          relfit_h <- MatrixStudent_measures(BetaHat,S,tXXi,dfN,RrE[[h]],RrO[[h]],MCdraws=1e4)
+          relcomp_h <- MatrixStudent_measures(Mean0,S_b,tXXi_b,df0,RrE[[h]],RrO[[h]],MCdraws=1e4)
+
+        }
+        return(list(relfit_h,relcomp_h))
+      }))
+
+      relfit <- t(matrix(unlist(relmeas)[rep((0:(numhyp-1))*4,each=2)+rep(1:2,numhyp)],nrow=2))
+      relcomp <- t(matrix(unlist(relmeas)[rep((0:(numhyp-1))*4,each=2)+rep(3:4,numhyp)],nrow=2))
+
+      # Compute relative fit/complexity for the complement hypothesis
+      relfit <- MatrixStudent_prob_Hc(BetaHat,S,tXXi,N-K-P+1,relfit,RrO)
+      relcomp <- MatrixStudent_prob_Hc(Mean0,S_b,tXXi_b,1,relcomp,RrO)
+    }
 
     # the BF for the complement hypothesis vs Hu needs to be computed.
     BFtu <- c(apply(relfit / relcomp, 1, prod))
@@ -362,8 +563,116 @@ BFregUpdate <- function(BFreg1,lm1,Xy=NULL){
   }
 
   return(list(BFtu=BFtu,PHP=PHP,BFmatrix=BFmatrix,relfit=relfit,relcomp=relcomp,
-              Nj=Nj,bj=bj,tXXj=tXXj,tXyj=tXyj,tyyj=tyyj,constraints=constraints,
+              Nj=Nj,bj=bj,tXXj=tXXj,tXYj=tXYj,tYYj=tYYj,constraints=constraints,
               priorprob=priorprob,groupcode=groupcode,dummyX=dummyX))
+}
+
+# compute relative meausures (fit or complexity) under a multivariate Student t distribution
+MatrixStudent_measures <- function(Mean1,Scale1,tXXi1,df1,RrE1,RrO1,MCdraws=1e4){
+  K <- nrow(Mean1)
+  P <- ncol(Mean1)
+  # vectorize the mean
+  mean1 <- c(Mean1)
+  relE <- relO <- 1
+  if(!is.null(RrE1) && is.null(RrO1)){ #only equality constraints
+    RE1 <- RrE1[,-(K*P+1)]
+    if(!is.matrix(RE1)){
+      RE1 <- t(as.matrix(RE1))
+    }
+    rE1 <- RrE1[,(K*P+1)]
+    qE1 <- nrow(RE1)
+
+    temp1 <- rWishart(MCdraws,df1+P-1,solve(Scale1))
+    temp2 <- lapply(seq(dim(temp1)[3]), function(x) temp1[,,x])
+    SigmaList <- lapply(temp2,solve)
+    covm1_E <- lapply(SigmaList,function(temp) RE1%*%(kronecker(temp,tXXi1))%*%t(RE1) )
+    mean1_E <- c(RE1 %*% mean1)
+    relE <- mean(unlist(lapply(covm1_E,function(temp) mvtnorm::dmvnorm(mean1_E,mean=mean1_E,sigma=temp))))
+
+  }else{
+    if(is.null(RrE1) && !is.null(RrO1)){ #only order constraints
+      RO1 <- RrO1[,-(K*P+1)]
+      if(!is.matrix(RO1)){
+        RO1 <- t(as.matrix(RO1))
+      }
+      qO1 <- nrow(RO1)
+      rO1 <- RrO1[,(K*P+1)]
+
+      if(Matrix::rankMatrix(RO1)[[1]]==nrow(RO1)){ #RO1 is of full row rank. So use transformation.
+
+        Scale1inv <- solve(Scale1)
+        relO <- mean(unlist(lapply(1:1e3,function(s){
+          Sigma1 <- solve(rWishart(1,df=df1+P-1,Sigma=Scale1inv)[,,1])
+          meanO <- c(RO1%*%mean1)
+          covmO <- RO1%*%kronecker(Sigma1,tXXi1)%*%t(RO1)
+          mvtnorm::pmvnorm(lower=rO1,upper=Inf,mean=meanO,sigma=covmO)
+        })))
+
+      }else{ #no linear transformation can be used; pmvt cannot be used. Use bain with a multivariate normal approximation
+        #compute covariance matrix for multivariate normal distribution
+        covm1 <- ifelse(df1>2,
+                        kronecker(Scale1,tXX1)/(df1-2),
+                        kronecker(Scale1,tXX1)) #for prior with df1==1, probability independent of common factor of scale1
+        # bain1 <- bain::bain(mean1,Sigma1=covm1,RrE1,RrO1,n=10) # choice of n does not matter
+        # extract posterior probability (Fit_eq) from bain-object)
+        stop("REMINDER. This situation should still be implemented.")
+      }
+    }else{  #hypothesis with equality and order constraints
+
+      RE1 <- RrE1[,-(K*P+1)]
+      if(!is.matrix(RE1)){
+        RE1 <- t(as.matrix(RE1))
+      }
+      rE1 <- RrE1[,(K*P+1)]
+      qE1 <- nrow(RE1)
+      RO1 <- RrO1[,-(K*P+1)]
+      if(!is.matrix(RO1)){
+        RO1 <- t(as.matrix(RO1))
+      }
+      qO1 <- nrow(RO1)
+      rO1 <- RrO1[,(K*P+1)]
+      Rr1 <- rbind(RrE1,RrO1)
+      R1 <- rbind(RE1,RO1)
+      r1 <- c(rE1,rO1)
+      qC1 <- length(r1)
+
+      temp1 <- rWishart(MCdraws,df1+P-1,solve(Scale1))
+      temp2 <- lapply(seq(dim(temp1)[3]), function(x) temp1[,,x])
+      SigmaList <- lapply(temp2,solve)
+      covm1_E <- lapply(SigmaList,function(temp) RE1%*%(kronecker(temp,tXXi1))%*%t(RE1) )
+      mean1_E <- RE1 %*% mean1
+      relE <- mean(unlist(lapply(covm1_E,function(temp) mvtnorm::dmvnorm(mean1_E,mean=mean1_E,sigma=temp))))
+
+      if(Matrix::rankMatrix(RrO1)[[1]] == nrow(RrO1)){
+
+        covm1_O <- lapply(SigmaList,function(temp) R1%*%(kronecker(temp,tXXi1))%*%t(R1) )
+        mean1_O <- c(RO1%*%mean1) - rO1  ## mu_zeta_O in the paper
+
+        mean1_OE <- lapply(covm1_O,function(temp) as.vector(mean1_O +
+                                                              temp[1:qE1,(qE1+1):qC1]%*%solve(temp[1:qE1,1:qE1])%*%(rE1-mean1_E)))
+        covm1_OE <- lapply(covm1_O,function(temp) temp[(qE1+1):qC1,(qE1+1):qC1] - ## phi_zeta_OO -
+                             temp[(qE1+1):qC1,1:qE1]%*%solve(temp[1:qE1,1:qE1])%*%temp[1:qE1,(qE1+1):qC1]) ##phi_zeta_OE*phi_zeta_EE^-1*phi_zeta_EO
+        #check covariance because some can be nonsymmetric due to a generation error
+        covm1_OE <- covm1_OE[(unlist(lapply(covm1_OE,function(temp) isSymmetric(temp,
+                                                                                tol = sqrt(.Machine$double.eps),check.attributes = FALSE))))]
+        relO <- mean(mapply(function(mu_temp,Sigma_temp) mvtnorm::pmvnorm(lower=rep(0,qO1),
+                                                                          upper=rep(Inf,qO1),mean=mu_temp,sigma=Sigma_temp)[1],mean1_OE,covm1_OE))
+
+      }else{ #use bain for the computation of the probability
+
+        #draw covariance matrix Sigma
+        Sigma1 <- solve(rWishart(1,df=df1+P-1,Sigma=Scale1inv)[,,1])
+        covm1 <- ifelse(df1>2,
+                        kronecker(Sigma1,tXXi1)/(df1-2),
+                        kronecker(Sigma1,tXXi1))
+
+        # bain1 <- bain::bain(mean1,Sigma1=covm1,RrE1=NULL,RrO1=RO1tilde,n=10) # choice of n does not matter
+        # extract posterior probability (Fit_eq) from bain-object)
+        stop("REMINDER. This case should still be implemented.")
+      }
+    }
+  }
+  return(c(relE,relO))
 }
 
 # compute relative meausures (fit or complexity) under a multivariate Student t distribution
@@ -393,13 +702,13 @@ Student_measures <- function(mean1,scale1,df1,RrE1,RrO1){
       meanO <- c(RO1%*%mean1)
       scaleO <- RO1%*%scale1%*%t(RO1)
       relO <- ifelse(nrow(scaleO)==1,
-                pt((rO1-meanO)/sqrt(scaleO[1,1]),df=df1,lower.tail=FALSE), #univariate
-                mvtnorm::pmvt(lower=rO1,upper=Inf,delta=meanO,sigma=scaleO,df=df1,type="shifted")) #multivariate
+                     pt((rO1-meanO)/sqrt(scaleO[1,1]),df=df1,lower.tail=FALSE), #univariate
+                     mvtnorm::pmvt(lower=rO1,upper=Inf,delta=meanO,sigma=scaleO,df=df1,type="shifted")) #multivariate
     }else{ #no linear transformation can be used; pmvt cannot be used. Use bain with a multivariate normal approximation
       #compute covariance matrix for multivariate normal distribution
       Sigma1 <- ifelse(df1>2,
-                  df1/(df1-2)*scale1,
-                  scale1) #for prior with df1==1, probability independent of common factor of scale1
+                       df1/(df1-2)*scale1,
+                       scale1) #for prior with df1==1, probability independent of common factor of scale1
       # bain1 <- bain::bain(mean1,Sigma1=Sigma1,RrE1,RrO1,n=10) # choice of n does not matter
       # extract posterior probability (Fit_eq) from bain-object)
       stop("REMINDER. This situation should still be implemented.")
@@ -477,6 +786,82 @@ Student_measures <- function(mean1,scale1,df1,RrE1,RrO1){
 }
 
 # The function computes the probability of an unconstrained draw falling in the complement subspace.
+MatrixStudent_prob_Hc <- function(Mean1,Scale1,tXXi1,df1,relmeas,RrO){
+
+  P <- ncol(Mean1)
+  K <- nrow(Mean1)
+  numpara <- P*K
+  numhyp <- nrow(relmeas)
+  #  relmeas <- relmeas[1:numhyp,]
+  which_eq <- relmeas[,1] != 1
+  if(sum(which_eq)==numhyp){ # Then the complement is equivalent to the unconstrained hypothesis.
+    relmeas <- rbind(relmeas,rep(1,2))
+    rownames(relfit)[numhyp+1] <- "Hc"
+  }else{ # So there is at least one hypothesis with only order constraints
+    welk <- which(!which_eq)
+    if(length(welk)==1){ # There is one hypothesis with only order constraints. Hc is complement of this hypothesis.
+      relmeas <- rbind(relmeas,rep(1,2))
+      relmeas[numhyp+1,2] <- 1 - relmeas[welk,2]
+      rownames(relmeas)[numhyp+1] <- "Hc"
+    }else{ # So more than one hypothesis with only order constraints
+      # First we check whether ther is an overlap between the order constrained spaces.
+
+      # Caspar, here we need the RE and RO which are lists of
+      # matrices for equality and order constraints under the hypotheses. We can probably do this
+      # using the R-code you wrote and a vector of names of the correlations but I don't know
+      # how exactly. When running your function I also get an error message saying that he
+      # does not know the function "rename_function".
+
+      draws2 <- 1e4
+      randomDraws <- mvtnorm::rmvnorm(draws2,mean=rep(0,numpara),sigma=diag(numpara))
+      #get draws that satisfy the constraints of the separate order constrained hypotheses
+      checksOC <- lapply(welk,function(h){
+        Rorder <- as.matrix(RrO[[h]][,-(1+numpara)])
+        if(ncol(Rorder)==1){
+          Rorder <- t(Rorder)
+        }
+        rorder <- as.matrix(RrO[[h]][,1+numpara])
+        apply(randomDraws%*%t(Rorder) > rep(1,draws2)%*%t(rorder),1,prod)
+      })
+      checkOCplus <- Reduce("+",checksOC)
+
+      if(sum(checkOCplus > 0) < draws2){ #then the joint order constrained hypotheses do not completely cover the parameter space.
+        if(sum(checkOCplus>1)==0){ # then order constrained spaces are nonoverlapping
+          relmeas <- rbind(relmeas,rep(1,2))
+          relmeas[numhyp+1,2] <- 1 - sum(relmeas[welk,2])
+          rownames(relmeas)[numhyp+1] <- "Hc"
+        }else{ #the order constrained subspaces at least partly overlap
+
+          # funtion below gives a rough estimate of the posterior probability under Hc
+          # a bain type of algorithm would be better of course. but for now this is ok.
+
+          temp1 <- rWishart(draws2,df1+P-1,solve(Scale1))
+          temp2 <- lapply(seq(dim(temp1)[3]), function(x) temp1[,,x])
+          SigmaList <- lapply(temp2,solve)
+          randomDraws <- matrix(unlist(lapply(SigmaList,function(temp){
+            mvtnorm::rmvnorm(1,mean=c(Mean1),sigma=kronecker(temp,tXXi1))
+          })),nrow=numpara)
+
+          checksOC <- lapply(welk,function(h){
+            Rorder <- as.matrix(RrO[[h]][,-(1+numpara)])
+            if(ncol(Rorder)==1){
+              Rorder <- t(Rorder)
+            }
+            rorder <- as.matrix(RrO[[h]][,1+numpara])
+            apply(Rorder%*%randomDraws > rorder%*%t(rep(1,draws2)),2,prod)
+          })
+          relmeas <- rbind(relmeas,rep(1,2))
+          relmeas[numhyp+1,] <- c(1,sum(Reduce("+",checksOC)==0)/draws2)
+          rownames(relmeas)[numhyp+1] <- "Hc"
+        }
+      }
+    }
+  }
+
+  return(relmeas)
+}
+
+# The function computes the probability of an unconstrained draw falling in the complement subspace.
 Student_prob_Hc <- function(mean1,scale1,df1,relmeas,constraints){
 
   numpara <- length(mean1)
@@ -535,98 +920,6 @@ Student_prob_Hc <- function(mean1,scale1,df1,relmeas,constraints){
           })
           relmeas <- rbind(relmeas,rep(1,2))
           relmeas[numhyp+1,2] <- sum(Reduce("+",checksOC) == 0) / draws2
-          rownames(relmeas)[numhyp+1] <- "Hc"
-        }
-      }
-    }
-  }
-
-  return(relmeas)
-}
-
-# The function computes the probability of an unconstrained draw falling in the complement subspace.
-Gaussian_prob_Hc <- function(mean1,Sigma1,relmeas,constraints){
-
-  numpara <- length(mean1)
-  numhyp <- nrow(relmeas)
-  relmeas <- relmeas[1:numhyp,]
-  which_eq <- relmeas[,1] != 1
-  if(sum(which_eq)==numhyp){ # Then the complement is equivalent to the unconstrained hypothesis.
-    relmeas <- rbind(relmeas,rep(1,2))
-    rownames(relmeas)[relmeas+1] <- "Hc"
-  }else{ # So there is at least one hypothesis with only order constraints
-    welk <- which(!which_eq)
-    if(length(welk)==1){ # There is one hypothesis with only order constraints. Hc is complement of this hypothesis.
-      relmeas <- rbind(relmeas,rep(1,2))
-      relmeas[numhyp+1,2] <- 1 - relmeas[welk,2]
-      rownames(relmeas)[numhyp+1] <- "Hc"
-    }else{ # So more than one hypothesis with only order constraints
-      # First we check whether ther is an overlap between the order constrained spaces.
-
-      # Caspar, here we need the RE and RO which are lists of
-      # matrices for equality and order constraints under the hypotheses. We can probably do this
-      # using the R-code you wrote and a vector of names of the correlations but I don't know
-      # how exactly. When running your function I also get an error message saying that he
-      # does not know the function "rename_function".
-
-      # Maybe (?) create_matrices(varnames=names(meanvec),hyp=constraints)
-
-      # This part can be removed when the constraints can be read in.
-      constraints <- "r211=r311=r321 & r321>r212;
-      r211<(r311,r321) & r321>r212;
-      r211>(r311,r321)"
-      # the coefficient matrices are
-      RE1 <- matrix(0,ncol=7,nrow=2)
-      RE1[1,c(1,2)] <- c(1,-1)
-      RE1[2,c(2,3)] <- c(1,-1)
-      RE <- list(RE1,NULL,NULL)
-
-      RO1 <- matrix(0,ncol=7,nrow=1)
-      RO1[1,c(3,4)] <- c(1,-1)
-      RO2 <- matrix(0,ncol=7,nrow=3)
-      RO2[1,c(1,2)] <- c(-1,1)
-      RO2[2,c(1,3)] <- c(-1,1)
-      RO2[3,c(3,4)] <- c(1,-1)
-      RO3 <- matrix(0,ncol=7,nrow=2)
-      RO3[1,c(1,2)] <- c(1,-1)
-      RO3[2,c(1,3)] <- c(1,-1)
-      RO <- list(RO1,RO2,RO3)
-      #######
-
-      draws2 <- 1e4
-      randomDraws <- mvtnorm::rmvnorm(draws2,mean=rep(0,numpara),sigma=diag(numpara))
-      #get draws that satisfy the constraints of the separate order constrained hypotheses
-      checksOC <- lapply(welk,function(h){
-        Rorder <- as.matrix(RrO[[h]][,-(1+numpara)])
-        if(ncol(Rorder)==1){
-          Rorder <- t(Rorder)
-        }
-        rorder <- as.matrix(RrO[[h]][,1+numpara])
-        apply(randomDraws%*%t(Rorder) > rep(1,draws2)%*%t(rorder),1,prod)
-      })
-      checkOCplus <- Reduce("+",checksOC)
-
-      if(sum(checkOCplus > 0) < draws2){ #then the joint order constrained hypotheses do not completely cover the parameter space.
-        if(sum(checkOCplus>1)==0){ # then order constrained spaces are nonoverlapping
-          relmeas <- rbind(relmeas,rep(1,2))
-          relmeas[numhyp+1,2] <- 1 - sum(relmeas[welk,2])
-          rownames(relmeas)[numhyp+1] <- "Hc"
-        }else{ #the order constrained subspaces at least partly overlap
-
-          # funtion below gives a rough estimate of the posterior probability under Hc
-          # a bain type of algorithm would be better of course. but for now this is ok.
-
-          randomDraws <- mvtnorm::rmvnorm(draws2,mean=mean1,sigma=Sigma1)
-          checksOCpost <- lapply(welk,function(h){
-            Rorder <- as.matrix(RrO[[h]][,-(1+numpara)])
-            if(ncol(Rorder)==1){
-              Rorder <- t(Rorder)
-            }
-            rorder <- as.matrix(RrO[[h]][,1+numpara])
-            apply(randomDraws%*%t(Rorder) > rep(1,draws2)%*%t(rorder),1,prod)
-          })
-          relmeas <- rbind(relmeas,rep(1,2))
-          relmeas[numhyp+1,2] <- sum(Reduce("+",checksOCpost) == 0) / draws2
           rownames(relmeas)[numhyp+1] <- "Hc"
         }
       }
@@ -731,6 +1024,122 @@ Gaussian_measures <- function(mean1,Sigma1,RrE1,RrO1){
   return(c(relE,relO))
 }
 
+# The function computes the probability of an unconstrained draw falling in the complement subspace.
+Gaussian_prob_Hc <- function(mean1,Sigma1,relmeas,constraints){
+
+  numpara <- length(mean1)
+  numhyp <- nrow(relmeas)
+  relmeas <- relmeas[1:numhyp,]
+  which_eq <- relmeas[,1] != 1
+  if(sum(which_eq)==numhyp){ # Then the complement is equivalent to the unconstrained hypothesis.
+    relmeas <- rbind(relmeas,rep(1,2))
+    rownames(relmeas)[relmeas+1] <- "Hc"
+  }else{ # So there is at least one hypothesis with only order constraints
+    welk <- which(!which_eq)
+    if(length(welk)==1){ # There is one hypothesis with only order constraints. Hc is complement of this hypothesis.
+      relmeas <- rbind(relmeas,rep(1,2))
+      relmeas[numhyp+1,2] <- 1 - relmeas[welk,2]
+      rownames(relmeas)[numhyp+1] <- "Hc"
+    }else{ # So more than one hypothesis with only order constraints
+      # First we check whether ther is an overlap between the order constrained spaces.
+
+      # Caspar, here we need the RE and RO which are lists of
+      # matrices for equality and order constraints under the hypotheses. We can probably do this
+      # using the R-code you wrote and a vector of names of the correlations but I don't know
+      # how exactly. When running your function I also get an error message saying that he
+      # does not know the function "rename_function".
+
+      # Maybe (?) create_matrices(varnames=names(meanvec),hyp=constraints)
+
+      # This part can be removed when the constraints can be read in.
+      constraints <- "r211=r311=r321 & r321>r212;
+      r211<(r311,r321) & r321>r212;
+      r211>(r311,r321)"
+      # the coefficient matrices are
+      RE1 <- matrix(0,ncol=7,nrow=2)
+      RE1[1,c(1,2)] <- c(1,-1)
+      RE1[2,c(2,3)] <- c(1,-1)
+      RE <- list(RE1,NULL,NULL)
+
+      RO1 <- matrix(0,ncol=7,nrow=1)
+      RO1[1,c(3,4)] <- c(1,-1)
+      RO2 <- matrix(0,ncol=7,nrow=3)
+      RO2[1,c(1,2)] <- c(-1,1)
+      RO2[2,c(1,3)] <- c(-1,1)
+      RO2[3,c(3,4)] <- c(1,-1)
+      RO3 <- matrix(0,ncol=7,nrow=2)
+      RO3[1,c(1,2)] <- c(1,-1)
+      RO3[2,c(1,3)] <- c(1,-1)
+      RO <- list(RO1,RO2,RO3)
+      #######
+
+      draws2 <- 1e4
+      randomDraws <- mvtnorm::rmvnorm(draws2,mean=rep(0,numpara),sigma=diag(numpara))
+      #get draws that satisfy the constraints of the separate order constrained hypotheses
+      checksOC <- lapply(welk,function(h){
+        Rorder <- as.matrix(RrO[[h]][,-(1+numpara)])
+        if(ncol(Rorder)==1){
+          Rorder <- t(Rorder)
+        }
+        rorder <- as.matrix(RrO[[h]][,1+numpara])
+        apply(randomDraws%*%t(Rorder) > rep(1,draws2)%*%t(rorder),1,prod)
+      })
+      checkOCplus <- Reduce("+",checksOC)
+
+      if(sum(checkOCplus > 0) < draws2){ #then the joint order constrained hypotheses do not completely cover the parameter space.
+        if(sum(checkOCplus>1)==0){ # then order constrained spaces are nonoverlapping
+          relmeas <- rbind(relmeas,rep(1,2))
+          relmeas[numhyp+1,2] <- 1 - sum(relmeas[welk,2])
+          rownames(relmeas)[numhyp+1] <- "Hc"
+        }else{ #the order constrained subspaces at least partly overlap
+
+          # funtion below gives a rough estimate of the posterior probability under Hc
+          # a bain type of algorithm would be better of course. but for now this is ok.
+
+          randomDraws <- mvtnorm::rmvnorm(draws2,mean=mean1,sigma=Sigma1)
+          checksOCpost <- lapply(welk,function(h){
+            Rorder <- as.matrix(RrO[[h]][,-(1+numpara)])
+            if(ncol(Rorder)==1){
+              Rorder <- t(Rorder)
+            }
+            rorder <- as.matrix(RrO[[h]][,1+numpara])
+            apply(randomDraws%*%t(Rorder) > rep(1,draws2)%*%t(rorder),1,prod)
+          })
+          relmeas <- rbind(relmeas,rep(1,2))
+          relmeas[numhyp+1,2] <- sum(Reduce("+",checksOCpost) == 0) / draws2
+          rownames(relmeas)[numhyp+1] <- "Hc"
+        }
+      }
+    }
+  }
+
+  return(relmeas)
+}
+
+# from the output of the constraints in 'parse_hypothesis' create lists for the equality and order matrices
+make_RrList <- function(parse_hyp){
+  numhyp <- length(parse_hyp$hyp_mat)
+  RrE <- lapply(1:numhyp,function(h){
+    qE <- parse_hyp$n_constraints[h*2-1]
+    if(qE==1){
+      RrE_h <- t(as.matrix(parse_hyp$hyp_mat[[h]][1:qE,]))
+    }else if(qE>1){
+      RrE_h <- parse_hyp$hyp_mat[[h]][1:qE,]
+    }else {RrE_h=NULL}
+    RrE_h
+  })
+  RrO <- lapply(1:numhyp,function(h){
+    qE <- parse_hyp$n_constraints[h*2-1]
+    qO <- parse_hyp$n_constraints[h*2]
+    if(qO==1){
+      RrO_h <- t(as.matrix(parse_hyp$hyp_mat[[h]][qE+1:qO,]))
+    }else if(qO>1){
+      RrO_h <- parse_hyp$hyp_mat[[h]][qE+1:qO,]
+    }else {RrO_h=NULL}
+    RrO_h
+  })
+  return(list(RrE,RrO))
+}
 
 
 mtcars0 <- mtcars
@@ -742,26 +1151,23 @@ mtcars0[,(names(mtcars0)!="vs")*(names(mtcars0)!="am")==1] <-
   scale(mtcars0[,(names(mtcars0)!="vs")*(names(mtcars0)!="am")==1])
 summary(mtcars0)
 
+# univariate regression
 lm1 <- lm(wt ~ -1 + disp + vs + hp + drat, mtcars0)
-model.matrix(lm1)
-summary(lm1)
+constraints <- "disp > drat > hp ; hp > disp = 0"
+BFreg1 <- BFreg(lm1,constraints=constraints,priorprob="default")
+BFreg2 <- BFregUpdate(BFreg1,lm1)
 
-BFreg1 <- BFreg(lm1,constraints="1")
-BFreg1update <- BFregUpdate(BFreg1,lm1)
+# ANCOVA
+lm1 <- lm(wt ~ -1 + disp + vs + hp + drat, mtcars0)
+constraints <- "vs0 > vs1 > vs2 ; vs0 = vs1 = vs2"
+BFreg1 <- BFreg(lm1,constraints=constraints,priorprob="default")
+BFreg2 <- BFregUpdate(BFreg1,lm1)
 
-BFreg1$PHP
-BFreg1update$PHP
-
-
-
-
-
-
-
-
-
-
-
+# multivariate regression
+lm1 <- lm(cbind(wt,mpg) ~ -1 + disp + vs + hp + drat, mtcars0)
+constraints <- "disp.wt > disp.mpg ; hp.wt > disp.wt = 0"
+BFreg1 <- BFreg(lm1,constraints=constraints,priorprob="default")
+BFreg2 <- BFregUpdate(BFreg1,lm1)
 
 
 
