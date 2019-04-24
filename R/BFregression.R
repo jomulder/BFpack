@@ -1141,7 +1141,7 @@ make_RrList <- function(parse_hyp){
   return(list(RrE,RrO))
 }
 
-
+# example analysis
 mtcars0 <- mtcars
 mtcars0$vs[1:6] <- 2
 mtcars0$vs <- as.factor(mtcars0$vs)
