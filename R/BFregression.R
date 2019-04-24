@@ -1141,6 +1141,8 @@ make_RrList <- function(parse_hyp){
   return(list(RrE,RrO))
 }
 
+
+library(bain)
 # example analysis
 mtcars0 <- mtcars
 mtcars0$vs[1:6] <- 2
