@@ -4,7 +4,7 @@
 \alias{bic_oc}
 \title{Compute the BIC of an order-constrained model.}
 \usage{
-bic_oc(object, constraints = NULL, complement = F, numdraws = 10000)
+bic_oc(object, constraints = NULL, complement = F, numdraws = 1e+05)
 }
 \arguments{
 \item{object}{A fitted model object, such as a glm-object}

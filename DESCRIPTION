@@ -2,11 +2,28 @@ Package: BFpack
 Type: Package
 Title: What the Package Does (Title Case)
 Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
+Authors@R: 
+    c(person(given = c("Joris"),
+             family = "Mulder",
+             role = c("aut", "cre"),
+             email = "j.mulder3@uvt.nl"),
+      person(given = "Caspar",
+             family = "van Lissa",
+             role = "aut",
+             email = "c.j.vanlissa@uu.nl"))
+Maintainer: Joris Mulder <j.mulder3@uvt.nl>
 Description: More about what it does (maybe more than one line)
     Use four spaces when indenting paragraphs within the Description.
-License: What license is it under?
+License: GPL (>= 3)
+BugReports: https://github.com/jomulder/BFpack/issues
 Encoding: UTF-8
 LazyData: true
+NeedsCompilation: yes
 RoxygenNote: 6.1.1
+Depends: 
+    R (>= 3.0.0),
+    stats,
+    methods,
+    bain
+Suggests: 
+    testthat
