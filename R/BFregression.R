@@ -1,18 +1,39 @@
+#' @importFrom pracma rref
+#' @importFrom mvtnorm dmvnorm pmvnorm dmvt pmvt
+#' @importFrom Matrix rankMatrix
+#' @importFrom MASS ginv
+#' @method BF lm
+#' @export
+BF.lm <- function(x,
+                  hypothesis = NULL,
+                  prior = NULL,
+                  ...){
 
-# The functions below can be used for Bayesian hypothesis testing under univariate
-# and multivariate linear regression models. Also grouping variables (factors) are
-# properly dealt with using group specific fractions for the default priors.
+  if(is.null(hypothesis)){
+    constraints <- "exploratory"
+  } else {
+    constraints <- hypothesis
+  }
+  if(is.null(prior)){
+    priorprob <- "default"
+  } else {
+    priorprob <- prior
+  }
 
-# BF test for a univariate normal linear regression type model
-BFreg <- function(lm1,constraints="exploratory",priorprob="default"){
   # default BF on location parameters in a univarite normal linear model
   # Note that it is recommended that the fitten model is based on standardized covariates.
-  P <- ifelse(!is.matrix(lm1$coefficients),1,ncol(lm1$residuals)) # dimension of dependent variable
-  K <- length(lm1$coefficients)/P # dimension of predictors per dependent variable
-  N <- ifelse(!is.matrix(lm1$coefficients),length(lm1$residuals),nrow(lm1$residuals))
+  if(!is.matrix(x$coefficients)){
+    P <- 1
+    N <- length(x$residuals)
+  } else {
+    P <- ncol(x$residuals)
+    N <- nrow(x$residuals)
+  }
 
-  Xmat <- model.matrix(lm1)
-  Ymat <- model.matrix(lm1)%*%lm1$coefficients + lm1$residuals
+  K <- length(x$coefficients)/P # dimension of predictors per dependent variable
+
+  Xmat <- model.matrix(x)
+  Ymat <- model.matrix(x)%*%x$coefficients + x$residuals
   dummyX <- rep(F,K)
   for(k in 1:K){ # Check which are dummy variables corresponding to (adjusted) mean parameters
     uniquek <- sort(unique(Xmat[,k]))
@@ -65,8 +86,8 @@ BFreg <- function(lm1,constraints="exploratory",priorprob="default"){
   tXXi_b <- solve(tXX_b)
   tXY_b <- Reduce("+",tXYj_b)
   tYY_b <- Reduce("+",tYYj_b)
-  BetaHat <- solve(tXX)%*%tXY           # same as lm1$coefficients
-  S <- tYY - t(tXY)%*%solve(tXX)%*%tXY # same as sum((lm1$residuals)**2)
+  BetaHat <- solve(tXX)%*%tXY           # same as x$coefficients
+  S <- tYY - t(tXY)%*%solve(tXX)%*%tXY # same as sum((x$residuals)**2)
   # sufficient statistics based on fraction of the data
   BetaHat_b <- solve(tXX_b)%*%tXY_b
   S_b <- tYY_b - t(tXY_b)%*%solve(tXX_b)%*%tXY_b
@@ -104,10 +125,10 @@ BFreg <- function(lm1,constraints="exploratory",priorprob="default"){
   }else{
     #read constraints
     if(P==1){
-      names_coef <- names(lm1$coefficients)
+      names_coef <- names(x$coefficients)
     }else{
-      names_coef1 <- names(lm1$coefficients[,1])
-      names_coef2 <- names(lm1$coefficients[1,])
+      names_coef1 <- names(x$coefficients[,1])
+      names_coef2 <- names(x$coefficients[1,])
       names_coef <- unlist(lapply(1:P,function(p){
         lapply(1:K,function(k){
           paste(names_coef1[k],".",names_coef2[p],sep="")
@@ -126,7 +147,7 @@ BFreg <- function(lm1,constraints="exploratory",priorprob="default"){
 
     # check if a common boundary exists for prior location under all constrained hypotheses
     if(nrow(RrStack) > 1){
-      rref_ei <- pracma::rref(RrStack)
+      rref_ei <- rref(RrStack)
       nonzero <- RrStack[,K+1]!=0
       if(max(nonzero)>0){
         row1 <- max(which(nonzero==T))
@@ -276,7 +297,7 @@ BFreg <- function(lm1,constraints="exploratory",priorprob="default"){
 }
 
 # update BF test for a univariate normal linear regression type model
-BFregUpdate <- function(BFreg1,lm1,XY=NULL){
+BFregUpdate <- function(BFreg1,x,XY=NULL){
   # update of default BF on location parameters in a univarite normal linear model
 
   Nj <- BFreg1$Nj
@@ -292,22 +313,22 @@ BFregUpdate <- function(BFreg1,lm1,XY=NULL){
   J <- nrow(groupcode)
   P <- nrow(tYYj[[1]])
 
-  Pnew <- ifelse(!is.matrix(lm1$coefficients),1,ncol(lm1$residuals))
+  Pnew <- ifelse(!is.matrix(x$coefficients),1,ncol(x$residuals))
 
   # check if dimensions of model in historical data (BFreg) is same as in new data
-  if(length(lm1$coefficients)/P != K || Pnew != P){
+  if(length(x$coefficients)/P != K || Pnew != P){
     stop("Dimensions of the model based on historical data and new data do not match.")
   }
 
-  if(!is.null(XY)){ #Get Xmat and yvec from Xy instead of lm1. Useful when only one observation is added for instance.
+  if(!is.null(XY)){ #Get Xmat and yvec from Xy instead of x. Useful when only one observation is added for instance.
     if(ncol(XY)!=K+P){# Dimension of new data does not match
       stop("Dimensions of the model based on historical data and new data do not match.")
     }
     Xmat <- XY[,-(K+1:P)]
     Ymat <- XY[,K+1:P]
   }else{
-    Xmat <- model.matrix(lm1)
-    Ymat <- model.matrix(lm1)%*%lm1$coefficients + lm1$residuals
+    Xmat <- model.matrix(x)
+    Ymat <- model.matrix(x)%*%x$coefficients + x$residuals
   }
   dummyX_new <- rep(F,K)
   for(k in 1:K){ # Check which are dummy variables corresponding to (adjusted) mean parameters
@@ -357,8 +378,8 @@ BFregUpdate <- function(BFreg1,lm1,XY=NULL){
   tXXi_b <- solve(tXX_b)
   tXY_b <- Reduce("+",tXYj_b)
   tYY_b <- Reduce("+",tYYj_b)
-  BetaHat <- solve(tXX)%*%tXY           # same as lm1$coefficients
-  S <- tYY - t(tXY)%*%solve(tXX)%*%tXY # same as sum((lm1$residuals)**2)
+  BetaHat <- solve(tXX)%*%tXY           # same as x$coefficients
+  S <- tYY - t(tXY)%*%solve(tXX)%*%tXY # same as sum((x$residuals)**2)
   # sufficient statistics based on fraction of the data
   BetaHat_b <- solve(tXX_b)%*%tXY_b
   S_b <- tYY_b - t(tXY_b)%*%solve(tXX_b)%*%tXY_b
@@ -396,10 +417,10 @@ BFregUpdate <- function(BFreg1,lm1,XY=NULL){
   }else{
     #read constraints
     if(P==1){
-      names_coef <- names(lm1$coefficients)
+      names_coef <- names(x$coefficients)
     }else{
-      names_coef1 <- names(lm1$coefficients[,1])
-      names_coef2 <- names(lm1$coefficients[1,])
+      names_coef1 <- names(x$coefficients[,1])
+      names_coef2 <- names(x$coefficients[1,])
       names_coef <- unlist(lapply(1:P,function(p){
         lapply(1:K,function(k){
           paste(names_coef1[k],".",names_coef2[p],sep="")
@@ -418,7 +439,7 @@ BFregUpdate <- function(BFreg1,lm1,XY=NULL){
 
     # check if a common boundary exists for prior location under all constrained hypotheses
     if(nrow(RrStack) > 1){
-      rref_ei <- pracma::rref(RrStack)
+      rref_ei <- rref(RrStack)
       nonzero <- RrStack[,K+1]!=0
       if(max(nonzero)>0){
         row1 <- max(which(nonzero==T))
@@ -587,7 +608,7 @@ MatrixStudent_measures <- function(Mean1,Scale1,tXXi1,df1,RrE1,RrO1,MCdraws=1e4)
     SigmaList <- lapply(temp2,solve)
     covm1_E <- lapply(SigmaList,function(temp) RE1%*%(kronecker(temp,tXXi1))%*%t(RE1) )
     mean1_E <- c(RE1 %*% mean1)
-    relE <- mean(unlist(lapply(covm1_E,function(temp) mvtnorm::dmvnorm(mean1_E,mean=mean1_E,sigma=temp))))
+    relE <- mean(unlist(lapply(covm1_E,function(temp) dmvnorm(mean1_E,mean=mean1_E,sigma=temp))))
 
   }else{
     if(is.null(RrE1) && !is.null(RrO1)){ #only order constraints
@@ -598,14 +619,14 @@ MatrixStudent_measures <- function(Mean1,Scale1,tXXi1,df1,RrE1,RrO1,MCdraws=1e4)
       qO1 <- nrow(RO1)
       rO1 <- RrO1[,(K*P+1)]
 
-      if(Matrix::rankMatrix(RO1)[[1]]==nrow(RO1)){ #RO1 is of full row rank. So use transformation.
+      if(rankMatrix(RO1)[[1]]==nrow(RO1)){ #RO1 is of full row rank. So use transformation.
 
         Scale1inv <- solve(Scale1)
         relO <- mean(unlist(lapply(1:1e3,function(s){
           Sigma1 <- solve(rWishart(1,df=df1+P-1,Sigma=Scale1inv)[,,1])
           meanO <- c(RO1%*%mean1)
           covmO <- RO1%*%kronecker(Sigma1,tXXi1)%*%t(RO1)
-          mvtnorm::pmvnorm(lower=rO1,upper=Inf,mean=meanO,sigma=covmO)
+          pmvnorm(lower=rO1,upper=Inf,mean=meanO,sigma=covmO)
         })))
 
       }else{ #no linear transformation can be used; pmvt cannot be used. Use bain with a multivariate normal approximation
@@ -641,9 +662,9 @@ MatrixStudent_measures <- function(Mean1,Scale1,tXXi1,df1,RrE1,RrO1,MCdraws=1e4)
       SigmaList <- lapply(temp2,solve)
       covm1_E <- lapply(SigmaList,function(temp) RE1%*%(kronecker(temp,tXXi1))%*%t(RE1) )
       mean1_E <- RE1 %*% mean1
-      relE <- mean(unlist(lapply(covm1_E,function(temp) mvtnorm::dmvnorm(mean1_E,mean=mean1_E,sigma=temp))))
+      relE <- mean(unlist(lapply(covm1_E,function(temp) dmvnorm(mean1_E,mean=mean1_E,sigma=temp))))
 
-      if(Matrix::rankMatrix(RrO1)[[1]] == nrow(RrO1)){
+      if(rankMatrix(RrO1)[[1]] == nrow(RrO1)){
 
         covm1_O <- lapply(SigmaList,function(temp) R1%*%(kronecker(temp,tXXi1))%*%t(R1) )
         mean1_O <- c(RO1%*%mean1) - rO1  ## mu_zeta_O in the paper
@@ -655,7 +676,7 @@ MatrixStudent_measures <- function(Mean1,Scale1,tXXi1,df1,RrE1,RrO1,MCdraws=1e4)
         #check covariance because some can be nonsymmetric due to a generation error
         covm1_OE <- covm1_OE[(unlist(lapply(covm1_OE,function(temp) isSymmetric(temp,
                                                                                 tol = sqrt(.Machine$double.eps),check.attributes = FALSE))))]
-        relO <- mean(mapply(function(mu_temp,Sigma_temp) mvtnorm::pmvnorm(lower=rep(0,qO1),
+        relO <- mean(mapply(function(mu_temp,Sigma_temp) pmvnorm(lower=rep(0,qO1),
                                                                           upper=rep(Inf,qO1),mean=mu_temp,sigma=Sigma_temp)[1],mean1_OE,covm1_OE))
 
       }else{ #use bain for the computation of the probability
@@ -676,7 +697,7 @@ MatrixStudent_measures <- function(Mean1,Scale1,tXXi1,df1,RrE1,RrO1,MCdraws=1e4)
 }
 
 # compute relative meausures (fit or complexity) under a multivariate Student t distribution
-Student_measures <- function(mean1,scale1,df1,RrE1,RrO1){
+Student_measures <- function(mean1,scale1,df1,RrE1,RrO1){ # Volgens mij moet je hier ook N meegeven
   K <- length(mean1)
   relE <- relO <- 1
   if(!is.null(RrE1) && is.null(RrO1)){ #only equality constraints
@@ -688,7 +709,7 @@ Student_measures <- function(mean1,scale1,df1,RrE1,RrO1){
     qE1 <- nrow(RE1)
     meanE <- RE1%*%mean1
     scaleE <- RE1%*%scale1%*%t(RE1)
-    relE <- mvtnorm::dmvt(rE1,delta=c(meanE),sigma=scaleE,df=df1,log=FALSE)
+    relE <- dmvt(rE1,delta=c(meanE),sigma=scaleE,df=df1,log=FALSE)
   }
   if(is.null(RrE1) && !is.null(RrO1)){ #only order constraints
     RO1 <- RrO1[,-(K+1)]
@@ -698,12 +719,12 @@ Student_measures <- function(mean1,scale1,df1,RrE1,RrO1){
     qO1 <- nrow(RO1)
     rO1 <- RrO1[,(K+1)]
 
-    if(Matrix::rankMatrix(RO1)[[1]]==nrow(RO1)){ #RO1 is of full row rank. So use transformation.
+    if(rankMatrix(RO1)[[1]]==nrow(RO1)){ #RO1 is of full row rank. So use transformation.
       meanO <- c(RO1%*%mean1)
       scaleO <- RO1%*%scale1%*%t(RO1)
       relO <- ifelse(nrow(scaleO)==1,
                      pt((rO1-meanO)/sqrt(scaleO[1,1]),df=df1,lower.tail=FALSE), #univariate
-                     mvtnorm::pmvt(lower=rO1,upper=Inf,delta=meanO,sigma=scaleO,df=df1,type="shifted")) #multivariate
+                     pmvt(lower=rO1,upper=Inf,delta=meanO,sigma=scaleO,df=df1,type="shifted")) #multivariate
     }else{ #no linear transformation can be used; pmvt cannot be used. Use bain with a multivariate normal approximation
       #compute covariance matrix for multivariate normal distribution
       Sigma1 <- ifelse(df1>2,
@@ -740,11 +761,11 @@ Student_measures <- function(mean1,scale1,df1,RrE1,RrO1){
     Tscale1 <- Tm %*% scale1 %*% t(Tm)
 
     # relative meausure for equalities
-    relE <- mvtnorm::dmvt(x = t(rE1), delta = Tmean1[1:qE1], sigma = matrix(Tscale1[1:qE1, 1:qE1], ncol = qE1), df = N - K, log = FALSE)
+    relE <- dmvt(x = t(rE1), delta = Tmean1[1:qE1], sigma = matrix(Tscale1[1:qE1, 1:qE1], ncol = qE1), df = N - K, log = FALSE)
 
     # transform order constraints
-    RO1tilde <- RO1 %*% MASS::ginv(D2)
-    rO1tilde <- rO1 - RO1 %*% MASS::ginv(RE1) %*% rE1
+    RO1tilde <- RO1 %*% ginv(D2)
+    rO1tilde <- rO1 - RO1 %*% ginv(RE1) %*% rE1
 
     # Partitioning equality part and order part
     Tmean1E <- Tmean1[1:qE1]
@@ -759,7 +780,7 @@ Student_measures <- function(mean1,scale1,df1,RrE1,RrO1){
     Tscale1OgE <- as.vector((N - K + (t(matrix(rE1 - Tmean1E)) %*% solve(Tscale1EE) %*% matrix(rE1 - Tmean1E))) /
                               (N - K + qE1)) * (Tscale1OO - Tscale1OE %*% solve(Tscale1EE) %*% t(Tscale1OE))
 
-    if(Matrix::rankMatrix(RO1tilde)[[1]] == nrow(RO1tilde)){
+    if(rankMatrix(RO1tilde)[[1]] == nrow(RO1tilde)){
       rO1tilde <- as.vector(rO1tilde)
 
       delta_trans <- as.vector(RO1tilde %*% Tmean1OgE)
@@ -768,7 +789,7 @@ Student_measures <- function(mean1,scale1,df1,RrE1,RrO1){
       if(nrow(scale1_trans) == 1){ # univariate
         relO <- pt((rO1tilde - delta_trans) / sqrt(scale1_trans), df = N-K+qE1, lower.tail = FALSE)[1]
       } else { # multivariate
-        relO <- mvtnorm::pmvt(lower = rO1tilde, upper = Inf, delta = delta_trans, sigma = scale1_trans, df = N - K + qE1, type = "shifted")[1]
+        relO <- pmvt(lower = rO1tilde, upper = Inf, delta = delta_trans, sigma = scale1_trans, df = N - K + qE1, type = "shifted")[1]
       }
 
     }else{ #use bain for the computation of the probability
@@ -813,7 +834,7 @@ MatrixStudent_prob_Hc <- function(Mean1,Scale1,tXXi1,df1,relmeas,RrO){
       # does not know the function "rename_function".
 
       draws2 <- 1e4
-      randomDraws <- mvtnorm::rmvnorm(draws2,mean=rep(0,numpara),sigma=diag(numpara))
+      randomDraws <- rmvnorm(draws2,mean=rep(0,numpara),sigma=diag(numpara))
       #get draws that satisfy the constraints of the separate order constrained hypotheses
       checksOC <- lapply(welk,function(h){
         Rorder <- as.matrix(RrO[[h]][,-(1+numpara)])
@@ -839,7 +860,7 @@ MatrixStudent_prob_Hc <- function(Mean1,Scale1,tXXi1,df1,relmeas,RrO){
           temp2 <- lapply(seq(dim(temp1)[3]), function(x) temp1[,,x])
           SigmaList <- lapply(temp2,solve)
           randomDraws <- matrix(unlist(lapply(SigmaList,function(temp){
-            mvtnorm::rmvnorm(1,mean=c(Mean1),sigma=kronecker(temp,tXXi1))
+            rmvnorm(1,mean=c(Mean1),sigma=kronecker(temp,tXXi1))
           })),nrow=numpara)
 
           checksOC <- lapply(welk,function(h){
@@ -887,7 +908,7 @@ Student_prob_Hc <- function(mean1,scale1,df1,relmeas,constraints){
       # does not know the function "rename_function".
 
       draws2 <- 1e4
-      randomDraws <- mvtnorm::rmvnorm(draws2,mean=rep(0,numpara),sigma=diag(numpara))
+      randomDraws <- rmvnorm(draws2,mean=rep(0,numpara),sigma=diag(numpara))
       #get draws that satisfy the constraints of the separate order constrained hypotheses
       checksOC <- lapply(welk,function(h){
         Rorder <- as.matrix(RrO[[h]][,-(1+numpara)])
@@ -909,7 +930,7 @@ Student_prob_Hc <- function(mean1,scale1,df1,relmeas,constraints){
           # funtion below gives a rough estimate of the posterior probability under Hc
           # a bain type of algorithm would be better of course. but for now this is ok.
 
-          randomDraws <- mvtnorm::rmvt(draws2,delta=mean1,sigma=scale1,df=df1)
+          randomDraws <- rmvt(draws2,delta=mean1,sigma=scale1,df=df1)
           checksOC <- lapply(welk,function(h){
             Rorder <- as.matrix(RrO[[h]][,-(1+numpara)])
             if(ncol(Rorder)==1){
@@ -952,7 +973,7 @@ Gaussian_measures <- function(mean1,Sigma1,RrE1,RrO1){
     qO1 <- nrow(RO1)
     rO1 <- RrO1[,(K+1)]
 
-    if(Matrix::rankMatrix(RO1)[[1]]==nrow(RO1)){ #RO1 is of full row rank. So use transformation.
+    if(rankMatrix(RO1)[[1]]==nrow(RO1)){ #RO1 is of full row rank. So use transformation.
       meanO <- c(RO1%*%mean1)
       SigmaO <- RO1%*%Sigma1%*%t(RO1)
       relO <- pmvt(lower=rO1,upper=Inf,mean=meanO,sigma=SigmaO)
@@ -988,11 +1009,11 @@ Gaussian_measures <- function(mean1,Sigma1,RrE1,RrO1){
     TSigma1 <- Tm %*% Sigma1 %*% t(Tm)
 
     # relative meausure for equalities
-    relE <- mvtnorm::dmvnorm(x=rE1,mean=Tmean1[1:qE1],sigma=matrix(TSigma1[1:qE1,1:qE1],ncol=qE1),log=FALSE)
+    relE <- dmvnorm(x=rE1,mean=Tmean1[1:qE1],sigma=matrix(TSigma1[1:qE1,1:qE1],ncol=qE1),log=FALSE)
 
     # transform order constraints
-    RO1tilde <- RO1 %*% MASS::ginv(D2)
-    rO1tilde <- rO1 - RO1 %*% MASS::ginv(RE1) %*% rE1
+    RO1tilde <- RO1 %*% ginv(D2)
+    rO1tilde <- rO1 - RO1 %*% ginv(RE1) %*% rE1
 
     # Partitioning equality part and order part
     Tmean1E <- Tmean1[1:qE1]
@@ -1006,12 +1027,12 @@ Gaussian_measures <- function(mean1,Sigma1,RrE1,RrO1){
     Tmean1OgE <- Tmean1O + TSigma1OE %*% solve(TSigma1EE) %*% (rE1-Tmean1E)
     TSigma1OgE <- TSigma1OO - TSigma1OE %*% solve(TSigma1EE) %*% t(TSigma1OE)
 
-    if(Matrix::rankMatrix(RO1tilde)[[1]] == nrow(RO1tilde)){
+    if(rankMatrix(RO1tilde)[[1]] == nrow(RO1tilde)){
       rO1tilde <- as.vector(rO1tilde)
       mean_trans <- as.vector(RO1tilde %*% Tmean1OgE)
       Sigma1_trans <- RO1tilde %*% TSigma1OgE %*% t(RO1tilde)
 
-      relO <- mvtnorm::pmvnorm(lower=rO1tilde,upper=Inf,mean=mean_trans,sigma=Sigma1_trans,log=FALSE)
+      relO <- pmvnorm(lower=rO1tilde,upper=Inf,mean=mean_trans,sigma=Sigma1_trans,log=FALSE)
 
     }else{ #use bain for the computation of the probability
 
@@ -1074,7 +1095,7 @@ Gaussian_prob_Hc <- function(mean1,Sigma1,relmeas,constraints){
       #######
 
       draws2 <- 1e4
-      randomDraws <- mvtnorm::rmvnorm(draws2,mean=rep(0,numpara),sigma=diag(numpara))
+      randomDraws <- rmvnorm(draws2,mean=rep(0,numpara),sigma=diag(numpara))
       #get draws that satisfy the constraints of the separate order constrained hypotheses
       checksOC <- lapply(welk,function(h){
         Rorder <- as.matrix(RrO[[h]][,-(1+numpara)])
@@ -1096,7 +1117,7 @@ Gaussian_prob_Hc <- function(mean1,Sigma1,relmeas,constraints){
           # funtion below gives a rough estimate of the posterior probability under Hc
           # a bain type of algorithm would be better of course. but for now this is ok.
 
-          randomDraws <- mvtnorm::rmvnorm(draws2,mean=mean1,sigma=Sigma1)
+          randomDraws <- rmvnorm(draws2,mean=mean1,sigma=Sigma1)
           checksOCpost <- lapply(welk,function(h){
             Rorder <- as.matrix(RrO[[h]][,-(1+numpara)])
             if(ncol(Rorder)==1){
@@ -1140,47 +1161,3 @@ make_RrList <- function(parse_hyp){
   })
   return(list(RrE,RrO))
 }
-
-
-library(bain)
-# example analysis
-mtcars0 <- mtcars
-mtcars0$vs[1:6] <- 2
-mtcars0$vs <- as.factor(mtcars0$vs)
-mtcars0$am <- as.factor(mtcars0$am)
-# standardize nonfactor variables
-mtcars0[,(names(mtcars0)!="vs")*(names(mtcars0)!="am")==1] <-
-  scale(mtcars0[,(names(mtcars0)!="vs")*(names(mtcars0)!="am")==1])
-
-
-# univariate regression
-lm1 <- lm(wt ~ -1 + disp + vs + hp + drat, mtcars0)
-constraints <- "disp > drat > hp ; hp > disp = 0"
-BFreg1 <- BFreg(lm1,constraints=constraints,priorprob="default")
-BFreg2 <- BFregUpdate(BFreg1,lm1)
-
-# ANOVA
-lm1 <- lm(wt ~ -1 + vs, mtcars0)
-constraints <- "vs0 > vs1 > vs2 ; vs0 = vs1 = vs2"
-BFreg1 <- BFreg(lm1,constraints=constraints,priorprob="default")
-BFreg2 <- BFregUpdate(BFreg1,lm1)
-
-# ANCOVA
-lm1 <- lm(wt ~ -1 + disp + vs + hp + drat, mtcars0)
-constraints <- "vs0 > vs1 > vs2 ; vs0 = vs1 = vs2"
-BFreg1 <- BFreg(lm1,constraints=constraints,priorprob="default")
-BFreg2 <- BFregUpdate(BFreg1,lm1)
-
-# multivariate regression
-lm1 <- lm(cbind(wt,mpg) ~ -1 + disp + vs + hp + drat, mtcars0)
-constraints <- "disp.wt > disp.mpg ; hp.wt > disp.wt = 0"
-BFreg1 <- BFreg(lm1,constraints=constraints,priorprob="default")
-BFreg2 <- BFregUpdate(BFreg1,lm1)
-
-
-
-
-
-
-
-
