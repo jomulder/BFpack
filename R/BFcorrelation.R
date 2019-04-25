@@ -22,28 +22,27 @@ approxFisherTrans <- function(df,S,samsize=1e4){
 }
 
 # The function will be called when called BFtest with parameter="correlation"
-BFcorr <- function(model,prior="default",constraints="exploratory",priorprob="default"){
+BFcorr <- function(model,prior=NULL,constraints="exploratory",priorprob="default"){
 
   #check if 'model' is a fitted mlm-object or list thereof
-  if(is.list(model)){
-    numpop <- length(model)
-    for(pop in 1:numpop){
-      if(class(model[[pop]])[1] != "mlm"){stop("Error: 'model' should be a fitted mlm-object with multiple outcome variables or a list of fitted mlm-objects.")}
-    }
-  }else{ #place the single model in a list object of 1 element
-    if(class(model)[1] != "mlm"){stop("Error: 'model' should be a fitted mlm-object with multiple outcome variables or a list of fitted mlm-objects.")}
+  if(class(model)[1] == "mlm"){
     numpop <- 1
     model <- list(model)
+  }else{ if(is.list(model)){
+    numpop <- length(model)
+  }else{
+    stop("Error: 'model' should be a fitted mlm-object with multiple outcome variables or a list thereof.")
+  }
   }
 
   # number of outcome varibles
   P <- ncol(model[[1]]$coefficients)
 
   # prior degrees of freedom
-  if(!(prior == "default" || prior > 0)){
-    stop("Please specify a positive value for the argument 'prior' or leave open and use default")
+  if(!(prior == NULL || prior > 0)){
+    stop("Please specify a positive value for the argument 'prior' or use default")
   }
-  if(prior=="default"){
+  if(is.null(prior)){
     delta <- 10
   }else{ delta <- prior}
   nu0 <- delta + P - 1
@@ -88,22 +87,17 @@ BFcorr <- function(model,prior="default",constraints="exploratory",priorprob="de
   }else{
     # confirmatory tests based on input constraints
 
-    # for this example the correlations are in the order:
-    # corr(DV2,DV1) in group 1 (note that this is the same as corr(DV1,DV2) in group 1)
-    # corr(DV3,DV1) in group 1
-    # corr(DV3,DV2) in group 1
-    # corr(DV2,DV1) in group 2
-    # corr(DV3,DV1) in group 2
-    # corr(DV3,DV2) in group 2
+    corrmat <- diag(P)
+    row.names(corrmat) <- colnames(corrmat) <- as.character(1:P)
+    (get_estimates(corrmat)$estimate)[c(lower.tri(corrmat))]
 
-    # Caspar I think we only need a function that generates the labels of these correlations
-    names(mean0) <- names(meanN) <- c("r211","r311","r321","r212","r312","r322")
-    # I noticed that the bain-function does not work when the covariance matrices have labels
-
-    # Example constraints which can be removed when the constraints are read in.
-    constraints <- "r211=r311=r321 & r321>r212;
-                    r211<(r311,r321) & r321>r212;
-                    r211>(r311,r321)"
+    ######
+    #
+    #
+    # STILL WORKING ON IT....
+    #
+    #
+    #######
 
     # compute relative fit
     results <- bain::bain(meanN,constraints,n=10,Sigma=covmN)
