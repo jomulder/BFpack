@@ -950,195 +950,9 @@ Student_prob_Hc <- function(mean1,scale1,df1,relmeas,constraints){
   return(relmeas)
 }
 
-# compute relative meausures (fit or complexity) under a multivariate Student t distribution
-Gaussian_measures <- function(mean1,Sigma1,RrE1,RrO1){
-  K <- length(mean1)
-  relE <- relO <- 1
-  if(!is.null(RrE1) && is.null(RrO1)){ #only equality constraints
-    RE1 <- RrE1[,-(K+1)]
-    if(!is.matrix(RE1)){
-      RE1 <- t(as.matrix(RE1))
-    }
-    rE1 <- RrE1[,(K+1)]
-    qE1 <- nrow(RE1)
-    meanE <- RE1%*%mean1
-    SigmaE <- RE1%*%Sigma1%*%t(RE1)
-    relE <- dmvnorm(rE1,mean=c(meanE),sigma=SigmaE,log=FALSE)
-  }
-  if(is.null(RrE1) && !is.null(RrO1)){ #only order constraints
-    RO1 <- RrO1[,-(K+1)]
-    if(!is.matrix(RO1)){
-      RO1 <- t(as.matrix(RO1))
-    }
-    qO1 <- nrow(RO1)
-    rO1 <- RrO1[,(K+1)]
-
-    if(rankMatrix(RO1)[[1]]==nrow(RO1)){ #RO1 is of full row rank. So use transformation.
-      meanO <- c(RO1%*%mean1)
-      SigmaO <- RO1%*%Sigma1%*%t(RO1)
-      relO <- pmvt(lower=rO1,upper=Inf,mean=meanO,sigma=SigmaO)
-    }else{ #no linear transformation can be used; pmvt cannot be used. Use bain with a multivariate normal approximation
-      # bain1 <- bain::bain(mean1,Sigma1,RrE1,RrO1,n=10) # choice of n does not matter
-      # extract posterior probability (Fit_eq) from bain-object)
-      stop("REMINDER. This case should still be implemented.")
-    }
-  }
-  if(!is.null(RrE1) && !is.null(RrO1)){ #hypothesis with equality and order constraints
-
-    RE1 <- RrE1[,-(K+1)]
-    if(!is.matrix(RE1)){
-      RE1 <- t(as.matrix(RE1))
-    }
-    rE1 <- RrE1[,(K+1)]
-    qE1 <- nrow(RE1)
-    RO1 <- RrO1[,-(K+1)]
-    if(!is.matrix(RO1)){
-      RO1 <- t(as.matrix(RO1))
-    }
-    qO1 <- nrow(RO1)
-    rO1 <- RrO1[,(K+1)]
-
-    #a)Transformation matrix
-    D <- diag(K) - t(RE1) %*% solve(RE1 %*% t(RE1)) %*% RE1
-    D2 <- unique(round(D, 5))
-    D2 <- D2[as.logical(rowSums(D2 != 0)),]
-    Tm <- rbind(RE1, D2)
-
-    #b)
-    Tmean1 <- Tm %*% mean1
-    TSigma1 <- Tm %*% Sigma1 %*% t(Tm)
-
-    # relative meausure for equalities
-    relE <- dmvnorm(x=rE1,mean=Tmean1[1:qE1],sigma=matrix(TSigma1[1:qE1,1:qE1],ncol=qE1),log=FALSE)
-
-    # transform order constraints
-    RO1tilde <- RO1 %*% ginv(D2)
-    rO1tilde <- rO1 - RO1 %*% ginv(RE1) %*% rE1
-
-    # Partitioning equality part and order part
-    Tmean1E <- Tmean1[1:qE1]
-    Tmean1O <- Tmean1[(qE1+1):K]
-
-    TSigma1EE <- TSigma1[1:qE1,1:qE1]
-    TSigma1OE <- TSigma1[(qE1+1):K,1:qE1]
-    TSigma1OO <- TSigma1[(qE1+1):K,(qE1+1):K]
-
-    #conditional location and covariance matrix
-    Tmean1OgE <- Tmean1O + TSigma1OE %*% solve(TSigma1EE) %*% (rE1-Tmean1E)
-    TSigma1OgE <- TSigma1OO - TSigma1OE %*% solve(TSigma1EE) %*% t(TSigma1OE)
-
-    if(rankMatrix(RO1tilde)[[1]] == nrow(RO1tilde)){
-      rO1tilde <- as.vector(rO1tilde)
-      mean_trans <- as.vector(RO1tilde %*% Tmean1OgE)
-      Sigma1_trans <- RO1tilde %*% TSigma1OgE %*% t(RO1tilde)
-
-      relO <- pmvnorm(lower=rO1tilde,upper=Inf,mean=mean_trans,sigma=Sigma1_trans,log=FALSE)
-
-    }else{ #use bain for the computation of the probability
-
-      # bain1 <- bain::bain(mean1,Sigma1=Sigma1,RrE1=NULL,RrO1=RO1tilde,n=10) # choice of n does not matter
-      # extract posterior probability (Fit_eq) from bain-object)
-      stop("REMINDER. This case should still be implemented.")
-    }
-  }
-
-  return(c(relE,relO))
-}
-
-# The function computes the probability of an unconstrained draw falling in the complement subspace.
-Gaussian_prob_Hc <- function(mean1,Sigma1,relmeas,constraints){
-
-  numpara <- length(mean1)
-  numhyp <- nrow(relmeas)
-  relmeas <- relmeas[1:numhyp,]
-  which_eq <- relmeas[,1] != 1
-  if(sum(which_eq)==numhyp){ # Then the complement is equivalent to the unconstrained hypothesis.
-    relmeas <- rbind(relmeas,rep(1,2))
-    rownames(relmeas)[relmeas+1] <- "Hc"
-  }else{ # So there is at least one hypothesis with only order constraints
-    welk <- which(!which_eq)
-    if(length(welk)==1){ # There is one hypothesis with only order constraints. Hc is complement of this hypothesis.
-      relmeas <- rbind(relmeas,rep(1,2))
-      relmeas[numhyp+1,2] <- 1 - relmeas[welk,2]
-      rownames(relmeas)[numhyp+1] <- "Hc"
-    }else{ # So more than one hypothesis with only order constraints
-      # First we check whether ther is an overlap between the order constrained spaces.
-
-      # Caspar, here we need the RE and RO which are lists of
-      # matrices for equality and order constraints under the hypotheses. We can probably do this
-      # using the R-code you wrote and a vector of names of the correlations but I don't know
-      # how exactly. When running your function I also get an error message saying that he
-      # does not know the function "rename_function".
-
-      # Maybe (?) create_matrices(varnames=names(meanvec),hyp=constraints)
-
-      # This part can be removed when the constraints can be read in.
-      constraints <- "r211=r311=r321 & r321>r212;
-      r211<(r311,r321) & r321>r212;
-      r211>(r311,r321)"
-      # the coefficient matrices are
-      RE1 <- matrix(0,ncol=7,nrow=2)
-      RE1[1,c(1,2)] <- c(1,-1)
-      RE1[2,c(2,3)] <- c(1,-1)
-      RE <- list(RE1,NULL,NULL)
-
-      RO1 <- matrix(0,ncol=7,nrow=1)
-      RO1[1,c(3,4)] <- c(1,-1)
-      RO2 <- matrix(0,ncol=7,nrow=3)
-      RO2[1,c(1,2)] <- c(-1,1)
-      RO2[2,c(1,3)] <- c(-1,1)
-      RO2[3,c(3,4)] <- c(1,-1)
-      RO3 <- matrix(0,ncol=7,nrow=2)
-      RO3[1,c(1,2)] <- c(1,-1)
-      RO3[2,c(1,3)] <- c(1,-1)
-      RO <- list(RO1,RO2,RO3)
-      #######
-
-      draws2 <- 1e4
-      randomDraws <- rmvnorm(draws2,mean=rep(0,numpara),sigma=diag(numpara))
-      #get draws that satisfy the constraints of the separate order constrained hypotheses
-      checksOC <- lapply(welk,function(h){
-        Rorder <- as.matrix(RrO[[h]][,-(1+numpara)])
-        if(ncol(Rorder)==1){
-          Rorder <- t(Rorder)
-        }
-        rorder <- as.matrix(RrO[[h]][,1+numpara])
-        apply(randomDraws%*%t(Rorder) > rep(1,draws2)%*%t(rorder),1,prod)
-      })
-      checkOCplus <- Reduce("+",checksOC)
-
-      if(sum(checkOCplus > 0) < draws2){ #then the joint order constrained hypotheses do not completely cover the parameter space.
-        if(sum(checkOCplus>1)==0){ # then order constrained spaces are nonoverlapping
-          relmeas <- rbind(relmeas,rep(1,2))
-          relmeas[numhyp+1,2] <- 1 - sum(relmeas[welk,2])
-          rownames(relmeas)[numhyp+1] <- "Hc"
-        }else{ #the order constrained subspaces at least partly overlap
-
-          # funtion below gives a rough estimate of the posterior probability under Hc
-          # a bain type of algorithm would be better of course. but for now this is ok.
-
-          randomDraws <- rmvnorm(draws2,mean=mean1,sigma=Sigma1)
-          checksOCpost <- lapply(welk,function(h){
-            Rorder <- as.matrix(RrO[[h]][,-(1+numpara)])
-            if(ncol(Rorder)==1){
-              Rorder <- t(Rorder)
-            }
-            rorder <- as.matrix(RrO[[h]][,1+numpara])
-            apply(randomDraws%*%t(Rorder) > rep(1,draws2)%*%t(rorder),1,prod)
-          })
-          relmeas <- rbind(relmeas,rep(1,2))
-          relmeas[numhyp+1,2] <- sum(Reduce("+",checksOCpost) == 0) / draws2
-          rownames(relmeas)[numhyp+1] <- "Hc"
-        }
-      }
-    }
-  }
-
-  return(relmeas)
-}
-
 # from the output of the constraints in 'parse_hypothesis' create lists for the equality and order matrices
-make_RrList <- function(parse_hyp){
+# based on previous version of parse_hypothesis
+make_RrList_old <- function(parse_hyp){
   numhyp <- length(parse_hyp$hyp_mat)
   RrE <- lapply(1:numhyp,function(h){
     qE <- parse_hyp$n_constraints[h*2-1]
@@ -1161,3 +975,30 @@ make_RrList <- function(parse_hyp){
   })
   return(list(RrE,RrO))
 }
+# from the output of the constraints in 'parse_hypothesis' create lists for the equality and order matrices
+make_RrList <- function(parse_hyp){
+  numhyp <- length(parse_hyp$original_hypothesis)
+  qE <- parse_hyp$n_constraints[(0:(numhyp-1))*2+1]
+  qO <- parse_hyp$n_constraints[(1:numhyp)*2]
+  RrE <- lapply(1:numhyp,function(h){
+    startcon <- sum(qE[1:h]+qO[1:h])-qE[h]-qO[h]
+    if(qE[h]==1){
+      RrE_h <- t(as.matrix(parse_hyp$hyp_mat[startcon+1:qE[h],]))
+    }else if(qE[h]>1){
+      RrE_h <- parse_hyp$hyp_mat[startcon+1:qE[h],]
+    }else {RrE_h=NULL}
+    RrE_h
+  })
+  RrO <- lapply(1:numhyp,function(h){
+    startcon <- sum(qE[1:h]+qO[1:h])-qE[h]-qO[h]
+    if(qO[h]==1){
+      RrO_h <- t(as.matrix(parse_hyp$hyp_mat[startcon+qE[h]+1:qO[h],]))
+    }else if(qO[h]>1){
+      RrO_h <- parse_hyp$hyp_mat[startcon+qE[h]+1:qO[h],]
+    }else {RrO_h=NULL}
+    RrO_h
+  })
+  return(list(RrE,RrO))
+}
+
+

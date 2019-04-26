@@ -108,14 +108,13 @@ get_estimates.matrix <- function(x, ...){
 
   x <- as.data.frame.table(x)
   estimate <- x$Freq
-  names(estimate) <- paste0(x$Var1, ".", x$Var2)
+  names(estimate) <- paste0(x$Var1, "_with_", x$Var2)
   out <- list(estimate = estimate,
               Sigma = NULL)
   class(out) <- "model_estimates"
   attr(out, "analysisType") <- "correlation"
   out
 }
-
 
 #' @method get_estimates lm
 #' @export
