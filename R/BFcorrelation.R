@@ -84,6 +84,25 @@ BFcorr <- function(model,prior=NULL,constraints="exploratory",priorprob="default
                         1-pnorm(0,mean=mean0,sd=sqrt(diag(covm0)))),ncol=3)
     BFtu <- relfit / relcomp
     PHP <- round(BFtu / apply(BFtu,1,sum),3)
+    colnames(PHP) <- c("H0:corr=0","H1:corr<0","H2:corr>0")
+    # get names of correlations
+    corrmat <- diag(P)
+    row.names(corrmat) <- colnames(corrmat) <- row.names(SumSquares[[1]])
+    corr_names <- names(get_estimates(corrmat)$estimate)
+    matrix_names <- matrix(corr_names,nrow=3)
+    # equal correlations are at the opposite side of the vector
+    corr_names <- matrix_names[lower.tri(matrix_names)]
+
+    if(numgroup>1){
+      matcorrpop <- matrix(0,nrow=length(corr_names),ncol=numgroup)
+      for(c in 1:length(corr_names)){
+        matcorrpop[c,] <- unlist(lapply(1:numgroup,function(pop){
+          paste0(corr_names[c],"_gr",as.character(pop)) #or "_in_gr"
+        }))
+      }
+      corr_names <- c(matcorrpop)
+    }
+    row.names(PHP) <- corr_names
     BFmatrix <- NULL
 
   }else{
@@ -150,7 +169,7 @@ BFcorr <- function(model,prior=NULL,constraints="exploratory",priorprob="default
 
   return(list(BFtu=BFtu,PHP=PHP,BFmatrix=BFmatrix,relfit=relfit,relcomp=relcomp,
               SumSquares=SumSquares,n=n,constraints=constraints,nu0=nu0,mean0=mean0,
-              covm0=covm0,priorprob=priorprob))
+              covm0=covm0,priorprob=priorprob,corr_names=corr_names))
 }
 
 # The update function for BFcorr of new data in fitted object 'model'
@@ -214,27 +233,12 @@ BFcorrUpdate <- function(BFcorr1,model,prior=NULL,constraints="exploratory",prio
                        1-pnorm(0,mean=meanN,sd=sqrt(diag(covmN)))),ncol=3)
     BFtu <- relfit / relcomp
     PHP <- round(BFtu / apply(BFtu,1,sum),3)
+    colnames(PHP) <- c("H0:corr=0","H1:corr<0","H2:corr>0")
+    row.names(PHP) <- BFcorr1$corr_names
     BFmatrix <- NULL
 
   }else{
     # confirmatory tests based on input constraints
-
-    corrmat <- diag(P)
-    row.names(corrmat) <- colnames(corrmat) <- row.names(SumSquares[[1]])
-    corr_names <- names(get_estimates(corrmat)$estimate)
-    matrix_names <- matrix(corr_names,nrow=3)
-    # equal correlations are at the opposite side of the vector
-    corr_names <- c(matrix_names[lower.tri(matrix_names)],
-                    t(matrix_names)[lower.tri(matrix_names)])
-    if(numgroup>1){
-      matcorrpop <- matrix(0,nrow=length(corr_names),ncol=numgroup)
-      for(c in 1:length(corr_names)){
-        matcorrpop[c,] <- unlist(lapply(1:numgroup,function(pop){
-          paste0(corr_names[c],"_gr",as.character(pop)) #or "_in_gr"
-        }))
-      }
-      corr_names <- c(matcorrpop)
-    }
 
     parse_hyp <- parse_hypothesis(corr_names,constraints)
     select1 <- rep(1:numcorrgroup,numgroup) + rep((0:(numgroup-1))*2*numcorrgroup,each=numcorrgroup)
@@ -471,6 +475,13 @@ dt <- as.data.frame(scale(mtcars))
 # exploratory testing of correlations of one correlation matrix
 model1 <- lm(cbind(mpg,cyl,hp) ~ disp + wt, data = dt)
 BFcorr1 <- BFcorr(model1,prior=NULL,constraints="exploratory",priorprob="default")
+#get posterior probabilities for the hypotheses
+BFcorr1$PHP
+# confirmatory test
+constraints <- "cyl_with_mpg > hp_with_mpg > hp_with_cyl; cyl_with_mpg < hp_with_mpg = cyl_with_hp ; cyl_with_mpg = hp_with_mpg = cyl_with_hp"
+BFcorr1 <- BFcorr(model1,prior=NULL,constraints=constraints,priorprob="default")
+#get posterior probabilities for the hypotheses
+BFcorr1$PHP
 
 # confirmatory testing of correlations in two correlation matrix
 model2 <- lm(cbind(mpg,cyl,hp) ~ carb + gear, data = dt)
@@ -478,11 +489,12 @@ model <- list(model1,model2)
 
 constraints <- "cyl_with_mpg_gr1 > hp_with_mpg_gr1 > hp_with_cyl_gr1; cyl_with_mpg_gr1 < hp_with_mpg_gr1 = cyl_with_hp_gr1 ; cyl_with_mpg_gr2 = hp_with_mpg_gr2 = cyl_with_hp_gr1"
 #constraints <- "cyl_with_mpg > hp_with_mpg > hp_with_cyl; cyl_with_mpg < hp_with_mpg = cyl_with_hp ; cyl_with_mpg = hp_with_mpg = cyl_with_hp"
-
 BFcorr1 <- BFcorr(model,prior=NULL,constraints=constraints,priorprob="default")
+#get posterior probabilities for the hypotheses
+BFcorr1$PHP
 BFcorr2 <- BFcorrUpdate(BFcorr1,model) #update with same information new data contained in 'model' (just for the exercise)
-
-
+#get posterior probabilities for the hypotheses
+BFcorr2$PHP
 
 
 
