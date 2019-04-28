@@ -1,6 +1,6 @@
 # BFpack
 
-R-functions for Bayesian exploratory (equal vs negative vs postive) and confirmatory (equality/order constraints) hypothesis testing for the most commonly used statistical models, including (but not limited to) univariate/multivariate t testing, (M)AN(C)OVA, multivariate/univariate regression, structural equation modeling, (mixed) generalized linear models. The functions need fitted models (e.g., lm) as input as well as a string that specifies a set of order constraints on the regression coefficients.
+R-functions for Bayesian exploratory (equal vs negative vs postive) and confirmatory (equality and/or order constraints) hypothesis testing for the most commonly used statistical models, including (but not limited to) univariate/multivariate t testing, (M)AN(C)OVA, multivariate/univariate regression, structural equation modeling, (mixed) generalized linear models. The functions need fitted models (e.g., lm) as input as well as a string that specifies a set of order constraints on the regression coefficients.
 
 Developers and collaborators: Joris Mulder, Caspar van Lissa, Xin Gu, Anton Olsson-Colentine, Florian Böing-Messing, Andrew Tomarken, Eric-Jan Wagenmakers, and Herbert Hoijtink.
 
