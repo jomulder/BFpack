@@ -90,7 +90,7 @@ BFcorr <- function(model,prior=NULL,constraints="exploratory",priorprob="default
     # confirmatory tests based on input constraints
 
     corrmat <- diag(P)
-    row.names(corrmat) <- colnames(corrmat) <- row.names(SumSquares[[m]])
+    row.names(corrmat) <- colnames(corrmat) <- row.names(SumSquares[[1]])
     corr_names <- names(get_estimates(corrmat)$estimate)
     matrix_names <- matrix(corr_names,nrow=3)
     # equal correlations are at the opposite side of the vector
@@ -220,7 +220,7 @@ BFcorrUpdate <- function(BFcorr1,model,prior=NULL,constraints="exploratory",prio
     # confirmatory tests based on input constraints
 
     corrmat <- diag(P)
-    row.names(corrmat) <- colnames(corrmat) <- row.names(SumSquares[[m]])
+    row.names(corrmat) <- colnames(corrmat) <- row.names(SumSquares[[1]])
     corr_names <- names(get_estimates(corrmat)$estimate)
     matrix_names <- matrix(corr_names,nrow=3)
     # equal correlations are at the opposite side of the vector
@@ -276,94 +276,6 @@ BFcorrUpdate <- function(BFcorr1,model,prior=NULL,constraints="exploratory",prio
   return(list(BFtu=BFtu,PHP=PHP,BFmatrix=BFmatrix,relfit=relfit,relcomp=relcomp,
               SumSquares=SumSquares,n=n,constraints=constraints,nu0=nu0,mean0=mean0,
               covm0=covm0,priorprob=priorprob))
-}
-
-
-BFcorrUpdate <- function(BFcorr1,model){
-
-  #Check of dimensions of outcome variables and number of populations match
-  if(is.list(model)){
-    numpop <- length(model)
-    for(pop in 1:numpop){
-      if(class(model[[pop]])[1] != "mlm"){stop("Error: 'model' should be a fitted mlm-object with multiple outcome variables or a list of fitted mlm-objects.")}
-    }
-  }else{ #place the single model in a list object of 1 element
-    if(class(model)[1] != "mlm"){stop("Error: 'model' should be a fitted mlm-object with multiple outcome variables or a list of fitted mlm-objects.")}
-    numpop <- 1
-    model <- list(model)
-  }
-  if(numpop!=length(BFcorr1$SumSquares)){
-    stop("Number of populations of model doesn't match with number in BFcorr object")
-  }
-
-  # number of outcome varibles
-  P <- ncol(model[[1]]$coefficients)
-
-  if(P!=ncol(BFcorr1$SumSquares[[1]])){
-    stop("Number of dimensions of model doesn't match with number in BFcorr object")
-  }
-
-  relcomp <- BFcorr1$relcomp
-  SumSquares <- BFcorr1$SumSquares
-  n <- BFcorr1$n
-  nu0 <- BFcorr1$nu0
-  mean0 <- meanN <- BFcorr1$mean0
-  covm0 <- covmN <- BFcorr1$covm0
-  constraints <- BFcorr1$constraints
-  priorprob <- BFcorr1$priorprob
-
-  # compute posterior mean and covariance matrix of Fisher transformed correlations
-  for(m in 1:numpop){
-    # extract sample size
-    nnew_m <- length(model[[m]]$residuals)
-    n[[m]] <- n[[m]] + nnew_m
-    # compute sums of squares matrix
-    SumSquares[[m]] <- SumSquares[[m]] + cov(model[[m]]$resid)*(nnew_m-1)
-    # posterior mean and covariance matrix of Fisher transformed correlations
-    FishApprox <- approxFisherTrans(df=nu0+n[[m]],S=diag(P)+SumSquares[[m]])
-    meanN[1:P+(m-1)*P] <- FishApprox$mean
-    covmN[1:P+(m-1)*P,1:P+(m-1)*P] <- FishApprox$Sigma
-  }
-
-  # compute BFs and posterior probs using
-  # prior mean en covmatrix mean0 and covm0
-  # post mean en covmatrix meanN and covmN
-  if(constraints=="exploratory"){
-    # H0: corr = 0
-    # H1: corr < 0
-    # H2: corr < 0
-    relfit <- matrix(c(dnorm(0,mean=meanN,sd=sqrt(diag(covmN))),
-                       pnorm(0,mean=meanN,sd=sqrt(diag(covmN))),
-                       1-pnorm(0,mean=meanN,sd=sqrt(diag(covmN)))),ncol=3)
-    # relcomp is already available
-    BFtu <- relfit / relcomp
-    PHP <- round(BFtu / apply(BFtu,1,sum),3)
-    BFmatrix <- NULL
-
-  }else{
-    # compute relative fit
-    results <- bain::bain(meanN,constraints,n=10,Sigma=covmN)
-    relfit <- results$fit[1:numhyp,c(1,3)]
-    # relcomp is already available
-    # get relative fit of complement hypothesis
-    relmeasures <- prob_Hc(mean,covm,relcomp,relfit,constraints)
-    relcomp <- relmeasures[[1]]
-    relfit <- relmeasures[[2]]
-
-    # the BF for the complement hypothesis vs Hu needs to be computed.
-    BFtu <- c(apply(relfit / relcomp, 1, prod))
-    # Change prior probs in case of default setting
-    if(priorprob=="default"){priorprobs <- rep(1,length(BFtu))}
-    PHP <- round(BFtu*priorprobs / sum(BFtu*priorprobs),3)
-    BFmatrix <- matrix(rep(BFtu,length(BFtu)),ncol=length(BFtu))/
-      t(matrix(rep(BFtu,length(BFtu)),ncol=length(BFtu)))
-
-  }
-
-  return(list(BFtu=BFtu,PHP=PHP,BFmatrix=BFmatrix,relfit=relfit,relcomp=relcomp,
-              SumSquares=SumSquares,n=n,constraints=constraints,nu0=nu0,mean0=mean0,
-              covm0=covm0))
-
 }
 
 # compute relative meausures (fit or complexity) under a multivariate Student t distribution
@@ -555,16 +467,19 @@ combineNormals <- function(mean1,covm1,mean2,covm2){
 
 # Example (dummy) correlation test
 dt <- as.data.frame(scale(mtcars))
-n <- nrow(mtcars)
 
+# exploratory testing of correlations of one correlation matrix
 model1 <- lm(cbind(mpg,cyl,hp) ~ disp + wt, data = dt)
+BFcorr1 <- BFcorr(model1,prior=NULL,constraints="exploratory",priorprob="default")
+
+# confirmatory testing of correlations in two correlation matrix
 model2 <- lm(cbind(mpg,cyl,hp) ~ carb + gear, data = dt)
 model <- list(model1,model2)
 
 constraints <- "cyl_with_mpg_gr1 > hp_with_mpg_gr1 > hp_with_cyl_gr1; cyl_with_mpg_gr1 < hp_with_mpg_gr1 = cyl_with_hp_gr1 ; cyl_with_mpg_gr2 = hp_with_mpg_gr2 = cyl_with_hp_gr1"
-constraints <- "cyl_with_mpg > hp_with_mpg > hp_with_cyl; cyl_with_mpg < hp_with_mpg = cyl_with_hp ; cyl_with_mpg = hp_with_mpg = cyl_with_hp"
+#constraints <- "cyl_with_mpg > hp_with_mpg > hp_with_cyl; cyl_with_mpg < hp_with_mpg = cyl_with_hp ; cyl_with_mpg = hp_with_mpg = cyl_with_hp"
 
-BFcorr1 <- BFcorr(model,prior=NULL,constraints="exploratory",priorprob="default")
+BFcorr1 <- BFcorr(model,prior=NULL,constraints=constraints,priorprob="default")
 BFcorr2 <- BFcorrUpdate(BFcorr1,model) #update with same information new data contained in 'model' (just for the exercise)
 
 
