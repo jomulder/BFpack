@@ -822,7 +822,7 @@ Student_measures <- function(mean1,scale1,df1,RrE1,RrO1){ # Volgens mij moet je 
     Tscale1 <- Tm %*% scale1 %*% t(Tm)
 
     # relative meausure for equalities
-    relE <- dmvt(x = t(rE1), delta = Tmean1[1:qE1], sigma = matrix(Tscale1[1:qE1, 1:qE1], ncol = qE1), df = N - K, log = FALSE)
+    relE <- dmvt(x = t(rE1), delta = Tmean1[1:qE1], sigma = matrix(Tscale1[1:qE1, 1:qE1], ncol = qE1), df = df1, log = FALSE)
 
     # transform order constraints
     RO1tilde <- RO1 %*% ginv(D2)
@@ -838,8 +838,8 @@ Student_measures <- function(mean1,scale1,df1,RrE1,RrO1){ # Volgens mij moet je 
 
     #conditional location and scale matrix
     Tmean1OgE <- Tmean1O + Tscale1OE %*% solve(Tscale1EE) %*% matrix(rE1 - Tmean1E)
-    Tscale1OgE <- as.vector((N - K + (t(matrix(rE1 - Tmean1E)) %*% solve(Tscale1EE) %*% matrix(rE1 - Tmean1E))) /
-                              (N - K + qE1)) * (Tscale1OO - Tscale1OE %*% solve(Tscale1EE) %*% t(Tscale1OE))
+    Tscale1OgE <- as.vector((df1 + (t(matrix(rE1 - Tmean1E)) %*% solve(Tscale1EE) %*% matrix(rE1 - Tmean1E))) /
+                              (df1 + qE1)) * (Tscale1OO - Tscale1OE %*% solve(Tscale1EE) %*% t(Tscale1OE))
 
     if(rankMatrix(RO1tilde)[[1]] == nrow(RO1tilde)){
       rO1tilde <- as.vector(rO1tilde)
@@ -848,9 +848,9 @@ Student_measures <- function(mean1,scale1,df1,RrE1,RrO1){ # Volgens mij moet je 
       scale1_trans <- RO1tilde %*% Tscale1OgE %*% t(RO1tilde)
 
       if(nrow(scale1_trans) == 1){ # univariate
-        relO <- pt((rO1tilde - delta_trans) / sqrt(scale1_trans), df = N-K+qE1, lower.tail = FALSE)[1]
+        relO <- pt((rO1tilde - delta_trans) / sqrt(scale1_trans), df = df1+qE1, lower.tail = FALSE)[1]
       } else { # multivariate
-        relO <- pmvt(lower = rO1tilde, upper = Inf, delta = delta_trans, sigma = scale1_trans, df = N - K + qE1, type = "shifted")[1]
+        relO <- pmvt(lower = rO1tilde, upper = Inf, delta = delta_trans, sigma = scale1_trans, df = df1+qE1, type = "shifted")[1]
       }
 
     }else{ #use bain for the computation of the probability
