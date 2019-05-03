@@ -486,7 +486,7 @@ BFupdate.lm <- function(BF1,x,XY=NULL){
     }
     # translate named constraints to matrices with coefficients for constraints
     parse_hyp <- parse_hypothesis(names_coef,constraints)
-    RrList <- make_RrList_old(parse_hyp)
+    RrList <- make_RrList(parse_hyp)
     RrE <- RrList[[1]]
     RrO <- RrList[[2]]
 
@@ -1012,8 +1012,7 @@ Student_prob_Hc <- function(mean1,scale1,df1,relmeas,constraints){
 }
 
 # from the output of the constraints in 'parse_hypothesis' create lists for the equality and order matrices
-# based on previous version of parse_hypothesis
-make_RrList_old <- function(parse_hyp){
+make_RrList <- function(parse_hyp){
   numhyp <- length(parse_hyp$hyp_mat)
   RrE <- lapply(1:numhyp,function(h){
     qE <- parse_hyp$n_constraints[h*2-1]
@@ -1037,25 +1036,26 @@ make_RrList_old <- function(parse_hyp){
   return(list(RrE,RrO))
 }
 # from the output of the constraints in 'parse_hypothesis' create lists for the equality and order matrices
-make_RrList <- function(parse_hyp){
-  numhyp <- length(parse_hyp$original_hypothesis)
-  qE <- parse_hyp$n_constraints[(0:(numhyp-1))*2+1]
-  qO <- parse_hyp$n_constraints[(1:numhyp)*2]
+# different format parse_hyp object
+make_RrList2 <- function(parse_hyp2){
+  numhyp <- length(parse_hyp2$original_hypothesis)
+  qE <- parse_hyp2$n_constraints[(0:(numhyp-1))*2+1]
+  qO <- parse_hyp2$n_constraints[(1:numhyp)*2]
   RrE <- lapply(1:numhyp,function(h){
     startcon <- sum(qE[1:h]+qO[1:h])-qE[h]-qO[h]
     if(qE[h]==1){
-      RrE_h <- t(as.matrix(parse_hyp$hyp_mat[startcon+1:qE[h],]))
+      RrE_h <- t(as.matrix(parse_hyp2$hyp_mat[startcon+1:qE[h],]))
     }else if(qE[h]>1){
-      RrE_h <- parse_hyp$hyp_mat[startcon+1:qE[h],]
+      RrE_h <- parse_hyp2$hyp_mat[startcon+1:qE[h],]
     }else {RrE_h=NULL}
     RrE_h
   })
   RrO <- lapply(1:numhyp,function(h){
     startcon <- sum(qE[1:h]+qO[1:h])-qE[h]-qO[h]
     if(qO[h]==1){
-      RrO_h <- t(as.matrix(parse_hyp$hyp_mat[startcon+qE[h]+1:qO[h],]))
+      RrO_h <- t(as.matrix(parse_hyp2$hyp_mat[startcon+qE[h]+1:qO[h],]))
     }else if(qO[h]>1){
-      RrO_h <- parse_hyp$hyp_mat[startcon+qE[h]+1:qO[h],]
+      RrO_h <- parse_hyp2$hyp_mat[startcon+qE[h]+1:qO[h],]
     }else {RrO_h=NULL}
     RrO_h
   })
