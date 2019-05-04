@@ -466,6 +466,3 @@ combineNormals <- function(mean1,covm1,mean2,covm2){
   mean12 <- c(covm12%*%(solve(covm1)%*%mean1+solve(covm2)%*%mean2))
   return(list(mean=mean12,covm=covm12))
 }
-
-
-

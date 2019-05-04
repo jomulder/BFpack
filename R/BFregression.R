@@ -4,6 +4,8 @@
 #' @importFrom MASS ginv
 #' @method BF lm
 #' @export
+
+
 BF.lm <- function(x,
                   hypothesis = NULL,
                   prior = NULL,
@@ -25,16 +27,19 @@ BF.lm <- function(x,
   if(!is.matrix(x$coefficients)){
     P <- 1
     N <- length(x$residuals)
+    K <- length(x$coefficients) # dimension of predictors
+    dummyX <- rep(F,K)
+    names(dummyX) <- names(x$coefficients)
   } else {
     P <- ncol(x$residuals)
     N <- nrow(x$residuals)
+    K <- length(x$coefficients)/P # dimension of predictors per dependent variable
+    dummyX <- rep(F,K)
+    names(dummyX) <- row.names(x$coefficients)
   }
-
-  K <- length(x$coefficients)/P # dimension of predictors per dependent variable
 
   Xmat <- model.matrix(x)
   Ymat <- model.matrix(x)%*%x$coefficients + x$residuals
-  dummyX <- rep(F,K)
   for(k in 1:K){ # Check which are dummy variables corresponding to (adjusted) mean parameters
     uniquek <- sort(unique(Xmat[,k]))
     # if(length(uniquek)==2){
@@ -46,7 +51,10 @@ BF.lm <- function(x,
   }
   #number of groups on variations of dummy combinations
   groupcode <- unique(Xmat[,dummyX])
-  rownames(groupcode) <- NULL
+  rownames(groupcode) <- unlist(lapply(1:nrow(groupcode),function(r){
+    paste0("groupcode",r)
+  }))
+
   J <- nrow(groupcode)
   if(J==0){ #then no intercept
     J <- 1
@@ -94,6 +102,18 @@ BF.lm <- function(x,
 
   if(constraints=="exploratory"){
 
+    if(P==1){
+      names_coef <- names(x$coefficients)
+    }else{
+      names_coef1 <- names(x$coefficients[,1])
+      names_coef2 <- names(x$coefficients[1,])
+      names_coef <- unlist(lapply(1:P,function(p){
+        lapply(1:K,function(k){
+          paste(names_coef1[k],".",names_coef2[p],sep="")
+        })
+      }))
+    }
+
     # prior hyperparameters
     df0 <- 1 # should be the same as sum(rep(bj,times=Nj))-K-P+1
     Scale0 <- kronecker(S_b,tXXi_b)
@@ -112,13 +132,18 @@ BF.lm <- function(x,
         pt((0-meanN[k,1])/sqrt(ScaleN[k,k]),df=dfN,lower.tail = TRUE),
         pt((0-meanN[k,1])/sqrt(ScaleN[k,k]),df=dfN,lower.tail = FALSE))
     })),nrow=3))
+    row.names(relfit) <- names_coef
+    colnames(relfit) <- c("p(effect=0)","Pr(effect<0)","Pr(effect>0)")
     relcomp <- t(matrix(unlist(lapply(1:K,function(k){
       c(dt((0-mean0[k,1])/sqrt(Scale0[k,k]),df=df0)/sqrt(Scale0[k,k]),
         pt((0-mean0[k,1])/sqrt(Scale0[k,k]),df=df0,lower.tail = TRUE),
         pt((0-mean0[k,1])/sqrt(Scale0[k,k]),df=df0,lower.tail = FALSE))
     })),nrow=3))
+    row.names(relcomp) <- names_coef
+    colnames(relcomp) <- c("p(effect=0)","Pr(effect<0)","Pr(effect>0)")
 
     BFtu <- relfit / relcomp
+    colnames(BFtu) <- c("effect=0","effect<0","effect>0")
     PHP <- round(BFtu / apply(BFtu,1,sum),3)
     BFmatrix <- NULL
 
@@ -174,10 +199,14 @@ BF.lm <- function(x,
       relcomp <- t(matrix(unlist(lapply(1:numhyp,function(h){
         Student_measures(mean0,Scale0,df0,RrE[[h]],RrO[[h]])
       })),nrow=2))
+      row.names(relcomp) <- parse_hyp$original_hypothesis
+      colnames(relcomp) <- c("c_E","c_O")
 
       relfit <- t(matrix(unlist(lapply(1:numhyp,function(h){
         Student_measures(meanN,ScaleN,dfN,RrE[[h]],RrO[[h]])
       })),nrow=2))
+      row.names(relfit) <- parse_hyp$original_hypothesis
+      colnames(relfit) <- c("f_E","f_O")
 
       # Compute relative fit/complexity for the complement hypothesis
       relfit <- Student_prob_Hc(meanN,scaleN,dfN,relfit,constraints)
@@ -271,7 +300,11 @@ BF.lm <- function(x,
       }))
 
       relfit <- t(matrix(unlist(relmeas)[rep((0:(numhyp-1))*4,each=2)+rep(1:2,numhyp)],nrow=2))
+      row.names(relfit) <- parse_hyp$original_hypothesis
+      colnames(relfit) <- c("f_E","f_O")
       relcomp <- t(matrix(unlist(relmeas)[rep((0:(numhyp-1))*4,each=2)+rep(3:4,numhyp)],nrow=2))
+      row.names(relcomp) <- parse_hyp$original_hypothesis
+      colnames(relcomp) <- c("c_E","c_O")
 
       # Compute relative fit/complexity for the complement hypothesis
       relfit <- MatrixStudent_prob_Hc(BetaHat,S,tXXi,N-K-P+1,relfit,RrO)
@@ -285,29 +318,36 @@ BF.lm <- function(x,
       stop("'probprob' must be a vector of positive values or set to 'default'.")
     }
     # Change prior probs in case of default setting
-    if(priorprob=="default"){priorprobs <- rep(1,length(BFtu))}
+    if(priorprob=="default"){
+      priorprobs <- rep(1/length(BFtu),length(BFtu))
+    }else{
+      priorprobs <- priorprobs/sum(priorprobs)
+    }
+    names(priorprobs) <- names(BFtu)
     PHP <- round(BFtu*priorprobs / sum(BFtu*priorprobs),3)
     BFmatrix <- matrix(rep(BFtu,length(BFtu)),ncol=length(BFtu))/
       t(matrix(rep(BFtu,length(BFtu)),ncol=length(BFtu)))
+    row.names(BFmatrix) <- names(PHP)
+    colnames(BFmatrix) <- names(PHP)
   }
 
   return(list(BFtu=BFtu,PHP=PHP,BFmatrix=BFmatrix,relfit=relfit,relcomp=relcomp,
               Nj=Nj,bj=bj,tXXj=tXXj,tXYj=tXYj,tYYj=tYYj,constraints=constraints,
-              priorprob=priorprob,groupcode=groupcode,dummyX=dummyX))
+              priorprobs=priorprobs,groupcode=groupcode,dummyX=dummyX))
 }
 
 # update BF test for a univariate normal linear regression type model
-BFregUpdate <- function(BFreg1,x,XY=NULL){
+BFupdate.lm <- function(BF1,x,XY=NULL){
   # update of default BF on location parameters in a univarite normal linear model
 
-  Nj <- BFreg1$Nj
-  tXXj <- BFreg1$tXXj
-  tXYj <- BFreg1$tXYj
-  tYYj <- BFreg1$tYYj
-  constraints <- BFreg1$constraints
-  priorprob <- BFreg1$priorprob
-  groupcode <- BFreg1$groupcode
-  dummyX <- BFreg1$dummyX
+  Nj <- BF1$Nj
+  tXXj <- BF1$tXXj
+  tXYj <- BF1$tXYj
+  tYYj <- BF1$tYYj
+  constraints <- BF1$constraints
+  priorprobs <- BF1$priorprobs
+  groupcode <- BF1$groupcode
+  dummyX <- BF1$dummyX
 
   K <- nrow(tXXj[[1]])
   J <- nrow(groupcode)
@@ -386,6 +426,18 @@ BFregUpdate <- function(BFreg1,x,XY=NULL){
 
   if(constraints=="exploratory"){
 
+    if(P==1){
+      names_coef <- names(x$coefficients)
+    }else{
+      names_coef1 <- names(x$coefficients[,1])
+      names_coef2 <- names(x$coefficients[1,])
+      names_coef <- unlist(lapply(1:P,function(p){
+        lapply(1:K,function(k){
+          paste(names_coef1[k],".",names_coef2[p],sep="")
+        })
+      }))
+    }
+
     # prior hyperparameters
     df0 <- 1 # should be the same as sum(rep(bj,times=Nj))-K-P+1
     Scale0 <- kronecker(S_b,tXXi_b)
@@ -404,13 +456,18 @@ BFregUpdate <- function(BFreg1,x,XY=NULL){
         pt((0-meanN[k,1])/sqrt(ScaleN[k,k]),df=dfN,lower.tail = TRUE),
         pt((0-meanN[k,1])/sqrt(ScaleN[k,k]),df=dfN,lower.tail = FALSE))
     })),nrow=3))
+    row.names(relfit) <- names_coef
+    colnames(relfit) <- c("p(effect=0)","Pr(effect<0)","Pr(effect>0)")
     relcomp <- t(matrix(unlist(lapply(1:K,function(k){
       c(dt((0-mean0[k,1])/sqrt(Scale0[k,k]),df=df0)/sqrt(Scale0[k,k]),
         pt((0-mean0[k,1])/sqrt(Scale0[k,k]),df=df0,lower.tail = TRUE),
         pt((0-mean0[k,1])/sqrt(Scale0[k,k]),df=df0,lower.tail = FALSE))
     })),nrow=3))
+    row.names(relcomp) <- names_coef
+    colnames(relcomp) <- c("p(effect=0)","Pr(effect<0)","Pr(effect>0)")
 
     BFtu <- relfit / relcomp
+    colnames(BFtu) <- c("effect=0","effect<0","effect>0")
     PHP <- round(BFtu / apply(BFtu,1,sum),3)
     BFmatrix <- NULL
 
@@ -466,10 +523,14 @@ BFregUpdate <- function(BFreg1,x,XY=NULL){
       relcomp <- t(matrix(unlist(lapply(1:numhyp,function(h){
         Student_measures(mean0,Scale0,df0,RrE[[h]],RrO[[h]])
       })),nrow=2))
+      row.names(relcomp) <- parse_hyp$original_hypothesis
+      colnames(relcomp) <- c("c_E","c_O")
 
       relfit <- t(matrix(unlist(lapply(1:numhyp,function(h){
         Student_measures(meanN,ScaleN,dfN,RrE[[h]],RrO[[h]])
       })),nrow=2))
+      row.names(relfit) <- parse_hyp$original_hypothesis
+      colnames(relfit) <- c("f_E","f_O")
 
       # Compute relative fit/complexity for the complement hypothesis
       relfit <- Student_prob_Hc(meanN,scaleN,dfN,relfit,constraints)
@@ -563,7 +624,11 @@ BFregUpdate <- function(BFreg1,x,XY=NULL){
       }))
 
       relfit <- t(matrix(unlist(relmeas)[rep((0:(numhyp-1))*4,each=2)+rep(1:2,numhyp)],nrow=2))
+      row.names(relfit) <- parse_hyp$original_hypothesis
+      colnames(relfit) <- c("c_E","c_O")
       relcomp <- t(matrix(unlist(relmeas)[rep((0:(numhyp-1))*4,each=2)+rep(3:4,numhyp)],nrow=2))
+      row.names(relcomp) <- parse_hyp$original_hypothesis
+      colnames(relcomp) <- c("f_E","f_O")
 
       # Compute relative fit/complexity for the complement hypothesis
       relfit <- MatrixStudent_prob_Hc(BetaHat,S,tXXi,N-K-P+1,relfit,RrO)
@@ -572,20 +637,16 @@ BFregUpdate <- function(BFreg1,x,XY=NULL){
 
     # the BF for the complement hypothesis vs Hu needs to be computed.
     BFtu <- c(apply(relfit / relcomp, 1, prod))
-    # Check input of prior probabilies
-    if(!(priorprob == "default" || (length(priorprob)==nrow(relfit) && min(priorprob)>0) )){
-      stop("'probprob' must be a vector of positive values or set to 'default'.")
-    }
-    # Change prior probs in case of default setting
-    if(priorprob=="default"){priorprobs <- rep(1,length(BFtu))}
     PHP <- round(BFtu*priorprobs / sum(BFtu*priorprobs),3)
     BFmatrix <- matrix(rep(BFtu,length(BFtu)),ncol=length(BFtu))/
       t(matrix(rep(BFtu,length(BFtu)),ncol=length(BFtu)))
+    row.names(BFmatrix) <- names(PHP)
+    colnames(BFmatrix) <- names(PHP)
   }
 
   return(list(BFtu=BFtu,PHP=PHP,BFmatrix=BFmatrix,relfit=relfit,relcomp=relcomp,
               Nj=Nj,bj=bj,tXXj=tXXj,tXYj=tXYj,tYYj=tYYj,constraints=constraints,
-              priorprob=priorprob,groupcode=groupcode,dummyX=dummyX))
+              priorprobs=priorprobs,groupcode=groupcode,dummyX=dummyX))
 }
 
 # compute relative meausures (fit or complexity) under a multivariate Student t distribution
@@ -761,7 +822,7 @@ Student_measures <- function(mean1,scale1,df1,RrE1,RrO1){ # Volgens mij moet je 
     Tscale1 <- Tm %*% scale1 %*% t(Tm)
 
     # relative meausure for equalities
-    relE <- dmvt(x = t(rE1), delta = Tmean1[1:qE1], sigma = matrix(Tscale1[1:qE1, 1:qE1], ncol = qE1), df = N - K, log = FALSE)
+    relE <- dmvt(x = t(rE1), delta = Tmean1[1:qE1], sigma = matrix(Tscale1[1:qE1, 1:qE1], ncol = qE1), df = df1, log = FALSE)
 
     # transform order constraints
     RO1tilde <- RO1 %*% ginv(D2)
@@ -777,8 +838,8 @@ Student_measures <- function(mean1,scale1,df1,RrE1,RrO1){ # Volgens mij moet je 
 
     #conditional location and scale matrix
     Tmean1OgE <- Tmean1O + Tscale1OE %*% solve(Tscale1EE) %*% matrix(rE1 - Tmean1E)
-    Tscale1OgE <- as.vector((N - K + (t(matrix(rE1 - Tmean1E)) %*% solve(Tscale1EE) %*% matrix(rE1 - Tmean1E))) /
-                              (N - K + qE1)) * (Tscale1OO - Tscale1OE %*% solve(Tscale1EE) %*% t(Tscale1OE))
+    Tscale1OgE <- as.vector((df1 + (t(matrix(rE1 - Tmean1E)) %*% solve(Tscale1EE) %*% matrix(rE1 - Tmean1E))) /
+                              (df1 + qE1)) * (Tscale1OO - Tscale1OE %*% solve(Tscale1EE) %*% t(Tscale1OE))
 
     if(rankMatrix(RO1tilde)[[1]] == nrow(RO1tilde)){
       rO1tilde <- as.vector(rO1tilde)
@@ -787,9 +848,9 @@ Student_measures <- function(mean1,scale1,df1,RrE1,RrO1){ # Volgens mij moet je 
       scale1_trans <- RO1tilde %*% Tscale1OgE %*% t(RO1tilde)
 
       if(nrow(scale1_trans) == 1){ # univariate
-        relO <- pt((rO1tilde - delta_trans) / sqrt(scale1_trans), df = N-K+qE1, lower.tail = FALSE)[1]
+        relO <- pt((rO1tilde - delta_trans) / sqrt(scale1_trans), df = df1+qE1, lower.tail = FALSE)[1]
       } else { # multivariate
-        relO <- pmvt(lower = rO1tilde, upper = Inf, delta = delta_trans, sigma = scale1_trans, df = N - K + qE1, type = "shifted")[1]
+        relO <- pmvt(lower = rO1tilde, upper = Inf, delta = delta_trans, sigma = scale1_trans, df = df1+qE1, type = "shifted")[1]
       }
 
     }else{ #use bain for the computation of the probability
@@ -817,13 +878,13 @@ MatrixStudent_prob_Hc <- function(Mean1,Scale1,tXXi1,df1,relmeas,RrO){
   which_eq <- relmeas[,1] != 1
   if(sum(which_eq)==numhyp){ # Then the complement is equivalent to the unconstrained hypothesis.
     relmeas <- rbind(relmeas,rep(1,2))
-    rownames(relfit)[numhyp+1] <- "Hc"
+    rownames(relfit)[numhyp+1] <- "complement"
   }else{ # So there is at least one hypothesis with only order constraints
     welk <- which(!which_eq)
     if(length(welk)==1){ # There is one hypothesis with only order constraints. Hc is complement of this hypothesis.
       relmeas <- rbind(relmeas,rep(1,2))
       relmeas[numhyp+1,2] <- 1 - relmeas[welk,2]
-      rownames(relmeas)[numhyp+1] <- "Hc"
+      rownames(relmeas)[numhyp+1] <- "complement"
     }else{ # So more than one hypothesis with only order constraints
       # First we check whether ther is an overlap between the order constrained spaces.
 
@@ -850,7 +911,7 @@ MatrixStudent_prob_Hc <- function(Mean1,Scale1,tXXi1,df1,relmeas,RrO){
         if(sum(checkOCplus>1)==0){ # then order constrained spaces are nonoverlapping
           relmeas <- rbind(relmeas,rep(1,2))
           relmeas[numhyp+1,2] <- 1 - sum(relmeas[welk,2])
-          rownames(relmeas)[numhyp+1] <- "Hc"
+          rownames(relmeas)[numhyp+1] <- "complement"
         }else{ #the order constrained subspaces at least partly overlap
 
           # funtion below gives a rough estimate of the posterior probability under Hc
@@ -873,7 +934,7 @@ MatrixStudent_prob_Hc <- function(Mean1,Scale1,tXXi1,df1,relmeas,RrO){
           })
           relmeas <- rbind(relmeas,rep(1,2))
           relmeas[numhyp+1,] <- c(1,sum(Reduce("+",checksOC)==0)/draws2)
-          rownames(relmeas)[numhyp+1] <- "Hc"
+          rownames(relmeas)[numhyp+1] <- "complement"
         }
       }
     }
@@ -891,13 +952,13 @@ Student_prob_Hc <- function(mean1,scale1,df1,relmeas,constraints){
   which_eq <- relmeas[,1] != 1
   if(sum(which_eq)==numhyp){ # Then the complement is equivalent to the unconstrained hypothesis.
     relmeas <- rbind(relmeas,rep(1,2))
-    rownames(relfit)[numhyp+1] <- "Hc"
+    rownames(relfit)[numhyp+1] <- "complement"
   }else{ # So there is at least one hypothesis with only order constraints
     welk <- which(!which_eq)
     if(length(welk)==1){ # There is one hypothesis with only order constraints. Hc is complement of this hypothesis.
       relmeas <- rbind(relmeas,rep(1,2))
       relmeas[numhyp+1,2] <- 1 - relmeas[welk,2]
-      rownames(relmeas)[numhyp+1] <- "Hc"
+      rownames(relmeas)[numhyp+1] <- "complement"
     }else{ # So more than one hypothesis with only order constraints
       # First we check whether ther is an overlap between the order constrained spaces.
 
@@ -924,7 +985,7 @@ Student_prob_Hc <- function(mean1,scale1,df1,relmeas,constraints){
         if(sum(checkOCplus>1)==0){ # then order constrained spaces are nonoverlapping
           relmeas <- rbind(relmeas,rep(1,2))
           relmeas[numhyp+1,2] <- 1 - sum(relmeas[welk,2])
-          rownames(relmeas)[numhyp+1] <- "Hc"
+          rownames(relmeas)[numhyp+1] <- "complement"
         }else{ #the order constrained subspaces at least partly overlap
 
           # funtion below gives a rough estimate of the posterior probability under Hc
@@ -941,7 +1002,7 @@ Student_prob_Hc <- function(mean1,scale1,df1,relmeas,constraints){
           })
           relmeas <- rbind(relmeas,rep(1,2))
           relmeas[numhyp+1,2] <- sum(Reduce("+",checksOC) == 0) / draws2
-          rownames(relmeas)[numhyp+1] <- "Hc"
+          rownames(relmeas)[numhyp+1] <- "complement"
         }
       }
     }
@@ -951,8 +1012,7 @@ Student_prob_Hc <- function(mean1,scale1,df1,relmeas,constraints){
 }
 
 # from the output of the constraints in 'parse_hypothesis' create lists for the equality and order matrices
-# based on previous version of parse_hypothesis
-make_RrList_old <- function(parse_hyp){
+make_RrList <- function(parse_hyp){
   numhyp <- length(parse_hyp$hyp_mat)
   RrE <- lapply(1:numhyp,function(h){
     qE <- parse_hyp$n_constraints[h*2-1]
@@ -976,25 +1036,26 @@ make_RrList_old <- function(parse_hyp){
   return(list(RrE,RrO))
 }
 # from the output of the constraints in 'parse_hypothesis' create lists for the equality and order matrices
-make_RrList <- function(parse_hyp){
-  numhyp <- length(parse_hyp$original_hypothesis)
-  qE <- parse_hyp$n_constraints[(0:(numhyp-1))*2+1]
-  qO <- parse_hyp$n_constraints[(1:numhyp)*2]
+# different format parse_hyp object
+make_RrList2 <- function(parse_hyp2){
+  numhyp <- length(parse_hyp2$original_hypothesis)
+  qE <- parse_hyp2$n_constraints[(0:(numhyp-1))*2+1]
+  qO <- parse_hyp2$n_constraints[(1:numhyp)*2]
   RrE <- lapply(1:numhyp,function(h){
     startcon <- sum(qE[1:h]+qO[1:h])-qE[h]-qO[h]
     if(qE[h]==1){
-      RrE_h <- t(as.matrix(parse_hyp$hyp_mat[startcon+1:qE[h],]))
+      RrE_h <- t(as.matrix(parse_hyp2$hyp_mat[startcon+1:qE[h],]))
     }else if(qE[h]>1){
-      RrE_h <- parse_hyp$hyp_mat[startcon+1:qE[h],]
+      RrE_h <- parse_hyp2$hyp_mat[startcon+1:qE[h],]
     }else {RrE_h=NULL}
     RrE_h
   })
   RrO <- lapply(1:numhyp,function(h){
     startcon <- sum(qE[1:h]+qO[1:h])-qE[h]-qO[h]
     if(qO[h]==1){
-      RrO_h <- t(as.matrix(parse_hyp$hyp_mat[startcon+qE[h]+1:qO[h],]))
+      RrO_h <- t(as.matrix(parse_hyp2$hyp_mat[startcon+qE[h]+1:qO[h],]))
     }else if(qO[h]>1){
-      RrO_h <- parse_hyp$hyp_mat[startcon+qE[h]+1:qO[h],]
+      RrO_h <- parse_hyp2$hyp_mat[startcon+qE[h]+1:qO[h],]
     }else {RrO_h=NULL}
     RrO_h
   })

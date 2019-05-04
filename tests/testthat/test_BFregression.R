@@ -11,9 +11,8 @@ mtcars0[,(names(mtcars0)!="vs")*(names(mtcars0)!="am")==1] <-
 # univariate regression
 lm1 <- lm(wt ~ -1 + disp + vs + hp + drat, mtcars0)
 constraints <- "disp > drat > hp ; hp > disp = 0"
-BFreg1 <- BF(lm1, hypothesis = constraints, prior="default")
-
-BFreg2 <- BFregUpdate(BFreg1,lm1)
+BFreg1 <- BF.lm(lm1, hypothesis = constraints, prior="default")
+BFreg2 <- BFupdate.lm(BFreg1,lm1)
 
 # ANOVA
 lm1 <- lm(wt ~ -1 + vs, mtcars0)
