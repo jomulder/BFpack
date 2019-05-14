@@ -42,10 +42,11 @@ BF.htest <- function(x,
     }
 
   }else{ # two samples t test
-    stop("for a two sample t test please use an aov object instead of a htest object.")
+    stop("for a two sample t test please use an aov or lm object instead of a htest object.")
   }
 
   return(BF1)
+
 }
 
 
