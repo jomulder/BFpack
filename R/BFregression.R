@@ -50,7 +50,7 @@ BF.lm <- function(x,
     if(length(uniquek)<=2){dummyX[k]<-T} #group index of intercept
   }
   #number of groups on variations of dummy combinations
-  groupcode <- unique(Xmat[,dummyX])
+  groupcode <- as.matrix(unique(Xmat[,dummyX]))
   rownames(groupcode) <- unlist(lapply(1:nrow(groupcode),function(r){
     paste0("groupcode",r)
   }))
@@ -146,6 +146,7 @@ BF.lm <- function(x,
     colnames(BFtu) <- c("effect=0","effect<0","effect>0")
     PHP <- round(BFtu / apply(BFtu,1,sum),3)
     BFmatrix <- NULL
+    priorprobs <- constraints
 
   }else{
     #read constraints
