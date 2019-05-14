@@ -32,8 +32,11 @@ constraints <- "disp.wt > disp.mpg ; hp.wt > disp.wt = 0"
 BFreg1 <- BFreg(lm1,constraints=constraints,priorprob="default")
 BFreg2 <- BFregUpdate(BFreg1,lm1)
 
-
-
+# Student t test
+ttest <- t.test(-3:10)
+BF.htest(ttest)
+BF.htest(ttest,"exploratory")
+BF.htest(ttest,"mu_minus_mu0<0")
 
 
 
