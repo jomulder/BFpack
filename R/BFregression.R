@@ -9,6 +9,7 @@
 BF.lm <- function(x,
                   hypothesis = NULL,
                   prior = NULL,
+                  covariates = NULL,
                   ...){
 
   if(is.null(hypothesis)){
@@ -38,9 +39,16 @@ BF.lm <- function(x,
     names(dummyX) <- row.names(x$coefficients)
   }
 
+  if(is.null(covariates)){
+    noncovs <- 1:K
+  } else { # covariates must be a vector of integers denoting which predictor variables
+           # are not grouping variables.
+    noncovs <- (1:K)[-covariates]
+  }
+
   Xmat <- model.matrix(x)
   Ymat <- model.matrix(x)%*%x$coefficients + x$residuals
-  for(k in 1:K){ # Check which are dummy variables corresponding to (adjusted) mean parameters
+  for(k in noncovs){ # Check which are dummy variables corresponding to (adjusted) mean parameters
     uniquek <- sort(unique(Xmat[,k]))
     # if(length(uniquek)==2){
     #   if(uniquek[1]==0 && uniquek[2]==1){dummyX[k]<-T} #(adjusted) mean
@@ -69,22 +77,26 @@ BF.lm <- function(x,
   bj <- ((P+K)/J)/Nj
   #Compute sufficient statistics for all groups
   tXXj <- lapply(1:J,function(j){
-    t(Xmat[dvec==j,])%*%Xmat[dvec==j,]
+    if(Nj[j]==1){
+      Xmat[dvec==j,]%*%t(Xmat[dvec==j,])
+    }else t(Xmat[dvec==j,])%*%Xmat[dvec==j,]
   })
   tXXj_b <- lapply(1:J,function(j){
-    t(Xmat[dvec==j,])%*%Xmat[dvec==j,]*bj[j]
+    tXXj[[j]]*bj[j]
   })
   tXYj <- lapply(1:J,function(j){
-    t(Xmat[dvec==j,])%*%Ymat[dvec==j,]
+    if(Nj[j]==1){
+      as.matrix(Xmat[dvec==j,]*Ymat[dvec==j,])
+    } else {t(Xmat[dvec==j,])%*%Ymat[dvec==j,]}
   })
   tXYj_b <- lapply(1:J,function(j){
-    t(Xmat[dvec==j,])%*%Ymat[dvec==j,]*bj[j]
+    tXYj[[j]]*bj[j]
   })
   tYYj <- lapply(1:J,function(j){
     t(Ymat[dvec==j,])%*%Ymat[dvec==j,]
   })
   tYYj_b <- lapply(1:J,function(j){
-    t(Ymat[dvec==j,])%*%Ymat[dvec==j,]*bj[j]
+    tYYj[[j]]*bj[j]
   })
   tXX <- Reduce("+",tXXj)
   tXXi <- solve(tXX)
@@ -372,7 +384,7 @@ BFupdate.lm <- function(BF1,x,XY=NULL){
     Ymat <- model.matrix(x)%*%x$coefficients + x$residuals
   }
   dummyX_new <- rep(F,K)
-  for(k in 1:K){ # Check which are dummy variables corresponding to (adjusted) mean parameters
+  for(k in (1:K)[dummyX]){ # Check which are dummy variables corresponding to (adjusted) mean parameters
     uniquek <- sort(unique(Xmat[,k]))
     if(length(uniquek)<=2){dummyX_new[k]<-T} #group index of intercept
   }
