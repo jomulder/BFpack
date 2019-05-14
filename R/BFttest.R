@@ -23,9 +23,7 @@ BF.htest <- function(x,
     lm1 <- lm(y1 ~ 1)
     names(lm1$coefficients) <- "mu_minus_mu0"
 
-    if(hypothesis=="exploratory"){
-      BF1 <- BF(x=lm1,prior=prior)
-    }else if(is.null(hypothesis)){
+    if(is.null(hypothesis)){
       if(x$alternative=="two.sided"){
         BF1 <- BF(lm1,hypothesis=paste0("mu_minus_mu0=",as.character(mu0)),
                   prior=prior)
@@ -36,7 +34,9 @@ BF.htest <- function(x,
         BF1 <- BF(lm1,hypothesis=paste0("mu_minus_mu0>",as.character(mu0)),
                   prior=prior)
       }
-    } else{
+    } else if(hypothesis=="exploratory"){
+      BF1 <- BF(x=lm1,prior=prior)
+    } else {
       if(!grepl("mu_minus_mu0",hypothesis)){stop("parameter in 'hypothesis' to be tested calls 'mu_minus_mu0'.")}
       BF1 <- BF(lm1,hypothesis=hypothesis,prior=prior)
     }
