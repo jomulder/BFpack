@@ -75,6 +75,7 @@ BF.lm <- function(x,
   Nj <- c(table(dvec))
   #set minimal fractions for each group
   bj <- ((P+K)/J)/Nj
+
   #Compute sufficient statistics for all groups
   tXXj <- lapply(1:J,function(j){
     if(Nj[j]==1){
@@ -106,7 +107,7 @@ BF.lm <- function(x,
   tXXi_b <- solve(tXX_b)
   tXY_b <- Reduce("+",tXYj_b)
   tYY_b <- Reduce("+",tYYj_b)
-  BetaHat <- solve(tXX)%*%tXY           # same as x$coefficients
+  BetaHat <- solve(tXX)%*%tXY          # same as x$coefficients
   S <- tYY - t(tXY)%*%solve(tXX)%*%tXY # same as sum((x$residuals)**2)
   # sufficient statistics based on fraction of the data
   BetaHat_b <- solve(tXX_b)%*%tXY_b
