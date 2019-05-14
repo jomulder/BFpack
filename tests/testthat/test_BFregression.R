@@ -11,32 +11,32 @@ mtcars0[,(names(mtcars0)!="vs")*(names(mtcars0)!="am")==1] <-
 # univariate regression
 lm1 <- lm(wt ~ -1 + disp + vs + hp + drat, mtcars0)
 constraints <- "disp > drat > hp ; hp > disp = 0"
-BFreg1 <- BF.lm(lm1, hypothesis = constraints, prior="default")
+BFreg1 <- BF(lm1, hypothesis = constraints, prior="default")
 BFreg2 <- BFupdate.lm(BFreg1,lm1)
 
 # ANOVA
 lm1 <- lm(wt ~ -1 + vs, mtcars0)
 constraints <- "vs0 > vs1 > vs2 ; vs0 = vs1 = vs2"
-BFreg1 <- BFreg(lm1,constraints=constraints,priorprob="default")
-BFreg2 <- BFregUpdate(BFreg1,lm1)
+BFreg1 <- BF(lm1,constraints=constraints,priorprob="default")
+BFreg2 <- BFupdate.lm(BFreg1,lm1)
 
 # ANCOVA
 lm1 <- lm(wt ~ -1 + disp + vs + hp + drat, mtcars0)
 constraints <- "vs0 > vs1 > vs2 ; vs0 = vs1 = vs2"
-BFreg1 <- BFreg(lm1,constraints=constraints,priorprob="default")
-BFreg2 <- BFregUpdate(BFreg1,lm1)
+BFreg1 <- BF(lm1,constraints=constraints,priorprob="default")
+BFreg2 <- BFupdate.lm(BFreg1,lm1)
 
 # multivariate regression
 lm1 <- lm(cbind(wt,mpg) ~ -1 + disp + vs + hp + drat, mtcars0)
 constraints <- "disp.wt > disp.mpg ; hp.wt > disp.wt = 0"
-BFreg1 <- BFreg(lm1,constraints=constraints,priorprob="default")
-BFreg2 <- BFregUpdate(BFreg1,lm1)
+BFreg1 <- BF(lm1,constraints=constraints,priorprob="default")
+BFreg2 <- BFupdate.lm(BFreg1,lm1)
 
 # Student t test
 ttest <- t.test(-3:10)
-BF.htest(ttest)
-BF.htest(ttest,"exploratory")
-BF.htest(ttest,"mu_minus_mu0<0")
+BF(ttest)
+BF(ttest,"exploratory")
+BF(ttest,"mu_minus_mu0<0")
 
 
 
