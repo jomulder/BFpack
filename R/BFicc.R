@@ -1,5 +1,5 @@
 ### Joris Mulder 2019, Bayes factor testing of multiple random intercept models
-### via lmer-objects
+### via multiple lmer-objects
 
 # Should actually be BF.lmerMod where x is a list of lmerMod-objects
 BFlmer <- function(x,
