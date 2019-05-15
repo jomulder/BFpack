@@ -1,4 +1,5 @@
-
+### Joris Mulder 2019. Bayes factor for a one sample Student t test
+### via adjusted FBFs (Mulder, 2014) using (m)lm-objects using a t.test object.
 
 BF.htest <- function(x,
                       hypothesis = NULL,

@@ -1,3 +1,7 @@
+### Joris Mulder 2019. Bayes factor testing of constrained multivariate normal linear model
+### via adjusted FBFs (Mulder, 2014; Mulder & Olsson-Collentine, 2018; Mulder, Hoijtink, Gu,
+### 2019) using (m)lm-objects.
+
 #' @importFrom pracma rref
 #' @importFrom mvtnorm dmvnorm pmvnorm dmvt pmvt
 #' @importFrom Matrix rankMatrix

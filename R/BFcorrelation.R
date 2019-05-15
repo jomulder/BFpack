@@ -1,3 +1,6 @@
+### Joris Mulder 2019. Bayes factor testing of constraints on correlations and other
+### measures of association (Mulder, 2016; Mulder & Gelissen, 2019) using mlm-objects.
+
 
 # Fisher Z tranformation for sampled correlations
 FisherZ <- function(r){.5*log((1+r)/(1-r))}
