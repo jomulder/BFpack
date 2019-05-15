@@ -2,9 +2,9 @@
 # test BF testing on icc's / between-groups variances
 library(bain)
 library(BFpack)
-parse_hypothesis <- getFromNamespace("parse_hypothesis", "bain")
-make_RrList <- getFromNamespace("make_RrList", "BFpack")
-make_RrList2 <- getFromNamespace("make_RrList2", "BFpack")
+# parse_hypothesis <- getFromNamespace("parse_hypothesis", "bain")
+# make_RrList <- getFromNamespace("make_RrList", "BFpack")
+# make_RrList2 <- getFromNamespace("make_RrList2", "BFpack")
 
 # Use lmer-object as input
 sleepstudylist <- fm <- list()
