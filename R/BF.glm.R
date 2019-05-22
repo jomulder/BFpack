@@ -8,130 +8,143 @@
 source("./R/BFcorrelation.R")
 source("./R/BFregression.R") #for make_Rrlist function
 
-BF.glm <- function(x,
-                   hypothesis = "exploratory", #instead of using NULL as default, use the actual default
-                   prior = NULL,
-                   ...){ #I do not see the point of having the dots unless you plan sub-functions of this function
-                          #but add them for consistency with BF.lm
+##TEST data
+#multivariate lm data
+ami_data <- read.table("http://static.lib.virginia.edu/statlab/materials/data/ami_data.DAT")
+names(ami_data) <- c("TOT","AMI","GEN","AMT","PR","DIAP","QRS")
+mlm1 <- lm(cbind(TOT, AMI) ~ GEN + AMT + PR + DIAP + QRS, data = ami_data)
 
-  betahat <- x$coefficients
-  sigma <- vcov(x)
-  K <- length(varnames)
-  N <- length(x$residuals)
+constraints <- "TOT_with_AMI > AMI_with_AMI = TOT_with_TOT"
 
-  varnames <- variable.names(x) #provides the variable names of the object, including intercept
-  constraints <- parse_hypothesis(varnames, hypothesis)
-  RrList <- make_RrList2(constraints) #make_RrList 1 was not working
-  RrE <- do.call(rbind, RrList[[1]])
-  RrO <- do.call(rbind, RrList[[2]])
+#glm data
+counts <- c(18,17,15,20,10,20,25,13,12)
+outcome <- gl(3,1,9)
+treatment <- gl(3,3)
+print(d.AD <- data.frame(treatment, outcome, counts))
+glm.D93 <- glm(counts ~ outcome + treatment, family = poisson())
 
-  mean0 <- as.matrix(rep(0,K))
-  meanN <- as.matrix(c(betahat))
-
-  prior <- Gaussian_measures(mean0, sigma*N, RrE, RrO)
-  posterior <- Gaussian_measures(meanN, sigma, RrE, RrO)
+constraints <- "outcome2 = outcome3 > treatment2"
 
 
- # parse_hypothesis(constraints) -> list of matrices [function already written]
-#  extractor(model) #To be written/copy pasted function to extract means + covariance matrix + N from glm model
+model <- glm.D93
 
- # prior = Gaussian_measures(mean0, sigma1*N, constraints1, constraints2) [Gaussian_measures is the core function in the package everything else is just wrappers]
-#  posterior = Gaussian_measures(mean1, sigma1, constraints1, constraints2)
+var_names <- variable.names(model)
+N <- length(model$residuals)
+mean0 <- as.matrix(rep(0, length(var_names)))
+covm0 <- vcov(model)
+meanN <- coef(model)
+covmN <- covm0*N
 
-  #From here we just need to compute the output -> can just copy paste from BF.lm (don't forget complement, using function Gaussian_prob_Hc)
-#  posterior / prior = BF
-#  Gaussian_prob_Hc
-#  output-> line 313 (Bayes factors, posterior probabilites)
+Gaussian_estimator <- function(mean0, covm0, meanN, covmN, constraints){
 
+  # compute BFs and posterior probs using
+  # prior mean en covmatrix mean0 and covm0
+  # post mean en covmatrix meanN and covmN
+  if(constraints=="exploratory"){ #IGNORING THIS PART FOR NOW> TALK TO JORIS TOMORROW
+    # H0: corr = 0
+    # H1: corr < 0
+    # H2: corr < 0
+    relfit <- matrix(c(dnorm(0,mean=meanN,sd=sqrt(diag(covmN))), #[Anton] Are these general or specific to correlations?
+                       pnorm(0,mean=meanN,sd=sqrt(diag(covmN))),
+                       1-pnorm(0,mean=meanN,sd=sqrt(diag(covmN)))),ncol=3)
 
+    relcomp <- matrix(c(dnorm(0,mean=mean0,sd=sqrt(diag(covm0))),
+                        pnorm(0,mean=mean0,sd=sqrt(diag(covm0))),
+                        1-pnorm(0,mean=mean0,sd=sqrt(diag(covm0)))),ncol=3)
+    BFtu <- relfit / relcomp
+    PHP <- round(BFtu / apply(BFtu,1,sum),3)
+    colnames(PHP) <- c("H0:corr=0","H1:corr<0","H2:corr>0")
+    # get names of correlations
+    corrmat <- diag(P)
+    row.names(corrmat) <- colnames(corrmat) <- row.names(SumSquares[[1]])
+    corr_names <- names(get_estimates(corrmat)$estimate)
+    matrix_names <- matrix(corr_names,nrow=3)
+    # equal correlations are at the opposite side of the vector
+    corr_names <- matrix_names[lower.tri(matrix_names)]
 
-
-
-
-
-
-}
-
-
-Gaussian_measures <- function(mean1,Sigma1,RrE1,RrO1){
-  K <- length(mean1)
-  relE <- relO <- 1
-  if(!is.null(RrE1) && is.null(RrO1)){ #only equality constraints
-    RE1 <- RrE1[,-(K+1)]
-    if(!is.matrix(RE1)){
-      RE1 <- t(as.matrix(RE1))
+    if(numgroup>1){
+      matcorrpop <- matrix(0,nrow=length(corr_names),ncol=numgroup)
+      for(c in 1:length(corr_names)){
+        matcorrpop[c,] <- unlist(lapply(1:numgroup,function(pop){
+          paste0(corr_names[c],"_gr",as.character(pop)) #or "_in_gr"
+        }))
+      }
+      corr_names <- c(matcorrpop)
     }
-    rE1 <- RrE1[,(K+1)]
-    qE1 <- nrow(RE1)
-    meanE <- RE1%*%mean1
-    SigmaE <- RE1%*%Sigma1%*%t(RE1)
-    relE <- mvtnorm::dmvnorm(rE1,mean=c(meanE),sigma=SigmaE,log=FALSE)
+    row.names(PHP) <- corr_names
+    BFmatrix <- NULL
+
+  }else{ #WORKING ON THIS PART
+    # confirmatory tests based on input constraints
+
+    #THIS IS ONLY ABOUT GETTING THE NAMES, SHOULD NOT BE INSIDE THIS PART OF THE FUNCTION
+    # corrmat <- diag(P)
+    # row.names(corrmat) <- colnames(corrmat) <- row.names(SumSquares[[1]])
+    # corr_names <- names(get_estimates(corrmat)$estimate)
+    # matrix_names <- matrix(corr_names,nrow=3)
+    # # equal correlations are at the opposite side of the vector
+    # corr_names <- c(matrix_names[lower.tri(matrix_names)],
+    #                 t(matrix_names)[lower.tri(matrix_names)])
+    # if(numgroup>1){
+    #   matcorrpop <- matrix(0,nrow=length(corr_names),ncol=numgroup)
+    #   for(c in 1:length(corr_names)){
+    #     matcorrpop[c,] <- unlist(lapply(1:numgroup,function(pop){
+    #       paste0(corr_names[c],"_gr",as.character(pop)) #or "_in_gr"
+    #     }))
+    #   }
+    #   corr_names <- c(matcorrpop)
+    # }
+
+    #ADDITIONAL CORRELATION SPECIFIC (NAME EXTRACTION?)
+    # select1 <- rep(1:numcorrgroup,numgroup) + rep((0:(numgroup-1))*2*numcorrgroup,each=numcorrgroup)
+    # select2 <- rep(numcorrgroup+1:numcorrgroup,numgroup) + rep((0:(numgroup-1))*2*numcorrgroup,each=numcorrgroup)
+    # #combine equivalent correlations, e.g., cor(Y1,Y2)=corr(Y2,Y1).
+    # parse_hyp$hyp_mat <-
+    #   cbind(parse_hyp$hyp_mat[,select1] + parse_hyp$hyp_mat[,select2],parse_hyp$hyp_mat[,numcorrgroup*2*numgroup+1])
+
+    parse_hyp <- parse_hypothesis(var_names,constraints) #PARSE HYP REQUIRES COEF_NAMES
+
+    #create coefficient with equality and order constraints
+    RrList <- make_RrList2(parse_hyp) #[Anton]MAKE rRLIST 1 NOT WORKING AGAIN?
+    RrE <- RrList[[1]]
+    RrO <- RrList[[2]]
+
+    numhyp <- length(RrE)
+    relcomp <- t(matrix(unlist(lapply(1:numhyp,function(h){
+      Gaussian_measures(mean0,covm0,RrE[[h]],RrO[[h]])
+    })),nrow=2))
+    relfit <- t(matrix(unlist(lapply(1:numhyp,function(h){
+      Gaussian_measures(meanN,covmN,RrE[[h]],RrO[[h]])
+    })),nrow=2))
+
+    # get relative fit and complexity of complement hypothesis
+    relcomp <- Gaussian_prob_Hc(mean0,covm0,relcomp,RrO) #[Anton]NOT WORKING!
+    relfit <- Gaussian_prob_Hc(meanN,covmN,relfit,RrO)
+
+    Hnames <- c(unlist(lapply(1:numhyp,function(h){paste0("H",as.character(h))})),"Hc")
+    row.names(relcomp) <- Hnames
+    row.names(relfit) <- Hnames
+
+
+    #[Anton]QUESTION HERE! Should this be inside or outside the function? I.e., could all functions use the same
+    #summarizing process (approximately below) after computing relcomp and relfit?
+
+    # the BF for the complement hypothesis vs Hu needs to be computed.
+    BFtu <- c(apply(relfit / relcomp, 1, prod))
+    # Check input of prior probabilies
+    if(!(priorprob == "default" || (length(priorprob)==nrow(relfit) && min(priorprob)>0) )){
+      stop("'probprob' must be a vector of positive values or set to 'default'.")
+    }
+    # Change prior probs in case of default setting
+    if(priorprob=="default"){priorprobs <- rep(1,length(BFtu))}
+    PHP <- round(BFtu*priorprobs / sum(BFtu*priorprobs),3)
+    BFmatrix <- matrix(rep(BFtu,length(BFtu)),ncol=length(BFtu))/
+      t(matrix(rep(BFtu,length(BFtu)),ncol=length(BFtu)))
+    row.names(BFmatrix) <- Hnames
+    colnames(BFmatrix) <- Hnames
   }
-  if(is.null(RrE1) && !is.null(RrO1)){ #only order constraints
-    RO1 <- RrO1[,-(K+1)]
-    if(!is.matrix(RO1)){
-      RO1 <- t(as.matrix(RO1))
-    }
-    qO1 <- nrow(RO1)
-    rO1 <- RrO1[,(K+1)]
 
-    if(Matrix::rankMatrix(RO1)[[1]]==nrow(RO1)){ #RO1 is of full row rank. So use transformation.
-      meanO <- c(RO1%*%mean1)
-      SigmaO <- RO1%*%Sigma1%*%t(RO1)
-      relO <- mvtnorm::pmvnorm(lower=rO1,upper=Inf,mean=meanO,sigma=SigmaO)[1]
-    }else{ #no linear transformation can be used; pmvt cannot be used. Use bain with a multivariate normal approximation
-      # bain1 <- bain::bain(mean1,Sigma1,RrE1,RrO1,n=10) # choice of n does not matter
-      # extract posterior probability (Fit_eq) from bain-object)
-      stop("REMINDER. This case should still be implemented.")
-    }
-  }
-  if(!is.null(RrE1) && !is.null(RrO1)){ #hypothesis with equality and order constraints
-
-    RE1 <- RrE1[,-(K+1)]
-    if(!is.matrix(RE1)){
-      RE1 <- t(as.matrix(RE1))
-    }
-    rE1 <- RrE1[,(K+1)]
-    qE1 <- nrow(RE1)
-    RO1 <- RrO1[,-(K+1)]
-    if(!is.matrix(RO1)){
-      RO1 <- t(as.matrix(RO1))
-    }
-    qO1 <- nrow(RO1)
-    rO1 <- RrO1[,(K+1)]
-
-    if(Matrix::rankMatrix(RrO1)[[1]] == nrow(RrO1)){
-
-      R1 <- rbind(RE1,RO1)
-
-      #b)
-      Tmean1 <- R1 %*% mean1
-      TSigma1 <- R1 %*% Sigma1 %*% t(R1)
-
-      # relative meausure for equalities
-      relE <- mvtnorm::dmvnorm(x=rE1,mean=Tmean1[1:qE1],sigma=matrix(TSigma1[1:qE1,1:qE1],ncol=qE1),log=FALSE)
-
-      # Partitioning equality part and order part
-      Tmean1E <- Tmean1[1:qE1]
-      Tmean1O <- Tmean1[qE1+1:qO1]
-
-      TSigma1EE <- TSigma1[1:qE1,1:qE1]
-      TSigma1OE <- TSigma1[qE1+1:qO1,1:qE1]
-      TSigma1OO <- TSigma1[qE1+1:qO1,qE1+1:qO1]
-
-      #conditional location and covariance matrix
-      Tmean1OgE <- Tmean1O + TSigma1OE %*% solve(TSigma1EE) %*% (rE1-Tmean1E)
-      TSigma1OgE <- TSigma1OO - TSigma1OE %*% solve(TSigma1EE) %*% TSigma1OE ##Removed t [transposing] because already correct format?
-
-      relO <- mvtnorm::pmvnorm(lower=rO1,upper=Inf,mean=c(Tmean1OgE),sigma=TSigma1OgE)[1]
-
-    }else{ #use bain for the computation of the probability
-
-      # bain1 <- bain::bain(mean1,Sigma1=Sigma1,RrE1=NULL,RrO1=RO1tilde,n=10) # choice of n does not matter
-      # extract posterior probability (Fit_eq) from bain-object)
-      stop("REMINDER. This case should still be implemented.")
-    }
-  }
-
-  return(c(relE,relO))
+  return(list(BFtu=BFtu,PHP=PHP,BFmatrix=BFmatrix,relfit=relfit,relcomp=relcomp,
+              SumSquares=SumSquares,n=n,constraints=constraints,nu0=nu0,mean0=mean0,
+              covm0=covm0,priorprob=priorprob,corr_names=corr_names))
 }
