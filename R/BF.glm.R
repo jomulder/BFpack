@@ -28,12 +28,20 @@ constraints <- "outcome2 = outcome3 > treatment2"
 
 model <- glm.D93
 
-var_names <- variable.names(model)
-N <- length(model$residuals)
-mean0 <- as.matrix(rep(0, length(var_names)))
-covm0 <- vcov(model)
-meanN <- coef(model)
-covmN <- covm0*N
+lm_extractor <- function(model){
+  var_names <- variable.names(model)
+  N <- length(model$residuals)
+  mean0 <- as.matrix(rep(0, length(var_names)))
+  covm0 <- vcov(model)
+  meanN <- coef(model)
+  covmN <- covm0*N
+  list(var_names = var_names,
+       N = N,
+       mean0 = mean0,
+       covm0 = covm0,
+       meanN = meanN,
+       covmN = covmN)
+}
 
 Gaussian_estimator <- function(mean0, covm0, meanN, covmN, constraints){
 
