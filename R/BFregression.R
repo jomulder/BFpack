@@ -1,3 +1,7 @@
+### Joris Mulder 2019. Bayes factor testing of constrained multivariate normal linear model
+### via adjusted FBFs (Mulder, 2014; Mulder & Olsson-Collentine, 2018; Mulder, Hoijtink, Gu,
+### 2019) using (m)lm-objects.
+
 #' @importFrom pracma rref
 #' @importFrom mvtnorm dmvnorm pmvnorm dmvt pmvt
 #' @importFrom Matrix rankMatrix
@@ -9,6 +13,7 @@
 BF.lm <- function(x,
                   hypothesis = NULL,
                   prior = NULL,
+                  covariates = NULL,
                   ...){
 
   if(is.null(hypothesis)){
@@ -38,9 +43,16 @@ BF.lm <- function(x,
     names(dummyX) <- row.names(x$coefficients)
   }
 
+  if(is.null(covariates)){
+    noncovs <- 1:K
+  } else { # covariates must be a vector of integers denoting which predictor variables
+           # are not grouping variables.
+    noncovs <- (1:K)[-covariates]
+  }
+
   Xmat <- model.matrix(x)
   Ymat <- model.matrix(x)%*%x$coefficients + x$residuals
-  for(k in 1:K){ # Check which are dummy variables corresponding to (adjusted) mean parameters
+  for(k in noncovs){ # Check which are dummy variables corresponding to (adjusted) mean parameters
     uniquek <- sort(unique(Xmat[,k]))
     # if(length(uniquek)==2){
     #   if(uniquek[1]==0 && uniquek[2]==1){dummyX[k]<-T} #(adjusted) mean
@@ -50,7 +62,7 @@ BF.lm <- function(x,
     if(length(uniquek)<=2){dummyX[k]<-T} #group index of intercept
   }
   #number of groups on variations of dummy combinations
-  groupcode <- unique(Xmat[,dummyX])
+  groupcode <- as.matrix(unique(Xmat[,dummyX]))
   rownames(groupcode) <- unlist(lapply(1:nrow(groupcode),function(r){
     paste0("groupcode",r)
   }))
@@ -67,24 +79,29 @@ BF.lm <- function(x,
   Nj <- c(table(dvec))
   #set minimal fractions for each group
   bj <- ((P+K)/J)/Nj
+
   #Compute sufficient statistics for all groups
   tXXj <- lapply(1:J,function(j){
-    t(Xmat[dvec==j,])%*%Xmat[dvec==j,]
+    if(Nj[j]==1){
+      Xmat[dvec==j,]%*%t(Xmat[dvec==j,])
+    }else t(Xmat[dvec==j,])%*%Xmat[dvec==j,]
   })
   tXXj_b <- lapply(1:J,function(j){
-    t(Xmat[dvec==j,])%*%Xmat[dvec==j,]*bj[j]
+    tXXj[[j]]*bj[j]
   })
   tXYj <- lapply(1:J,function(j){
-    t(Xmat[dvec==j,])%*%Ymat[dvec==j,]
+    if(Nj[j]==1){
+      as.matrix(Xmat[dvec==j,]*Ymat[dvec==j,])
+    } else {t(Xmat[dvec==j,])%*%Ymat[dvec==j,]}
   })
   tXYj_b <- lapply(1:J,function(j){
-    t(Xmat[dvec==j,])%*%Ymat[dvec==j,]*bj[j]
+    tXYj[[j]]*bj[j]
   })
   tYYj <- lapply(1:J,function(j){
     t(Ymat[dvec==j,])%*%Ymat[dvec==j,]
   })
   tYYj_b <- lapply(1:J,function(j){
-    t(Ymat[dvec==j,])%*%Ymat[dvec==j,]*bj[j]
+    tYYj[[j]]*bj[j]
   })
   tXX <- Reduce("+",tXXj)
   tXXi <- solve(tXX)
@@ -94,7 +111,7 @@ BF.lm <- function(x,
   tXXi_b <- solve(tXX_b)
   tXY_b <- Reduce("+",tXYj_b)
   tYY_b <- Reduce("+",tYYj_b)
-  BetaHat <- solve(tXX)%*%tXY           # same as x$coefficients
+  BetaHat <- solve(tXX)%*%tXY          # same as x$coefficients
   S <- tYY - t(tXY)%*%solve(tXX)%*%tXY # same as sum((x$residuals)**2)
   # sufficient statistics based on fraction of the data
   BetaHat_b <- solve(tXX_b)%*%tXY_b
@@ -146,6 +163,7 @@ BF.lm <- function(x,
     colnames(BFtu) <- c("effect=0","effect<0","effect>0")
     PHP <- round(BFtu / apply(BFtu,1,sum),3)
     BFmatrix <- NULL
+    priorprobs <- constraints
 
   }else{
     #read constraints
@@ -162,7 +180,7 @@ BF.lm <- function(x,
     }
     # translate named constraints to matrices with coefficients for constraints
     parse_hyp <- parse_hypothesis(names_coef,constraints)
-    RrList <- make_RrList(parse_hyp)
+    RrList <- make_RrList2(parse_hyp)
     RrE <- RrList[[1]]
     RrO <- RrList[[2]]
 
@@ -199,25 +217,26 @@ BF.lm <- function(x,
       relcomp <- t(matrix(unlist(lapply(1:numhyp,function(h){
         Student_measures(mean0,Scale0,df0,RrE[[h]],RrO[[h]])
       })),nrow=2))
-      row.names(relcomp) <- parse_hyp$original_hypothesis
-      colnames(relcomp) <- c("c_E","c_O")
 
       relfit <- t(matrix(unlist(lapply(1:numhyp,function(h){
         Student_measures(meanN,ScaleN,dfN,RrE[[h]],RrO[[h]])
       })),nrow=2))
-      row.names(relfit) <- parse_hyp$original_hypothesis
-      colnames(relfit) <- c("f_E","f_O")
 
       # Compute relative fit/complexity for the complement hypothesis
       relfit <- Student_prob_Hc(meanN,scaleN,dfN,relfit,constraints)
       relcomp <- Student_prob_Hc(mean0,scale0,df0,relcomp,constraints)
+      row.names(relcomp)[1:numhyp] <- parse_hyp$original_hypothesis
+      row.names(relfit)[1:numhyp] <- parse_hyp$original_hypothesis
+      colnames(relcomp) <- c("c_E","c_O")
+      colnames(relfit) <- c("f_E","f_O")
+
     }else{
 
       #number of hypotheses that are specified
       numhyp <- length(RrO)
       Mean0 <- matrix(0,nrow=K,ncol=P)
 
-      relmeas <- unlist(lapply(1:numhyp,function(h){
+      relmeasunlist <- unlist(lapply(1:numhyp,function(h){
         # Check whether the constraints are on a single row or column, if so
         # use the analytic expression, else using a Monte Carlo estimate.
         RrStack <- rbind(RrE[[h]],RrO[[h]])
@@ -294,21 +313,20 @@ BF.lm <- function(x,
           dfN <- N-K-P+1
           relfit_h <- MatrixStudent_measures(BetaHat,S,tXXi,dfN,RrE[[h]],RrO[[h]],MCdraws=1e4)
           relcomp_h <- MatrixStudent_measures(Mean0,S_b,tXXi_b,df0,RrE[[h]],RrO[[h]],MCdraws=1e4)
-
         }
         return(list(relfit_h,relcomp_h))
       }))
 
-      relfit <- t(matrix(unlist(relmeas)[rep((0:(numhyp-1))*4,each=2)+rep(1:2,numhyp)],nrow=2))
+      relfit <- t(matrix(unlist(relmeasunlist)[rep((0:(numhyp-1))*4,each=2)+rep(1:2,numhyp)],nrow=2))
       row.names(relfit) <- parse_hyp$original_hypothesis
       colnames(relfit) <- c("f_E","f_O")
-      relcomp <- t(matrix(unlist(relmeas)[rep((0:(numhyp-1))*4,each=2)+rep(3:4,numhyp)],nrow=2))
+      relcomp <- t(matrix(unlist(relmeasunlist)[rep((0:(numhyp-1))*4,each=2)+rep(3:4,numhyp)],nrow=2))
       row.names(relcomp) <- parse_hyp$original_hypothesis
       colnames(relcomp) <- c("c_E","c_O")
 
       # Compute relative fit/complexity for the complement hypothesis
-      relfit <- MatrixStudent_prob_Hc(BetaHat,S,tXXi,N-K-P+1,relfit,RrO)
-      relcomp <- MatrixStudent_prob_Hc(Mean0,S_b,tXXi_b,1,relcomp,RrO)
+      relfit <- MatrixStudent_prob_Hc(BetaHat,S,tXXi,N-K-P+1,as.matrix(relfit),RrO)
+      relcomp <- MatrixStudent_prob_Hc(Mean0,S_b,tXXi_b,1,as.matrix(relcomp),RrO)
     }
 
     # the BF for the complement hypothesis vs Hu needs to be computed.
@@ -371,7 +389,7 @@ BFupdate.lm <- function(BF1,x,XY=NULL){
     Ymat <- model.matrix(x)%*%x$coefficients + x$residuals
   }
   dummyX_new <- rep(F,K)
-  for(k in 1:K){ # Check which are dummy variables corresponding to (adjusted) mean parameters
+  for(k in (1:K)[dummyX]){ # Check which are dummy variables corresponding to (adjusted) mean parameters
     uniquek <- sort(unique(Xmat[,k]))
     if(length(uniquek)<=2){dummyX_new[k]<-T} #group index of intercept
   }
@@ -486,7 +504,7 @@ BFupdate.lm <- function(BF1,x,XY=NULL){
     }
     # translate named constraints to matrices with coefficients for constraints
     parse_hyp <- parse_hypothesis(names_coef,constraints)
-    RrList <- make_RrList(parse_hyp)
+    RrList <- make_RrList2(parse_hyp)
     RrE <- RrList[[1]]
     RrO <- RrList[[2]]
 
@@ -944,15 +962,17 @@ MatrixStudent_prob_Hc <- function(Mean1,Scale1,tXXi1,df1,relmeas,RrO){
 }
 
 # The function computes the probability of an unconstrained draw falling in the complement subspace.
-Student_prob_Hc <- function(mean1,scale1,df1,relmeas,constraints){
+Student_prob_Hc <- function(mean1,scale1,df1,relmeas1,constraints){
 
   numpara <- length(mean1)
-  numhyp <- nrow(relmeas)
-  relmeas <- relmeas[1:numhyp,]
+  numhyp <- nrow(relmeas1)
+  if(numhyp==1){
+    relmeas <- t(relmeas1[1:numhyp,])
+  }else{ relmeas <- relmeas1[1:numhyp,]}
   which_eq <- relmeas[,1] != 1
   if(sum(which_eq)==numhyp){ # Then the complement is equivalent to the unconstrained hypothesis.
     relmeas <- rbind(relmeas,rep(1,2))
-    rownames(relfit)[numhyp+1] <- "complement"
+    rownames(relmeas)[numhyp+1] <- "complement"
   }else{ # So there is at least one hypothesis with only order constraints
     welk <- which(!which_eq)
     if(length(welk)==1){ # There is one hypothesis with only order constraints. Hc is complement of this hypothesis.
