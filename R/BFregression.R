@@ -3,22 +3,13 @@
 ### 2019) using (m)lm-objects.
 
 #' @importFrom pracma rref
-#' @importFrom mvtnorm dmvnorm pmvnorm dmvt pmvt
+#' @importFrom mvtnorm dmvnorm pmvnorm rmvnorm dmvt pmvt
 #' @importFrom Matrix rankMatrix
+#' @importFrom MCMCpack rinvgamma
 #' @importFrom MASS ginv
 #' @method BF lm
 #' @export
 
-
-#' @importFrom Matrix rankMatrix
-#' @importFrom utils tail pmvt mvtnorm
-#' @importFrom utils tail dmvt mvtnorm
-#' @importFrom utils tail pmvnorm mvtnorm
-#' @importFrom utils tail dmvnorm mvtnorm
-#' @importFrom utils tail rmvnorm mvtnorm
-#' @importFrom utils tail rref pracma
-#' @importFrom utils tail ginv MASS
-#' @importFrom utils tail rinvgamma MCMCpack
 BF.lm <- function(x,
                   hypothesis = NULL,
                   prior = NULL,
