@@ -1,11 +1,12 @@
 ### Joris Mulder 2019. Bayes factor testing of multiple random intercept models
 ### via multiple lmer-objects based on Mulder & Fox (2013, 2019).
 
-# Should actually be BF.lmerMod where x is a list of lmerMod-objects
-BFlmer <- function(x,
+
+BF.lmerMod <- function(x,
                    hypothesis = NULL,
                    prior = NULL,
                    priorshape = NULL,
+                   grouping_variables=NULL,
                    ...){
   # check if constrained hypotheses are formulated for confirmatory testing
   if(is.null(hypothesis)){
@@ -26,39 +27,61 @@ BFlmer <- function(x,
     shape0 <- c(1,1)
   }else shape0 <- priorshape
 
-  designX <- yobs <- group <- sorts <- list()
-  numcat <- length(x)
-  for(ca in 1:numcat){
-    designX1 <- getME(x[[ca]],"X")
-    yobs[[ca]] <- getME(x[[ca]],"y")
-    group[[ca]] <- getME(x[[ca]],"flist")$Subject
-    sorts <- order(group[[ca]])
-    # sort data per category so that data from same groups are clustered over the rows
-    yobs[[ca]] <- yobs[[ca]][sorts]
-    designX1 <- designX1[sorts,]
-    designX[[ca]] <- cbind(matrix(0,nrow=nrow(designX1),ncol=numcat),designX1[,-1])
-    designX[[ca]][,ca] <- 1
-    group[[ca]] <- group[[ca]][sorts]
+  # ############ REPLACE THIS PART THAT ASSUMES AN INPUT OF A LIST OF LMERMOD-OBJECTS
+  #
+  # designX <- yobs <- group <- sorts <- list()
+  # numcat <- length(x)
+  # for(ca in 1:numcat){
+  #   designX1 <- getME(x[[ca]],"X")
+  #   yobs[[ca]] <- getME(x[[ca]],"y")
+  #   group[[ca]] <- getME(x[[ca]],"flist")$Subject
+  #   sorts <- order(group[[ca]])
+  #   # sort data per category so that data from same groups are clustered over the rows
+  #   yobs[[ca]] <- yobs[[ca]][sorts]
+  #   designX1 <- designX1[sorts,]
+  #   designX[[ca]] <- cbind(matrix(0,nrow=nrow(designX1),ncol=numcat),designX1[,-1])
+  #   designX[[ca]][,ca] <- 1
+  #   group[[ca]] <- group[[ca]][sorts]
+  # }
+  # ngroups <- rep(0,numcat)
+  # for(ca in 1:numcat){
+  #   # check that all groups/clusters are of equal size
+  #   if(length(table(table(group[[ca]]))) != 1){stop("message")}
+  #   # get number of groups per category
+  #   ngroups[ca] <- length(levels(group[[ca]]))
+  # }
+  # for(ca in 1:(numcat-1)){
+  #   if(names(table(table(group[[ca]]))) != names(table(table(group[[ca+1]])))){stop("message")}
+  # }
+  # p <- table(group[[ca]])[1]
+  # names(p) <- NULL
+  # ystack <- Reduce(c,yobs)
+  # names(ystack) <- NULL
+  # Xstack <- Reduce(rbind,designX)
+  # row.names(Xstack) <- colnames(Xstack) <- NULL
+  # yXstack <- cbind(ystack,Xstack)
+  # #give names for icc's
+  # iccnames <- unlist(lapply(1:numcat,function(nc){paste0("icc",as.character(nc))}))
+  #
+  # ############## END. REPLACE THIS PART
+
+  groups <- getME(x,"flist")[[1]]
+  if(length(table(table(groups)))>1){stop("Clusters are of unequal size.")}
+  p <- table(groups)[1]
+  # The data needs to be stacked per cluster.
+  ystack <- getME(x,"y")
+  Xstack <- getME(x,"X")
+  if(is.null(grouping_variables)){
+    numcat <- 1
+    ngroups <- nrow(Xstack)/p
+    iccnames <- "icc"
+  }else{
+    numcat <- length(grouping_variables)
+    ngroups <- unlist(lapply(1:numcat,function(nc){
+      sum(yX[,grouping_variables[nc]])/p
+    }))
+    iccnames <- unlist(lapply(1:numcat,function(nc){paste0("icc_",grouping_variables[nc])}))
   }
-  ngroups <- rep(0,numcat)
-  for(ca in 1:numcat){
-    # check that all groups/clusters are of equal size
-    if(length(table(table(group[[ca]]))) != 1){stop("message")}
-    # get number of groups per category
-    ngroups[ca] <- length(levels(group[[ca]]))
-  }
-  for(ca in 1:(numcat-1)){
-    if(names(table(table(group[[ca]]))) != names(table(table(group[[ca+1]])))){stop("message")}
-  }
-  p <- table(group[[ca]])[1]
-  names(p) <- NULL
-  ystack <- Reduce(c,yobs)
-  names(ystack) <- NULL
-  Xstack <- Reduce(rbind,designX)
-  row.names(Xstack) <- colnames(Xstack) <- NULL
-  yXstack <- cbind(ystack,Xstack)
-  #give names for icc's
-  iccnames <- unlist(lapply(1:numcat,function(nc){paste0("icc",as.character(nc))}))
 
   # marginal likelihoods of unconstrained model and unconstrained estimation
   marglike_Hu <- marglike2_Hq(cbind(ystack,Xstack),ngroups,p,shape1=shape0[1],shape2=shape0[2],
@@ -70,7 +93,7 @@ BFlmer <- function(x,
   cat("\n")
   BFtu_exploratory <- t(matrix(unlist(lapply(1:numcat,function(nc){
 
-    cat(paste0("icc",as.character(nc),"; "))
+    cat(paste0(iccnames[nc],"; "))
 
     if(numcat>1){
       unique_c <- rep(1,numcat)
@@ -200,8 +223,8 @@ BFlmer <- function(x,
               BFmatrix_confirmatory=BFmatrix_confirmatory,
               ngroups=ngroups,
               p=p,
-              designX=designX,
-              yobs=yobs,
+              Xstack=Xstack,
+              ystack=ystack,
               constraints=constraints,
               priorprobs=priorprobs))
 }
