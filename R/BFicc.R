@@ -1,12 +1,10 @@
 ### Joris Mulder 2019. Bayes factor testing of multiple random intercept models
 ### via multiple lmer-objects based on Mulder & Fox (2013, 2019).
 
-
+#' @importFrom MCMCpack rinvgamma
 BF.lmerMod <- function(x,
                    hypothesis = NULL,
                    prior = NULL,
-                   priorshape = NULL,
-                   grouping_variables=NULL,
                    ...){
   # check if constrained hypotheses are formulated for confirmatory testing
   if(is.null(hypothesis)){
@@ -21,11 +19,6 @@ BF.lmerMod <- function(x,
   } else {
     priorprob <- prior
   }
-
-  #prior hyperparameters of (truncated) stretched beta priors for icc's
-  if(is.null(priorshape)){
-    shape0 <- c(1,1)
-  }else shape0 <- priorshape
 
   # ############ REPLACE THIS PART THAT ASSUMES AN INPUT OF A LIST OF LMERMOD-OBJECTS
   #
@@ -65,28 +58,71 @@ BF.lmerMod <- function(x,
   #
   # ############## END. REPLACE THIS PART
 
-  groups <- getME(x,"flist")[[1]]
-  if(length(table(table(groups)))>1){stop("Clusters are of unequal size.")}
-  p <- table(groups)[1]
-  # The data needs to be stacked per cluster.
-  ystack <- getME(x,"y")
-  Xstack <- getME(x,"X")
-  if(is.null(grouping_variables)){
-    numcat <- 1
-    ngroups <- nrow(Xstack)/p
-    iccnames <- "icc"
-  }else{
-    numcat <- length(grouping_variables)
-    ngroups <- unlist(lapply(1:numcat,function(nc){
-      sum(yX[,grouping_variables[nc]])/p
+  # REPLACE THIS WITH PART WHERE DATA ARE NOT SORTED BY CLUSTERS
+  # groups <- getME(x,"flist")[[1]]
+  # if(length(table(table(groups)))>1){stop("Clusters are of unequal size.")}
+  # p <- table(groups)[1]
+  # # The data needs to be stacked per cluster.
+  # ystack <- getME(x,"y")
+  # Xstack <- getME(x,"X")
+  # if(is.null(grouping_variables)){
+  #   numcat <- 1
+  #   ngroups <- nrow(Xstack)/p
+  #   iccnames <- "icc"
+  # }else{
+  #   numcat <- length(grouping_variables)
+  #   ngroups <- unlist(lapply(1:numcat,function(nc){
+  #     sum(yX[,grouping_variables[nc]])/p
+  #   }))
+  #   iccnames <- unlist(lapply(1:numcat,function(nc){paste0("icc_",grouping_variables[nc])}))
+  # }
+  # END REPLACE 2
+
+  #get names of the categories of clusters
+  numcat <- length(x@cnms)
+  namescat <- unlist(lapply(1:numcat,function(ca){
+    x@cnms[[ca]]
+  }))
+  if(numcat>1){
+    iccnames <- unlist(lapply(1:numcat,function(nc){paste0("icc_",namescat[nc])}))
+  }else{ iccnames <- "icc" }
+  # sort data per cluster
+  clusterindex <- x@flist[[1]]
+  if(length(table(table(clusterindex)))>1){stop("Clusters are of unequal size.")}
+  p <- table(clusterindex)[1]
+  levels(clusterindex) <- 1:length(levels(clusterindex))
+  reorder1 <- order(as.integer(clusterindex))
+  nclusters <- length(levels(clusterindex)) #total number of groups/clusters
+  ystack <- getME(x,"y")[reorder1]
+  Xstack <- getME(x,"X")[reorder1,]
+  colcat <- unlist(lapply(1:numcat,function(ca){
+    which(colnames(Xstack)==namescat[ca])
+  }))
+  Xstack <- Xstack[,c(colcat,(1:ncol(Xstack))[-colcat])]
+  # next sort data per category
+  if(numcat>1){
+    catassign <- unlist(lapply((0:(nclusters-1))*p+1,function(cluster){
+      which(Xstack[cluster,1:numcat]==1)
     }))
-    iccnames <- unlist(lapply(1:numcat,function(nc){paste0("icc_",grouping_variables[nc])}))
-  }
+    ngroups <- table(catassign)
+    names(ngroups) <- NULL
+    reorder2 <- rep(unlist(lapply(1:numcat,function(ca){
+      which(catassign==ca)
+    }))-1,each=p)*p + rep(1:p,nclusters)
+    Xstack <- Xstack[reorder2,]
+    ystack <- ystack[reorder2]
+  }else{ ngroups <- nclusters }
 
   # marginal likelihoods of unconstrained model and unconstrained estimation
-  marglike_Hu <- marglike2_Hq(cbind(ystack,Xstack),ngroups,p,shape1=shape0[1],shape2=shape0[2],
+  #default prior for icc's is stretched beta(1,1)
+  shape0 <- c(1,1)
+  cat("First, unconstrained analysis...")
+  cat("\n")
+  cat("\n")
+  marglike_Hu <- BFpack:::marglike2_Hq(cbind(ystack,Xstack),ngroups,p,shape1=shape0[1],shape2=shape0[2],
                               samsize1=5e3,samsize2=5e3,unique=1:numcat,inequalities=0)
   postestimates <- marglike_Hu[[4]]
+  colnames(postestimates) <- iccnames
 
   # exploratory testing
   cat("Bayes factor computation for exploratory testing...")
@@ -103,11 +139,11 @@ BF.lmerMod <- function(x,
 
     marglike_explo <- rep(0,3)
     # zero icc
-    marglike_explo[1] <- marglike2_Hq(cbind(ystack,Xstack),ngroups,p,shape1=shape0[1],
+    marglike_explo[1] <- BFpack:::marglike2_Hq(cbind(ystack,Xstack),ngroups,p,shape1=shape0[1],
                                       shape2=shape0[2],unique=unique_c)[[1]]
     inequalities2 = matrix(c(unique_c==0,0),ncol=numcat+1)
     # positive icc
-    marglike_positive <- marglike2_Hq(cbind(ystack,Xstack),ngroups,p,shape1=shape0[1],
+    marglike_positive <- BFpack:::marglike2_Hq(cbind(ystack,Xstack),ngroups,p,shape1=shape0[1],
                                       shape2=shape0[2],unique=1:numcat,inequalities=inequalities2)
     marglike_explo[3] <- marglike_positive[[1]]
     # negative icc
@@ -226,7 +262,9 @@ BF.lmerMod <- function(x,
               Xstack=Xstack,
               ystack=ystack,
               constraints=constraints,
-              priorprobs=priorprobs))
+              priorprobs=priorprobs,
+              iccestimates=postestimates,
+              categories=namescat))
 }
 
 BFupdatelmer <- function(x,
@@ -259,7 +297,7 @@ Gibbs2 <- function(zW,ngroups,p,shape1,shape2,bB,bW,unique,T0,V1,inequalities=0,
   N = sum(ngroups)
   K = ncol(zW)-1
 
-  Hp = Helmert(p)
+  Hp = BFpack:::Helmert(p)
   select1 = p*(0:(N-1))+1
 
   Wmat = matrix(zW[,-1],ncol=ncol(zW)-1)
@@ -312,7 +350,7 @@ Gibbs2 <- function(zW,ngroups,p,shape1,shape2,bB,bW,unique,T0,V1,inequalities=0,
     scale.sigma2 = sum((diffs[-select1])**2)*bW/2 +
       sum(sumsquares.tau[1:T0]*bB[1:T0])/2*T0check
     shape.sigma2 = bW*N*(p-1)/2 + sum(bB[1:T0]*ngroups[1:T0])/2*T0check
-    sigma2 = rinvgamma(1,shape=shape.sigma2,scale=scale.sigma2)
+    sigma2 = MCMCpack::rinvgamma(1,shape=shape.sigma2,scale=scale.sigma2)
 
     #2b. draw psi | sigma2, beta, y
     # if psi.check==F then psi is set to zero
@@ -323,7 +361,7 @@ Gibbs2 <- function(zW,ngroups,p,shape1,shape2,bB,bW,unique,T0,V1,inequalities=0,
     #2c. draw tau | sigma2, psi, beta, y
     scale.tau = c(t(sumsquares.tau*bB)%*%transMatrix)/(2*p) + psi
     shape.tau = c(t(bB*ngroups)%*%transMatrix)/2 + shape2
-    tauV = rinvgamma(V1,shape=shape.tau,scale=scale.tau) - sigma2/p + .001
+    tauV = MCMCpack::rinvgamma(V1,shape=shape.tau,scale=scale.tau) - sigma2/p + .001
 
     #    setTxtProgressBar(pb,ss)
   }
@@ -353,7 +391,7 @@ Gibbs2 <- function(zW,ngroups,p,shape1,shape2,bB,bW,unique,T0,V1,inequalities=0,
     scale.sigma2 = sum((diffs[-select1])**2)*bW/2 +
       sum(sumsquares.tau[1:T0]*bB[1:T0])/2*T0check
     shape.sigma2 = bW*N*(p-1)/2 + sum(bB[1:T0]*ngroups[1:T0])/2*T0check
-    sigma2 = rinvgamma(1,shape=shape.sigma2,scale=scale.sigma2)
+    sigma2 = MCMCpack::rinvgamma(1,shape=shape.sigma2,scale=scale.sigma2)
 
     #2b. draw psi | sigma2, beta, y
     # if psi.check==F then psi is set to zero
@@ -364,7 +402,7 @@ Gibbs2 <- function(zW,ngroups,p,shape1,shape2,bB,bW,unique,T0,V1,inequalities=0,
     #2c. draw tau | sigma2, psi, beta, y
     scale.tau = c(t(sumsquares.tau*bB)%*%transMatrix)/(2*p) + psi
     shape.tau = c(t(bB*ngroups)%*%transMatrix)/2 + shape2
-    tauV = rinvgamma(V1,shape=shape.tau,scale=scale.tau) - sigma2/p + .001
+    tauV = MCMCpack::rinvgamma(V1,shape=shape.tau,scale=scale.tau) - sigma2/p + .001
 
     #2d. compute rho
     rho = tauV/(tauV+sigma2)
@@ -443,7 +481,7 @@ marglike_Hq = function(yX,ngroups,p,shape1=1,shape2=1,samsize1=5e3,samsize2=5e3,
 
   clusters = length(ngroups)
   N = sum(ngroups)
-  Hp = Helmert(p)
+  Hp = BFpack:::Helmert(p)
 
   if(length(bB)==1){
     bB = rep(bB,clusters)
@@ -570,7 +608,7 @@ marglike_H0 = function(yX,ngroups,p,bB=1,bW=1){
   N = sum(ngroups)
   clusters = length(ngroups)
   K = ncol(Wmat)
-  Hp = Helmert(p)
+  Hp = BFpack:::Helmert(p)
 
   if(length(bB)==1){
     bB = rep(bB,clusters)
