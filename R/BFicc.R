@@ -81,6 +81,7 @@ BF.lmerMod <- function(x,
   # }
   # END REPLACE 2
 
+
   #get names of the categories of clusters
   numcat <- length(x@cnms)
   namescat <- unlist(lapply(1:numcat,function(ca){
@@ -89,6 +90,32 @@ BF.lmerMod <- function(x,
   if(numcat>1){
     iccnames <- unlist(lapply(1:numcat,function(nc){paste0("icc_",namescat[nc])}))
   }else{ iccnames <- "icc" }
+
+  # check if the lmer-model only has a random intercept or category specific random intercepts
+  fixedeffectsonly <- F
+  Zstack <- Reduce(cbind,getME(x,"mmList"))
+  if(numcat>1){ #check if the random effects are category specific random intercepts
+    for(ca in 1:numcat){
+      freq_ca <- table(Zstack[,ca])
+      if(sum(abs(sort(as.integer(names(freq_ca))) - c(0,1))) !=0){
+        warning("only models with a single random intercept or category specific random intercepts are currently supported when testing icc's.")
+        fixedeffectsonly <- T
+      }
+    }
+    for(r in 1:nrow(Zstack)){
+      if(table(Zstack[r,])["1"]!=1 || table(Zstack[r,])["0"]!=numcat-1){
+        warning("only models with a single random intercept or category specific random intercepts are currently supported when testing icc's.")
+        fixedeffectsonly <- T
+      }
+    }
+  }else{
+    freq_ca <- table(getME(x,"mmList")[[1]])
+    if(as.integer(names(freq_ca))!=1 || length(as.integer(names(freq_ca)))!=1){
+      warning("only models with a single random intercept or category specific random intercepts are currently supported when testing icc's.")
+      fixedeffectsonly <- T
+    }
+  }
+
   # sort data per cluster
   clusterindex <- x@flist[[1]]
   if(length(table(table(clusterindex)))>1){stop("Clusters are of unequal size.")}
@@ -98,14 +125,12 @@ BF.lmerMod <- function(x,
   nclusters <- length(levels(clusterindex)) #total number of groups/clusters
   ystack <- getME(x,"y")[reorder1]
   Xstack <- getME(x,"X")[reorder1,]
-  colcat <- unlist(lapply(1:numcat,function(ca){
-    which(colnames(Xstack)==namescat[ca])
-  }))
-  Xstack <- Xstack[,c(colcat,(1:ncol(Xstack))[-colcat])]
+  Zstack <- Zstack[reorder1,]
   # next sort data per category
   if(numcat>1){
+    # sort rows per category
     catassign <- unlist(lapply((0:(nclusters-1))*p+1,function(cluster){
-      which(Xstack[cluster,1:numcat]==1)
+      which(Zstack[cluster,1:numcat]==1)
     }))
     ngroups <- table(catassign)
     names(ngroups) <- NULL
@@ -114,155 +139,172 @@ BF.lmerMod <- function(x,
     }))-1,each=p)*p + rep(1:p,nclusters)
     Xstack <- Xstack[reorder2,]
     ystack <- ystack[reorder2]
+    Zstack <- Zstack[reorder2,]
   }else{ ngroups <- nclusters }
 
   # marginal likelihoods of unconstrained model and unconstrained estimation
   #default prior for icc's is stretched beta(1,1)
-  shape0 <- c(1,1)
-  cat("First, unconstrained analysis...")
-  cat("\n")
-  cat("\n")
-  marglike_Hu <- BFpack:::marglike2_Hq(cbind(ystack,Xstack),ngroups,p,shape1=shape0[1],shape2=shape0[2],
-                              samsize1=5e3,samsize2=5e3,unique=1:numcat,inequalities=0)
-  postestimates <- marglike_Hu[[4]]
-  colnames(postestimates) <- iccnames
-
-  # exploratory testing
-  cat("Bayes factor computation for exploratory testing...")
-  cat("\n")
-  BFtu_exploratory <- t(matrix(unlist(lapply(1:numcat,function(nc){
-
-    cat(paste0(iccnames[nc],"; "))
-
-    if(numcat>1){
-      unique_c <- rep(1,numcat)
-      unique_c[nc] <- 0
-      unique_c[-nc] <- 1:(numcat-1)
-    }else unique_c <- 0
-
-    marglike_explo <- rep(0,3)
-    # zero icc
-    marglike_explo[1] <- BFpack:::marglike2_Hq(cbind(ystack,Xstack),ngroups,p,shape1=shape0[1],
-                                      shape2=shape0[2],unique=unique_c)[[1]]
-    inequalities2 = matrix(c(unique_c==0,0),ncol=numcat+1)
-    # positive icc
-    marglike_positive <- BFpack:::marglike2_Hq(cbind(ystack,Xstack),ngroups,p,shape1=shape0[1],
-                                      shape2=shape0[2],unique=1:numcat,inequalities=inequalities2)
-    marglike_explo[3] <- marglike_positive[[1]]
-    # negative icc
-    marglike_explo[2] <- marglike_positive[[1]] - log(marglike_positive[[2]]) + log(marglike_positive[[3]]) +
-      log(1-marglike_positive[[2]]) - log(1-marglike_positive[[3]])
-    return(exp(marglike_explo - marglike_Hu[[1]]))
-  })),nrow=3))
-  colnames(BFtu_exploratory) <- c("icc=0","icc<0","icc>0")
-  row.names(BFtu_exploratory) <- iccnames
-  PHP_exploratory <- round(BFtu_exploratory / apply(BFtu_exploratory,1,sum),3)
-  priorprobs <- rep(1,3)/3 #prior probs for exploratory tests
-  cat("\n")
-  cat("\n")
-  if(constraints!="exploratory"){ # confirmatory test with constrained hypotheses on icc's.
-    cat("Bayes factor computation for confirmatory testing...")
+  if(fixedeffectsonly==F){
+    shape0 <- c(1,1)
+    cat("First, unconstrained icc analysis...")
     cat("\n")
-    parse_hyp <- parse_hypothesis(iccnames,constraints)
-    RrList <- make_RrList2(parse_hyp)
-    RrE <- RrList[[1]]
-    RrO <- RrList[[2]]
-    # check if icc's are only tested against each other or against zero
-    numhyp <- length(RrE)
-    for(h in 1:numhyp){
-      if(!is.null(RrE[[h]])){
-        for(r in 1:nrow(RrE[[h]])){
-          row1 <- RrE[[h]][r,]
-          if( !(sum(row1)==1 || sum(row1)==0) ){
-            stop("icc's can only be compared with each other or to zero.")
+    cat("\n")
+    marglike_Hu <- BFpack:::marglike2_Hq(cbind(ystack,Xstack),ngroups,p,shape1=shape0[1],shape2=shape0[2],
+                                         samsize1=5e3,samsize2=5e3,unique=1:numcat,inequalities=0)
+    postestimates <- marglike_Hu[[4]]
+    colnames(postestimates) <- iccnames
+
+    # exploratory testing
+    cat("Bayes factor computation for exploratory testing of icc's...")
+    cat("\n")
+    BFtu_exploratory_icc <- t(matrix(unlist(lapply(1:numcat,function(nc){
+
+      cat(paste0(iccnames[nc],"; "))
+
+      if(numcat>1){
+        unique_c <- rep(1,numcat)
+        unique_c[nc] <- 0
+        unique_c[-nc] <- 1:(numcat-1)
+      }else unique_c <- 0
+
+      marglike_explo <- rep(0,3)
+      # zero icc
+      marglike_explo[1] <- BFpack:::marglike2_Hq(cbind(ystack,Xstack),ngroups,p,shape1=shape0[1],
+                                                 shape2=shape0[2],unique=unique_c)[[1]]
+      inequalities2 = matrix(c(unique_c==0,0),ncol=numcat+1)
+      # positive icc
+      marglike_positive <- BFpack:::marglike2_Hq(cbind(ystack,Xstack),ngroups,p,shape1=shape0[1],
+                                                 shape2=shape0[2],unique=1:numcat,inequalities=inequalities2)
+      marglike_explo[3] <- marglike_positive[[1]]
+      # negative icc
+      marglike_explo[2] <- marglike_positive[[1]] - log(marglike_positive[[2]]) + log(marglike_positive[[3]]) +
+        log(1-marglike_positive[[2]]) - log(1-marglike_positive[[3]])
+      return(exp(marglike_explo - marglike_Hu[[1]]))
+    })),nrow=3))
+    colnames(BFtu_exploratory_icc) <- c("icc=0","icc<0","icc>0")
+    row.names(BFtu_exploratory_icc) <- iccnames
+    PHP_exploratory_icc <- round(BFtu_exploratory_icc / apply(BFtu_exploratory_icc,1,sum),3)
+    priorprobs <- rep(1,3)/3 #prior probs for exploratory tests
+    cat("\n")
+    cat("\n")
+    if(constraints!="exploratory"){ # confirmatory test with constrained hypotheses on icc's.
+      cat("Bayes factor computation for confirmatory testing of icc's...")
+      cat("\n")
+      parse_hyp <- parse_hypothesis(iccnames,constraints)
+      RrList <- make_RrList2(parse_hyp)
+      RrE <- RrList[[1]]
+      RrO <- RrList[[2]]
+      # check if icc's are only tested against each other or against zero
+      numhyp <- length(RrE)
+      for(h in 1:numhyp){
+        if(!is.null(RrE[[h]])){
+          for(r in 1:nrow(RrE[[h]])){
+            row1 <- RrE[[h]][r,]
+            if( !(sum(row1)==1 || sum(row1)==0) ){
+              stop("icc's can only be compared with each other or to zero.")
+            }
+          }
+        }
+        if(!is.null(RrO[[h]])){
+          for(r in 1:nrow(RrO[[h]])){
+            freq1 <- table(sort(RrO[[h]][r,]))
+            row1 <- RrO[[h]][r,]
+            if( !(sum(row1)==1 || sum(row1)==0) ){
+              stop("icc's can only be compared with each other or to zero.")
+            }
           }
         }
       }
-      if(!is.null(RrO[[h]])){
-        for(r in 1:nrow(RrO[[h]])){
-          freq1 <- table(sort(RrO[[h]][r,]))
-          row1 <- RrO[[h]][r,]
-          if( !(sum(row1)==1 || sum(row1)==0) ){
-            stop("icc's can only be compared with each other or to zero.")
+
+      output_marglike_icc <- t(matrix(unlist(lapply(1:numhyp, function(h){
+
+        cat(paste0(parse_hyp$original_hypothesis[h],"; "))
+
+        # code equal icc's with same integer for marglike2_Hq function
+        unique_h <- 1:numcat
+        if(!is.null(RrE[[h]])){
+          for(r in 1:nrow(RrE[[h]])){
+            row1 <- RrE[[h]][r,]
+            if(sum(row1)==0){
+              which_equal <- which(row1!=0)
+              which_highercodegroup <- which(unique_h > max(unique_h[which_equal]))
+              unique_h[which_equal] <- min(unique_h[which_equal])
+              unique_h[which_highercodegroup] <- unique_h[which_highercodegroup] - 1
+            } else if(sum(row1)==1){
+              which_zero <- which(row1==1)
+              which_highercodegroup <- which(unique_h > max(unique_h[which_zero]))
+              unique_h[which_zero] <- 0
+              unique_h[which_highercodegroup] <- unique_h[which_highercodegroup] - 1
+            }
           }
         }
-      }
-    }
-
-    output_marglike_icc <- t(matrix(unlist(lapply(1:numhyp, function(h){
-
-      cat(paste0(parse_hyp$original_hypothesis[h],"; "))
-
-      # code equal icc's with same integer for marglike2_Hq function
-      unique_h <- 1:numcat
-      if(!is.null(RrE[[h]])){
-        for(r in 1:nrow(RrE[[h]])){
-          row1 <- RrE[[h]][r,]
-          if(sum(row1)==0){
-            which_equal <- which(row1!=0)
-            which_highercodegroup <- which(unique_h > max(unique_h[which_equal]))
-            unique_h[which_equal] <- min(unique_h[which_equal])
-            unique_h[which_highercodegroup] <- unique_h[which_highercodegroup] - 1
-          } else if(sum(row1)==1){
-            which_zero <- which(row1==1)
-            which_highercodegroup <- which(unique_h > max(unique_h[which_zero]))
-            unique_h[which_zero] <- 0
-            unique_h[which_highercodegroup] <- unique_h[which_highercodegroup] - 1
+        if(!is.null(RrO[[h]])){
+          inequalities_h <- matrix(0,nrow(RrO[[h]]),ncol=length(unique(unique_h))+1)
+          for(u in sort(unique(unique_h[unique_h>0]))){
+            inequalities_h[,u] <- apply(as.matrix(RrO[[h]][,which(unique_h == u)]),1,sum)
           }
+        } else inequalities_h = 0
+
+        marglike2_h <- marglike2_Hq(cbind(ystack,Xstack),ngroups,p,shape1=shape0[1],shape2=shape0[2],samsize1=5e3,samsize2=5e3,
+                                    unique=unique_h,inequalities=inequalities_h)[1:3]
+        return(c(unlist(marglike2_h),ifelse(is.null(RrE[[h]]),1,0)))
+      })),nrow=4))
+      if(sum(output_marglike_icc[,4])==0){ #the complement is equivalent to the unconstrained model
+        output_marglike_icc <- rbind(output_marglike_icc,c(unlist(marglike_Hu),1))
+      } else { #the complement is the complement of the joint of the order hypotheses
+        which_order <- which(output_marglike_icc[,4]==1)
+        if(length(which_order)==1){
+          probs <- output_marglike_icc[which_order,2:3]
+          marglike_Hc <- marglike_Hu[[1]] + log(1-probs[1]) - log(1-probs[2])
+          output_marglike_icc <- rbind(output_marglike_icc,c(marglike_Hc,1-probs[1],1-probs[2],1))
+        }else {
+          probs <- apply(output_marglike_icc[which_order,2:3],2,sum)
+          marglike_Hc <- marglike_Hu[[1]] + log(1-probs[1]) - log(1-probs[2])
+          output_marglike_icc <- rbind(output_marglike_icc,c(marglike_Hc,1-probs[1],1-probs[2],1))
         }
       }
-      if(!is.null(RrO[[h]])){
-        inequalities_h <- matrix(0,nrow(RrO[[h]]),ncol=length(unique(unique_h))+1)
-        for(u in sort(unique(unique_h[unique_h>0]))){
-          inequalities_h[,u] <- apply(as.matrix(RrO[[h]][,which(unique_h == u)]),1,sum)
-        }
-      } else inequalities_h = 0
+      row.names(output_marglike_icc) <- c(parse_hyp$original_hypothesis,"complement")
+      BFtu_confirmatory_icc <- exp(output_marglike_icc[,1] - marglike_Hu[[1]])
 
-      marglike2_h <- marglike2_Hq(cbind(ystack,Xstack),ngroups,p,shape1=shape0[1],shape2=shape0[2],samsize1=5e3,samsize2=5e3,
-                                  unique=unique_h,inequalities=inequalities_h)[1:3]
-      return(c(unlist(marglike2_h),ifelse(is.null(RrE[[h]]),1,0)))
-    })),nrow=4))
-    if(sum(output_marglike_icc[,4])==0){ #the complement is equivalent to the unconstrained model
-      output_marglike_icc <- rbind(output_marglike_icc,c(unlist(marglike_Hu),1))
-    } else { #the complement is the complement of the joint of the order hypotheses
-      which_order <- which(output_marglike_icc[,4]==1)
-      if(length(which_order)==1){
-        probs <- output_marglike_icc[which_order,2:3]
-        marglike_Hc <- marglike_Hu[[1]] + log(1-probs[1]) - log(1-probs[2])
-        output_marglike_icc <- rbind(output_marglike_icc,c(marglike_Hc,1-probs[1],1-probs[2],1))
-      }else {
-        probs <- apply(output_marglike_icc[which_order,2:3],2,sum)
-        marglike_Hc <- marglike_Hu[[1]] + log(1-probs[1]) - log(1-probs[2])
-        output_marglike_icc <- rbind(output_marglike_icc,c(marglike_Hc,1-probs[1],1-probs[2],1))
+      #compute BFmatrix and PHPs
+      logBFmatrix <- matrix(rep(output_marglike_icc[,1],numhyp+1),nrow=numhyp+1) -
+        matrix(rep(output_marglike_icc[,1],each=numhyp+1),nrow=numhyp+1)
+      row.names(logBFmatrix) <- colnames(logBFmatrix) <- c(parse_hyp$original_hypothesis,"complement")
+      BFmatrix_confirmatory_icc <- round(exp(logBFmatrix),3)
+      BFta_confirmatory_icc <- exp(output_marglike_icc[,1] - max(output_marglike_icc[,1]))
+      # Change prior probs in case of default setting
+      if(priorprob=="default"){
+        priorprobs <- rep(1/length(BFta_confirmatory_icc),length(BFta_confirmatory_icc))
+      }else{
+        priorprobs <- priorprobs/sum(priorprobs)
       }
-    }
-    row.names(output_marglike_icc) <- c(parse_hyp$original_hypothesis,"complement")
-    BFtu_confirmatory <- exp(output_marglike_icc[,1] - marglike_Hu[[1]])
-
-    #compute BFmatrix and PHPs
-    logBFmatrix <- matrix(rep(output_marglike_icc[,1],numhyp+1),nrow=numhyp+1) -
-      matrix(rep(output_marglike_icc[,1],each=numhyp+1),nrow=numhyp+1)
-    row.names(logBFmatrix) <- colnames(logBFmatrix) <- c(parse_hyp$original_hypothesis,"complement")
-    BFmatrix_confirmatory <- round(exp(logBFmatrix),3)
-    BFta_confirmatory <- exp(output_marglike_icc[,1] - max(output_marglike_icc[,1]))
-    # Change prior probs in case of default setting
-    if(priorprob=="default"){
-      priorprobs <- rep(1/length(BFta_confirmatory),length(BFta_confirmatory))
+      PHP_confirmatory_icc <- round(priorprobs*BFta_confirmatory_icc / sum(priorprobs*BFta_confirmatory_icc),3)
     }else{
-      priorprobs <- priorprobs/sum(priorprobs)
+      BFmatrix_confirmatory_icc <- PHP_confirmatory_icc <- BFtu_confirmatory_icc <- NULL
     }
-    PHP_confirmatory <- round(priorprobs*BFta_confirmatory / sum(priorprobs*BFta_confirmatory),3)
   }else{
-    BFmatrix_confirmatory <- PHP_confirmatory <- BFtu_confirmatory <- NULL
+    BFtu_exploratory_icc <- PHP_exploratory_icc <- BFtu_confirmatory_icc <-
+      PHP_confirmatory_icc <- BFmatrix_confirmatory_icc <- postestimates <-
+      priorprobs <- NULL
   }
-  return(list(BFtu_exploratory=BFtu_exploratory,
-              PHP_exploratory=PHP_exploratory,
-              BFtu_confirmatory=BFtu_confirmatory,
-              PHP_confirmatory=PHP_confirmatory,
-              BFmatrix_confirmatory=BFmatrix_confirmatory,
+
+  #### Code for testing the fixed effects here.
+
+  #### End code for testing the fixed effects here.
+
+  #####
+  # Combine results of tests of fixed effects and
+  #####
+
+  return(list(BFtu_exploratory=BFtu_exploratory_icc,
+              PHP_exploratory=PHP_exploratory_icc,
+              BFtu_confirmatory=BFtu_confirmatory_icc,
+              PHP_confirmatory=PHP_confirmatory_icc,
+              BFmatrix_confirmatory=BFmatrix_confirmatory_icc,
               ngroups=ngroups,
               p=p,
               Xstack=Xstack,
+              Zstack=Zstack,
               ystack=ystack,
               constraints=constraints,
               priorprobs=priorprobs,
@@ -610,7 +652,7 @@ marglike_H0 = function(yX,ngroups,p,bB=1,bW=1){
 
   N = sum(ngroups)
   clusters = length(ngroups)
-  K = ncol(Wmat)
+  K = ncol(yX)-1
   Hp = BFpack:::Helmert(p)
 
   if(length(bB)==1){
