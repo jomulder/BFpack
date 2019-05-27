@@ -1,6 +1,15 @@
 ### Joris Mulder 2019. Bayes factor for a one sample Student t test
 ### via adjusted FBFs (Mulder, 2014) using (m)lm-objects using a t.test object.
 
+#' @method bain htest
+#' @export
+bain.htest <-
+  function(x,
+           hypothesis,
+           ...) {
+    stop("The standard t.test() function from the 'stats' package does not return variance and sample size, which are required to run bain. Please use the function t_test() from the 'bain' package instead. It accepts the same arguments.")
+  }
+
 BF.bain_htest <- function(x,
                       hypothesis = NULL,
                       prior = NULL,

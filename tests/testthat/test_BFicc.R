@@ -20,5 +20,12 @@ fit1 <- lmer(Reaction ~ -1 + Days + category1 + category2 +
 # only exploratory testing
 BFtest1 <- BF(fit1)
 # both exploratory and confirmatory testing
-constraints="icc1=icc2>icc3>0;icc1>0 & icc2>icc3;icc1=0"
+constraints="icc_category2=icc_category1=0;icc_category2>icc_category1>0"
 BFtest2 <- BF(fit1,hypothesis=constraints)
+
+
+
+
+
+
+

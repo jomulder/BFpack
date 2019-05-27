@@ -1,7 +1,10 @@
 ### Joris Mulder 2019. Bayes factor testing of multiple random intercept models
 ### via multiple lmer-objects based on Mulder & Fox (2013, 2019).
 
+
 #' @importFrom MCMCpack rinvgamma
+#' @method BF lmerMod
+#' @export
 BF.lmerMod <- function(x,
                    hypothesis = NULL,
                    prior = NULL,
