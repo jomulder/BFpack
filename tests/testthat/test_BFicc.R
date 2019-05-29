@@ -69,47 +69,19 @@ load("/Users/jorismulder/Dropbox/JP-Joris/data-BFlmer.RData")
 
 library(lme4)
 ## for one year (2011) and countries (4 countries)
-yXTot11 <- subset(yXTot, yXTot$groupNL11==1 | yXTot$groupHR11==1 | yXTot$groupDE11==1 | yXTot$groupDK11==1)
+timssICC_subset <- subset(timssICC, yXTot$groupNL11==1 | yXTot$groupHR11==1 | yXTot$groupDE11==1 | yXTot$groupDK11==1)
 outlme1 <- lmer(math ~ -1+gender+ weight+lln +
-                  groupNL11 + (0+groupNL11 | groupschool) +
-                  groupHR11 + (0+groupHR11 | groupschool) +
-                  groupDE11 + (0+groupDE11 | groupschool) +
-                  groupDK11 + (0+groupDK11 | groupschool),data=yXTot11)
+                  groupNL11 + (0+groupNL11 | schoolID) +
+                  groupHR11 + (0+groupHR11 | schoolID) +
+                  groupDE11 + (0+groupDE11 | schoolID) +
+                  groupDK11 + (0+groupDK11 | schoolID),data=timssICC_subset)
 summary(outlme1)
-BF(outlme1)
+BFout <- BF(outlme1,hypothesis="icc_groupNL11<icc_groupHR11<icc_groupDE11<icc_groupDK11;
+            icc_groupNL11=icc_groupHR11=icc_groupDE11=icc_groupDK11")
+BFout$iccestimates
+BFout$PHP_exploratory
+BFout$PHP_confirmatory
 
-head(sivan)
-
-
-yXTot11 <- subset(yXTot, yXTot$groupNL11==1 | yXTot$groupHR11==1 | yXTot$groupDE11==1 | yXTot$groupDK11==1)
-outlme1 <- lmer(math ~ -1+gender+ weight+lln +
-                  groupNL11 + (0+groupNL11 | groupschool) +
-                  groupHR11 + (0+groupHR11 | groupschool) +
-                  groupDE11 + (0+groupDE11 | groupschool) +
-                  groupDK11 + (0+groupDK11 | groupschool),data=timssICC)
-summary(outlme1)
-
-
-## for one year (2015) and countries (4 countries)
-yXTot15 <- subset(yXTot, yXTot$groupNL15==1 | yXTot$groupHR15==1 | yXTot$groupDE15==1 | yXTot$groupDK15==1)
-outlme2 <- lmer(math ~ -1+gender+weight+lln +
-                  groupNL15 + (0+groupNL15 | groupschool) +
-                  groupHR15 + (0+groupHR15 | groupschool) +
-                  groupDE15 + (0+groupDE15 | groupschool) +
-                  groupDK15 + (0+groupDK15 | groupschool),data=yXTot15)
-summary(outlme2)
-
-## for different years (2011 and 2015) and countries (4 countries)
-outlme <- lmer(math ~ -1+gender+weight+yeargender+lln +
-                 groupNL11 + (0+groupNL11 | groupschool) +
-                 groupNL15 + (0+groupNL15 | groupschool) +
-                 groupHR11 + (0+groupHR11 | groupschool) +
-                 groupHR15 + (0+groupHR15 | groupschool) +
-                 groupDE11 + (0+groupDE11 | groupschool) +
-                 groupDE15 + (0+groupDE15 | groupschool) +
-                 groupDK11 + (0+groupDK11 | groupschool) +
-                 groupDK15 + (0+groupDK15 | groupschool),data=yXTot)
-summary(outlme)
 
 
 

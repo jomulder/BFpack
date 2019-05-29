@@ -155,11 +155,12 @@ BF.lmerMod <- function(x,
     colnames(postestimates) <- iccnames
 
     # exploratory testing
-    cat("Bayes factor computation for exploratory testing of icc's...")
+    cat("Next, Bayes factor computation for exploratory testing of icc's...")
     cat("\n")
     BFtu_exploratory_icc <- t(matrix(unlist(lapply(1:numcat,function(nc){
 
       cat(paste0(iccnames[nc],"; "))
+      cat("\n")
 
       if(numcat>1){
         unique_c <- rep(1,numcat)
@@ -219,6 +220,7 @@ BF.lmerMod <- function(x,
       output_marglike_icc <- t(matrix(unlist(lapply(1:numhyp, function(h){
 
         cat(paste0(parse_hyp$original_hypothesis[h],"; "))
+        cat("\n")
 
         # code equal icc's with same integer for marglike2_Hq function
         unique_h <- 1:numcat
@@ -380,7 +382,7 @@ Gibbs2 <- function(zW,ngroups,p,shape1,shape2,bB,bW,unique,T0,V1,inequalities=0,
     vars = unlist(lapply(1:clusters,function(cc){
       rep(c((sigma2+p*tauC[cc])*bB[cc]**(-1),rep(sigma2*bW**(-1),p-1)),ngroups[cc])
     }))
-    covBeta = solve(t(Wmat/vars)%*%Wmat) + diag(ncol(Wmat))*.001
+    covBeta = solve(t(Wmat/vars)%*%Wmat) #+ diag(ncol(Wmat))*.00001
     meanBeta = covBeta%*%t(Wmat/vars)%*%zvec
     beta = c(rmvnorm(1,mean=meanBeta,sigma=covBeta))
     #beta = c(0,0)
@@ -406,7 +408,7 @@ Gibbs2 <- function(zW,ngroups,p,shape1,shape2,bB,bW,unique,T0,V1,inequalities=0,
     #2c. draw tau | sigma2, psi, beta, y
     scale.tau = c(t(sumsquares.tau*bB)%*%transMatrix)/(2*p) + psi
     shape.tau = c(t(bB*ngroups)%*%transMatrix)/2 + shape2
-    tauV = MCMCpack::rinvgamma(V1,shape=shape.tau,scale=scale.tau) - sigma2/p + .001
+    tauV = MCMCpack::rinvgamma(V1,shape=shape.tau,scale=scale.tau) - sigma2/p #+ .00001
 
     #    setTxtProgressBar(pb,ss)
   }
@@ -422,7 +424,7 @@ Gibbs2 <- function(zW,ngroups,p,shape1,shape2,bB,bW,unique,T0,V1,inequalities=0,
     vars = unlist(lapply(1:clusters,function(cc){
       rep(c((sigma2+p*tauC[cc])*bB[cc]**(-1),rep(sigma2*bW**(-1),p-1)),ngroups[cc])
     }))
-    covBeta = solve(t(Wmat/vars)%*%Wmat) + diag(ncol(Wmat))*.001
+    covBeta = solve(t(Wmat/vars)%*%Wmat) #+ diag(ncol(Wmat))*.00001
     meanBeta = covBeta%*%t(Wmat/vars)%*%zvec
     beta = c(rmvnorm(1,mean=meanBeta,sigma=covBeta))
 
@@ -447,7 +449,7 @@ Gibbs2 <- function(zW,ngroups,p,shape1,shape2,bB,bW,unique,T0,V1,inequalities=0,
     #2c. draw tau | sigma2, psi, beta, y
     scale.tau = c(t(sumsquares.tau*bB)%*%transMatrix)/(2*p) + psi
     shape.tau = c(t(bB*ngroups)%*%transMatrix)/2 + shape2
-    tauV = MCMCpack::rinvgamma(V1,shape=shape.tau,scale=scale.tau) - sigma2/p + .001
+    tauV = MCMCpack::rinvgamma(V1,shape=shape.tau,scale=scale.tau) - sigma2/p #+ .00001
 
     #2d. compute rho
     rho = tauV/(tauV+sigma2)
