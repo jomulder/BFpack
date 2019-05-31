@@ -117,55 +117,51 @@ BF.lm <- function(x,
   BetaHat_b <- solve(tXX_b)%*%tXY_b
   S_b <- tYY_b - t(tXY_b)%*%solve(tXX_b)%*%tXY_b
 
-  if(constraints=="exploratory"){
 
-    if(P==1){
-      names_coef <- names(x$coefficients)
-    }else{
-      names_coef1 <- names(x$coefficients[,1])
-      names_coef2 <- names(x$coefficients[1,])
-      names_coef <- unlist(lapply(1:P,function(p){
-        lapply(1:K,function(k){
-          paste(names_coef1[k],".",names_coef2[p],sep="")
-        })
-      }))
-    }
-
-    # prior hyperparameters
-    df0 <- 1 # should be the same as sum(rep(bj,times=Nj))-K-P+1
-    Scale0 <- kronecker(S_b,tXXi_b)
-    mean0 <- as.matrix(rep(0,K*P))
-    # posterior hyperparameters
-    dfN <- N-K-P+1
-    ScaleN <- kronecker(S,tXXi)/(N-K-P+1) # off-diagonal elements have no meaning
-    meanN <- as.matrix(c(BetaHat))
-
-    # Hypotheses for exploratory test
-    # H0: beta = 0
-    # H1: beta < 0
-    # H2: beta < 0
-    relfit <- t(matrix(unlist(lapply(1:K,function(k){
-      c(dt((0-meanN[k,1])/sqrt(ScaleN[k,k]),df=dfN)/sqrt(ScaleN[k,k]),
-        pt((0-meanN[k,1])/sqrt(ScaleN[k,k]),df=dfN,lower.tail = TRUE),
-        pt((0-meanN[k,1])/sqrt(ScaleN[k,k]),df=dfN,lower.tail = FALSE))
-    })),nrow=3))
-    row.names(relfit) <- names_coef
-    colnames(relfit) <- c("p(effect=0)","Pr(effect<0)","Pr(effect>0)")
-    relcomp <- t(matrix(unlist(lapply(1:K,function(k){
-      c(dt((0-mean0[k,1])/sqrt(Scale0[k,k]),df=df0)/sqrt(Scale0[k,k]),
-        pt((0-mean0[k,1])/sqrt(Scale0[k,k]),df=df0,lower.tail = TRUE),
-        pt((0-mean0[k,1])/sqrt(Scale0[k,k]),df=df0,lower.tail = FALSE))
-    })),nrow=3))
-    row.names(relcomp) <- names_coef
-    colnames(relcomp) <- c("p(effect=0)","Pr(effect<0)","Pr(effect>0)")
-
-    BFtu <- relfit / relcomp
-    colnames(BFtu) <- c("effect=0","effect<0","effect>0")
-    PHP <- round(BFtu / apply(BFtu,1,sum),3)
-    BFmatrix <- NULL
-    priorprobs <- constraints
-
+  # BF computation for exploratory analysis of separate parameters
+  if(P==1){
+    names_coef <- names(x$coefficients)
   }else{
+    names_coef1 <- names(x$coefficients[,1])
+    names_coef2 <- names(x$coefficients[1,])
+    names_coef <- unlist(lapply(1:P,function(p){
+      lapply(1:K,function(k){
+        paste(names_coef1[k],".",names_coef2[p],sep="")
+      })
+    }))
+  }
+
+  # prior hyperparameters
+  df0 <- 1 # should be the same as sum(rep(bj,times=Nj))-K-P+1
+  Scale0 <- kronecker(S_b,tXXi_b)
+  mean0 <- as.matrix(rep(0,K*P))
+  # posterior hyperparameters
+  dfN <- N-K-P+1
+  ScaleN <- kronecker(S,tXXi)/(N-K-P+1) # off-diagonal elements have no meaning
+  meanN <- as.matrix(c(BetaHat))
+
+  # Hypotheses for exploratory test
+  # H0: beta = 0
+  # H1: beta < 0
+  # H2: beta < 0
+  relfit <- t(matrix(unlist(lapply(1:(K*P),function(k){
+    c(dt((0-meanN[k,1])/sqrt(ScaleN[k,k]),df=dfN)/sqrt(ScaleN[k,k]),
+      pt((0-meanN[k,1])/sqrt(ScaleN[k,k]),df=dfN,lower.tail = TRUE),
+      pt((0-meanN[k,1])/sqrt(ScaleN[k,k]),df=dfN,lower.tail = FALSE))
+  })),nrow=3))
+  relcomp <- t(matrix(unlist(lapply(1:(K*P),function(k){
+    c(dt((0-mean0[k,1])/sqrt(Scale0[k,k]),df=df0)/sqrt(Scale0[k,k]),
+      pt((0-mean0[k,1])/sqrt(Scale0[k,k]),df=df0,lower.tail = TRUE),
+      pt((0-mean0[k,1])/sqrt(Scale0[k,k]),df=df0,lower.tail = FALSE))
+  })),nrow=3))
+  colnames(relfit) <- colnames(relcomp) <- c("p(=0)","Pr(<0)","Pr(>0)")
+  row.names(relcomp) <- row.names(relfit) <- names_coef
+
+  BFtu_exploratory <- relfit / relcomp
+  colnames(BFtu_exploratory) <- c("Pr(=0)","Pr(<0)","Pr(>0)")
+  PHP_exploratory <- BFtu_exploratory / apply(BFtu_exploratory,1,sum)
+
+  if(constraints!="exploratory"){
     #read constraints
     if(P==1){
       names_coef <- names(x$coefficients)
@@ -330,28 +326,52 @@ BF.lm <- function(x,
     }
 
     # the BF for the complement hypothesis vs Hu needs to be computed.
-    BFtu <- c(apply(relfit / relcomp, 1, prod))
+    BFtu_confirmatory <- c(apply(relfit / relcomp, 1, prod))
     # Check input of prior probabilies
     if(!(priorprob == "default" || (length(priorprob)==nrow(relfit) && min(priorprob)>0) )){
       stop("'probprob' must be a vector of positive values or set to 'default'.")
     }
     # Change prior probs in case of default setting
     if(priorprob=="default"){
-      priorprobs <- rep(1/length(BFtu),length(BFtu))
+      priorprobs <- rep(1/length(BFtu_confirmatory),length(BFtu_confirmatory))
     }else{
       priorprobs <- priorprobs/sum(priorprobs)
     }
-    names(priorprobs) <- names(BFtu)
-    PHP <- round(BFtu*priorprobs / sum(BFtu*priorprobs),3)
-    BFmatrix <- matrix(rep(BFtu,length(BFtu)),ncol=length(BFtu))/
-      t(matrix(rep(BFtu,length(BFtu)),ncol=length(BFtu)))
-    row.names(BFmatrix) <- names(PHP)
-    colnames(BFmatrix) <- names(PHP)
+    names(priorprobs) <- names(BFtu_confirmatory)
+    PHP_confirmatory <- BFtu_confirmatory*priorprobs / sum(BFtu_confirmatory*priorprobs)
+    # names(PHP_confirmatory) <- unlist(lapply(1:length(parse_hyp$original_hypothesis),function(hyp){
+    #   paste0("Pr(",parse_hyp$original_hypothesis,")")
+    # }))
+    BFmatrix_confirmatory <- matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory))/
+      t(matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory)))
+    row.names(BFmatrix_confirmatory) <- colnames(BFmatrix_confirmatory) <- names(BFtu_confirmatory)
+  }else{
+    BFtu_confirmatory <- PHP_confirmatory <- BFmatrix_confirmatory <- relfit <-
+      relcomp <- NULL
   }
 
-  return(list(BFtu=BFtu,PHP=PHP,BFmatrix=BFmatrix,relfit=relfit,relcomp=relcomp,
-              Nj=Nj,bj=bj,tXXj=tXXj,tXYj=tXYj,tYYj=tYYj,constraints=constraints,
-              priorprobs=priorprobs,groupcode=groupcode,dummyX=dummyX))
+  BFlm_out <- list(
+    BFtu_exploratory=BFtu_exploratory,
+    PHP_exploratory=PHP_exploratory,
+    BFtu_confirmatory=BFtu_confirmatory,
+    PHP_confirmatory=PHP_confirmatory,
+    BFmatrix_confirmatory=BFmatrix_confirmatory,
+    relative_fit=relfit,
+    relative_complexity=relcomp,
+    model=x,
+    P=P,
+    ngroups=Nj,
+    tXXj=tXXj,
+    tXYj=tXYj,
+    tYYj=tYYj,
+    constraints=constraints,
+    priorprob=priorprob,
+    groupcode=groupcode,
+    dummyX=dummyX)
+
+  class(BFlm_out) <- "BF"
+
+  return(BFlm_out)
 }
 
 # update BF test for a univariate normal linear regression type model
