@@ -67,7 +67,7 @@ attributes(lm1,"dataClasses")
 # test correlation analysis
 mtcars$vss <- as.factor(mtcars$vs)
 lm1 <- lm(cbind(mpg,cyl,disp) ~ -1 + wt + vss, mtcars)
-constraints="mpg_with_cyl_vss0>mpg_with_disp_vss1>cyl_with_disp_vss0;mpg_with_cyl_vss0>mpg_with_disp=0"
+constraints="mpg_with_cyl_in_vss0>mpg_with_disp_in_vss1>cyl_with_disp_in_vss0;mpg_with_cyl_in_vss0>mpg_with_disp_in_vss1=0"
 
 
 summary(lm1)
@@ -106,4 +106,8 @@ results <- bain(anov, "site1=site2=site3=site4=site5; site2>site5>site1>
 
 
 
-
+library(lmhyp)
+fit <- lm(mpg ~ disp + hp + wt, data = mtcars)
+Hyp <- "wt > disp > hp > 0; wt > hp > disp > 0"
+result <- test_hyp(fit, Hyp, mcrep = 1000000)
+result
