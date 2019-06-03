@@ -1,3 +1,6 @@
+### Joris Mulder 2019. Bayes factor testing of constraints on correlations and other
+### measures of association (Mulder, 2016; Mulder & Gelissen, 2019) using mlm-objects.
+
 
 # Fisher Z tranformation for sampled correlations
 FisherZ <- function(r){.5*log((1+r)/(1-r))}
@@ -371,7 +374,7 @@ Gaussian_prob_Hc <- function(mean1,Sigma1,relmeas,constraints,RrO){
 
   numpara <- length(mean1)
   numhyp <- nrow(relmeas)
-  relmeas <- relmeas[1:numhyp,]
+  #relmeas <- relmeas[1:numhyp,]
   which_eq <- relmeas[,1] != 1
   if(sum(which_eq)==numhyp){ # Then the complement is equivalent to the unconstrained hypothesis.
     relmeas <- rbind(relmeas,rep(1,2))
@@ -466,11 +469,3 @@ combineNormals <- function(mean1,covm1,mean2,covm2){
   mean12 <- c(covm12%*%(solve(covm1)%*%mean1+solve(covm2)%*%mean2))
   return(list(mean=mean12,covm=covm12))
 }
-
-
-
-
-
-
-
-
