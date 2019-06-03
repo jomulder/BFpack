@@ -372,9 +372,13 @@ Gaussian_measures <- function(mean1,Sigma1,RrE1,RrO1){
 # The function computes the probability of an unconstrained draw falling in the complement subspace.
 Gaussian_prob_Hc <- function(mean1,Sigma1,relmeas,constraints,RrO){
 
+  mean1 <- matrix(0,5,1)
+  Sigma1 <- diag(5)
+  relmeas <- matrix(.5,1,2)
+
   numpara <- length(mean1)
   numhyp <- nrow(relmeas)
-  relmeas <- relmeas[1:numhyp,]
+  #relmeas <- relmeas[1:numhyp,]
   which_eq <- relmeas[,1] != 1
   if(sum(which_eq)==numhyp){ # Then the complement is equivalent to the unconstrained hypothesis.
     relmeas <- rbind(relmeas,rep(1,2))

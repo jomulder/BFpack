@@ -8,6 +8,7 @@
 BF.lmerMod <- function(x,
                    hypothesis = NULL,
                    prior = NULL,
+                   parameter = NULL,
                    ...){
   # check if constrained hypotheses are formulated for confirmatory testing
   if(is.null(hypothesis)){
@@ -298,20 +299,28 @@ BF.lmerMod <- function(x,
   # Combine results of tests of fixed effects and
   #####
 
-  return(list(BFtu_exploratory=BFtu_exploratory_icc,
-              PHP_exploratory=PHP_exploratory_icc,
-              BFtu_confirmatory=BFtu_confirmatory_icc,
-              PHP_confirmatory=PHP_confirmatory_icc,
-              BFmatrix_confirmatory=BFmatrix_confirmatory_icc,
-              ngroups=ngroups,
-              p=p,
-              Xstack=Xstack,
-              Zstack=Zstack,
-              ystack=ystack,
-              constraints=constraints,
-              priorprobs=priorprobs,
-              iccestimates=postestimates,
-              categories=namescat))
+  BFlm_out <- list(
+    BFtu_exploratory=BFtu_exploratory_icc,
+    PHP_exploratory=PHP_exploratory_icc,
+    BFtu_confirmatory=BFtu_confirmatory_icc,
+    PHP_confirmatory=PHP_confirmatory_icc,
+    BFmatrix_confirmatory=BFmatrix_confirmatory_icc,
+    relative_fit=NULL,
+    relative_complexity=NULL,
+    model=x,
+    ngroups=ngroups,
+    p=p,
+    Xstack=Xstack,
+    Zstack=Zstack,
+    ystack=ystack,
+    constraints=constraints,
+    priorprobs=priorprobs,
+    estimates=postestimates,
+    categories=namescat)
+
+  class(BFlm_out) <- "BF"
+
+  return(BFlm_out)
 }
 
 BFupdatelmer <- function(x,

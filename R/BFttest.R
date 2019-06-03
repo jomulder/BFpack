@@ -6,6 +6,8 @@
 bain.htest <-
   function(x,
            hypothesis,
+           prior = NULL,
+           parameter = NULL,
            ...) {
     stop("The standard t.test() function from the 'stats' package does not return variance and sample size, which are required to run bain. Please use the function t_test() from the 'bain' package instead. It accepts the same arguments.")
   }
@@ -13,6 +15,7 @@ bain.htest <-
 BF.bain_htest <- function(x,
                       hypothesis = NULL,
                       prior = NULL,
+                      parameter = NULL,
                       ...){
 
   numpop <- length(x$estimate)

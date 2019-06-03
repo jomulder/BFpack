@@ -69,18 +69,22 @@ load("/Users/jorismulder/Dropbox/JP-Joris/data-BFlmer.RData")
 
 library(lme4)
 ## for one year (2011) and countries (4 countries)
-timssICC_subset <- subset(timssICC, yXTot$groupNL11==1 | yXTot$groupHR11==1 | yXTot$groupDE11==1 | yXTot$groupDK11==1)
-outlme1 <- lmer(math ~ -1+gender+ weight+lln +
-                  groupNL11 + (0+groupNL11 | schoolID) +
-                  groupHR11 + (0+groupHR11 | schoolID) +
-                  groupDE11 + (0+groupDE11 | schoolID) +
-                  groupDK11 + (0+groupDK11 | schoolID),data=timssICC_subset)
+timssICC_subset <- subset(timssICC, timssICC$groupNL11==1 | timssICC$groupHR11==1) #| timssICC$groupDE11==1 | timssICC$groupDK11==1)
+outlme1 <- lmer(math ~ -1 + gender + weight + lln
+                  + groupNL11 + (0+groupNL11 | schoolID)
+                  + groupHR11 + (0+groupHR11 | schoolID)
+                  # + groupDE11 + (0+groupDE11 | schoolID)
+                  # + groupDK11 + (0+groupDK11 | schoolID)
+                ,data=timssICC_subset)
 summary(outlme1)
 BFout <- BF(outlme1,hypothesis="icc_groupNL11<icc_groupHR11<icc_groupDE11<icc_groupDK11;
             icc_groupNL11=icc_groupHR11=icc_groupDE11=icc_groupDK11")
-BFout$iccestimates
-BFout$PHP_exploratory
-BFout$PHP_confirmatory
+BFout <- BF(outlme1,hypothesis="icc_groupNL11<icc_groupHR11;
+            icc_groupNL11=icc_groupHR11")
+
+BFout
+BFout$estimates
+
 
 
 

@@ -14,6 +14,7 @@ BF.lm <- function(x,
                   hypothesis = NULL,
                   prior = NULL,
                   covariates = NULL,
+                  parameter = NULL,
                   ...){
 
   if(is.null(hypothesis)){
@@ -359,6 +360,7 @@ BF.lm <- function(x,
     relative_fit=relfit,
     relative_complexity=relcomp,
     model=x,
+    estimates=x$coefficients,
     P=P,
     ngroups=Nj,
     tXXj=tXXj,
