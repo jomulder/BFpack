@@ -14,6 +14,5 @@ BF.glm <- function(x,
   meanN <- coef(x)
 
   Gaussian_estimator(meanN, covmN, n, hypothesis, prior)
-  #list(n, covmN, meanN, hypothesis, prior)
 
 }
