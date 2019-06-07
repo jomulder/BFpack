@@ -1,20 +1,19 @@
-###Default method for BFpack
+##Internal estimation function for the methods for classes glm, lavaan, coxph, rem, rem.dyad and glmerMod
 
 
-#' @method BF default
-#' @export
-BF.default <- function(x,
-                       hypothesis = NULL,
-                       prior = NULL,
-                       ...){
+Gaussian_estimator <- function(meanN,
+                       covmN,
+                       n,
+                       hypothesis,
+                       prior){
 
-  #Extract model data
-  names_coef <- variable.names(x)
-  N <- nobs(x)
+  #Input is a named mean vector, covariance matrix and number of observations
+  #These are extracted by the relevant method functions from a model object and
+  #passed together with the hypothesis and prior to the Gaussian_estimator
+
+  names_coef <- names(meanN)
+  covm0 <- covmN * n
   mean0 <- as.matrix(rep(0, length(names_coef)))
-  covm0 <- vcov(x) * N
-  meanN <- coef(x)
-  covmN <- vcov(x)
 
   # compute BFs and posterior probs using
   # prior mean and covmatrix mean0 and covm0
@@ -34,7 +33,10 @@ BF.default <- function(x,
     colnames(PHP_exploratory) <- c("p(=0)","Pr(<0)","Pr(>0)")
     row.names(PHP_exploratory) <- names_coef
 
-  if(!is.null(hypothesis)){
+  if(is.null(hypothesis)){
+    BFtu_confirmatory <- PHP_confirmatory <- BFmatrix_confirmatory <- relfit <- relcomp <- NULL
+
+  }else{
     # confirmatory tests based on input constraints
 
     parse_hyp <- parse_hypothesis(names_coef, hypothesis)

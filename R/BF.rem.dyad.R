@@ -1,0 +1,18 @@
+#BF method for rem.dyad class objects
+
+
+#' @method BF rem.dyad
+#' @export
+BF.rem.dyad <- function(x,
+                      hypothesis = NULL,
+                      prior = NULL,
+                      ...){
+
+  #Extract summary statistics
+  n <- x$n
+  covmN <- x$cov
+  meanN <- x$coef
+
+  Gaussian_estimator(meanN, covmN, n, hypothesis, prior)
+
+}
