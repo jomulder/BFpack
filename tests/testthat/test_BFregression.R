@@ -66,8 +66,19 @@ attributes(lm1,"dataClasses")
 
 # test correlation analysis
 mtcars$vss <- as.factor(mtcars$vs)
-lm1 <- lm(cbind(mpg,cyl,disp) ~ -1 + wt + vss, mtcars)
+lm1 <- lm(cbind(mpg,cyl,disp) ~ 1 + wt + vss + am, mtcars)
+lm1 <- lm(cbind(mpg,cyl,disp) ~ -1 + wt + vss + am, mtcars)
+x <- lm1
+constraints="mpg_with_cyl>disp_with_mpg>cyl_with_disp;mpg_with_cyl>disp_with_mpg=0"
+
+constraints="cyl_with_mpg > disp_with_mpg > 0"
+
 constraints="mpg_with_cyl_in_vss0>mpg_with_disp_in_vss1>cyl_with_disp_in_vss0;mpg_with_cyl_in_vss0>mpg_with_disp_in_vss1=0"
+
+BF(lm1)
+BF(lm1,parameter="correlation")
+
+BFcorr(lm1,constraints)
 
 
 summary(lm1)

@@ -9,7 +9,6 @@
 #' @importFrom MASS ginv
 #' @method BF mlm
 #' @export
-
 BF.mlm <- function(x,
                   hypothesis = NULL,
                   prior = NULL,
@@ -36,19 +35,11 @@ BF.mlm <- function(x,
 
   # default BF on location parameters in a univarite normal linear model
   # Note that it is recommended that the fitten model is based on standardized covariates.
-  if(!is.matrix(x$coefficients)){
-    P <- 1
-    N <- length(x$residuals)
-    K <- length(x$coefficients) # dimension of predictors
-    dummyX <- rep(F,K)
-    names(dummyX) <- names(x$coefficients)
-  } else {
-    P <- ncol(x$residuals)
-    N <- nrow(x$residuals)
-    K <- length(x$coefficients)/P # dimension of predictors per dependent variable
-    dummyX <- rep(F,K)
-    names(dummyX) <- row.names(x$coefficients)
-  }
+  P <- ncol(x$residuals)
+  N <- nrow(x$residuals)
+  K <- length(x$coefficients)/P # dimension of predictors per dependent variable
+  dummyX <- rep(F,K)
+  names(dummyX) <- row.names(x$coefficients)
 
   if(is.null(covariates)){
     noncovs <- 1:K
@@ -129,17 +120,13 @@ BF.mlm <- function(x,
 
 
     # BF computation for exploratory analysis of separate parameters
-    if(P==1){
-      names_coef <- names(x$coefficients)
-    }else{
-      names_coef1 <- names(x$coefficients[,1])
-      names_coef2 <- names(x$coefficients[1,])
-      names_coef <- unlist(lapply(1:P,function(p){
-        lapply(1:K,function(k){
-          paste(names_coef1[k],".",names_coef2[p],sep="")
-        })
-      }))
-    }
+    names_coef1 <- names(x$coefficients[,1])
+    names_coef2 <- names(x$coefficients[1,])
+    names_coef <- unlist(lapply(1:P,function(p){
+      lapply(1:K,function(k){
+        paste0(names_coef1[k],"_on_",names_coef2[p])
+      })
+    }))
 
     # prior hyperparameters
     df0 <- 1 # should be the same as sum(rep(bj,times=Nj))-K-P+1
@@ -173,17 +160,14 @@ BF.mlm <- function(x,
 
     if(constraints!="exploratory"){
       #read constraints
-      if(P==1){
-        names_coef <- names(x$coefficients)
-      }else{
-        names_coef1 <- names(x$coefficients[,1])
-        names_coef2 <- names(x$coefficients[1,])
-        names_coef <- unlist(lapply(1:P,function(p){
-          lapply(1:K,function(k){
-            paste(names_coef1[k],".",names_coef2[p],sep="")
-          })
-        }))
-      }
+      names_coef1 <- names(x$coefficients[,1])
+      names_coef2 <- names(x$coefficients[1,])
+      names_coef <- unlist(lapply(1:P,function(p){
+        lapply(1:K,function(k){
+          paste(names_coef1[k],".",names_coef2[p],sep="")
+        })
+      }))
+
       # translate named constraints to matrices with coefficients for constraints
       parse_hyp <- parse_hypothesis(names_coef,constraints)
       RrList <- make_RrList2(parse_hyp)
@@ -206,134 +190,101 @@ BF.mlm <- function(x,
         }
       }
 
-      if(P==1){ # then the unconstrained prior and posterior have multivariate Student t distributions
+      #number of hypotheses that are specified
+      numhyp <- length(RrO)
+      Mean0 <- matrix(0,nrow=K,ncol=P)
 
-        # prior hyperparameters
-        df0 <- 1 # should be the same as sum(rep(bj,times=Nj))-K-P+1
-        Scale0 <- kronecker(S_b,tXXi_b)
-        mean0 <- as.matrix(rep(0,K*P))
-        # posterior hyperparameters
-        dfN <- N-K-P+1
-        ScaleN <- kronecker(S,tXXi)/(N-K-P+1) # off-diagonal elements have no meaning
-        meanN <- as.matrix(c(BetaHat))
-
-        #number of hypotheses that are specified
-        numhyp <- length(RrO)
-
-        relcomp <- t(matrix(unlist(lapply(1:numhyp,function(h){
-          Student_measures(mean0,Scale0,df0,RrE[[h]],RrO[[h]])
-        })),nrow=2))
-
-        relfit <- t(matrix(unlist(lapply(1:numhyp,function(h){
-          Student_measures(meanN,ScaleN,dfN,RrE[[h]],RrO[[h]])
-        })),nrow=2))
-
-        # Compute relative fit/complexity for the complement hypothesis
-        relfit <- Student_prob_Hc(meanN,scaleN,dfN,relfit,constraints)
-        relcomp <- Student_prob_Hc(mean0,scale0,df0,relcomp,constraints)
-        row.names(relcomp)[1:numhyp] <- parse_hyp$original_hypothesis
-        row.names(relfit)[1:numhyp] <- parse_hyp$original_hypothesis
-        colnames(relcomp) <- c("c_E","c_O")
-        colnames(relfit) <- c("f_E","f_O")
-
-      }else{
-
-        #number of hypotheses that are specified
-        numhyp <- length(RrO)
-        Mean0 <- matrix(0,nrow=K,ncol=P)
-
-        relmeasunlist <- unlist(lapply(1:numhyp,function(h){
-          # Check whether the constraints are on a single row or column, if so
-          # use the analytic expression, else using a Monte Carlo estimate.
-          RrStack <- rbind(RrE[[h]],RrO[[h]])
-          Rcheck <- Reduce("+",lapply(1:nrow(RrStack),function(row1){
-            abs(matrix(RrStack[row1,-(K*P+1)],nrow=K))
-          }))
-          RcheckRow <- apply(Rcheck,1,sum)
-          RcheckCol <- apply(Rcheck,2,sum)
-          if(sum(RcheckRow!=0)==1){ # use multivariate Student distributions
-            K1 <- which(RcheckRow!=0)
-            # posterior hyperparameters
-            dfN <- N-K-P+1
-            ScaleN <- S*tXXi[K1,K1]/(N-K-P+1) # off-diagonal elements have no meaning
-            meanN <- as.matrix(c(BetaHat[K1,]))
-            # exclude inactive rows
-            if(is.null(RrE[[h]])){RrE_h=NULL
-            }else{
-              if(nrow(RrE[[h]])==1){
-                RrE_h <- t(as.matrix(RrE[[h]][,c((0:(P-1))*K+K1,P*K+1)]))
-              }else{
-                RrE_h <- RrE[[h]][,c((0:(P-1))*K+K1,P*K+1)]
-              }
-            }
-            if(is.null(RrO[[h]])){RrO_h=NULL
-            }else{
-              if(nrow(RrO[[h]])==1){
-                RrO_h <- t(as.matrix(RrO[[h]][,c((0:(P-1))*K+K1,P*K+1)]))
-              }else{
-                RrO_h <- RrO[[h]][,c((0:(P-1))*K+K1,P*K+1)]
-              }
-            }
-            # prior hyperparameters
-            df0 <- 1 # should be the same as sum(rep(bj,times=Nj))-K-P+1
-            Scale0 <- S_b*tXXi_b[K1,K1]
-            mean0 <- Mean0[K1,]
-            # compute relative measures of fit and complexity
-            relcomp_h <- Student_measures(mean0,Scale0,df0,RrE_h,RrO_h)
-            relfit_h <- Student_measures(meanN,ScaleN,dfN,RrE_h,RrO_h)
-
-          }else if(sum(RcheckCol!=0)==1){ # use multivariate Student distributions
-            P1 <- which(RcheckCol!=0)
-            # prior hyperparameters
-            df0 <- 1 # should be the same as sum(rep(bj,times=Nj))-K-P+1
-            Scale0 <- S_b[P1,P1]*tXXi_b
-            mean0 <- Mean0[,P1]
-            # posterior hyperparameters
-            dfN <- N-K-P+1
-            ScaleN <- S[P1,P1]*tXXi/(N-K-P+1) # off-diagonal elements have no meaning
-            meanN <- as.matrix(c(BetaHat[,P1]))
-            # exclude inactive rows
-            if(is.null(RrE[[h]])){RrE_h=NULL
-            }else{
-              if(nrow(RrE[[h]])==1){
-                RrE_h <- t(as.matrix(RrE[[h]][,c((P1-1)*K+1:K,P*K+1)]))
-              }else{
-                RrE_h <- RrE[[h]][,c((P1-1)*K+1:K,P*K+1)]
-              }
-            }
-            if(is.null(RrO[[h]])){RrO_h=NULL
-            }else{
-              if(nrow(RrO[[h]])==1){
-                RrO_h <- t(as.matrix(RrO[[h]][,c((P1-1)*K+1:K,P*K+1)]))
-              }else{
-                RrO_h <- RrO[[h]][,c((P1-1)*K+1:K,P*K+1)]
-              }
-            }
-            # compute relative measures of fit and complexity
-            relcomp_h <- Student_measures(mean0,Scale0,df0,RrE_h,RrO_h)
-            relfit_h <- Student_measures(meanN,ScaleN,dfN,RrE_h,RrO_h)
-
-          }else{ #use Matrix-Student distributions with Monte Carlo estimate
-
-            df0 <- 1
-            dfN <- N-K-P+1
-            relfit_h <- MatrixStudent_measures(BetaHat,S,tXXi,dfN,RrE[[h]],RrO[[h]],MCdraws=1e4)
-            relcomp_h <- MatrixStudent_measures(Mean0,S_b,tXXi_b,df0,RrE[[h]],RrO[[h]],MCdraws=1e4)
-          }
-          return(list(relfit_h,relcomp_h))
+      relmeasunlist <- unlist(lapply(1:numhyp,function(h){
+        # Check whether the constraints are on a single row or column, if so
+        # use the analytic expression, else using a Monte Carlo estimate.
+        RrStack <- rbind(RrE[[h]],RrO[[h]])
+        Rcheck <- Reduce("+",lapply(1:nrow(RrStack),function(row1){
+          abs(matrix(RrStack[row1,-(K*P+1)],nrow=K))
         }))
+        RcheckRow <- apply(Rcheck,1,sum)
+        RcheckCol <- apply(Rcheck,2,sum)
+        if(sum(RcheckRow!=0)==1){ # use multivariate Student distributions
+          K1 <- which(RcheckRow!=0)
+          # posterior hyperparameters
+          dfN <- N-K-P+1
+          ScaleN <- S*tXXi[K1,K1]/(N-K-P+1) # off-diagonal elements have no meaning
+          meanN <- as.matrix(c(BetaHat[K1,]))
+          # exclude inactive rows
+          if(is.null(RrE[[h]])){RrE_h=NULL
+          }else{
+            if(nrow(RrE[[h]])==1){
+              RrE_h <- t(as.matrix(RrE[[h]][,c((0:(P-1))*K+K1,P*K+1)]))
+            }else{
+              RrE_h <- RrE[[h]][,c((0:(P-1))*K+K1,P*K+1)]
+            }
+          }
+          if(is.null(RrO[[h]])){RrO_h=NULL
+          }else{
+            if(nrow(RrO[[h]])==1){
+              RrO_h <- t(as.matrix(RrO[[h]][,c((0:(P-1))*K+K1,P*K+1)]))
+            }else{
+              RrO_h <- RrO[[h]][,c((0:(P-1))*K+K1,P*K+1)]
+            }
+          }
+          # prior hyperparameters
+          df0 <- 1 # should be the same as sum(rep(bj,times=Nj))-K-P+1
+          Scale0 <- S_b*tXXi_b[K1,K1]
+          mean0 <- Mean0[K1,]
+          # compute relative measures of fit and complexity
+          relcomp_h <- Student_measures(mean0,Scale0,df0,RrE_h,RrO_h)
+          relfit_h <- Student_measures(meanN,ScaleN,dfN,RrE_h,RrO_h)
 
-        relfit <- t(matrix(unlist(relmeasunlist)[rep((0:(numhyp-1))*4,each=2)+rep(1:2,numhyp)],nrow=2))
-        row.names(relfit) <- parse_hyp$original_hypothesis
-        colnames(relfit) <- c("f_E","f_O")
-        relcomp <- t(matrix(unlist(relmeasunlist)[rep((0:(numhyp-1))*4,each=2)+rep(3:4,numhyp)],nrow=2))
-        row.names(relcomp) <- parse_hyp$original_hypothesis
-        colnames(relcomp) <- c("c_E","c_O")
+        }else if(sum(RcheckCol!=0)==1){ # use multivariate Student distributions
+          P1 <- which(RcheckCol!=0)
+          # prior hyperparameters
+          df0 <- 1 # should be the same as sum(rep(bj,times=Nj))-K-P+1
+          Scale0 <- S_b[P1,P1]*tXXi_b
+          mean0 <- Mean0[,P1]
+          # posterior hyperparameters
+          dfN <- N-K-P+1
+          ScaleN <- S[P1,P1]*tXXi/(N-K-P+1) # off-diagonal elements have no meaning
+          meanN <- as.matrix(c(BetaHat[,P1]))
+          # exclude inactive rows
+          if(is.null(RrE[[h]])){RrE_h=NULL
+          }else{
+            if(nrow(RrE[[h]])==1){
+              RrE_h <- t(as.matrix(RrE[[h]][,c((P1-1)*K+1:K,P*K+1)]))
+            }else{
+              RrE_h <- RrE[[h]][,c((P1-1)*K+1:K,P*K+1)]
+            }
+          }
+          if(is.null(RrO[[h]])){RrO_h=NULL
+          }else{
+            if(nrow(RrO[[h]])==1){
+              RrO_h <- t(as.matrix(RrO[[h]][,c((P1-1)*K+1:K,P*K+1)]))
+            }else{
+              RrO_h <- RrO[[h]][,c((P1-1)*K+1:K,P*K+1)]
+            }
+          }
+          # compute relative measures of fit and complexity
+          relcomp_h <- Student_measures(mean0,Scale0,df0,RrE_h,RrO_h)
+          relfit_h <- Student_measures(meanN,ScaleN,dfN,RrE_h,RrO_h)
 
-        # Compute relative fit/complexity for the complement hypothesis
-        relfit <- MatrixStudent_prob_Hc(BetaHat,S,tXXi,N-K-P+1,as.matrix(relfit),RrO)
-        relcomp <- MatrixStudent_prob_Hc(Mean0,S_b,tXXi_b,1,as.matrix(relcomp),RrO)
-      }
+        }else{ #use Matrix-Student distributions with Monte Carlo estimate
+
+          df0 <- 1
+          dfN <- N-K-P+1
+          relfit_h <- MatrixStudent_measures(BetaHat,S,tXXi,dfN,RrE[[h]],RrO[[h]],MCdraws=1e4)
+          relcomp_h <- MatrixStudent_measures(Mean0,S_b,tXXi_b,df0,RrE[[h]],RrO[[h]],MCdraws=1e4)
+        }
+        return(list(relfit_h,relcomp_h))
+      }))
+
+      relfit <- t(matrix(unlist(relmeasunlist)[rep((0:(numhyp-1))*4,each=2)+rep(1:2,numhyp)],nrow=2))
+      row.names(relfit) <- parse_hyp$original_hypothesis
+      colnames(relfit) <- c("f_E","f_O")
+      relcomp <- t(matrix(unlist(relmeasunlist)[rep((0:(numhyp-1))*4,each=2)+rep(3:4,numhyp)],nrow=2))
+      row.names(relcomp) <- parse_hyp$original_hypothesis
+      colnames(relcomp) <- c("c_E","c_O")
+
+      # Compute relative fit/complexity for the complement hypothesis
+      relfit <- MatrixStudent_prob_Hc(BetaHat,S,tXXi,N-K-P+1,as.matrix(relfit),RrO)
+      relcomp <- MatrixStudent_prob_Hc(Mean0,S_b,tXXi_b,1,as.matrix(relcomp),RrO)
 
       # the BF for the complement hypothesis vs Hu needs to be computed.
       BFtu_confirmatory <- c(apply(relfit / relcomp, 1, prod))
@@ -359,31 +310,38 @@ BF.mlm <- function(x,
       BFtu_confirmatory <- PHP_confirmatory <- BFmatrix_confirmatory <- relfit <-
         relcomp <- NULL
     }
-  }else{ #perform correlation tests
+  }else{ #perform tests on correlations
 
     corrmat <- diag(P)
+    numcorrgroup <- P*(P-1)/2
     row.names(corrmat) <- colnames(corrmat) <- colnames(x$residuals)
     corr_names <- names(get_estimates(corrmat)$estimate)
-    matrix_names <- matrix(corr_names,nrow=3)
+    matrix_names <- matrix(corr_names,nrow=P)
     # equal correlations are at the opposite side of the vector
     corr_names <- c(matrix_names[lower.tri(matrix_names)],
                     t(matrix_names)[lower.tri(matrix_names)])
     params_in_hyp1 <- params_in_hyp(constraints)
-    if(sum(abs(unlist(lapply(1:length(params_in_hyp1),function(par){
-      sum(params_in_hyp1[par]==corr_names)
-    }))-rep(1,length(params_in_hyp1))))==0){
-      ngroups <- 1
+    # check if labels of correlations in hypotheses match with actual correlations
+    checkLabels <- matrix(unlist(lapply(1:length(params_in_hyp1),function(par){
+      params_in_hyp1[par]==corr_names
+    })),nrow=length(params_in_hyp1),byrow=T)
+    if(sum(abs(apply(checkLabels,1,sum)-rep(1,length(params_in_hyp1))))==0 || constraints=="exploratory"){
+      #constraints are formulated on correlations from one population/group
+      numG <- 1
+      ngroups <- nrow(Ymat)
+      YXlist <- list(list(Ymat,Xmat))
+      corr_names_exploratory <- matrix_names[lower.tri(matrix_names)]
     }else{ #check if labels of correlations in hypotheses match with
       #combined labels of correlations and dummy group variables
 
       #Check which are dummy variables corresponding to (adjusted) mean parameters
       for(k in 1:K){
         uniquek <- sort(unique(Xmat[,k]))
-        if(length(uniquek)<=2){dummyX[k]<-T} #group index of intercept
+        if(length(uniquek)==2 && uniquek[1]==0 && uniquek[2]==1){dummyX[k]<-T} #group index of intercept
       }
       if(sum(dummyX)==0){
         # there appears to be no dummy group variables
-        stop("Hypotheses appear to be formulated on correlations with incorrect labels. Labels for correlations should be of the form 'y1_with_y2' or 'y1_with_y2_in_x1', if x1 if a dummy group covariate.")
+        stop("Labels for correlations should be of the form 'y1_with_y2' or 'y1_with_y2_in_x1', where x1 must be a dummy (0/1) group covariate.")
       }
       # create correlation labels
       corr_names_all <- unlist(lapply(which(dummyX==T),function(k){
@@ -394,55 +352,130 @@ BF.mlm <- function(x,
         }
       }))
       names(corr_names_all) <- NULL
-      abs(unlist(lapply(1:length(params_in_hyp1),function(par){
-        sum(params_in_hyp1[par]==corr_names_all)
-      })) - rep(1,length(params_in_hyp1)))
+      checkLabels <- matrix(unlist(lapply(1:length(params_in_hyp1),function(par){
+        params_in_hyp1[par]==corr_names_all
+      })),nrow=length(params_in_hyp1),byrow=T)
 
-      ## ABOVE SHOULD CHECK IF EXACT NAMES MATCH NOT PART OF NAMES!!!!!
-
-
-
-
-
-    }
-
-
-
-
-
-
-
-    }
-
-  if(constraints!="exploratory"){
-    # check if there are group specific correlations
-
-  }
-  if(numgroup>1){
-    matcorrpop <- matrix(0,nrow=length(corr_names),ncol=numgroup)
-    for(c in 1:length(corr_names)){
-      matcorrpop[c,] <- unlist(lapply(1:numgroup,function(pop){
-        paste0(corr_names[c],"_gr",as.character(pop)) #or "_in_gr"
+      if(sum(abs(apply(checkLabels,1,sum)-rep(1,length(params_in_hyp1))))!=0){
+        stop("Labels for correlations should be of the form 'y1_with_y2' or 'y1_with_y2_in_x1', where x1 must be a dummy (0/1) group covariate.")
+      }
+      #find which covariates are group specific for the correlations on which hypotheses are formulated.
+      groupcorrelations <- corr_names_all[which(apply(checkLabels,2,sum)==1)]
+      groupcov <- unique(unlist(lapply(1:length(groupcorrelations),function(grcor){
+        substr(groupcorrelations[grcor],start=max(gregexpr(pattern ='_',groupcorrelations[grcor])[[1]])+1,stop=nchar(groupcorrelations[grcor]))
+      })))
+      Xgroup <- matrix(unlist(lapply(1:length(groupcov),function(gcov){
+        dvec <- Xmat[,groupcov[gcov]]
+      })),nrow=nrow(Xmat))
+      colnum <- unlist(lapply(1:length(groupcov),function(gcov){
+        which(colnames(Xmat)==groupcov[gcov])
+      }))
+      colnames(Xgroup) <- groupcov
+      which0 <- which(apply(Xgroup,1,sum)==0)
+      if(length(which0)>0){
+        grouprest <- rep(0,nrow(Xgroup))
+        grouprest[which0] <- 1
+        Xgroup <- cbind(Xgroup,grouprest)
+        colnames(Xgroup) <- c(groupcov,"restgroup")
+      }
+      ngroups <- apply(Xgroup,2,sum)
+      numG <- ncol(Xgroup) # numG
+      whichgr1 <- which(apply(Xgroup,1,sum)>1)
+      if(length(whichgr1)>0){ #extra check for dummy group variables
+        stop("Group indices for dummy group variables need to be either 0 or 1.")
+      }
+      YXlist <- lapply(1:numG,function(col){
+        return(list(Y=Ymat[Xgroup[,col]==1,],
+          X=Xmat[Xgroup[,col]==1,-colnum[-col]]))
+      })
+      corr_names_exploratory0 <- matrix_names[lower.tri(matrix_names)]
+      corr_names_exploratory <- unlist(lapply(1:length(groupcov),function(gr){
+        unlist(lapply(1:length(corr_names_exploratory0),function(cn){
+           paste0(corr_names_exploratory0[cn],"_in_",groupcov[gr])
+        }))
+      }))
+      corr_names <- unlist(lapply(1:length(groupcov),function(gr){
+        unlist(lapply(1:length(corr_names),function(cn){
+          paste0(corr_names[cn],"_in_",groupcov[gr])
+        }))
       }))
     }
-    corr_names <- c(matcorrpop)
+    # find posterior mean and covariance matrix of correlations in Fisher transformed
+    # space having an approximate multivariate normal distribution.
+    Gibbs_output <- estimate_postMeanCov_FisherZ(YXlist,numdraws=8e3)
+    correlation_estimates <- Gibbs_output$corr_quantiles
+    meanN <- Gibbs_output$meanN
+    covmN <- Gibbs_output$covmN
+    numcorr <- length(meanN)
+
+    #get height of prior density at 0 of Fisher transformed correlation
+    drawsJU <- draw_ju(P,samsize=50000,Fisher=1,seed=123)
+    relcomp0 <- approxfun(density(drawsJU[,1]))(0)
+    # compute exploratory BFs
+    relfit <- matrix(c(dnorm(0,mean=meanN,sd=sqrt(diag(covmN))),
+                       pnorm(0,mean=meanN,sd=sqrt(diag(covmN))),
+                       1-pnorm(0,mean=meanN,sd=sqrt(diag(covmN)))),ncol=3)
+    relcomp <- matrix(c(rep(relcomp0,numcorr),rep(.5,numcorr*2)),ncol=3)
+    colnames(relcomp) <- c("c_E","c_O")
+    colnames(relfit) <- c("f_E","f_O")
+    BFtu_exploratory <- relfit / relcomp
+    row.names(BFtu_exploratory) <- corr_names_exploratory
+    colnames(BFtu_exploratory) <- c("Pr(=0)","Pr(<0)","Pr(>0)")
+    PHP_exploratory <- round(BFtu_exploratory / apply(BFtu_exploratory,1,sum),3)
+
+    if(constraints!="exploratory"){
+      parse_hyp <- bain:::parse_hypothesis(corr_names,constraints)
+      #combine equivalent correlations, e.g., cor(Y1,Y2)=corr(Y2,Y1).
+      select1 <- rep(1:numcorrgroup,numG) + rep((0:(numG-1))*2*numcorrgroup,each=numcorrgroup)
+      select2 <- rep(numcorrgroup+1:numcorrgroup,numG) + rep((0:(numG-1))*2*numcorrgroup,each=numcorrgroup)
+      parse_hyp$hyp_mat <-
+        cbind(parse_hyp$hyp_mat[,select1] + parse_hyp$hyp_mat[,select2],parse_hyp$hyp_mat[,numcorrgroup*2*numG+1])
+      #create coefficient with equality and order constraints
+      RrList <- make_RrList2(parse_hyp)
+      RrE <- RrList[[1]]
+      RrO <- RrList[[2]]
+
+      RrStack <- rbind(do.call(rbind,RrE),do.call(rbind,RrO))
+      RStack <- RrStack[,-(numcorr+1)]
+      rStack <- RrStack[,(numcorr+1)]
+
+      numhyp <- length(RrE)
+      relfit <- t(matrix(unlist(lapply(1:numhyp,function(h){
+        Gaussian_measures(meanN,covmN,RrE[[h]],RrO[[h]])
+      })),nrow=2))
+      relcomp <- t(matrix(unlist(lapply(1:numhyp,function(h){
+        jointuniform_measures(P,numcorrgroup,numG,RrE[[h]],RrO[[h]],Fisher=1)
+      })),nrow=2))
+      row.names(relfit) <- row.names(relcomp) <- parse_hyp$original_hypothesis
+      relfit <- Gaussian_prob_Hc(meanN,covmN,relfit,RrO)
+      relcomp <- jointuniform_prob_Hc(P,numcorrgroup,numG,relcomp,constraints,RrO)
+
+      # the BF for the complement hypothesis vs Hu needs to be computed.
+      BFtu_confirmatory <- c(apply(relfit / relcomp, 1, prod))
+      # Check input of prior probabilies
+      if(!(priorprob == "default" || (length(priorprob)==nrow(relfit) && min(priorprob)>0) )){
+        stop("'probprob' must be a vector of positive values or set to 'default'.")
+      }
+      # Change prior probs in case of default setting
+      if(priorprob=="default"){
+        priorprobs <- rep(1/length(BFtu_confirmatory),length(BFtu_confirmatory))
+      }else{
+        priorprobs <- priorprobs/sum(priorprobs)
+      }
+      names(priorprobs) <- names(BFtu_confirmatory)
+      PHP_confirmatory <- BFtu_confirmatory*priorprobs / sum(BFtu_confirmatory*priorprobs)
+      # names(PHP_confirmatory) <- unlist(lapply(1:length(parse_hyp$original_hypothesis),function(hyp){
+      #   paste0("Pr(",parse_hyp$original_hypothesis,")")
+      # }))
+      BFmatrix_confirmatory <- matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory))/
+        t(matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory)))
+      row.names(BFmatrix_confirmatory) <- colnames(BFmatrix_confirmatory) <- names(BFtu_confirmatory)
+    }else{
+      BFtu_confirmatory <- PHP_confirmatory <- BFmatrix_confirmatory <- relfit <-
+        relcomp <- NULL
+    }
+
   }
-
-  parse_hyp <- parse_hypothesis(corr_names,constraints)
-  select1 <- rep(1:numcorrgroup,numgroup) + rep((0:(numgroup-1))*2*numcorrgroup,each=numcorrgroup)
-  select2 <- rep(numcorrgroup+1:numcorrgroup,numgroup) + rep((0:(numgroup-1))*2*numcorrgroup,each=numcorrgroup)
-  #combine equivalent correlations, e.g., cor(Y1,Y2)=corr(Y2,Y1).
-  parse_hyp$hyp_mat <-
-    cbind(parse_hyp$hyp_mat[,select1] + parse_hyp$hyp_mat[,select2],parse_hyp$hyp_mat[,numcorrgroup*2*numgroup+1])
-  #create coefficient with equality and order constraints
-  RrList <- make_RrList(parse_hyp)
-  RrE <- RrList[[1]]
-  RrO <- RrList[[2]]
-
-
-
-
-
 
   BFlm_out <- list(
     BFtu_exploratory=BFtu_exploratory,
@@ -476,5 +509,88 @@ params_in_hyp <- function(hyp){
   params_in_hyp <- params_in_hyp[!sapply(params_in_hyp, grepl, pattern = "^[0-9]*\\.?[0-9]+$")]
   params_in_hyp[grepl("^[a-zA-Z]", params_in_hyp)]
 }
+
+
+
+
+#dyn.load("/Users/jorismulder/surfdrive/R packages/BFpack/scr/bct_continuous_final.dll")
+# R function to call Fortran subroutine for Gibbs sampling using noninformative improper
+# priors for regression coefficients, Jeffreys priors for standard deviations, and a proper
+# joint uniform prior for the correlation matrices.
+# dyn.load("/Users/jorismulder/surfdrive/R packages/BFpack/src/bct_continuous_final.dll")
+estimate_postMeanCov_FisherZ <- function(YXlist,numdraws=5e3){
+  # YXlist should be a list of length number of independent groups, of which each
+  # element is another list of which the first element is a matrix of dependent
+  # variables in the group, and the second element is a matrix of covariate variables
+  # in the group.
+
+  numG <- length(YXlist)
+  P <- ncol(YXlist[[1]][[1]])
+  K <- ncol(YXlist[[1]][[2]])
+  numcorr <- numG*P*(P-1)/2
+  ngroups <- unlist(lapply(1:numG,function(g){nrow(YXlist[[g]][[1]])}))
+  Ntot <- max(ngroups)
+  Ygroups <- array(0,dim=c(numG,Ntot,P))
+  Xgroups <- array(0,dim=c(numG,Ntot,K))
+  XtXi <- array(0,dim=c(numG,K,K))
+  BHat <- array(0,dim=c(numG,K,P))
+  sdHat <- matrix(0,nrow=numG,ncol=P)
+  CHat <- array(0,dim=c(numG,P,P))
+  SumSq <- array(0,dim=c(numG,P,P))
+  SumSqInv <- array(0,dim=c(numG,P,P))
+
+  for(g in 1:numG){
+    Y_g <- scale(YXlist[[g]][[1]])
+    X_g <- YXlist[[g]][[2]]
+    Ygroups[g,1:ngroups[g],] <- Y_g
+    #standardize data to get a more stable sampler for the correlations.
+    tableX <- apply(X_g,2,table)
+    catX <- unlist(lapply(1:length(tableX),function(xcol){
+      length(tableX[[xcol]])
+    }))
+    if(sum(catX>1)){
+      X_g[1:ngroups[g],which(catX>1)] <- apply(as.matrix(X_g[1:ngroups[g],which(catX>1)]),2,scale)
+    }
+    Xgroups[g,1:ngroups[g],] <- X_g
+    XtXi[g,,] <- solve(t(X_g)%*%X_g)
+    BHat[g,,] <- XtXi[g,,]%*%t(X_g)%*%Y_g
+    SumSq[g,,] <- t(Y_g - X_g%*%BHat[g,,])%*%(Y_g - X_g%*%BHat[g,,])
+    SumSqInv[g,,] <- solve(SumSq[g,,])
+    Sigma_g <- SumSq[g,,]/ngroups[g]
+    sdHat[g,] <- sqrt(diag(Sigma_g))
+    CHat[g,,] <- diag(1/sdHat[g,])%*%Sigma_g%*%diag(1/sdHat[g,])
+  }
+  samsize0 <- numdraws
+  # call Fortran subroutine for Gibbs sampling using noninformative improper priors
+  # for regression coefficients, Jeffreys priors for standard deviations, and a proper
+  # joint uniform prior for the correlation matrices.
+  res <-.Fortran("estimate_postMeanCov_FisherZ2",
+                 postZmean=matrix(0,numcorr,1),
+                 postZcov=matrix(0,numcorr,numcorr),
+                 P=as.integer(P),
+                 numcorr=as.integer(numcorr),
+                 K=as.integer(K),
+                 numG=as.integer(numG),
+                 BHat=BHat,
+                 sdHat=sdHat,
+                 CHat=CHat,
+                 XtXi=XtXi,
+                 samsize0=as.integer(samsize0),
+                 Njs=as.integer(ngroups),
+                 Ygroups=Ygroups,
+                 Xgroups=Xgroups,
+                 Ntot=as.integer(Ntot),
+                 C_quantiles=array(0,dim=c(numG,P,P,3)),
+                 sigma_quantiles=array(0,dim=c(numG,P,3)),
+                 B_quantiles=array(0,dim=c(numG,K,P,3)),
+                 BDrawsStore=array(0,dim=c(samsize0,numG,K,P)),
+                 sigmaDrawsStore=array(0,dim=c(samsize0,numG,P)),
+                 CDrawsStore=array(0,dim=c(samsize0,numG,P,P)))
+
+  return(list(corr_quantiles=res$C_quantiles,B_quantiles=res$B_quantiles,
+              sigma_quantiles=res$sigma_quantiles,meanN=res$postZmean,covmN=res$postZcov))
+
+}
+
 
 

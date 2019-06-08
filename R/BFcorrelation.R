@@ -114,7 +114,7 @@ BFcorr <- function(model,prior=NULL,constraints="exploratory",priorprob="default
     corrmat <- diag(P)
     row.names(corrmat) <- colnames(corrmat) <- row.names(SumSquares[[1]])
     corr_names <- names(get_estimates(corrmat)$estimate)
-    matrix_names <- matrix(corr_names,nrow=3)
+    matrix_names <- matrix(corr_names,nrow=P)
     # equal correlations are at the opposite side of the vector
     corr_names <- c(matrix_names[lower.tri(matrix_names)],
       t(matrix_names)[lower.tri(matrix_names)])
@@ -349,7 +349,7 @@ Gaussian_measures <- function(mean1,Sigma1,RrE1,RrO1){
       Tmean1O <- Tmean1[qE1+1:qO1]
 
       TSigma1EE <- TSigma1[1:qE1,1:qE1]
-      TSigma1OE <- TSigma1[qE1+1:qO1,1:qE1]
+      TSigma1OE <- matrix(c(TSigma1[qE1+1:qO1,1:qE1]),nrow=qO1)
       TSigma1OO <- TSigma1[qE1+1:qO1,qE1+1:qO1]
 
       #conditional location and covariance matrix
@@ -378,13 +378,13 @@ Gaussian_prob_Hc <- function(mean1,Sigma1,relmeas,constraints,RrO){
   which_eq <- relmeas[,1] != 1
   if(sum(which_eq)==numhyp){ # Then the complement is equivalent to the unconstrained hypothesis.
     relmeas <- rbind(relmeas,rep(1,2))
-    rownames(relmeas)[relmeas+1] <- "Hc"
+    rownames(relmeas)[relmeas+1] <- "complement"
   }else{ # So there is at least one hypothesis with only order constraints
     welk <- which(!which_eq)
     if(length(welk)==1){ # There is one hypothesis with only order constraints. Hc is complement of this hypothesis.
       relmeas <- rbind(relmeas,rep(1,2))
       relmeas[numhyp+1,2] <- 1 - relmeas[welk,2]
-      rownames(relmeas)[numhyp+1] <- "Hc"
+      rownames(relmeas)[numhyp+1] <- "complement"
     }else{ # So more than one hypothesis with only order constraints
       # First we check whether ther is an overlap between the order constrained spaces.
 #
@@ -435,7 +435,7 @@ Gaussian_prob_Hc <- function(mean1,Sigma1,relmeas,constraints,RrO){
         if(sum(checkOCplus>1)==0){ # then order constrained spaces are nonoverlapping
           relmeas <- rbind(relmeas,rep(1,2))
           relmeas[numhyp+1,2] <- 1 - sum(relmeas[welk,2])
-          rownames(relmeas)[numhyp+1] <- "Hc"
+          rownames(relmeas)[numhyp+1] <- "complement"
         }else{ #the order constrained subspaces at least partly overlap
 
           # funtion below gives a rough estimate of the posterior probability under Hc
@@ -452,7 +452,7 @@ Gaussian_prob_Hc <- function(mean1,Sigma1,relmeas,constraints,RrO){
           })
           relmeas <- rbind(relmeas,rep(1,2))
           relmeas[numhyp+1,2] <- sum(Reduce("+",checksOCpost) == 0) / draws2
-          rownames(relmeas)[numhyp+1] <- "Hc"
+          rownames(relmeas)[numhyp+1] <- "complement"
         }
       }
     }
