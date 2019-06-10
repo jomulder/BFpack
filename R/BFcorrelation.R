@@ -286,7 +286,7 @@ BFcorrUpdate <- function(BFcorr1,model,prior=NULL,constraints="exploratory",prio
 }
 
 # compute relative meausures (fit or complexity) under a multivariate Student t distribution
-Gaussian_measures <- function(mean1,Sigma1,RrE1,RrO1){
+Gaussian_measures <- function(mean1,Sigma1,n1=0,RrE1,RrO1,names1=NULL,constraints1=NULL){
   K <- length(mean1)
   relE <- relO <- 1
   if(!is.null(RrE1) && is.null(RrO1)){ #only equality constraints
@@ -313,9 +313,14 @@ Gaussian_measures <- function(mean1,Sigma1,RrE1,RrO1){
       SigmaO <- RO1%*%Sigma1%*%t(RO1)
       relO <- mvtnorm::pmvnorm(lower=rO1,upper=Inf,mean=meanO,sigma=SigmaO)[1]
     }else{ #no linear transformation can be used; pmvt cannot be used. Use bain with a multivariate normal approximation
-      # bain1 <- bain::bain(mean1,Sigma1,RrE1,RrO1,n=10) # choice of n does not matter
-      # extract posterior probability (Fit_eq) from bain-object)
-      stop("REMINDER. This case should still be implemented.")
+      names(mean1) <- names1
+      if(n1>0){ # we need prior measures
+        bain_res <- bain(x=c(mean1),hypothesis=constraints1,Sigma=Sigma1,n=n1)
+        relO <- bain_res$fit[1,4]
+      }else { # we need posterior measures (there is very little information)
+        bain_res <- bain(x=c(mean1),hypothesis=constraints1,Sigma=Sigma1,n=999) #n not used in computation
+        relO <- bain_res$fit[1,3]
+      }
     }
   }
   if(!is.null(RrE1) && !is.null(RrO1)){ #hypothesis with equality and order constraints
@@ -359,10 +364,16 @@ Gaussian_measures <- function(mean1,Sigma1,RrE1,RrO1){
       relO <- mvtnorm::pmvnorm(lower=rO1,upper=Inf,mean=c(Tmean1OgE),sigma=TSigma1OgE)[1]
 
     }else{ #use bain for the computation of the probability
-
-      # bain1 <- bain::bain(mean1,Sigma1=Sigma1,RrE1=NULL,RrO1=RO1tilde,n=10) # choice of n does not matter
-      # extract posterior probability (Fit_eq) from bain-object)
-      stop("REMINDER. This case should still be implemented.")
+      names(mean1) <- names1
+      if(n1>0){ # we need prior measures
+        bain_res <- bain(x=c(mean1),hypothesis=constraints1,Sigma=Sigma1,n=n1)
+        relO <- bain_res$fit[1,4]
+        relE <- bain_res$fit[1,2]
+      }else { # we need posterior measures (there is very little information)
+        bain_res <- bain(x=c(mean1),hypothesis=constraints1,Sigma=Sigma1,n=999) #n not used in computation
+        relO <- bain_res$fit[1,3]
+        relE <- bain_res$fit[1,1]
+      }
     }
   }
 

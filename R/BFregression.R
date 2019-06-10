@@ -9,7 +9,6 @@
 #' @importFrom MASS ginv
 #' @method BF lm
 #' @export
-
 BF.lm <- function(x,
                   hypothesis = NULL,
                   prior = NULL,
@@ -118,7 +117,6 @@ BF.lm <- function(x,
   BetaHat_b <- solve(tXX_b)%*%tXY_b
   S_b <- tYY_b - t(tXY_b)%*%solve(tXX_b)%*%tXY_b
 
-
   # BF computation for exploratory analysis of separate parameters
   if(P==1){
     names_coef <- names(x$coefficients)
@@ -176,7 +174,7 @@ BF.lm <- function(x,
       }))
     }
     # translate named constraints to matrices with coefficients for constraints
-    parse_hyp <- parse_hypothesis(names_coef,constraints)
+    parse_hyp <- bain:::parse_hypothesis(names_coef,constraints)
     RrList <- make_RrList2(parse_hyp)
     RrE <- RrList[[1]]
     RrO <- RrList[[2]]
@@ -212,7 +210,8 @@ BF.lm <- function(x,
       numhyp <- length(RrO)
 
       relcomp <- t(matrix(unlist(lapply(1:numhyp,function(h){
-        Student_measures(mean0,Scale0,df0,RrE[[h]],RrO[[h]])
+        Student_measures(mean1=mean0,Scale1=Scale0,df1=df0,RrE1=RrE[[h]],RrO1=RrO[[h]],
+                         names1=names_coef,constraints1=parse_hyp$original_hypothesis[h])
       })),nrow=2))
 
       relfit <- t(matrix(unlist(lapply(1:numhyp,function(h){
@@ -690,7 +689,11 @@ BFupdate.lm <- function(BF1,x,XY=NULL){
 }
 
 # compute relative meausures (fit or complexity) under a multivariate Student t distribution
-MatrixStudent_measures <- function(Mean1,Scale1,tXXi1,df1,RrE1,RrO1,MCdraws=1e4){
+MatrixStudent_measures <- function(Mean1,Scale1,tXXi1,df1,RrE1,RrO1,Names1=NULL,
+                                   constraints1=NULL,MCdraws=1e4){
+  # constraints1 = parse_hyp$original_hypothesis
+  # RrE1 <- matrix(0,nrow=1,ncol=ncol(RrO1))
+  # RrE1[1,1:2] <- c(-1,1)
   K <- nrow(Mean1)
   P <- ncol(Mean1)
   # vectorize the mean
@@ -732,14 +735,27 @@ MatrixStudent_measures <- function(Mean1,Scale1,tXXi1,df1,RrE1,RrO1,MCdraws=1e4)
 
       }else{ #no linear transformation can be used; pmvt cannot be used. Use bain with a multivariate normal approximation
         #compute covariance matrix for multivariate normal distribution
-        covm1 <- ifelse(df1>2,
-                        kronecker(Scale1,tXX1)/(df1-2),
-                        kronecker(Scale1,tXX1)) #for prior with df1==1, probability independent of common factor of scale1
+        mean1 <- c(Mean1)
+        names(mean1) <- c(Names1)
+        if(df1>2){ #posterior measures
+          covm1 <- kronecker(Scale1,tXXi1)/(df1-2)
+          bain_res <- bain(x=mean1,hypothesis=constraints1,Sigma=covm1,n=999) #n not used in computation
+          relO <- bain_res$fit[1,3]
+        }else if(df1==2){ #posterior measures
+          covm1 <- kronecker(Scale1,tXXi1)/(df1-1)
+          bain_res <- bain(x=mean1,hypothesis=constraints1,Sigma=covm1,n=999) #n not used in computation
+          relO <- bain_res$fit[1,3]
+        }else{
+          covm1 <- kronecker(Scale1,tXXi1) #for prior with df1==1, probability independent of common factor of scale1
+          bain_res <- bain(x=mean1,hypothesis=constraints1,Sigma=covm1,n=df1) #n not used in computation
+          relO <- bain_res$fit[1,4]
+        }
+
         # bain1 <- bain::bain(mean1,Sigma1=covm1,RrE1,RrO1,n=10) # choice of n does not matter
         # extract posterior probability (Fit_eq) from bain-object)
-        stop("REMINDER. This situation should still be implemented.")
+        # warning("Check if this works now")
       }
-    }else{  #hypothesis with equality and order constraints
+    }else{ #hypothesis with equality and order constraints
 
       RE1 <- RrE1[,-(K*P+1)]
       if(!is.matrix(RE1)){
@@ -782,15 +798,25 @@ MatrixStudent_measures <- function(Mean1,Scale1,tXXi1,df1,RrE1,RrO1,MCdraws=1e4)
 
       }else{ #use bain for the computation of the probability
 
-        #draw covariance matrix Sigma
-        Sigma1 <- solve(rWishart(1,df=df1+P-1,Sigma=Scale1inv)[,,1])
-        covm1 <- ifelse(df1>2,
-                        kronecker(Sigma1,tXXi1)/(df1-2),
-                        kronecker(Sigma1,tXXi1))
+        mean1 <- c(Mean1)
+        names(mean1) <- c(Names1)
+        if(df1>2){ #posterior measures
+          covm1 <- kronecker(Scale1,tXXi1)/(df1-2)
+          bain_res <- bain(x=mean1,hypothesis=constraints1,Sigma=covm1,n=999) #n not used in computation
+          relO <- bain_res$fit[1,3]
+        }else if(df1==2){ #posterior measures
+          covm1 <- kronecker(Scale1,tXXi1)/(df1-1)
+          bain_res <- bain(x=mean1,hypothesis=constraints1,Sigma=covm1,n=999) #n not used in computation
+          relO <- bain_res$fit[1,3]
+        }else{
+          covm1 <- kronecker(Scale1,tXXi1) #for prior with df1==1, probability independent of common factor of scale1
+          bain_res <- bain(x=mean1,hypothesis=constraints1,Sigma=covm1,n=df1) #n not used in computation
+          relO <- bain_res$fit[1,4]
+        }
 
         # bain1 <- bain::bain(mean1,Sigma1=covm1,RrE1=NULL,RrO1=RO1tilde,n=10) # choice of n does not matter
         # extract posterior probability (Fit_eq) from bain-object)
-        stop("REMINDER. This case should still be implemented.")
+        # stop("REMINDER. This case should still be implemented.")
       }
     }
   }
@@ -798,7 +824,7 @@ MatrixStudent_measures <- function(Mean1,Scale1,tXXi1,df1,RrE1,RrO1,MCdraws=1e4)
 }
 
 # compute relative meausures (fit or complexity) under a multivariate Student t distribution
-Student_measures <- function(mean1,scale1,df1,RrE1,RrO1){ # Volgens mij moet je hier ook N meegeven
+Student_measures <- function(mean1,Scale1,df1,RrE1,RrO1,names1=NULL,constraints1=NULL){ # Volgens mij moet je hier ook N meegeven
   K <- length(mean1)
   relE <- relO <- 1
   if(!is.null(RrE1) && is.null(RrO1)){ #only equality constraints
@@ -809,7 +835,7 @@ Student_measures <- function(mean1,scale1,df1,RrE1,RrO1){ # Volgens mij moet je 
     rE1 <- RrE1[,(K+1)]
     qE1 <- nrow(RE1)
     meanE <- RE1%*%mean1
-    scaleE <- RE1%*%scale1%*%t(RE1)
+    scaleE <- RE1%*%Scale1%*%t(RE1)
     relE <- dmvt(rE1,delta=c(meanE),sigma=scaleE,df=df1,log=FALSE)
   }
   if(is.null(RrE1) && !is.null(RrO1)){ #only order constraints
@@ -822,18 +848,33 @@ Student_measures <- function(mean1,scale1,df1,RrE1,RrO1){ # Volgens mij moet je 
 
     if(rankMatrix(RO1)[[1]]==nrow(RO1)){ #RO1 is of full row rank. So use transformation.
       meanO <- c(RO1%*%mean1)
-      scaleO <- RO1%*%scale1%*%t(RO1)
+      scaleO <- RO1%*%Scale1%*%t(RO1)
       relO <- ifelse(nrow(scaleO)==1,
                      pt((rO1-meanO)/sqrt(scaleO[1,1]),df=df1,lower.tail=FALSE), #univariate
                      pmvt(lower=rO1,upper=Inf,delta=meanO,sigma=scaleO,df=df1,type="shifted")) #multivariate
     }else{ #no linear transformation can be used; pmvt cannot be used. Use bain with a multivariate normal approximation
       #compute covariance matrix for multivariate normal distribution
-      Sigma1 <- ifelse(df1>2,
-                       df1/(df1-2)*scale1,
-                       scale1) #for prior with df1==1, probability independent of common factor of scale1
-      # bain1 <- bain::bain(mean1,Sigma1=Sigma1,RrE1,RrO1,n=10) # choice of n does not matter
-      # extract posterior probability (Fit_eq) from bain-object)
-      stop("REMINDER. This situation should still be implemented.")
+      row.names(mean1) <- names1
+      if(df1>2){ # we need posterior measures
+        covm1 <- Scale1/(df1-2)
+        bain_res <- bain(x=c(mean1),hypothesis=constraints1,Sigma=covm1,n=999) #n not used in computation
+        relO <- bain_res$fit[1,3]
+      }else if(df1==2){ # we need posterior measures (there is very little information)
+        covm1 <- Scale1/(df1-1)
+        bain_res <- bain(x=c(mean1),hypothesis=constraints1,Sigma=covm1,n=999) #n not used in computation
+        relO <- bain_res$fit[1,3]
+      }else{ #then df=1, so we need prior measures
+        covm1 <- Scale1 #for prior with df1==1, probability independent of common factor of scale1
+        bain_res <- bain(x=c(mean1),hypothesis=constraints1,Sigma=covm1,n=df1) #n not used in computation
+        relO <- bain_res$fit[1,4]
+      }
+
+      # Sigma1 <- ifelse(df1>2,
+      #                  df1/(df1-2)*Scale1,
+      #                  Scale1) #for prior with df1==1, probability independent of common factor of scale1
+      # # bain1 <- bain::bain(mean1,Sigma1=Sigma1,RrE1,RrO1,n=10) # choice of n does not matter
+      # # extract posterior probability (Fit_eq) from bain-object)
+      # stop("REMINDER. This situation should still be implemented.")
     }
   }
   if(!is.null(RrE1) && !is.null(RrO1)){ #hypothesis with equality and order constraints
@@ -859,7 +900,7 @@ Student_measures <- function(mean1,scale1,df1,RrE1,RrO1){ # Volgens mij moet je 
 
     #b)
     Tmean1 <- Tm %*% mean1
-    Tscale1 <- Tm %*% scale1 %*% t(Tm)
+    Tscale1 <- Tm %*% Scale1 %*% t(Tm)
 
     # relative meausure for equalities
     relE <- dmvt(x = t(rE1), delta = Tmean1[1:qE1], sigma = matrix(Tscale1[1:qE1, 1:qE1], ncol = qE1), df = df1, log = FALSE)
@@ -895,12 +936,27 @@ Student_measures <- function(mean1,scale1,df1,RrE1,RrO1){ # Volgens mij moet je 
 
     }else{ #use bain for the computation of the probability
       #compute covariance matrix for multivariate normal distribution
-      Sigma1 <- ifelse(df1>2,
-                       df1/(df1-2)*Tscale1OgE,
-                       Tscale1OgE) #for prior with df1==1, probability independent of common factor of scale1
-      # bain1 <- bain::bain(mean1,Sigma1=Sigma1,RrE1=NULL,RrO1=RO1tilde,n=10) # choice of n does not matter
-      # extract posterior probability (Fit_eq) from bain-object)
-      stop("REMINDER. This situation should still be implemented.")
+      row.names(mean1) <- names1
+      if(df1>2){ # we need posterior measures
+        covm1 <- Scale1/(df1-2)
+        bain_res <- bain(x=c(mean1),hypothesis=constraints1,Sigma=covm1,n=999) #n not used in computation
+        relO <- bain_res$fit[1,3]
+      }else if(df1==2){ # we need posterior measures (there is very little information)
+        covm1 <- Scale1/(df1-1)
+        bain_res <- bain(x=c(mean1),hypothesis=constraints1,Sigma=covm1,n=999) #n not used in computation
+        relO <- bain_res$fit[1,3]
+      }else{ #then df=1, so we need prior measures
+        covm1 <- Scale1 #for prior with df1==1, probability independent of common factor of scale1
+        bain_res <- bain(x=c(mean1),hypothesis=constraints1,Sigma=covm1,n=df1) #n not used in computation
+        relO <- bain_res$fit[1,4]
+      }
+
+      # Sigma1 <- ifelse(df1>2,
+      #                  df1/(df1-2)*Tscale1OgE,
+      #                  Tscale1OgE) #for prior with df1==1, probability independent of common factor of scale1
+      # # bain1 <- bain::bain(mean1,Sigma1=Sigma1,RrE1=NULL,RrO1=RO1tilde,n=10) # choice of n does not matter
+      # # extract posterior probability (Fit_eq) from bain-object)
+      # stop("REMINDER. This situation should still be implemented.")
     }
   }
 

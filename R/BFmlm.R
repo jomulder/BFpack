@@ -1,7 +1,6 @@
 
 
 
-
 #' @importFrom pracma rref
 #' @importFrom mvtnorm dmvnorm pmvnorm rmvnorm dmvt pmvt
 #' @importFrom Matrix rankMatrix
@@ -136,6 +135,7 @@ BF.mlm <- function(x,
     dfN <- N-K-P+1
     ScaleN <- kronecker(S,tXXi)/(N-K-P+1) # off-diagonal elements have no meaning
     meanN <- as.matrix(c(BetaHat))
+    row.names(meanN) <- row.names(mean0) <- names_coef
 
     # Hypotheses for exploratory test
     # H0: beta = 0
@@ -164,12 +164,12 @@ BF.mlm <- function(x,
       names_coef2 <- names(x$coefficients[1,])
       names_coef <- unlist(lapply(1:P,function(p){
         lapply(1:K,function(k){
-          paste(names_coef1[k],".",names_coef2[p],sep="")
+          paste(names_coef1[k],"_on_",names_coef2[p],sep="")
         })
       }))
 
       # translate named constraints to matrices with coefficients for constraints
-      parse_hyp <- parse_hypothesis(names_coef,constraints)
+      parse_hyp <- bain:::parse_hypothesis(names_coef,constraints)
       RrList <- make_RrList2(parse_hyp)
       RrE <- RrList[[1]]
       RrO <- RrList[[2]]
@@ -266,11 +266,14 @@ BF.mlm <- function(x,
           relfit_h <- Student_measures(meanN,ScaleN,dfN,RrE_h,RrO_h)
 
         }else{ #use Matrix-Student distributions with Monte Carlo estimate
-
           df0 <- 1
           dfN <- N-K-P+1
-          relfit_h <- MatrixStudent_measures(BetaHat,S,tXXi,dfN,RrE[[h]],RrO[[h]],MCdraws=1e4)
-          relcomp_h <- MatrixStudent_measures(Mean0,S_b,tXXi_b,df0,RrE[[h]],RrO[[h]],MCdraws=1e4)
+          relfit_h <- MatrixStudent_measures(BetaHat,S,tXXi,dfN,RrE[[h]],RrO[[h]],
+                         Names=matrix(names_coef,ncol=P),constraints=parse_hyp$original_hypothesis,
+                         MCdraws=1e4)
+          relcomp_h <- MatrixStudent_measures(Mean0,S_b,tXXi_b,df0,RrE[[h]],RrO[[h]],
+                          Names=matrix(names_coef,ncol=P),constraints=parse_hyp$original_hypothesis,
+                          MCdraws=1e4)
         }
         return(list(relfit_h,relcomp_h))
       }))
@@ -564,7 +567,7 @@ estimate_postMeanCov_FisherZ <- function(YXlist,numdraws=5e3){
   # call Fortran subroutine for Gibbs sampling using noninformative improper priors
   # for regression coefficients, Jeffreys priors for standard deviations, and a proper
   # joint uniform prior for the correlation matrices.
-  res <-.Fortran("estimate_postMeanCov_FisherZ2",
+  res <-.Fortran("estimate_postMeanCov_FisherZ",
                  postZmean=matrix(0,numcorr,1),
                  postZcov=matrix(0,numcorr,numcorr),
                  P=as.integer(P),

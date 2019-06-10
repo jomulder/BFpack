@@ -2,7 +2,7 @@
 
 
 
-subroutine estimate_postMeanCov_FisherZ2(postZmean, postZcov, P, numcorr, K, numG, BHat, sdHat, CHat, XtXi, samsize0, Njs, &
+subroutine estimate_postMeanCov_FisherZ(postZmean, postZcov, P, numcorr, K, numG, BHat, sdHat, CHat, XtXi, samsize0, Njs, &
     Ygroups, Xgroups, Ntot, C_quantiles, sigma_quantiles, B_quantiles, BDrawsStore, sigmaDrawsStore, CDrawsStore)
 !
     implicit none
@@ -1219,7 +1219,7 @@ subroutine spofa(a,lda,n,info)
       return
 end SUBROUTINE spofa
 
-  end subroutine estimate_postMeanCov_FisherZ2
+  end subroutine estimate_postMeanCov_FisherZ
 
 
 

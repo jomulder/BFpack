@@ -9,8 +9,8 @@ mtcars0[,(names(mtcars0)!="vs")*(names(mtcars0)!="am")==1] <-
   scale(mtcars0[,(names(mtcars0)!="vs")*(names(mtcars0)!="am")==1])
 
 # univariate regression
-lm1 <- lm(wt ~ -1 + disp + vs + hp + drat, mtcars)
-constraints <- "disp > drat > hp ; hp > disp = 0"
+x <- lm1 <- lm(wt ~ -1 + disp + vs + hp + drat, mtcars)
+constraints <- "(disp , drat) > (hp,vs)"
 BFreg1 <- BF(lm1)
 BFreg1
 BFreg1 <- BF(lm1, hypothesis = constraints)
@@ -44,7 +44,6 @@ BF(ttest)
 BF(ttest,"exploratory")
 BF(ttest,"mu_minus_mu0<0")
 
-
 #mixed outcomes
 mtcars0$vs <- as.factor(mtcars0$vs)
 lm1 <- lm(cbind(qsec,vs) ~ -1 + disp + wt + hp + drat, mtcars0)
@@ -75,8 +74,13 @@ constraints="cyl_with_mpg > disp_with_mpg > 0"
 
 constraints="mpg_with_cyl_in_vss0>mpg_with_disp_in_vss1>cyl_with_disp_in_vss0;mpg_with_cyl_in_vss0>mpg_with_disp_in_vss1=0"
 
+constraints="(wt_on_mpg, wt_on_cyl) > (vss1_on_mpg,vss1_on_cyl) & (Intercept)_on_mpg = wt_on_mpg"
+
+constraints="(wt_on_mpg, wt_on_cyl) > (vss1_on_mpg,vss1_on_cyl) & vss1_on_mpg = wt_on_mpg"
+
 BF(lm1)
-BF(lm1,parameter="correlation")
+BF(lm1,hypothesis=constraints)
+BF(x=lm1,parameter="correlation")
 
 BFcorr(lm1,constraints)
 
@@ -115,10 +119,32 @@ results <- bain(anov, "site1=site2=site3=site4=site5; site2>site5>site1>
                 site3>site4")
 
 
-
-
 library(lmhyp)
 fit <- lm(mpg ~ disp + hp + wt, data = mtcars)
 Hyp <- "wt > disp > hp > 0; wt > hp > disp > 0"
 result <- test_hyp(fit, Hyp, mcrep = 1000000)
 result
+
+
+npk.aov <- aov(yield ~ -1 + block + N*P*K, npk)
+BF(npk.aov)
+
+Xmat <- model.matrix(npk.aov)
+solve(t(Xmat)%*%Xmat)
+
+op <- options(contrasts = c("contr.helmert", "contr.poly"))
+npk.aov <- aov(yield ~ block + N*P*K, npk)
+summary(npk.aov)
+coefficients(npk.aov)
+
+
+
+
+cor1 <- polycor::hetcor(mvtnorm::rmvnorm(30,mean=rep(0,4),sigma=diag(4)+1))
+constraints <- c("X2_with_X1>X1_with_X3>X1_with_X4;X2_with_X1=X3_with_X1=X4_with_X1>0;
+  X2_with_X1=X3_with_X1=X4_with_X1=0")
+x <- cor1
+BF(cor1,constraints)
+
+
+

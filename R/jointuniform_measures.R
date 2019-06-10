@@ -1,4 +1,6 @@
 
+
+
 # Compute relative meausures for constraints on correlation based
 # on a joint uniform distribution on correlation matrix
 jointuniform_measures <- function(P,numcorrgroup,numG,RrE1,RrO1,Fisher=0){
@@ -82,7 +84,7 @@ jointuniform_measures <- function(P,numcorrgroup,numG,RrE1,RrO1,Fisher=0){
         meanOE <- rep(0,nrow(RrO1))
         covOE <- matrix(0,nrow=nrow(RrO1),ncol=nrow(RrO1))
         analysisE <- .Fortran("compute_rcEt2",numE=as.integer(nrow(RrE1)),drawsIn=drawsTrans,wIn=rE1,delta=.1,
-                 rcEt=relE,meanOut=meanOE,covmOut=covOE,samsize=as.integer(samsize),numcorr=as.integer(nrow(R1)))
+                              rcEt=relE,meanOut=meanOE,covmOut=covOE,samsize=as.integer(samsize),numcorr=as.integer(nrow(R1)))
         relE <- analysisE$rcEt
         meanOE <- analysisE$meanOut
         covOE <- analysisE$covmOut
@@ -102,7 +104,7 @@ jointuniform_measures <- function(P,numcorrgroup,numG,RrE1,RrO1,Fisher=0){
         meanOE <- rep(0,numcorr-nrow(RE1))
         covOE <- matrix(0,nrow=numcorr-nrow(RE1),ncol=numcorr-nrow(RE1))
         analysisE <- .Fortran("compute_rcEt2",numE=as.integer(nrow(RrE1)),drawsIn=drawsTrans,wIn=rE1,delta=.1,
-                          rcEt=relE,meanOut=meanOE,covmOut=covOE,samsize=as.integer(samsize),numcorr=as.integer(numcorr))
+                              rcEt=relE,meanOut=meanOE,covmOut=covOE,samsize=as.integer(samsize),numcorr=as.integer(numcorr))
         relE <- analysisE$rcEt
         meanOE <- analysisE$meanOut
         covOE <- analysisE$covmOut
@@ -117,7 +119,6 @@ jointuniform_measures <- function(P,numcorrgroup,numG,RrE1,RrO1,Fisher=0){
   }
   return(c(relE,relO))
 }
-
 
 # The function computes the probability of an unconstrained draw falling in the complement subspace of a
 # correlation matrix having a joint uniform distribution
@@ -205,7 +206,7 @@ jointuniform_prob_Hc <- function(P,numcorrgroup,numG,relmeas,constraints,RrO){
 #get draws from joint uniform prior in Fisher transformed space
 #Call Fortran subroutine in from bct_prior.f90
 # dyn.load("/Users/jorismulder/surfdrive/R packages/BFpack/src/bct_prior.dll")
-draw_ju <-function(P, samsize=50000,Fisher=1,seed=123){
+draw_ju <- function(P, samsize=50000,Fisher=1,seed=123){
   testm<- matrix(0,ncol=.5*P*(P-1),nrow=samsize)
   res <-.Fortran("draw_ju",P = as.integer(P),
                  drawscorr=testm,
@@ -216,4 +217,3 @@ draw_ju <-function(P, samsize=50000,Fisher=1,seed=123){
   return(res$drawscorr)
 
 }
-
