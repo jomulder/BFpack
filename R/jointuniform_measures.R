@@ -122,7 +122,7 @@ jointuniform_measures <- function(P,numcorrgroup,numG,RrE1,RrO1,Fisher=0){
 
 # The function computes the probability of an unconstrained draw falling in the complement subspace of a
 # correlation matrix having a joint uniform distribution
-jointuniform_prob_Hc <- function(P,numcorrgroup,numG,relmeas,constraints,RrO){
+jointuniform_prob_Hc <- function(P,numcorrgroup,numG,relmeas,RrO,samsize0=1e4){
 
   numhyp <- nrow(relmeas)
   #relmeas <- relmeas[1:numhyp,]
@@ -138,7 +138,6 @@ jointuniform_prob_Hc <- function(P,numcorrgroup,numG,relmeas,constraints,RrO){
       rownames(relmeas)[numhyp+1] <- "complement"
     }else{ # So more than one hypothesis with only order constraints
 
-      samsize0 <- 1e4
       drawsJU <- matrix(0,nrow=samsize,ncol=numcorr)
       drawsJU[,1:numcorrgroup] <- .Fortran("draw_ju",P=as.integer(P),drawscorr=drawsJU[,1:numcorrgroup],
                                            samsize=as.integer(samsize),numcorrgroup=as.integer(numcorrgroup),
@@ -155,12 +154,7 @@ jointuniform_prob_Hc <- function(P,numcorrgroup,numG,relmeas,constraints,RrO){
           teldummy <- teldummy + numcorrgroup
         }
       }
-
-
-      draws2 <- 1e4
-
-
-      randomDraws <- mvtnorm::rmvnorm(draws2,mean=rep(0,numpara),sigma=diag(numpara))
+      randomDraws <- mvtnorm::rmvnorm(samsize0,mean=rep(0,numpara),sigma=diag(numpara))
       #get draws that satisfy the constraints of the separate order constrained hypotheses
       checksOC <- lapply(welk,function(h){
         Rorder <- as.matrix(RrO[[h]][,-(1+numpara)])
@@ -168,37 +162,32 @@ jointuniform_prob_Hc <- function(P,numcorrgroup,numG,relmeas,constraints,RrO){
           Rorder <- t(Rorder)
         }
         rorder <- as.matrix(RrO[[h]][,1+numpara])
-        apply(randomDraws%*%t(Rorder) > rep(1,draws2)%*%t(rorder),1,prod)
+        apply(randomDraws%*%t(Rorder) > rep(1,samsize0)%*%t(rorder),1,prod)
       })
       checkOCplus <- Reduce("+",checksOC)
 
-      if(sum(checkOCplus > 0) < draws2){ #then the joint order constrained hypotheses do not completely cover the parameter space.
+      if(sum(checkOCplus > 0) < samsize0){ #then the joint order constrained hypotheses do not completely cover the parameter space.
         if(sum(checkOCplus>1)==0){ # then order constrained spaces are nonoverlapping
           relmeas <- rbind(relmeas,rep(1,2))
           relmeas[numhyp+1,2] <- 1 - sum(relmeas[welk,2])
           rownames(relmeas)[numhyp+1] <- "complement"
         }else{ #the order constrained subspaces at least partly overlap
-
-          # funtion below gives a rough estimate of the posterior probability under Hc
-          # a bain type of algorithm would be better of course. but for now this is ok.
-
-          randomDraws <- mvtnorm::rmvnorm(draws2,mean=mean1,sigma=Sigma1)
+          randomDraws <- mvtnorm::rmvnorm(samsize0,mean=mean1,sigma=Sigma1)
           checksOCpost <- lapply(welk,function(h){
             Rorder <- as.matrix(RrO[[h]][,-(1+numpara)])
             if(ncol(Rorder)==1){
               Rorder <- t(Rorder)
             }
             rorder <- as.matrix(RrO[[h]][,1+numpara])
-            apply(randomDraws%*%t(Rorder) > rep(1,draws2)%*%t(rorder),1,prod)
+            apply(randomDraws%*%t(Rorder) > rep(1,samsize0)%*%t(rorder),1,prod)
           })
           relmeas <- rbind(relmeas,rep(1,2))
-          relmeas[numhyp+1,2] <- sum(Reduce("+",checksOCpost) == 0) / draws2
+          relmeas[numhyp+1,2] <- sum(Reduce("+",checksOCpost) == 0) / samsize0
           rownames(relmeas)[numhyp+1] <- "complement"
         }
       }
     }
   }
-
   return(relmeas)
 }
 

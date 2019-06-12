@@ -1,20 +1,24 @@
 library(BFpack)
 # example analysis
-mtcars0 <- mtcars
-mtcars0$vs[1:6] <- 2
-mtcars0$vs <- as.factor(mtcars0$vs)
-mtcars0$am <- as.factor(mtcars0$am)
+mtcars$vsf <- as.factor(mtcars$vs)
+mtcars$amf <- as.factor(mtcars$am)
+mtcars$gearf <- as.factor(mtcars$gear)
 # standardize nonfactor variables
-mtcars0[,(names(mtcars0)!="vs")*(names(mtcars0)!="am")==1] <-
-  scale(mtcars0[,(names(mtcars0)!="vs")*(names(mtcars0)!="am")==1])
+# mtcars0[,(names(mtcars0)!="vs")*(names(mtcars0)!="am")==1] <-
+#   scale(mtcars0[,(names(mtcars0)!="vs")*(names(mtcars0)!="am")==1])
 
 # univariate regression
-x <- lm1 <- lm(wt ~ -1 + disp + vs + hp + drat, mtcars)
+lm1 <-  lm(wt ~ disp + vsf + amf:vsf + drat:vsf, mtcars)
+BF(lm1)
+lm1 <- aov(wt ~ disp + vsf + amf:vsf + drat:vsf, mtcars)
+BF(lm1)
+lm1 <- aov(wt  ~ -1 + gearf + amf:vsf:disp, mtcars)
+BF(lm1)
+
 constraints <- "(disp , drat) > (hp,vs)"
-BFreg1 <- BF(lm1)
-BFreg1
-BFreg1 <- BF(lm1, hypothesis = constraints)
-BFreg1
+constraints <- "(disp , drat) > hp"
+BF(lm1, hypothesis = constraints)
+
 # update for later
 # BFreg2 <- BFupdate.lm(BFreg1,lm1)
 
@@ -31,10 +35,10 @@ BFreg1 <- BF(lm1,hypothesis=constraints,priorprob="default")
 # BFreg2 <- BFupdate.lm(BFreg1,lm1)
 
 # multivariate regression
-lm1 <- lm(cbind(wt,mpg) ~ -1 + disp + vs + hp + drat, mtcars0)
-constraints <- "disp.wt > disp.mpg ; hp.wt > disp.wt = 0"
-BFreg1 <- BF(lm1)
-BFreg1 <- BF(lm1,hypothesis=constraints)
+lm1 <- lm(cbind(wt,mpg) ~ 1 + disp + vs + hp + drat, mtcars)
+BF(lm1)
+constraints <- "(hp_on_wt,disp_on_wt) > (drat_on_mpg,disp_on_mpg) ; hp_on_wt > disp_on_wt = 0"
+BF(lm1,hypothesis=constraints)
 BFreg1
 # BFreg2 <- BFupdate.lm(BFreg1,lm1)
 
@@ -91,15 +95,8 @@ model.matrix(lm1)
 coefficients(lm1)
 BFcorr(lm1,constraints="exploratory")
 
-library(polycor)
-my_data <- mtcars[, c(1,3,4,5,6,7)]
-res <- cor(my_data)
-res <- hetcor(my_data)
 
-install.packages("Hmisc")
-library("Hmisc")
-res2 <- rcorr(as.matrix(my_data))
-res2$P
+
 
 
 

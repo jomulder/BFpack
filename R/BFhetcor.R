@@ -61,13 +61,15 @@ BF.hetcor <- function(x,
       jointuniform_measures(P,numcorr,1,RrE[[h]],RrO[[h]],Fisher=0)
     })),nrow=2))
     relfit <- t(matrix(unlist(lapply(1:numhyp,function(h){
-      Gaussian_measures(estimates,errcov,RrE[[h]],RrO[[h]])
+      Gaussian_measures(estimates,errcov,RrE[[h]],RrO[[h]],names1=corr_names_lower,
+                        constraints1=parse_hyp$original_hypothesis[h])
     })),nrow=2))
     row.names(relcomp) <- parse_hyp$original_hypothesis
     row.names(relfit) <- parse_hyp$original_hypothesis
     # evaluation of complement hypothesis
-    relfit <- Gaussian_prob_Hc(estimates,errcov,relfit,constraints,RrO)
-    relcomp <- jointuniform_prob_Hc(mean0,scale0,df0,relcomp,constraints)
+    relfit <- Gaussian_prob_Hc(estimates,errcov,relfit,RrO)
+    relcomp <- jointuniform_prob_Hc(P,numcorr,1,relcomp,RrO)
+
     colnames(relcomp) <- c("c_E","c_O")
     colnames(relfit) <- c("f_E","f_O")
     # computation of exploratory BFs and PHPs

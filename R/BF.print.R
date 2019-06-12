@@ -12,6 +12,22 @@ print.BF <- function(x, #stats = c("Fit_eq", "Com_eq", "Fit_in", "Com_in", "Fit"
 
   cat("\n")
 
+  if(class(x$model)[1]=="aov"){
+    if(!is.null(x$BFtu_main)){
+      cat("Main effects:")
+      cat("\n")
+      print(round(x$PHP_main,digits))
+    }
+    cat("\n")
+
+    if(!is.null(x$BFtu_interaction)){
+      cat("Interaction effects:")
+      cat("\n")
+      print(round(x$PHP_interaction,digits))
+    }
+    cat("\n")
+  }
+
   if(!is.null(x$BFtu_confirmatory)){
     cat("Results of Bayesian confirmatory hypothesis tests for an object of class ", class(x$model)[1], ":\n\n", sep = "")
     cat("Hypotheses:")

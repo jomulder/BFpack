@@ -39,7 +39,7 @@ Gaussian_estimator <- function(meanN,
   }else{
     # confirmatory tests based on input constraints
 
-    parse_hyp <- parse_hypothesis(names_coef, hypothesis)
+    parse_hyp <- parse_hypothesis(names_coef,hypothesis)
 
     #create coefficient with equality and order constraints
     RrList <- make_RrList2(parse_hyp)
@@ -49,16 +49,17 @@ Gaussian_estimator <- function(meanN,
     #get relative fit and complexity of hypotheses
     numhyp <- length(RrE)
     relcomp <- t(matrix(unlist(lapply(1:numhyp,function(h){
-      Gaussian_measures(mean0,covm0,RrE[[h]],RrO[[h]])
+      Gaussian_measures(mean0,covm0,RrE[[h]],RrO[[h]],names1=names_coef,
+                        constraints1=parse_hyp$original_hypothesis)
     })),nrow=2))
-
     relfit <- t(matrix(unlist(lapply(1:numhyp,function(h){
-      Gaussian_measures(meanN,covmN,RrE[[h]],RrO[[h]])
+      Gaussian_measures(meanN,covmN,RrE[[h]],RrO[[h]],names1=names_coef,
+                        constraints1=parse_hyp$original_hypothesis)
     })),nrow=2))
 
     # get relative fit and complexity of complement hypothesis
-    relcomp <- Gaussian_prob_Hc(mean0,covm0,relcomp, RrO, RrO) #Note that input is a bit strange here, Gaussian_prob_Hc needs fixing
-    relfit <- Gaussian_prob_Hc(meanN,covmN,relfit,RrO, RrO)
+    relcomp <- Gaussian_prob_Hc(mean0,covm0,relcomp,RrO) #Note that input is a bit strange here, Gaussian_prob_Hc needs fixing
+    relfit <- Gaussian_prob_Hc(meanN,covmN,relfit,RrO)
 
     Hnames <- c(unlist(lapply(1:numhyp,function(h){paste0("H",as.character(h))})),"Hc")
     row.names(relcomp) <- row.names(relfit) <- Hnames

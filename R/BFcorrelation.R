@@ -381,7 +381,7 @@ Gaussian_measures <- function(mean1,Sigma1,n1=0,RrE1,RrO1,names1=NULL,constraint
 }
 
 # The function computes the probability of an unconstrained draw falling in the complement subspace.
-Gaussian_prob_Hc <- function(mean1,Sigma1,relmeas,constraints,RrO){
+Gaussian_prob_Hc <- function(mean1,Sigma1,relmeas,RrO){
 
   numpara <- length(mean1)
   numhyp <- nrow(relmeas)
