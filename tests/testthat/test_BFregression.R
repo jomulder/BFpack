@@ -8,16 +8,18 @@ mtcars$gearf <- as.factor(mtcars$gear)
 #   scale(mtcars0[,(names(mtcars0)!="vs")*(names(mtcars0)!="am")==1])
 
 # univariate regression
-lm1 <-  lm(wt ~ disp + vsf + amf:vsf + drat:vsf, mtcars)
+lm1 <-  lm(wt ~ disp + drat + hp, mtcars)
 BF(lm1)
-lm1 <- aov(wt ~ disp + vsf + amf:vsf + drat:vsf, mtcars)
+lm1 <- aov(wt ~ -1 + gearf + drat + disp + cyl+ vsf + amf:vsf:drat:vsf + carb:gearf + qsec + hp, mtcars)
 BF(lm1)
 lm1 <- aov(wt  ~ -1 + gearf + amf:vsf:disp, mtcars)
 BF(lm1)
 
 constraints <- "(disp , drat) > (hp,vs)"
-constraints <- "(disp , drat) > hp"
-BF(lm1, hypothesis = constraints)
+constraints <- "(disp , drat) > hp; disp = drat = hp; drat > hp"
+constraints <- "(disp, drat) > hp; disp = drat = hp; drat > hp"
+BF1 <- BF(x=lm1, hypothesis = constraints)
+BF1$relative_complexity
 
 # update for later
 # BFreg2 <- BFupdate.lm(BFreg1,lm1)
@@ -142,6 +144,29 @@ constraints <- c("X2_with_X1>X1_with_X3>X1_with_X4;X2_with_X1=X3_with_X1=X4_with
   X2_with_X1=X3_with_X1=X4_with_X1=0")
 x <- cor1
 BF(cor1,constraints)
+
+
+# ?manova test
+npk2 <- within(npk, foo <- rnorm(24))
+npk2.aov <- manova(cbind(yield, foo) ~ block + N, npk2)
+summary(npk2.aov)
+BF(npk2.aov)
+class(npk2.aov)
+
+npk2.aov$coefficients
+
+npk2.aov$coefficients
+model.matrix(npk2.aov)
+
+x=npk2.aov
+
+
+devtools::install_github("jomulder/BFpack")
+library(BFpack)
+fit <- lm(cbind(mpg,disp) ~ 1 + hp + wt, data = mtcars)
+BF(fit)
+BF(fit,"hp_on_mpg>hp_on_disp;hp_on_mpg=hp_on_disp")
+
 
 
 

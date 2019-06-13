@@ -11,7 +11,6 @@
 BF.mlm <- function(x,
                   hypothesis = NULL,
                   prior = NULL,
-                  covariates = NULL,
                   parameter = NULL,
                   ...){
 
@@ -29,8 +28,12 @@ BF.mlm <- function(x,
     parametertest <- "regression"
   }else if(parameter=="correlation"){
     parametertest <- parameter
-  }else{parametertest <- "regression"}
-
+  }else{
+    parametertest <- "regression"
+    if(parameter!="regression"){
+      warning("The 'parameter' argument is not recognized. It should be either 'regression' (default) or 'correlation'. The test is executed as a regression/anova analysis.")
+    }
+  }
 
   # default BF on location parameters in a univarite normal linear model
   # Note that it is recommended that the fitten model is based on standardized covariates.
@@ -40,45 +43,52 @@ BF.mlm <- function(x,
   dummyX <- rep(F,K)
   names(dummyX) <- row.names(x$coefficients)
 
-  if(is.null(covariates)){
-    noncovs <- 1:K
-  } else { # covariates must be a vector of integers denoting which predictor variables
-    # are not grouping variables.
-    noncovs <- (1:K)[-covariates]
-  }
-
   Xmat <- model.matrix(x)
   Ymat <- model.matrix(x)%*%x$coefficients + x$residuals
-
   if(parametertest=="regression"){
-    #Check which are dummy variables corresponding to (adjusted) mean parameters
-    for(k in noncovs){
-      uniquek <- sort(unique(Xmat[,k]))
-      # if(length(uniquek)==2){
-      #   if(uniquek[1]==0 && uniquek[2]==1){dummyX[k]<-T} #(adjusted) mean
-      # }else{
-      #   if(length(uniquek)==1){dummyX[k]<-T} #intercept parameter
-      # }
-      if(length(uniquek)<=2){dummyX[k]<-T} #group index of intercept
-    }
-    #number of groups on variations of dummy combinations
-    groupcode <- as.matrix(unique(Xmat[,dummyX]))
-    rownames(groupcode) <- unlist(lapply(1:nrow(groupcode),function(r){
-      paste0("groupcode",r)
-    }))
 
-    J <- nrow(groupcode)
-    if(J==0){ #then no intercept
+    if(length(x$xlevels)==0){ #no grouping covariates: 1 group
       J <- 1
-      nointercept <- T
+      dummyX <- rep(F,K)
+      Nj <- nrow(Xmat)
+      dvec <- rep(1,Nj)
+      #set minimal fractions for the group
+      bj <- ((P+K)/J)/Nj
+    }else{
+      numlevels <- unlist(lapply(x$xlevels,length))
+      mains <- unlist(lapply(1:length(x$xlevels),function(fac){
+        unlist(lapply(1:length(x$xlevels[[fac]]),function(lev){
+          paste0(names(x$xlevels)[fac],x$xlevels[[fac]][lev])
+        }))
+      }))
+      intercept <- attr(x$terms,"intercept")==1
+      names_coef <- row.names(x$coefficients)
+      # dummyX indicate which columns contain dummy group covariates
+      dummyX1 <- apply(matrix(unlist(lapply(1:length(mains),function(faclev){
+        unlist(lapply(1:length(names_coef),function(cf){
+          grepl(mains[faclev],names_coef[cf])
+        }))
+      })),nrow=length(names_coef)),1,max)==1
+      dummyX2 <- unlist(lapply(apply(Xmat,2,table),length))==2
+      dummyX <- dummyX1 * dummyX2 == 1
+      #number of groups on variations of dummy combinations
+      groupcode <- as.matrix(unique(Xmat[,dummyX]))
+      rownames(groupcode) <- unlist(lapply(1:nrow(groupcode),function(r){
+        paste0("groupcode",r)
+      }))
+      J <- nrow(groupcode)
+      if(J==nrow(Xmat)){
+        stop("Not enough observations for every group. Try fitting the model without factors.")
+      }
+
+      # group membership of each observation
+      dvec <- unlist(lapply(1:N,function(i){
+        which(rowSums(abs(t(matrix(rep(Xmat[i,dummyX],J),ncol=J)) - groupcode))==0)
+      }))
+      Nj <- c(table(dvec))
+      #set minimal fractions for each group
+      bj <- ((P+K)/J)/Nj
     }
-    # group membership of each observation
-    dvec <- unlist(lapply(1:N,function(i){
-      which(rowSums(abs(t(matrix(rep(Xmat[i,dummyX],J),ncol=J)) - groupcode))==0)
-    }))
-    Nj <- c(table(dvec))
-    #set minimal fractions for each group
-    bj <- ((P+K)/J)/Nj
 
     #Compute sufficient statistics for all groups
     tXXj <- lapply(1:J,function(j){
@@ -116,7 +126,6 @@ BF.mlm <- function(x,
     # sufficient statistics based on fraction of the data
     BetaHat_b <- solve(tXX_b)%*%tXY_b
     S_b <- tYY_b - t(tXY_b)%*%solve(tXX_b)%*%tXY_b
-
 
     # BF computation for exploratory analysis of separate parameters
     names_coef1 <- names(x$coefficients[,1])
@@ -158,6 +167,91 @@ BF.mlm <- function(x,
     colnames(BFtu_exploratory) <- c("Pr(=0)","Pr(<0)","Pr(>0)")
     PHP_exploratory <- BFtu_exploratory / apply(BFtu_exploratory,1,sum)
 
+
+    # Additional exploratory tests in the case of an aov type object
+    if(sum(class(x)=="aov")==1){
+
+      #
+      #
+      # CHECK CHECEK CEHECK
+      #
+      #
+
+
+
+      # check main effects
+      BFmain <- unlist(lapply(1:length(numlevels),function(fac){
+        name1 <- names(numlevels[fac])
+        mains1 <- mains[sum(numlevels[1:fac])-numlevels[fac]+1:numlevels[fac]]
+        which0 <- unlist(lapply(1:length(colnames(Xmat)),function(col){
+          sum(colnames(Xmat)[col]==mains1)==1
+        }))
+        if(sum(which0)>0){
+          RrE_f <- matrix(0,nrow=sum(which0),ncol=length(colnames(Xmat))+1)
+          for(r1 in 1:sum(which0)){RrE_f[r1,which(which0)[r1]]<-1}
+          relcomp_f <- Student_measures(mean1=mean0,Scale1=Scale0,df1=df0,RrE1=RrE_f,RrO1=NULL)
+          relfit_f <- Student_measures(mean1=meanN,Scale1=ScaleN,df1=dfN,RrE1=RrE_f,RrO1=NULL)
+          BFtu <- relfit_f[1]/relcomp_f[1]
+          names(BFtu) <- name1
+          return(c(BFtu,relfit_f[1],relcomp_f[1]))
+        }
+      }))
+      #compute Bayes factors for testing main effects if present
+      if(length(BFmain)>0){ # then there are main effects
+        names_main <- names(BFmain[(0:(length(BFmain)/3-1))*3+1])
+        BFtu_main <- matrix(c(BFmain[(0:(length(BFmain)/3-1))*3+1],rep(1,length(BFmain)/3)),nrow=length(BFmain)/3)
+        row.names(BFtu_main) <- names_main
+        colnames(BFtu_main) <- c("BFtu","BFuu")
+        PHP_main <- BFtu_main / apply(BFtu_main,1,sum)
+        colnames(PHP_main) <- c("Pr(null)","Pr(alt)")
+      }else{ PHP_main <- BFtu_main <- NULL}
+      #check whether interaction effects are present
+      prednames <- names(attr(x$term,"dataClasses"))
+      matcov <- cbind(matrix(unlist(lapply(1:K,function(col){
+        colx <- colnames(Xmat)[col]
+        unlist(lapply(1:length(prednames),function(pred){
+          grepl(prednames[pred],colx)
+        }))
+      })),nrow=length(prednames)),rep(F,length(prednames)))
+      row.names(matcov) <- prednames
+      colnames(matcov) <- c(colnames(Xmat),"dummy")
+      BFtu_interaction0 <- list()
+      count_interaction <- 0
+      for(c1 in 1:ncol(matcov)){
+        if(c1 < ncol(matcov)){
+          numeffects_c <- sum(matcov[,c1])
+          if(numeffects_c>1){
+            count_interaction <- count_interaction + 1
+            interactionset <- names(which(matcov[,c1]))
+            whichx <- apply(matcov[which(matcov[,c1]),],2,sum)==length(interactionset)
+            RrE_ia <- matrix(0,nrow=sum(whichx),ncol=K+1)
+            for(r1 in 1:sum(whichx)){RrE_ia[r1,which(whichx)[r1]]<-1}
+            relcomp_ia <- Student_measures(mean1=mean0,Scale1=Scale0,df1=df0,RrE1=RrE_ia,RrO1=NULL)
+            names(relcomp_ia) <- c("c=","c>")
+            relfit_ia <- Student_measures(mean1=meanN,Scale1=ScaleN,df1=dfN,RrE1=RrE_ia,RrO1=NULL)
+            names(relfit_ia) <- c("f=","f>")
+            BFtu_ia <- relfit_ia[1]/relcomp_ia[1]
+            names(BFtu_ia) <- paste(interactionset,collapse=":")
+            BFtu_interaction0[[count_interaction]] <- c(BFtu_ia,relcomp_ia[1],relfit_ia[1])
+            #exclude other columns from Xmat that have been used to avoid double results
+            matcov <- matcov[,-(which(whichx[-c1])+1)]
+          }
+        }
+      }
+      #compute Bayes factors for testing interaction effects if present
+      if(count_interaction>0){ # then there are main effects
+        BFtu_interaction0 <- unlist(BFtu_interaction0)
+        names_interaction <- names(BFtu_interaction0[(0:(length(BFtu_interaction0)/3-1))*3+1])
+        BFtu_interaction <- matrix(c(BFtu_interaction0[(0:(length(BFtu_interaction0)/3-1))*3+1],
+                                     rep(1,length(BFtu_interaction0)/3)),nrow=length(BFtu_interaction0)/3)
+        row.names(BFtu_interaction) <- names_interaction
+        colnames(BFtu_interaction) <- c("BFtu","BFuu")
+        PHP_interaction <- BFtu_interaction / apply(BFtu_interaction,1,sum)
+        colnames(PHP_interaction) <- c("Pr(null)","Pr(alt)")
+      }else{ PHP_interaction <- BFtu_interaction <- NULL}
+    }else{ PHP_interaction <- BFtu_interaction <- PHP_main <- BFtu_main <- NULL}
+
+    # confirmatory BF test
     if(constraints!="exploratory"){
       #read constraints
       names_coef1 <- names(x$coefficients[,1])

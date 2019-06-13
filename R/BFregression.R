@@ -10,7 +10,6 @@
 BF.lm <- function(x,
                   hypothesis = NULL,
                   prior = NULL,
-                  covariates = NULL,
                   parameter = NULL,
                   ...){
 
@@ -81,6 +80,9 @@ BF.lm <- function(x,
       paste0("groupcode",r)
     }))
     J <- nrow(groupcode)
+    if(J==nrow(Xmat)){
+      stop("Not enough observations for every group. Try fitting the model without factors.")
+    }
 
     # group membership of each observation
     dvec <- unlist(lapply(1:N,function(i){
@@ -115,6 +117,9 @@ BF.lm <- function(x,
     tYYj[[j]]*bj[j]
   })
   tXX <- Reduce("+",tXXj)
+  if(min(eigen(tXX)$values)<0){
+    stop("Model matrix does not seem to be of full row rank.")
+  }
   tXXi <- solve(tXX)
   tXY <- Reduce("+",tXYj)
   tYY <- Reduce("+",tYYj)
@@ -243,8 +248,9 @@ BF.lm <- function(x,
       PHP_interaction <- BFtu_interaction / apply(BFtu_interaction,1,sum)
       colnames(PHP_interaction) <- c("Pr(null)","Pr(alt)")
     }else{ PHP_interaction <- BFtu_interaction <- NULL}
-  }
+  }else{ PHP_interaction <- BFtu_interaction <- PHP_main <- BFtu_main <- NULL}
 
+  # confirmatory BF test
   if(constraints!="exploratory"){
     #read constraints
     # if(P==1){
@@ -259,8 +265,8 @@ BF.lm <- function(x,
     #   }))
     # }
     # translate named constraints to matrices with coefficients for constraints
-    parse_hyp <- parse_hypothesis(names_coef,constraints)
-    RrList <- make_RrList2(parse_hyp)
+    parse_hyp <- bain:::parse_hypothesis(names_coef,constraints)
+    RrList <- BFpack:::make_RrList2(parse_hyp)
     RrE <- RrList[[1]]
     RrO <- RrList[[2]]
 
@@ -301,12 +307,13 @@ BF.lm <- function(x,
     })),nrow=2))
 
     relfit <- t(matrix(unlist(lapply(1:numhyp,function(h){
-      Student_measures(meanN,ScaleN,dfN,RrE[[h]],RrO[[h]])
+      Student_measures(meanN,ScaleN,dfN,RrE[[h]],RrO[[h]],
+                       names1=names_coef,constraints1=parse_hyp$original_hypothesis[h])
     })),nrow=2))
 
     # Compute relative fit/complexity for the complement hypothesis
-    relfit <- Student_prob_Hc(meanN,scaleN,dfN,relfit,constraints)
-    relcomp <- Student_prob_Hc(mean0,scale0,df0,relcomp,constraints)
+    relfit <- Student_prob_Hc(meanN,ScaleN,dfN,relfit,constraints)
+    relcomp <- Student_prob_Hc(mean0,Scale0,df0,relcomp,constraints)
     row.names(relcomp)[1:numhyp] <- parse_hyp$original_hypothesis
     row.names(relfit)[1:numhyp] <- parse_hyp$original_hypothesis
     colnames(relcomp) <- c("c_E","c_O")
@@ -431,9 +438,16 @@ BF.lm <- function(x,
     BFmatrix_confirmatory <- matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory))/
       t(matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory)))
     row.names(BFmatrix_confirmatory) <- colnames(BFmatrix_confirmatory) <- names(BFtu_confirmatory)
+    #tested hypotheses
+    if(nrow(relfit)==length(parse_hyp$original_hypothesis)){
+      hypotheses <- parse_hyp$original_hypothesis
+    }else{
+      hypotheses <- c(parse_hyp$original_hypothesis,"complement")
+    }
   }else{
     BFtu_confirmatory <- PHP_confirmatory <- BFmatrix_confirmatory <- relfit <-
       relcomp <- NULL
+    hypotheses <- "exploratory"
   }
 
   BFlm_out <- list(
@@ -449,16 +463,8 @@ BF.lm <- function(x,
     relative_fit=relfit,
     relative_complexity=relcomp,
     model=x,
-    estimates=x$coefficients,
-    P=P,
-    ngroups=Nj,
-    tXXj=tXXj,
-    tXYj=tXYj,
-    tYYj=tYYj,
-    constraints=constraints,
-    priorprob=priorprob,
-    groupcode=groupcode,
-    dummyX=dummyX)
+    hypotheses=hypotheses,
+    estimates=x$coefficients)
 
   class(BFlm_out) <- "BF"
 
