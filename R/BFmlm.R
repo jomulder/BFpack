@@ -171,13 +171,9 @@ BF.mlm <- function(x,
     # Additional exploratory tests in the case of an aov type object
     if(sum(class(x)=="aov")==1){
 
-      #
-      #
-      # CHECK CHECEK CEHECK
-      #
-      #
-
-
+      cat("Computing Bayes factors for testing main effects may take a few seconds.")
+      cat("\n")
+      cat("\n")
 
       # check main effects
       BFmain <- unlist(lapply(1:length(numlevels),function(fac){
@@ -187,10 +183,13 @@ BF.mlm <- function(x,
           sum(colnames(Xmat)[col]==mains1)==1
         }))
         if(sum(which0)>0){
-          RrE_f <- matrix(0,nrow=sum(which0),ncol=length(colnames(Xmat))+1)
+          RrE_f <- matrix(0,nrow=sum(which0),ncol=length(colnames(Xmat)))
           for(r1 in 1:sum(which0)){RrE_f[r1,which(which0)[r1]]<-1}
-          relcomp_f <- Student_measures(mean1=mean0,Scale1=Scale0,df1=df0,RrE1=RrE_f,RrO1=NULL)
-          relfit_f <- Student_measures(mean1=meanN,Scale1=ScaleN,df1=dfN,RrE1=RrE_f,RrO1=NULL)
+          RrE_f <- cbind(kronecker(diag(P),RrE_f),rep(0,sum(which0)*P))
+          relcomp_f <- MatrixStudent_measures(Mean1=matrix(mean0,ncol=P),Scale1=S_b,tXXi1=tXXi_b,
+                                        df1=df0,RrE1=RrE_f,RrO1=NULL)
+          relfit_f <- MatrixStudent_measures(Mean1=BetaHat,Scale1=S,tXXi1=tXXi,df1=dfN,RrE1=RrE_f,
+                                       RrO1=NULL)
           BFtu <- relfit_f[1]/relcomp_f[1]
           names(BFtu) <- name1
           return(c(BFtu,relfit_f[1],relcomp_f[1]))
@@ -217,6 +216,11 @@ BF.mlm <- function(x,
       colnames(matcov) <- c(colnames(Xmat),"dummy")
       BFtu_interaction0 <- list()
       count_interaction <- 0
+
+      cat("Computing Bayes factors for testing interaction effects may take a few seconds.")
+      cat("\n")
+      cat("\n")
+
       for(c1 in 1:ncol(matcov)){
         if(c1 < ncol(matcov)){
           numeffects_c <- sum(matcov[,c1])
@@ -224,11 +228,14 @@ BF.mlm <- function(x,
             count_interaction <- count_interaction + 1
             interactionset <- names(which(matcov[,c1]))
             whichx <- apply(matcov[which(matcov[,c1]),],2,sum)==length(interactionset)
-            RrE_ia <- matrix(0,nrow=sum(whichx),ncol=K+1)
+            RrE_ia <- matrix(0,nrow=sum(whichx),ncol=K)
             for(r1 in 1:sum(whichx)){RrE_ia[r1,which(whichx)[r1]]<-1}
-            relcomp_ia <- Student_measures(mean1=mean0,Scale1=Scale0,df1=df0,RrE1=RrE_ia,RrO1=NULL)
+            RrE_ia <- cbind(kronecker(diag(P),RrE_ia),rep(0,sum(whichx)*P))
+            relcomp_ia <- MatrixStudent_measures(Mean1=matrix(mean0,ncol=P),Scale1=S_b,tXXi1=tXXi_b,
+                                                df1=df0,RrE1=RrE_ia,RrO1=NULL)
             names(relcomp_ia) <- c("c=","c>")
-            relfit_ia <- Student_measures(mean1=meanN,Scale1=ScaleN,df1=dfN,RrE1=RrE_ia,RrO1=NULL)
+            relfit_ia <- MatrixStudent_measures(Mean1=BetaHat,Scale1=S,tXXi1=tXXi,df1=dfN,RrE1=RrE_ia,
+                                               RrO1=NULL)
             names(relfit_ia) <- c("f=","f>")
             BFtu_ia <- relfit_ia[1]/relcomp_ia[1]
             names(BFtu_ia) <- paste(interactionset,collapse=":")
@@ -253,6 +260,10 @@ BF.mlm <- function(x,
 
     # confirmatory BF test
     if(constraints!="exploratory"){
+      cat("Computing Bayes factors for confirmatory hypothesis tests may take a few seconds.")
+      cat("\n")
+      cat("\n")
+
       #read constraints
       names_coef1 <- names(x$coefficients[,1])
       names_coef2 <- names(x$coefficients[1,])
@@ -363,7 +374,7 @@ BF.mlm <- function(x,
           df0 <- 1
           dfN <- N-K-P+1
           relfit_h <- MatrixStudent_measures(BetaHat,S,tXXi,dfN,RrE[[h]],RrO[[h]],
-                         Names=matrix(names_coef,ncol=P),constraints=parse_hyp$original_hypothesis,
+                         Names1=matrix(names_coef,ncol=P),constraints1=parse_hyp$original_hypothesis,
                          MCdraws=1e4)
           relcomp_h <- MatrixStudent_measures(Mean0,S_b,tXXi_b,df0,RrE[[h]],RrO[[h]],
                           Names=matrix(names_coef,ncol=P),constraints=parse_hyp$original_hypothesis,
@@ -403,9 +414,15 @@ BF.mlm <- function(x,
       BFmatrix_confirmatory <- matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory))/
         t(matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory)))
       row.names(BFmatrix_confirmatory) <- colnames(BFmatrix_confirmatory) <- names(BFtu_confirmatory)
+      if(nrow(relfit)==length(parse_hyp$original_hypothesis)){
+        hypotheses <- parse_hyp$original_hypothesis
+      }else{
+        hypotheses <- c(parse_hyp$original_hypothesis,"complement")
+      }
     }else{
       BFtu_confirmatory <- PHP_confirmatory <- BFmatrix_confirmatory <- relfit <-
         relcomp <- NULL
+      hypotheses <- "exploratory"
     }
   }else{ #perform tests on correlations
 
@@ -567,11 +584,17 @@ BF.mlm <- function(x,
       BFmatrix_confirmatory <- matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory))/
         t(matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory)))
       row.names(BFmatrix_confirmatory) <- colnames(BFmatrix_confirmatory) <- names(BFtu_confirmatory)
+      if(nrow(relfit)==length(parse_hyp$original_hypothesis)){
+        hypotheses <- parse_hyp$original_hypothesis
+      }else{
+        hypotheses <- c(parse_hyp$original_hypothesis,"complement")
+      }
     }else{
       BFtu_confirmatory <- PHP_confirmatory <- BFmatrix_confirmatory <- relfit <-
         relcomp <- NULL
+      hypotheses <- "exploratory"
     }
-
+    PHP_interaction <- BFtu_interaction <- PHP_main <- BFtu_main <- NULL
   }
 
   BFlm_out <- list(
@@ -580,19 +603,15 @@ BF.mlm <- function(x,
     BFtu_confirmatory=BFtu_confirmatory,
     PHP_confirmatory=PHP_confirmatory,
     BFmatrix_confirmatory=BFmatrix_confirmatory,
+    BFtu_main=BFtu_main,
+    PHP_main=PHP_main,
+    BFtu_interaction=PHP_interaction,
+    PHP_interaction=PHP_interaction,
     relative_fit=relfit,
     relative_complexity=relcomp,
+    hypotheses=hypotheses,
     model=x,
-    estimates=x$coefficients,
-    P=P,
-    ngroups=Nj,
-    tXXj=tXXj,
-    tXYj=tXYj,
-    tYYj=tYYj,
-    constraints=constraints,
-    priorprob=priorprob,
-    groupcode=groupcode,
-    dummyX=dummyX)
+    estimates=x$coefficients)
 
   class(BFlm_out) <- "BF"
 

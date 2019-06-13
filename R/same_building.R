@@ -1,0 +1,29 @@
+#' Same building event statistic
+#' 
+#' A matrix coding whether senders of events (in the rows) and receivers of events
+#' (in the column) work in the same building. Related to the 'events' data object,
+#' that contains a relational event sequence, and the 'actors' object, that contains
+#' information on the 25 actors involved in the relational event sequence. 
+#' 
+#'
+#' @name same_building
+#' @docType data
+#' @usage data(same_building)
+#' @format dataframe (25 rows, 4 columns)
+#'
+#' \tabular{lll}{
+#'    \strong{same_building} \tab \code{integer} \tab Event statistic. Matrix with senders in the
+#'    rows and receivers in the columns. The event statistic is 1 if sender and receiver work 
+#'    in the same building and 0 otherwise. \cr
+#' }
+#' 
+#' @references Mulder, J., & Leenders, R. T. (2019). Modeling the evolution of 
+#' interaction behavior in social networks: A dynamic relational event approach 
+#' for real-time analysis. Chaos, Solitons and Fractal Nonlinear, 119, 73-85,
+#' https://doi.org/10.1016/j.chaos.2018.11.027
+#' \href{https://doi.org/10.1016/j.chaos.2018.11.027}{
+#' doi:10.1016/j.chaos.2018.11.027}
+#' @source \href{https://doi.org/10.1016/j.chaos.2018.11.027}{
+#' doi:10.1016/j.chaos.2018.11.027}
+#' @keywords datasets
+NULL

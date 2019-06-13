@@ -462,8 +462,8 @@ BF.lm <- function(x,
     PHP_interaction=PHP_interaction,
     relative_fit=relfit,
     relative_complexity=relcomp,
-    model=x,
     hypotheses=hypotheses,
+    model=x,
     estimates=x$coefficients)
 
   class(BFlm_out) <- "BF"

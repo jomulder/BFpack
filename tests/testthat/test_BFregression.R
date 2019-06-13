@@ -71,10 +71,9 @@ attributes(lm1,"dataClasses")
 
 # test correlation analysis
 mtcars$vss <- as.factor(mtcars$vs)
-lm1 <- lm(cbind(mpg,cyl,disp) ~ 1 + wt + vss + am, mtcars)
-lm1 <- lm(cbind(mpg,cyl,disp) ~ -1 + wt + vss + am, mtcars)
-x <- lm1
+lm1 <- lm(cbind(mpg,cyl,disp) ~ 1 + wt, mtcars)
 constraints="mpg_with_cyl>disp_with_mpg>cyl_with_disp;mpg_with_cyl>disp_with_mpg=0"
+BF(x=lm1,parameter="correlation")
 
 constraints="cyl_with_mpg > disp_with_mpg > 0"
 
@@ -148,9 +147,10 @@ BF(cor1,constraints)
 
 # ?manova test
 npk2 <- within(npk, foo <- rnorm(24))
-npk2.aov <- manova(cbind(yield, foo) ~ block + N, npk2)
+npk2.aov <- manova(cbind(yield, foo) ~ N*K, npk2)
 summary(npk2.aov)
-BF(npk2.aov)
+BF1 <- BF(npk2.aov)
+BF1 <- BF(npk2.aov,"N1_on_yield>K1_on_yield>0")
 class(npk2.aov)
 
 npk2.aov$coefficients
@@ -159,6 +159,8 @@ npk2.aov$coefficients
 model.matrix(npk2.aov)
 
 x=npk2.aov
+
+
 
 
 devtools::install_github("jomulder/BFpack")
