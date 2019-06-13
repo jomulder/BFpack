@@ -91,7 +91,6 @@ Gaussian_estimator <- function(meanN,
       BFmatrix_confirmatory=BFmatrix_confirmatory,
       relative_fit=relfit,
       relative_complexity=relcomp,
-      model=x,
       estimates=meanN,
       constraints=hypothesis,
       priorprob=prior)

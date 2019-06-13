@@ -16,6 +16,8 @@ BF.glmerMod <- function(x,
   meanN <- x@beta
   names(meanN) <- rownames(covmN)
 
-  Gaussian_estimator(meanN, covmN, n, hypothesis, prior)
+  out <- Gaussian_estimator(meanN, covmN, n, hypothesis, prior)
+  out$model <- x
+  out
 
 }
