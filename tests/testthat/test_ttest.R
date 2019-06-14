@@ -13,3 +13,8 @@ BF(ttest1,hypothesis="difference=0.2;difference<0.2")
 ttest1 <- t_test(therapeutic,therapeutic*.7+.5,"two.sided",var.equal=F)
 BF(ttest1)
 BF(ttest1,hypothesis="difference=0.2;difference<0.2")
+
+
+
+
+
