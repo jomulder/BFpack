@@ -49,17 +49,17 @@ Gaussian_estimator <- function(meanN,
     #get relative fit and complexity of hypotheses
     numhyp <- length(RrE)
     relcomp <- t(matrix(unlist(lapply(1:numhyp,function(h){
-      Gaussian_measures(mean0,covm0,RrE[[h]],RrO[[h]],names1=names_coef,
-                        constraints1=parse_hyp$original_hypothesis)
+      Gaussian_measures(mean1 = mean0, Sigma1 = covm0, RrE1 = RrE[[h]], RrO1 = RrO[[h]],
+                        names1=names_coef,constraints1=parse_hyp$original_hypothesis)
     })),nrow=2))
     relfit <- t(matrix(unlist(lapply(1:numhyp,function(h){
-      Gaussian_measures(meanN,covmN,RrE[[h]],RrO[[h]],names1=names_coef,
-                        constraints1=parse_hyp$original_hypothesis)
+      Gaussian_measures(mean1 = meanN, Sigma1 = covmN, RrE1 = RrE[[h]], RrO1 = RrO[[h]],
+                        names1=names_coef,constraints1=parse_hyp$original_hypothesis)
     })),nrow=2))
 
     # get relative fit and complexity of complement hypothesis
-    relcomp <- Gaussian_prob_Hc(mean0,covm0,relcomp,RrO) #Note that input is a bit strange here, Gaussian_prob_Hc needs fixing
-    relfit <- Gaussian_prob_Hc(meanN,covmN,relfit,RrO)
+    relcomp <- Gaussian_prob_Hc(mean1 = mean0, Sigma1 = covm0, relmeas = relcomp, RrO = RrO) #Note that input is a bit strange here, Gaussian_prob_Hc needs fixing
+    relfit <- Gaussian_prob_Hc(mean1 = meanN, Sigma1 = covmN, relmeas = relfit, RrO = RrO)
 
     Hnames <- c(unlist(lapply(1:numhyp,function(h){paste0("H",as.character(h))})),"Hc")
     row.names(relcomp) <- row.names(relfit) <- Hnames
@@ -91,7 +91,6 @@ Gaussian_estimator <- function(meanN,
       BFmatrix_confirmatory=BFmatrix_confirmatory,
       relative_fit=relfit,
       relative_complexity=relcomp,
-      model=x,
       estimates=meanN,
       constraints=hypothesis,
       priorprob=prior)

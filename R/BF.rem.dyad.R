@@ -13,6 +13,8 @@ BF.rem.dyad <- function(x,
   covmN <- x$cov
   meanN <- x$coef
 
-  Gaussian_estimator(meanN, covmN, n, hypothesis, prior)
+  out <- Gaussian_estimator(meanN, covmN, n, hypothesis, prior)
+  out$model <- x
+  out
 
 }
