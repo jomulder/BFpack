@@ -21,15 +21,15 @@ LazyData: true
 NeedsCompilation: yes
 RoxygenNote: 6.1.1
 Depends: 
-    R (>= 3.0.0),
+    R (>= 3.0.0)
+Imports:
     stats,
     methods,
-    bain
-Imports:
     MASS,
     MCMCpack,
     Matrix,
     mvtnorm,
-    pracma
+    pracma,
+    bain
 Suggests: 
     testthat
