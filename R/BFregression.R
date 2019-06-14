@@ -265,8 +265,8 @@ BF.lm <- function(x,
     #   }))
     # }
     # translate named constraints to matrices with coefficients for constraints
-    parse_hyp <- bain:::parse_hypothesis(names_coef,constraints)
-    RrList <- BFpack:::make_RrList2(parse_hyp)
+    parse_hyp <- parse_hypothesis(names_coef,constraints)
+    RrList <- make_RrList2(parse_hyp)
     RrE <- RrList[[1]]
     RrO <- RrList[[2]]
 

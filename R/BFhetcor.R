@@ -47,12 +47,12 @@ BF.hetcor <- function(x,
   #confirmatory BF testing
   if(constraints!="exploratory"){
 
-    parse_hyp <- bain:::parse_hypothesis(corr_names_all,constraints)
+    parse_hyp <- parse_hypothesis(corr_names_all,constraints)
     #combine equivalent correlations, e.g., cor(Y1,Y2)=corr(Y2,Y1).
     parse_hyp$hyp_mat <- cbind(parse_hyp$hyp_mat[,1:numcorr] + parse_hyp$hyp_mat[,numcorr+1:numcorr],
             parse_hyp$hyp_mat[,numcorr*2+1])
     #create coefficient with equality and order constraints
-    RrList <- BFpack:::make_RrList2(parse_hyp)
+    RrList <- make_RrList2(parse_hyp)
     RrE <- RrList[[1]]
     RrO <- RrList[[2]]
 

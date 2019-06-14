@@ -1,9 +1,9 @@
 ### Joris Mulder 2019. Bayes factor for a one sample Student t test
 ### via adjusted FBFs (Mulder, 2014) using (m)lm-objects using a t.test object.
 
-#' @method bain htest
+#' @method BF htest
 #' @export
-bain.htest <-
+BF.htest <-
   function(x,
            hypothesis,
            prior = NULL,
@@ -266,8 +266,8 @@ BF.bain_htest <- function(x,
 
       if(!is.null(hypothesis)){
         name1 <- "difference"
-        parse_hyp <- bain:::parse_hypothesis(name1,hypothesis)
-        RrList <- BFpack:::make_RrList2(parse_hyp)
+        parse_hyp <- parse_hypothesis(name1,hypothesis)
+        RrList <- make_RrList2(parse_hyp)
         RrE <- RrList[[1]]
         RrO <- RrList[[2]]
         if(ncol(do.call(rbind,RrE))>2 || ncol(do.call(rbind,RrO))>2){

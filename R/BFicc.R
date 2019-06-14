@@ -150,7 +150,7 @@ BF.lmerMod <- function(x,
     cat("First, unconstrained icc analysis...")
     cat("\n")
     cat("\n")
-    marglike_Hu <- BFpack:::marglike2_Hq(cbind(ystack,Xstack),ngroups,p,shape1=shape0[1],shape2=shape0[2],
+    marglike_Hu <- marglike2_Hq(cbind(ystack,Xstack),ngroups,p,shape1=shape0[1],shape2=shape0[2],
                                          samsize1=5e3,samsize2=5e3,unique=1:numcat,inequalities=0)
     postestimates <- marglike_Hu[[4]]
     colnames(postestimates) <- iccnames
@@ -171,11 +171,11 @@ BF.lmerMod <- function(x,
 
       marglike_explo <- rep(0,3)
       # zero icc
-      marglike_explo[1] <- BFpack:::marglike2_Hq(cbind(ystack,Xstack),ngroups,p,shape1=shape0[1],
+      marglike_explo[1] <- marglike2_Hq(cbind(ystack,Xstack),ngroups,p,shape1=shape0[1],
                                                  shape2=shape0[2],unique=unique_c)[[1]]
       inequalities2 = matrix(c(unique_c==0,0),ncol=numcat+1)
       # positive icc
-      marglike_positive <- BFpack:::marglike2_Hq(cbind(ystack,Xstack),ngroups,p,shape1=shape0[1],
+      marglike_positive <- marglike2_Hq(cbind(ystack,Xstack),ngroups,p,shape1=shape0[1],
                                                  shape2=shape0[2],unique=1:numcat,inequalities=inequalities2)
       marglike_explo[3] <- marglike_positive[[1]]
       # negative icc
@@ -353,7 +353,7 @@ Gibbs2 <- function(zW,ngroups,p,shape1,shape2,bB,bW,unique,T0,V1,inequalities=0,
   N = sum(ngroups)
   K = ncol(zW)-1
 
-  Hp = BFpack:::Helmert(p)
+  Hp = Helmert(p)
   select1 = p*(0:(N-1))+1
 
   Wmat = matrix(zW[,-1],ncol=ncol(zW)-1)
@@ -537,7 +537,7 @@ marglike_Hq = function(yX,ngroups,p,shape1=1,shape2=1,samsize1=5e3,samsize2=5e3,
 
   clusters = length(ngroups)
   N = sum(ngroups)
-  Hp = BFpack:::Helmert(p)
+  Hp = Helmert(p)
 
   if(length(bB)==1){
     bB = rep(bB,clusters)
@@ -664,7 +664,7 @@ marglike_H0 = function(yX,ngroups,p,bB=1,bW=1){
   N = sum(ngroups)
   clusters = length(ngroups)
   K = ncol(yX)-1
-  Hp = BFpack:::Helmert(p)
+  Hp = Helmert(p)
 
   if(length(bB)==1){
     bB = rep(bB,clusters)
