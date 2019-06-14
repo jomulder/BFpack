@@ -16,6 +16,7 @@
 #' used.
 #' @param na.action a function which indicates what should happen when the data
 #' contain \code{NA}s. Defaults to getOption("\code{na.action}").
+#' @param ... Parameters passed to and from other functions.
 #' @section BF var_test:
 #' In order to allow users to enjoy the functionality of BFpack with the
 #' familiar

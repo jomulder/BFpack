@@ -11,7 +11,7 @@
 #' statistics respectively.
 #'
 #'
-#' @name events
+#' @name actors
 #' @docType data
 #' @usage data(actors)
 #' @format dataframe (25 rows, 4 columns)

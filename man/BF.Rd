@@ -18,6 +18,8 @@ evaluate. Defaults to NULL, which will
 result in an exploratory analysis.}
 
 \item{prior}{Prior, Default: 'default'}
+
+\item{...}{Parameters passed to and from other functions.}
 }
 \value{
 OUTPUT_DESCRIPTION

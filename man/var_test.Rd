@@ -17,6 +17,8 @@ var_test(x, ...)
 representing the respective samples, or fitted linear model objects
 (inheriting from class "\code{lm}").}
 
+\item{...}{Parameters passed to and from other functions.}
+
 \item{g}{a vector or factor object giving the group for the corresponding
 elements of \code{x}. Ignored if \code{x} is a list.}
 
