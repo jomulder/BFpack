@@ -5,6 +5,8 @@
 #' evaluate. Defaults to NULL, which will
 #' result in an exploratory analysis.
 #' @param prior Prior, Default: 'default'
+#' @param parameter Joris, wat is dit?
+#' @param ... Parameters passed to and from other functions.
 #' @return OUTPUT_DESCRIPTION
 #' @details DETAILS
 #' @examples
@@ -19,6 +21,6 @@
 # The functions below can be used for Bayesian hypothesis testing under univariate
 # and multivariate linear regression models. Also grouping variables (factors) are
 # properly dealt with using group specific fractions for the default priors.
-BF <- function(x, hypothesis, prior, ...) {
+BF <- function(x, hypothesis, prior, parameter, ...) {
   UseMethod("BF", x)
 }
