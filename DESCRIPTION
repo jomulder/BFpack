@@ -25,5 +25,11 @@ Depends:
     stats,
     methods,
     bain
+Imports:
+    MASS,
+    MCMCpack,
+    Matrix,
+    mvtnorm,
+    pracma
 Suggests: 
     testthat
