@@ -5,7 +5,7 @@
 \alias{BF.vtest}
 \title{BF test for a univariate normal linear regression type model}
 \usage{
-BF(x, hypothesis, prior, ...)
+BF(x, hypothesis, prior, parameter, ...)
 
 \method{BF}{vtest}(x, hypothesis = NULL, prior = NULL,
   parameter = NULL, ...)
@@ -18,6 +18,10 @@ evaluate. Defaults to NULL, which will
 result in an exploratory analysis.}
 
 \item{prior}{Prior, Default: 'default'}
+
+\item{parameter}{Joris, wat is dit?}
+
+\item{...}{Parameters passed to and from other functions.}
 }
 \value{
 OUTPUT_DESCRIPTION

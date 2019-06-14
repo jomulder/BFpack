@@ -274,7 +274,7 @@ BF.mlm <- function(x,
       }))
 
       # translate named constraints to matrices with coefficients for constraints
-      parse_hyp <- bain:::parse_hypothesis(names_coef,constraints)
+      parse_hyp <- parse_hypothesis(names_coef,constraints)
       RrList <- make_RrList2(parse_hyp)
       RrE <- RrList[[1]]
       RrO <- RrList[[2]]
@@ -538,7 +538,7 @@ BF.mlm <- function(x,
     PHP_exploratory <- round(BFtu_exploratory / apply(BFtu_exploratory,1,sum),3)
 
     if(constraints!="exploratory"){
-      parse_hyp <- bain:::parse_hypothesis(corr_names,constraints)
+      parse_hyp <- parse_hypothesis(corr_names,constraints)
       #combine equivalent correlations, e.g., cor(Y1,Y2)=corr(Y2,Y1).
       select1 <- rep(1:numcorrgroup,numG) + rep((0:(numG-1))*2*numcorrgroup,each=numcorrgroup)
       select2 <- rep(numcorrgroup+1:numcorrgroup,numG) + rep((0:(numG-1))*2*numcorrgroup,each=numcorrgroup)
