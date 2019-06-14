@@ -1,16 +1,29 @@
 #' @title Bartlett Test of Homogeneity of Variances
-#' @description Performs Bartlett's test of the null that the variances in each of the groups (samples) are the same.
-#' @param x a numeric vector of data values, or a list of numeric data vectors representing the respective samples, or fitted linear model objects (inheriting from class "\code{lm}").
-#' @param g a vector or factor object giving the group for the corresponding elements of \code{x}. Ignored if \code{x} is a list.
-#' @param formula a formula of the form \code{lhs ~ rhs} where lhs gives the data values and rhs the corresponding groups.
-#' @param data an optional matrix or data frame (or similar: see \code{\link{model.frame}}) containing the variables in the formula \code{formula}. By default the variables are taken from environment(\code{formula}).
-#' @param subset an optional vector specifying a subset of observations to be used.
-#' @param na.action a function which indicates what should happen when the data contain \code{NA}s. Defaults to getOption("\code{na.action}").
+#' @description Performs Bartlett's test of the null that the variances in each
+#' of the groups (samples) are the same.
+#' @param x a numeric vector of data values, or a list of numeric data vectors
+#' representing the respective samples, or fitted linear model objects
+#' (inheriting from class "\code{lm}").
+#' @param g a vector or factor object giving the group for the corresponding
+#' elements of \code{x}. Ignored if \code{x} is a list.
+#' @param formula a formula of the form \code{lhs ~ rhs} where lhs gives the
+#' data values and rhs the corresponding groups.
+#' @param data an optional matrix or data frame (or similar: see
+#' \code{\link{model.frame}}) containing the variables in the formula
+#' \code{formula}. By default the variables are taken from
+#' environment(\code{formula}).
+#' @param subset an optional vector specifying a subset of observations to be
+#' used.
+#' @param na.action a function which indicates what should happen when the data
+#' contain \code{NA}s. Defaults to getOption("\code{na.action}").
 #' @section BF var_test:
-#' In order to allow users to enjoy the functionality of BFpack with the familiar
-#' stats-function bartlett.test, we have had to make minor changes to the function
-#' bartlett.test.default. All rights to, and credit for, the function bartlett.test.default
-#' belong to the R Core Team, as indicated in the original license below.
+#' In order to allow users to enjoy the functionality of BFpack with the
+#' familiar
+#' stats-function \code{bartlett.test}, we have had to make minor changes to the
+#' function
+#' bartlett.test.default. All rights to, and credit for, the function
+#' \code{bartlett.test.default}
+#' belongs to the R Core Team, as indicated in the original license below.
 #' We make no claims to copyright and incur no liability with regard to the
 #' changes implemented in var_test.
 #'
@@ -38,18 +51,33 @@
 #' @return A list with class \code{"vtest"} containing the following
 #' components:
 #' \item{statistic}{Bartlett's K-squared test statistic.}
-#' \item{parameter}{the degrees of freedom of the approximate chi-squared distribution of the test statistic.}
+#' \item{parameter}{the degrees of freedom of the approximate chi-squared
+#' distribution of the test statistic.}
 #' \item{p.value}{the p-value for the test.}
-#' \item{method}{the character string "\code{Bartlett test of homogeneity of variances}".}
+#' \item{method}{the character string "\code{Bartlett test of homogeneity of
+#' variances}".}
 #' \item{data.name}{a character string giving the name(s) of
 #' the data.}
 #' \item{v}{a vector containing the sample variances for each factor level.}
 #' \item{n}{a vector containing the sample sizes for each factor level.}
-#' @details If \code{x} is a list, its elements are taken as the samples or fitted linear models to be compared for homogeneity of variances. In this case, the elements must either all be numeric data vectors or fitted linear model objects, \code{g} is ignored, and one can simply use \code{bartlett.test(x)} to perform the test. If the samples are not yet contained in a list, use \code{var_test(list(x, ...))}.
+#' @details If \code{x} is a list, its elements are taken as the samples or
+#' fitted linear models to be compared for homogeneity of variances. In this
+#' case, the elements must either all be numeric data vectors or fitted linear
+#' model objects, \code{g} is ignored, and one can simply use
+#' \code{bartlett.test(x)} to perform the test. If the samples are not yet
+#' contained in a list, use \code{var_test(list(x, ...))}.
 #'
-#' Otherwise, x must be a numeric data vector, and g must be a vector or factor object of the same length as x giving the group for the corresponding elements of x.
-#' @references Bartlett, M. S. (1937). Properties of sufficiency and statistical tests. Proceedings of the Royal Society of London Series A 160, 268–282. doi: 10.1098/rspa.1937.0109.
-#' @seealso \code{\link{var.test}} for the special case of comparing variances in two samples from normal distributions; \code{\link{fligner.test} for a rank-based (nonparametric) k-sample test for homogeneity of variances; \code{\link{ansari.test} and \code{\link{mood.test} for two rank based two-sample tests for difference in scale.
+#' Otherwise, x must be a numeric data vector, and g must be a vector or factor
+#' object of the same length as x giving the group for the corresponding
+#' elements of x.
+#' @references Bartlett, M. S. (1937). Properties of sufficiency and statistical
+#' tests. Proceedings of the Royal Society of London Series A 160, 268–282.
+#' doi: 10.1098/rspa.1937.0109.
+#' @seealso \code{\link{var.test}} for the special case of comparing variances
+#' in two samples from normal distributions; \code{\link{fligner.test}} for a
+#' rank-based (nonparametric) k-sample test for homogeneity of variances;
+#' \code{\link{ansari.test} and \code{\link{mood.test} for two rank based
+#' two-sample tests for difference in scale.
 #' @examples
 #' require(graphics)
 #'
