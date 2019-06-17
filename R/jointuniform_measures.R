@@ -9,7 +9,7 @@ jointuniform_measures <- function(P,numcorrgroup,numG,RrE1,RrO1,Fisher=0){
   numcorr <- numcorrgroup*numG
   # If the correlation
   teldummy <- 0
-  if (numcorr==1){ #use analytic expression in case of a single correlation
+  if(numcorr==1){ #use analytic expression in case of a single correlation
     # RrE1=RrO1=matrix(c(-1,1,-.5,.3),nrow=2)
     if(!is.null(RrE1)){ # only inequality constraint(s). Copmute prior proportion.
       relE <- .5
@@ -60,7 +60,7 @@ jointuniform_measures <- function(P,numcorrgroup,numG,RrE1,RrO1,Fisher=0){
                        rcEt=relE,samsize=as.integer(samsize))$rcEt
     }else if(is.null(RrE1) && !is.null(RrO1)){ #only order constraints.
       # Use normal approximation.
-      relO <- Gaussian_measures(mean1=apply(drawsJU,2,mean),Sigma1=cov(drawsJU),RrE1=NULL,RrO1)[2]
+      relO <- Gaussian_measures(mean1=apply(drawsJU,2,mean),Sigma1=cov(drawsJU),RrE1=NULL,RrO1=RrO1)[2]
     }else if(!is.null(RrE1) && !is.null(RrO1)){
       if(nrow(RrE1)==1){
         RE1 <- t(RrE1[1,-numcorr-1])

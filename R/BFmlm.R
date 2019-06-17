@@ -434,85 +434,96 @@ BF.mlm <- function(x,
     # equal correlations are at the opposite side of the vector
     corr_names <- c(matrix_names[lower.tri(matrix_names)],
                     t(matrix_names)[lower.tri(matrix_names)])
-    params_in_hyp1 <- params_in_hyp(constraints)
-    # check if labels of correlations in hypotheses match with actual correlations
-    checkLabels <- matrix(unlist(lapply(1:length(params_in_hyp1),function(par){
-      params_in_hyp1[par]==corr_names
-    })),nrow=length(params_in_hyp1),byrow=T)
-    if(sum(abs(apply(checkLabels,1,sum)-rep(1,length(params_in_hyp1))))==0 || constraints=="exploratory"){
+    # sum(abs(apply(checkLabels,1,sum)-rep(1,length(params_in_hyp1))))==0
+    if(constraints=="exploratory"){
       #constraints are formulated on correlations from one population/group
       numG <- 1
       ngroups <- nrow(Ymat)
       YXlist <- list(list(Ymat,Xmat))
       corr_names_exploratory <- matrix_names[lower.tri(matrix_names)]
-    }else{ #check if labels of correlations in hypotheses match with
-      #combined labels of correlations and dummy group variables
-
-      #Check which are dummy variables corresponding to (adjusted) mean parameters
-      for(k in 1:K){
-        uniquek <- sort(unique(Xmat[,k]))
-        if(length(uniquek)==2 && uniquek[1]==0 && uniquek[2]==1){dummyX[k]<-T} #group index of intercept
-      }
-      if(sum(dummyX)==0){
-        # there appears to be no dummy group variables
-        stop("Labels for correlations should be of the form 'y1_with_y2' or 'y1_with_y2_in_x1', where x1 must be a dummy (0/1) group covariate.")
-      }
-      # create correlation labels
-      corr_names_all <- unlist(lapply(which(dummyX==T),function(k){
-        if(dummyX[k]){
-          unlist(lapply(1:length(corr_names),function(naam){
-            paste0(corr_names[naam],"_in_",names(dummyX[k]))
-          }))
-        }
-      }))
-      names(corr_names_all) <- NULL
+    }else{
+      params_in_hyp1 <- params_in_hyp(constraints)
+      # check if labels of correlations in hypotheses match with actual correlations
       checkLabels <- matrix(unlist(lapply(1:length(params_in_hyp1),function(par){
-        params_in_hyp1[par]==corr_names_all
+        params_in_hyp1[par]==corr_names
       })),nrow=length(params_in_hyp1),byrow=T)
+      if(sum(abs(apply(checkLabels,1,sum)-rep(1,length(params_in_hyp1))))==0){
+        #constraints are formulated on correlations from one population/group
+        numG <- 1
+        ngroups <- nrow(Ymat)
+        YXlist <- list(list(Ymat,Xmat))
+        corr_names_exploratory <- matrix_names[lower.tri(matrix_names)]
+      }else{
+        #check if labels of correlations in hypotheses match with
+        #combined labels of correlations and dummy group variables
 
-      if(sum(abs(apply(checkLabels,1,sum)-rep(1,length(params_in_hyp1))))!=0){
-        stop("Labels for correlations should be of the form 'y1_with_y2' or 'y1_with_y2_in_x1', where x1 must be a dummy (0/1) group covariate.")
-      }
-      #find which covariates are group specific for the correlations on which hypotheses are formulated.
-      groupcorrelations <- corr_names_all[which(apply(checkLabels,2,sum)==1)]
-      groupcov <- unique(unlist(lapply(1:length(groupcorrelations),function(grcor){
-        substr(groupcorrelations[grcor],start=max(gregexpr(pattern ='_',groupcorrelations[grcor])[[1]])+1,stop=nchar(groupcorrelations[grcor]))
-      })))
-      Xgroup <- matrix(unlist(lapply(1:length(groupcov),function(gcov){
-        dvec <- Xmat[,groupcov[gcov]]
-      })),nrow=nrow(Xmat))
-      colnum <- unlist(lapply(1:length(groupcov),function(gcov){
-        which(colnames(Xmat)==groupcov[gcov])
-      }))
-      colnames(Xgroup) <- groupcov
-      which0 <- which(apply(Xgroup,1,sum)==0)
-      if(length(which0)>0){
-        grouprest <- rep(0,nrow(Xgroup))
-        grouprest[which0] <- 1
-        Xgroup <- cbind(Xgroup,grouprest)
-        colnames(Xgroup) <- c(groupcov,"restgroup")
-      }
-      ngroups <- apply(Xgroup,2,sum)
-      numG <- ncol(Xgroup) # numG
-      whichgr1 <- which(apply(Xgroup,1,sum)>1)
-      if(length(whichgr1)>0){ #extra check for dummy group variables
-        stop("Group indices for dummy group variables need to be either 0 or 1.")
-      }
-      YXlist <- lapply(1:numG,function(col){
-        return(list(Y=Ymat[Xgroup[,col]==1,],
-          X=Xmat[Xgroup[,col]==1,-colnum[-col]]))
-      })
-      corr_names_exploratory0 <- matrix_names[lower.tri(matrix_names)]
-      corr_names_exploratory <- unlist(lapply(1:length(groupcov),function(gr){
-        unlist(lapply(1:length(corr_names_exploratory0),function(cn){
-           paste0(corr_names_exploratory0[cn],"_in_",groupcov[gr])
+        #Check which are dummy variables corresponding to (adjusted) mean parameters
+        dummyX <- rep(F,K)
+        for(k in 1:K){
+          uniquek <- sort(unique(Xmat[,k]))
+          if(length(uniquek)==2 && uniquek[1]==0 && uniquek[2]==1){dummyX[k]<-T} #group index of intercept
+        }
+        if(sum(dummyX)==0){
+          # there appears to be no dummy group variables
+          stop("Labels for correlations should be of the form 'y1_with_y2' or 'y1_with_y2_in_x1', where x1 must be a dummy (0/1) group covariate.")
+        }
+        # create correlation labels
+        corr_names_all <- unlist(lapply(which(dummyX==T),function(k){
+          if(dummyX[k]){
+            unlist(lapply(1:length(corr_names),function(naam){
+              paste0(corr_names[naam],"_in_",names(dummyX[k]))
+            }))
+          }
         }))
-      }))
-      corr_names <- unlist(lapply(1:length(groupcov),function(gr){
-        unlist(lapply(1:length(corr_names),function(cn){
-          paste0(corr_names[cn],"_in_",groupcov[gr])
+        names(corr_names_all) <- NULL
+        checkLabels <- matrix(unlist(lapply(1:length(params_in_hyp1),function(par){
+          params_in_hyp1[par]==corr_names_all
+        })),nrow=length(params_in_hyp1),byrow=T)
+
+        if(sum(abs(apply(checkLabels,1,sum)-rep(1,length(params_in_hyp1))))!=0){
+          stop("Labels for correlations should be of the form 'y1_with_y2' or 'y1_with_y2_in_x1', where x1 must be a dummy (0/1) group covariate.")
+        }
+        #find which covariates are group specific for the correlations on which hypotheses are formulated.
+        groupcorrelations <- corr_names_all[which(apply(checkLabels,2,sum)==1)]
+        groupcov <- unique(unlist(lapply(1:length(groupcorrelations),function(grcor){
+          substr(groupcorrelations[grcor],start=max(gregexpr(pattern ='_',groupcorrelations[grcor])[[1]])+1,stop=nchar(groupcorrelations[grcor]))
+        })))
+        Xgroup <- matrix(unlist(lapply(1:length(groupcov),function(gcov){
+          dvec <- Xmat[,groupcov[gcov]]
+        })),nrow=nrow(Xmat))
+        colnum <- unlist(lapply(1:length(groupcov),function(gcov){
+          which(colnames(Xmat)==groupcov[gcov])
         }))
-      }))
+        colnames(Xgroup) <- groupcov
+        which0 <- which(apply(Xgroup,1,sum)==0)
+        if(length(which0)>0){
+          grouprest <- rep(0,nrow(Xgroup))
+          grouprest[which0] <- 1
+          Xgroup <- cbind(Xgroup,grouprest)
+          colnames(Xgroup) <- c(groupcov,"restgroup")
+        }
+        ngroups <- apply(Xgroup,2,sum)
+        numG <- ncol(Xgroup) # numG
+        whichgr1 <- which(apply(Xgroup,1,sum)>1)
+        if(length(whichgr1)>0){ #extra check for dummy group variables
+          stop("Group indices for dummy group variables need to be either 0 or 1.")
+        }
+        YXlist <- lapply(1:numG,function(col){
+          return(list(Y=Ymat[Xgroup[,col]==1,],
+                      X=Xmat[Xgroup[,col]==1,-colnum[-col]]))
+        })
+        corr_names_exploratory0 <- matrix_names[lower.tri(matrix_names)]
+        corr_names_exploratory <- unlist(lapply(1:length(groupcov),function(gr){
+          unlist(lapply(1:length(corr_names_exploratory0),function(cn){
+            paste0(corr_names_exploratory0[cn],"_in_",groupcov[gr])
+          }))
+        }))
+        corr_names <- unlist(lapply(1:length(groupcov),function(gr){
+          unlist(lapply(1:length(corr_names),function(cn){
+            paste0(corr_names[cn],"_in_",groupcov[gr])
+          }))
+        }))
+      }
     }
     # find posterior mean and covariance matrix of correlations in Fisher transformed
     # space having an approximate multivariate normal distribution.
@@ -530,8 +541,7 @@ BF.mlm <- function(x,
                        pnorm(0,mean=meanN,sd=sqrt(diag(covmN))),
                        1-pnorm(0,mean=meanN,sd=sqrt(diag(covmN)))),ncol=3)
     relcomp <- matrix(c(rep(relcomp0,numcorr),rep(.5,numcorr*2)),ncol=3)
-    colnames(relcomp) <- c("c_E","c_O")
-    colnames(relfit) <- c("f_E","f_O")
+    colnames(relcomp) <- colnames(relfit) <- c("p(=0)","Pr(<0)","Pr(>0)")
     BFtu_exploratory <- relfit / relcomp
     row.names(BFtu_exploratory) <- corr_names_exploratory
     colnames(BFtu_exploratory) <- c("Pr(=0)","Pr(<0)","Pr(>0)")
@@ -539,11 +549,18 @@ BF.mlm <- function(x,
 
     if(constraints!="exploratory"){
       parse_hyp <- parse_hypothesis(corr_names,constraints)
-      #combine equivalent correlations, e.g., cor(Y1,Y2)=corr(Y2,Y1).
-      select1 <- rep(1:numcorrgroup,numG) + rep((0:(numG-1))*2*numcorrgroup,each=numcorrgroup)
-      select2 <- rep(numcorrgroup+1:numcorrgroup,numG) + rep((0:(numG-1))*2*numcorrgroup,each=numcorrgroup)
-      parse_hyp$hyp_mat <-
-        cbind(parse_hyp$hyp_mat[,select1] + parse_hyp$hyp_mat[,select2],parse_hyp$hyp_mat[,numcorrgroup*2*numG+1])
+      if(nrow(parse_hyp$hyp_mat)==1){
+        select1 <- rep(1:numcorrgroup,numG) + rep((0:(numG-1))*2*numcorrgroup,each=numcorrgroup)
+        select2 <- rep(numcorrgroup+1:numcorrgroup,numG) + rep((0:(numG-1))*2*numcorrgroup,each=numcorrgroup)
+        parse_hyp$hyp_mat <-
+          t(as.matrix(c(parse_hyp$hyp_mat[,select1] + parse_hyp$hyp_mat[,select2],parse_hyp$hyp_mat[,numcorrgroup*2*numG+1])))
+      }else{
+        #combine equivalent correlations, e.g., cor(Y1,Y2)=corr(Y2,Y1).
+        select1 <- rep(1:numcorrgroup,numG) + rep((0:(numG-1))*2*numcorrgroup,each=numcorrgroup)
+        select2 <- rep(numcorrgroup+1:numcorrgroup,numG) + rep((0:(numG-1))*2*numcorrgroup,each=numcorrgroup)
+        parse_hyp$hyp_mat <-
+          cbind(parse_hyp$hyp_mat[,select1] + parse_hyp$hyp_mat[,select2],parse_hyp$hyp_mat[,numcorrgroup*2*numG+1])
+      }
       #create coefficient with equality and order constraints
       RrList <- make_RrList2(parse_hyp)
       RrE <- RrList[[1]]
@@ -555,10 +572,10 @@ BF.mlm <- function(x,
 
       numhyp <- length(RrE)
       relfit <- t(matrix(unlist(lapply(1:numhyp,function(h){
-        Gaussian_measures(meanN,covmN,RrE[[h]],RrO[[h]])
+        Gaussian_measures(meanN,covmN,RrE1=RrE[[h]],RrO1=RrO[[h]])
       })),nrow=2))
       relcomp <- t(matrix(unlist(lapply(1:numhyp,function(h){
-        jointuniform_measures(P,numcorrgroup,numG,RrE[[h]],RrO[[h]],Fisher=1)
+        jointuniform_measures(P,numcorrgroup,numG,RrE1=RrE[[h]],RrO1=RrO[[h]],Fisher=1)
       })),nrow=2))
       row.names(relfit) <- row.names(relcomp) <- parse_hyp$original_hypothesis
       relfit <- Gaussian_prob_Hc(meanN,covmN,relfit,RrO)

@@ -334,11 +334,11 @@ BFupdatelmer <- function(x,
 
 #create Helmert matrix
 Helmert = function(p){
-  Helm = diag(p)
-  Helm[1,] = 1/sqrt(p)
+  Helm <- diag(p)
+  Helm[1,] <- 1/sqrt(p)
   for(pp in 2:p){
-    Helm[pp,1:(pp-1)] = 1/sqrt(pp*(pp-1))
-    Helm[pp,pp] = -(pp-1)/sqrt(pp*(pp-1))
+    Helm[pp,1:(pp-1)] <- 1/sqrt(pp*(pp-1))
+    Helm[pp,pp] <- -(pp-1)/sqrt(pp*(pp-1))
   }
   return(Helm)
 }
@@ -349,35 +349,35 @@ Gibbs2 <- function(zW,ngroups,p,shape1,shape2,bB,bW,unique,T0,V1,inequalities=0,
   #returns hyper parameters of a shifted-beta(shape1,shape2,-1/(p-1),1)-
   #distribution used for importance sampling.
 
-  clusters = length(ngroups)
-  N = sum(ngroups)
-  K = ncol(zW)-1
+  clusters <- length(ngroups)
+  N <- sum(ngroups)
+  K <- ncol(zW)-1
 
-  Hp = Helmert(p)
-  select1 = p*(0:(N-1))+1
+  Hp <- Helmert(p)
+  select1 <- p*(0:(N-1))+1
 
-  Wmat = matrix(zW[,-1],ncol=ncol(zW)-1)
-  zvec = zW[,1]
+  Wmat <- matrix(zW[,-1],ncol=ncol(zW)-1)
+  zvec <- zW[,1]
 
   #initial values
-  sigma2 = 1
-  tauV = rep(.5,V1)
-  beta = rep(1,K)
-  psi = rep(1,V1)
+  sigma2 <- 1
+  tauV <- rep(.5,V1)
+  beta <- rep(1,K)
+  psi <- rep(1,V1)
 
-  transMatrix = matrix(0,ncol=V1,nrow=clusters)
+  transMatrix <- matrix(0,ncol=V1,nrow=clusters)
   if(T0<clusters){
     for(cc in (T0+1):clusters){
-      transMatrix[cc,unique[cc]] = 1
+      transMatrix[cc,unique[cc]] <- 1
     }
   }
 
-  T0check = T0>0
-  psi.check = shape1>0
-  psi = psi * psi.check
+  T0check <- T0>0
+  psi.check <- shape1>0
+  psi <- psi * psi.check
 
   #store ICC's
-  rhoMat2 = matrix(0,ncol=V1,nrow=samsize)
+  rhoMat2 <- matrix(0,ncol=V1,nrow=samsize)
 
   burnin <- 1e3
   #  pb = txtProgressBar(min = 0, max = burnin, initial = 0)
@@ -387,37 +387,37 @@ Gibbs2 <- function(zW,ngroups,p,shape1,shape2,bB,bW,unique,T0,V1,inequalities=0,
   #burnin
   for(ss in 1:burnin){
     #1. draw beta | sigma2, tau, psi, y
-    tauC = c(transMatrix%*%tauV)
-    vars = unlist(lapply(1:clusters,function(cc){
+    tauC <- c(transMatrix%*%tauV)
+    vars <- unlist(lapply(1:clusters,function(cc){
       rep(c((sigma2+p*tauC[cc])*bB[cc]**(-1),rep(sigma2*bW**(-1),p-1)),ngroups[cc])
     }))
-    covBeta = solve(t(Wmat/vars)%*%Wmat) #+ diag(ncol(Wmat))*.00001
-    meanBeta = covBeta%*%t(Wmat/vars)%*%zvec
-    beta = c(rmvnorm(1,mean=meanBeta,sigma=covBeta))
+    covBeta <- solve(t(Wmat/vars)%*%Wmat) #+ diag(ncol(Wmat))*.00001
+    meanBeta <- covBeta%*%t(Wmat/vars)%*%zvec
+    beta <- c(rmvnorm(1,mean=meanBeta,sigma=covBeta))
     #beta = c(0,0)
 
     #2. draw (sigma2,psi,tau) | beta, y
-    diffs = zvec - Wmat%*%beta
-    sumsquares.tau = unlist(lapply(1:clusters,function(cc){
-      select_c = p*((sum(ngroups[1:cc])-ngroups[cc]):(sum(ngroups[1:cc])-1))+1
+    diffs <- zvec - Wmat%*%beta
+    sumsquares.tau <- unlist(lapply(1:clusters,function(cc){
+      select_c <- p*((sum(ngroups[1:cc])-ngroups[cc]):(sum(ngroups[1:cc])-1))+1
       sum(diffs[select_c]**2)
     }))
     #2a. draw sigma2| beta, y
-    scale.sigma2 = sum((diffs[-select1])**2)*bW/2 +
+    scale.sigma2 <- sum((diffs[-select1])**2)*bW/2 +
       sum(sumsquares.tau[1:T0]*bB[1:T0])/2*T0check
-    shape.sigma2 = bW*N*(p-1)/2 + sum(bB[1:T0]*ngroups[1:T0])/2*T0check
-    sigma2 = MCMCpack::rinvgamma(1,shape=shape.sigma2,scale=scale.sigma2)
+    shape.sigma2 <- bW*N*(p-1)/2 + sum(bB[1:T0]*ngroups[1:T0])/2*T0check
+    sigma2 <- MCMCpack::rinvgamma(1,shape=shape.sigma2,scale=scale.sigma2)
 
     #2b. draw psi | sigma2, beta, y
     # if psi.check==F then psi is set to zero
-    shape.psi = shape1*psi.check + (1-psi.check)*rep(10,V1)
-    rate.psi = p/((p-1)*sigma2)
-    psi = rgamma(V1,shape=shape.psi,rate=rate.psi)*psi.check
+    shape.psi <- shape1*psi.check + (1-psi.check)*rep(10,V1)
+    rate.psi <- p/((p-1)*sigma2)
+    psi <- rgamma(V1,shape=shape.psi,rate=rate.psi)*psi.check
 
     #2c. draw tau | sigma2, psi, beta, y
-    scale.tau = c(t(sumsquares.tau*bB)%*%transMatrix)/(2*p) + psi
+    scale.tau <- c(t(sumsquares.tau*bB)%*%transMatrix)/(2*p) + psi
     shape.tau = c(t(bB*ngroups)%*%transMatrix)/2 + shape2
-    tauV = MCMCpack::rinvgamma(V1,shape=shape.tau,scale=scale.tau) - sigma2/p #+ .00001
+    tauV <- MCMCpack::rinvgamma(V1,shape=shape.tau,scale=scale.tau) - sigma2/p #+ .00001
 
     #    setTxtProgressBar(pb,ss)
   }
@@ -429,104 +429,94 @@ Gibbs2 <- function(zW,ngroups,p,shape1,shape2,bB,bW,unique,T0,V1,inequalities=0,
 
   for(ss in 1:samsize){
     #1. draw beta | sigma2, tau, psi, y
-    tauC = c(transMatrix%*%tauV)
-    vars = unlist(lapply(1:clusters,function(cc){
+    tauC <- c(transMatrix%*%tauV)
+    vars <- unlist(lapply(1:clusters,function(cc){
       rep(c((sigma2+p*tauC[cc])*bB[cc]**(-1),rep(sigma2*bW**(-1),p-1)),ngroups[cc])
     }))
-    covBeta = solve(t(Wmat/vars)%*%Wmat) #+ diag(ncol(Wmat))*.00001
-    meanBeta = covBeta%*%t(Wmat/vars)%*%zvec
-    beta = c(rmvnorm(1,mean=meanBeta,sigma=covBeta))
+    covBeta <- solve(t(Wmat/vars)%*%Wmat) #+ diag(ncol(Wmat))*.00001
+    meanBeta <- covBeta%*%t(Wmat/vars)%*%zvec
+    beta <- c(rmvnorm(1,mean=meanBeta,sigma=covBeta))
 
     #2. draw (sigma2,psi,tau) | beta, y
-    diffs = c(zvec - Wmat%*%beta)
-    sumsquares.tau = unlist(lapply(1:clusters,function(cc){
-      select_c = p*((sum(ngroups[1:cc])-ngroups[cc]):(sum(ngroups[1:cc])-1))+1
+    diffs <- c(zvec - Wmat%*%beta)
+    sumsquares.tau <- unlist(lapply(1:clusters,function(cc){
+      select_c <- p*((sum(ngroups[1:cc])-ngroups[cc]):(sum(ngroups[1:cc])-1))+1
       sum(diffs[select_c]**2)
     }))
     #2a. draw sigma2| beta, y
-    scale.sigma2 = sum((diffs[-select1])**2)*bW/2 +
+    scale.sigma2 <- sum((diffs[-select1])**2)*bW/2 +
       sum(sumsquares.tau[1:T0]*bB[1:T0])/2*T0check
-    shape.sigma2 = bW*N*(p-1)/2 + sum(bB[1:T0]*ngroups[1:T0])/2*T0check
-    sigma2 = MCMCpack::rinvgamma(1,shape=shape.sigma2,scale=scale.sigma2)
+    shape.sigma2 <- bW*N*(p-1)/2 + sum(bB[1:T0]*ngroups[1:T0])/2*T0check
+    sigma2 <- MCMCpack::rinvgamma(1,shape=shape.sigma2,scale=scale.sigma2)
 
     #2b. draw psi | sigma2, beta, y
     # if psi.check==F then psi is set to zero
-    shape.psi = shape1*psi.check + (1-psi.check)*rep(10,V1)
-    rate.psi = p/((p-1)*sigma2)
-    psi = rgamma(V1,shape=shape.psi,rate=rate.psi)*psi.check
+    shape.psi <- shape1*psi.check + (1-psi.check)*rep(10,V1)
+    rate.psi <- p/((p-1)*sigma2)
+    psi <- rgamma(V1,shape=shape.psi,rate=rate.psi)*psi.check
 
     #2c. draw tau | sigma2, psi, beta, y
-    scale.tau = c(t(sumsquares.tau*bB)%*%transMatrix)/(2*p) + psi
-    shape.tau = c(t(bB*ngroups)%*%transMatrix)/2 + shape2
-    tauV = MCMCpack::rinvgamma(V1,shape=shape.tau,scale=scale.tau) - sigma2/p #+ .00001
+    scale.tau <- c(t(sumsquares.tau*bB)%*%transMatrix)/(2*p) + psi
+    shape.tau <- c(t(bB*ngroups)%*%transMatrix)/2 + shape2
+    tauV <- MCMCpack::rinvgamma(V1,shape=shape.tau,scale=scale.tau) - sigma2/p #+ .00001
 
     #2d. compute rho
-    rho = tauV/(tauV+sigma2)
+    rho <- tauV/(tauV+sigma2)
 
-    rhoMat2[ss,] = rho
-
-    #    setTxtProgressBar(pb,ss)
+    rhoMat2[ss,] <- rho
   }
 
-  meanICC = apply(rhoMat2,2,mean)
-  varICC = apply(rhoMat2,2,var)
-  LB = -1/(p-1)
-  shape1IM = (meanICC*(p-1)+1)*(meanICC**2*(1-p)+meanICC*(p-2)-varICC*(p-1)+1)/((p-1)*p*varICC)
-  shape2IM = (meanICC-1)*(meanICC^2*(p-1)-meanICC*(p-2)+varICC*(p-1)-1)/(varICC*p)
+  meanICC <- apply(rhoMat2,2,mean)
+  varICC <- apply(rhoMat2,2,var)
+  LB <- -1/(p-1)
+  shape1IM <- (meanICC*(p-1)+1)*(meanICC**2*(1-p)+meanICC*(p-2)-varICC*(p-1)+1)/((p-1)*p*varICC)
+  shape2IM <- (meanICC-1)*(meanICC^2*(p-1)-meanICC*(p-2)+varICC*(p-1)-1)/(varICC*p)
 
-  #plot(density(rhoMat[,1]))
-  #rseq = seq(LB,1,length=1e2)
-  #lines(rseq,(p-1)/p*dbeta((rseq-LB)/(1-LB),shape1IM[1],shape2IM[1]),col=2)
-
-  post.prob=1
+  post.prob <- 1
   if(sum(abs(inequalities))>0){
-    inequalities0 = matrix(inequalities[,1:V1],ncol=V1)
-    post.prob = mean(apply(rhoMat2%*%t(inequalities0)>rep(1,samsize)%*%t(inequalities[,V1+1]),1,prod))
+    inequalities0 <- matrix(inequalities[,1:V1],ncol=V1)
+    post.prob <- mean(apply(rhoMat2%*%t(inequalities0)>rep(1,samsize)%*%t(inequalities[,V1+1]),1,prod))
   }
 
   return(list(shape1IM,shape2IM,post.prob,rhoMat2))
 }
 #integrand of the marginal likelhood
-logintegrand_Hq = function(rhoV,zvec,Wmat,p,ngroups,shape1,shape2,bB,bW,transMatrix){
+logintegrand_Hq <- function(rhoV,zvec,Wmat,p,ngroups,shape1,shape2,bB,bW,transMatrix){
   #zvec is the stacked Helmert transformed outcome vector.
   #Wmat is the stacked Helmert transformed matrix with predictors.
-  ngroupsVb = c((ngroups*bB)%*%transMatrix)
-  #rhoV=c(-.10,.5)
-  #rhoV=c(-.06,.5)
-  rhoC = c(transMatrix%*%rhoV)
-  N = sum(ngroups)
+  ngroupsVb <- c((ngroups*bB)%*%transMatrix)
+  rhoC <- c(transMatrix%*%rhoV)
+  N <- sum(ngroups)
 
-  clusters = length(ngroups)
-  K = ncol(Wmat)
+  clusters <- length(ngroups)
+  K <- ncol(Wmat)
 
   #the normalizing constants (term1 and term2) will be included after averaging.
-  term3 = sum( (-ngroupsVb/2+shape1-1)*log(1+(p-1)*rhoV) +
+  term3 <- sum( (-ngroupsVb/2+shape1-1)*log(1+(p-1)*rhoV) +
                  (ngroupsVb/2+shape2-1)*log(1-rhoV) )
 
-  vars = unlist(lapply(1:clusters,function(cc){
+  vars <- unlist(lapply(1:clusters,function(cc){
     rep( c( (1+(p-1)*rhoC[cc])/(1-rhoC[cc])*bB[cc]**(-1),rep(bW**(-1),p-1)),ngroups[cc]) + .0000001
   }))
-  #vars[1]
-  #vars[5991]
-  tWDi = t(Wmat/vars)
-  tWDiW = tWDi%*%Wmat
-  tWDiWi = solve(tWDiW)
-  betaHat = c(tWDiWi%*%tWDi%*%zvec)
-  diffHat = c(zvec - Wmat%*%betaHat)
-  s2Hat = sum(diffHat*diffHat/vars)
+  tWDi <- t(Wmat/vars)
+  tWDiW <- tWDi%*%Wmat
+  tWDiWi <- solve(tWDiW)
+  betaHat <- c(tWDiWi%*%tWDi%*%zvec)
+  diffHat <- c(zvec - Wmat%*%betaHat)
+  s2Hat <- sum(diffHat*diffHat/vars)
 
-  term4 = -.5*(sum(ngroups*bB)+N*(p-1)*bW-K)*log(s2Hat)
-  term5 = -.5*log(det(tWDiW))
+  term4 <- -.5*(sum(ngroups*bB)+N*(p-1)*bW-K)*log(s2Hat)
+  term5 <- -.5*log(det(tWDiW))
 
   return(#term1+term2+
-    term3+term4+term5)
+    term3 + term4 + term5)
 }
 #log density of stretched-beta distribution in (-1/(p-1);1)
-log_dshiftedbeta = function(x,shape1,shape2,p){
+log_dshiftedbeta <- function(x,shape1,shape2,p){
   lgamma(shape1+shape2)-lgamma(shape1)-lgamma(shape2)+(-shape1-shape2+1)*log(p)+shape2*log(p-1)+(shape1-1)*log(1+(p-1)*x)+(shape2-1)*log(1-x)
 }
 #computation of the marginal likelihood of Hq.
-marglike_Hq = function(yX,ngroups,p,shape1=1,shape2=1,samsize1=5e3,samsize2=5e3,bB=1,bW=1,unique,inequalities=0,complement=FALSE){
+marglike_Hq <- function(yX,ngroups,p,shape1=1,shape2=1,samsize1=5e3,samsize2=5e3,bB=1,bW=1,unique,inequalities=0,complement=FALSE){
 
   #E.g., for clusters=5, unique=c(0,2,0,1,1),inequalities=[1 -1 0],
   #the hypothesis equals, Hq:rho1=rho3=0, rho4=rho5>rho2
@@ -535,80 +525,80 @@ marglike_Hq = function(yX,ngroups,p,shape1=1,shape2=1,samsize1=5e3,samsize2=5e3,
   #samsize2 sets the sample size for computing the probability that the inequality constraints hold,
   #and for constructing the proposal distribution.
 
-  clusters = length(ngroups)
-  N = sum(ngroups)
-  Hp = Helmert(p)
+  clusters <- length(ngroups)
+  N <- sum(ngroups)
+  Hp <- Helmert(p)
 
   if(length(bB)==1){
-    bB = rep(bB,clusters)
+    bB <- rep(bB,clusters)
   }
 
   #re-order: first zero-rho's, then rho's coded as 1, then 2, etc.
-  T0 = sum(unique==0) #number of zero tau's
-  V1 = max(unique)
-  K1 = ncol(yX)-1
-  lvec = rep(0,V1)
-  kvec = rep(0,V1)
-  ord1 = rep(0,clusters)
+  T0 <- sum(unique==0) #number of zero tau's
+  V1 <- max(unique)
+  K1 <- ncol(yX)-1
+  lvec <- rep(0,V1)
+  kvec <- rep(0,V1)
+  ord1 <- rep(0,clusters)
   if(T0>0){
-    ord1[1:T0] = which(unique==0)
+    ord1[1:T0] <- which(unique==0)
   }
 
-  plek = T0
+  plek <- T0
   for(hh in 1:V1){
-    welke_h = which(unique==hh)
-    lvec[hh] = length(welke_h)
-    kvec[hh] = sum(unique<hh)
-    ord1[plek+1:length(welke_h)] = welke_h
-    plek = plek + length(welke_h)
+    welke_h <- which(unique==hh)
+    lvec[hh] <- length(welke_h)
+    kvec[hh] <- sum(unique<hh)
+    ord1[plek+1:length(welke_h)] <- welke_h
+    plek <- plek + length(welke_h)
   }
   #Change order of the data
-  yXdummy = yX
-  location = 0
+  yXdummy <- yX
+  location <- 0
   for(cc in 1:clusters){
-    welke = ord1[cc]
-    maxcc = sum(ngroups[1:welke])*p
-    mincc = (sum(ngroups[1:welke])-ngroups[welke])*p+1
-    yXdummy[location+1:(maxcc-mincc+1),] = yX[mincc:maxcc,]
-    location = location + maxcc-mincc+1
+    welke <- ord1[cc]
+    maxcc <- sum(ngroups[1:welke])*p
+    mincc <- (sum(ngroups[1:welke])-ngroups[welke])*p+1
+    yXdummy[location+1:(maxcc-mincc+1),] <- yX[mincc:maxcc,]
+    location <- location + maxcc-mincc+1
   }
-  yX = yXdummy
-  ngroups = ngroups[ord1]
-  bB = bB[ord1]
-  unique = unique[ord1]
-  T0check = (T0>0)
+  yX <- yXdummy
+  ngroups <- ngroups[ord1]
+  bB <- bB[ord1]
+  unique <- unique[ord1]
+  T0check <- (T0>0)
 
   if(length(shape1)==1){
-    shape1 = rep(shape1,V1)
+    shape1 <- rep(shape1,V1)
   }
   if(length(shape2)==1){
-    shape2 = rep(shape2,V1)
+    shape2 <- rep(shape2,V1)
   }
 
-  transMatrix = matrix(0,ncol=V1,nrow=clusters)
+  transMatrix <- matrix(0,ncol=V1,nrow=clusters)
   if(T0<clusters){
     for(cc in (T0+1):clusters){
-      transMatrix[cc,unique[cc]] = 1
+      transMatrix[cc,unique[cc]] <- 1
     }
   }
 
-  zW = yX
+  zW <- yX
   for(ii in 1:N){
-    zW[((ii-1)*p+1):(ii*p),] = Hp%*%yX[((ii-1)*p+1):(ii*p),]
+    zW[((ii-1)*p+1):(ii*p),] <- Hp%*%yX[((ii-1)*p+1):(ii*p),]
   }
-  Xmat = matrix(yX[,-1],ncol=ncol(yX)-1)
-  yvec = yX[,1]
-  Wmat = matrix(zW[,-1],ncol=ncol(zW)-1)
-  zvec = zW[,1]
+  Xmat <- matrix(yX[,-1],ncol=ncol(yX)-1)
+  yvec <- yX[,1]
+  Wmat <- matrix(zW[,-1],ncol=ncol(zW)-1)
+  zvec <- zW[,1]
 
-  inequalities0=0
+  inequalities0 <- 0
   if(sum(abs(inequalities))>0){
-    inequalities0 = matrix(inequalities[,1:V1],ncol=V1)
+    inequalities0 <- matrix(inequalities[,1:V1],ncol=V1)
   }
 
   #determine hyperparameters for the importance sampler and prob of inequality constraints Hq
-  out2 = Gibbs2(zW,ngroups,p,shape1,shape2,bB,bW,unique,T0,V1,inequalities,samsize=samsize2)
-  post.prob.Hq = out2[[3]]*(1-complement) + (1-out2[[3]])*complement
+  out2 <- Gibbs2(zW,ngroups,p,shape1,shape2,bB,bW,unique,T0,V1,inequalities,samsize=samsize2)
+  post.prob.Hq <- out2[[3]]*(1-complement) + (1-out2[[3]])*complement
   # estimates under the marginal model retricted with the equality constraints
   postestimates <- rbind(t(apply(out2[[4]],2,mean)),
                          t(apply(out2[[4]],2,median)),
@@ -618,109 +608,109 @@ marglike_Hq = function(yX,ngroups,p,shape1=1,shape2=1,samsize1=5e3,samsize2=5e3,
   colnames(postestimates) <- iccnames
 
   #compute the normalizing constant in the prior
-  logKq=0
-  prior.prob.Hq=1
-  LB = -1/(p-1)
+  logKq <- 0
+  prior.prob.Hq <- 1
+  LB <- -1/(p-1)
   if(prod(shape1*shape2)>0){
-    logKq = sum(lgamma(shape1+shape2)-lgamma(shape1)-lgamma(shape2)) +
+    logKq <- sum(lgamma(shape1+shape2)-lgamma(shape1)-lgamma(shape2)) +
       sum(shape2*log(p-1) - (shape1+shape2-1)*log(p))
     if(sum(abs(inequalities))>0){
-      priordraws = matrix(unlist(lapply(1:V1,function(cc){
+      priordraws <- matrix(unlist(lapply(1:V1,function(cc){
         rbeta(samsize2,shape1=shape1[cc],shape2=shape2[cc])*(1-LB)+LB
       })),ncol=V1)
-      prior.prob.Hq = mean(apply(priordraws%*%t(inequalities0)>rep(1,samsize2)%*%t(inequalities[,V1+1]),1,prod))
-      prior.prob.Hq = prior.prob.Hq*(1-complement) + (1-prior.prob.Hq)*complement
+      prior.prob.Hq <- mean(apply(priordraws%*%t(inequalities0)>rep(1,samsize2)%*%t(inequalities[,V1+1]),1,prod))
+      prior.prob.Hq <- prior.prob.Hq*(1-complement) + (1-prior.prob.Hq)*complement
     }
   }
 
   #multiply with .6 to make the importance sampler distribution slightly wider
   #draws from proposal density
-  factor1 = .6
-  hyperIS = list(out2[[1]]*factor1,out2[[2]]*factor1)
-  rdraws = samsize1
-  LB = -1/(p-1)
-  rhodraws = matrix(unlist(lapply(1:V1,function(cc){
+  factor1 <- .6
+  hyperIS <- list(out2[[1]]*factor1,out2[[2]]*factor1)
+  rdraws <- samsize1
+  LB <- -1/(p-1)
+  rhodraws <- matrix(unlist(lapply(1:V1,function(cc){
     (rbeta(rdraws,shape1=hyperIS[[1]][cc],shape2=hyperIS[[2]][cc])*(1-LB)+LB)*.99999
   })),ncol=V1)
   #multiplication with .9999 to avoid points too close to boundary
 
   #compute prior*likelihood for importance sample draws
-  logintegrands = unlist(lapply(1:rdraws,function(ss){
+  logintegrands <- unlist(lapply(1:rdraws,function(ss){
     logintegrand_Hq(rhoV=rhodraws[ss,],zvec,Wmat,p,ngroups,shape1,shape2,bB,bW,transMatrix) -
       sum(log_dshiftedbeta(rhodraws[ss,],shape1=hyperIS[[1]],shape2=hyperIS[[2]],p))
   }))
 
-  term1 = -.5*(sum(ngroups*bB)+N*(p-1)*bW-K1)*log(pi)
-  term2 = lgamma(.5*(sum(ngroups*bB)+N*(p-1)*bW-K1))
-  logintegrands = logintegrands + term1 + term2 + logKq - log(prior.prob.Hq)
-  marglike.Hq = log(mean(exp(logintegrands-max(logintegrands)))) +
+  term1 <- -.5*(sum(ngroups*bB)+N*(p-1)*bW-K1)*log(pi)
+  term2 <- lgamma(.5*(sum(ngroups*bB)+N*(p-1)*bW-K1))
+  logintegrands <- logintegrands + term1 + term2 + logKq - log(prior.prob.Hq)
+  marglike.Hq <- log(mean(exp(logintegrands-max(logintegrands)))) +
     max(logintegrands) + log(post.prob.Hq)
 
   return(list(marglike.Hq,post.prob.Hq,prior.prob.Hq,postestimates))
 }
 #marginal likelihood for H0:rho1=...=rhoC=0
-marglike_H0 = function(yX,ngroups,p,bB=1,bW=1){
+marglike_H0 <- function(yX,ngroups,p,bB=1,bW=1){
 
-  N = sum(ngroups)
-  clusters = length(ngroups)
-  K = ncol(yX)-1
-  Hp = Helmert(p)
+  N <- sum(ngroups)
+  clusters <- length(ngroups)
+  K <- ncol(yX)-1
+  Hp <- Helmert(p)
 
   if(length(bB)==1){
-    bB = rep(bB,clusters)
+    bB <- rep(bB,clusters)
   }
 
-  zW = yX
+  zW <- yX
   for(ii in 1:N){
     zW[((ii-1)*p+1):(ii*p),] = Hp%*%yX[((ii-1)*p+1):(ii*p),]
   }
-  Xmat = yX[,-1]
-  yvec = yX[,1]
-  Wmat = zW[,-1]
-  zvec = zW[,1]
+  Xmat <- yX[,-1]
+  yvec <- yX[,1]
+  Wmat <- zW[,-1]
+  zvec <- zW[,1]
 
-  term1 = -.5*(sum(ngroups*bB)+N*(p-1)*bW-K)*log(pi)
-  term2 = lgamma(.5*(sum(ngroups*bB)+N*(p-1)*bW-K))
+  term1 <- -.5*(sum(ngroups*bB)+N*(p-1)*bW-K)*log(pi)
+  term2 <- lgamma(.5*(sum(ngroups*bB)+N*(p-1)*bW-K))
 
-  vars = unlist(lapply(1:clusters,function(cc){
+  vars <- unlist(lapply(1:clusters,function(cc){
     rep(c(bB[cc]**(-1),rep(bW**(-1),p-1)),ngroups[cc])
   }))
 
-  tWDi = t(Wmat/vars)
-  tWDiW = tWDi%*%Wmat
-  tWDiWi = solve(tWDiW)
-  betaHat = c(tWDiWi%*%tWDi%*%zvec)
-  diffHat = c(zvec - Wmat%*%betaHat)
-  s2Hat = sum(diffHat*diffHat/vars)
+  tWDi <- t(Wmat/vars)
+  tWDiW <- tWDi%*%Wmat
+  tWDiWi <- solve(tWDiW)
+  betaHat <- c(tWDiWi%*%tWDi%*%zvec)
+  diffHat <- c(zvec - Wmat%*%betaHat)
+  s2Hat <- sum(diffHat*diffHat/vars)
 
-  term3 = -.5*(sum(ngroups*bB)+N*(p-1)*bW-K)*log(s2Hat)
-  term4 = -.5*log(det(tWDiW))
+  term3 <- -.5*(sum(ngroups*bB)+N*(p-1)*bW-K)*log(s2Hat)
+  term4 <- -.5*log(det(tWDiW))
 
   return(list(term1+term2+term3+term4,1,1,NA))
 }
 #wrapper for marglike_Hq but applies FBF approach with minimal fractions if shape1=shape2=0
-marglike2_Hq = function(yX,ngroups,p,shape1=1,shape2=1,samsize1=5e3,samsize2=5e3,unique,inequalities=0,complement=FALSE){
+marglike2_Hq <- function(yX,ngroups,p,shape1=1,shape2=1,samsize1=5e3,samsize2=5e3,unique,inequalities=0,complement=FALSE){
   if(sum(abs(unique))>0){
     if(prod(shape1*shape2)==0){#apply FBF methodology
       #default fractions need to be checked...
-      bBmin = 2/ngroups # to identify the fixed cluster specific intercepts and cluster specific tau's
-      bWmin = (ncol(yX)-length(ngroups))/(sum(ngroups)*(p-1)) # to identify sigma2 and the remaining fixed effects
-      pyb = marglike_Hq(yX,ngroups,p,shape1,shape2,samsize1,samsize2,bB=bBmin,bW=bWmin,unique,inequalities,complement)
-      py1 = marglike_Hq(yX,ngroups,p,shape1,shape2,samsize1,samsize2,bB=1,bW=1,unique,inequalities,complement)
-      outpHq = py1[[1]] - pyb[[1]]
+      bBmin <- 2/ngroups # to identify the fixed cluster specific intercepts and cluster specific tau's
+      bWmin <- (ncol(yX)-length(ngroups))/(sum(ngroups)*(p-1)) # to identify sigma2 and the remaining fixed effects
+      pyb <- marglike_Hq(yX,ngroups,p,shape1,shape2,samsize1,samsize2,bB=bBmin,bW=bWmin,unique,inequalities,complement)
+      py1 <- marglike_Hq(yX,ngroups,p,shape1,shape2,samsize1,samsize2,bB=1,bW=1,unique,inequalities,complement)
+      outpHq <- py1[[1]] - pyb[[1]]
     }else{
-      outpHq = marglike_Hq(yX,ngroups,p,shape1,shape2,samsize1,samsize2,bB=1,bW=1,unique,inequalities,complement)
+      outpHq <- marglike_Hq(yX,ngroups,p,shape1,shape2,samsize1,samsize2,bB=1,bW=1,unique,inequalities,complement)
     }
   }else{
     if(prod(shape1*shape2)==0){#apply FBF methodology
       #default fractions need to be checked...
-      bBmin = 2/ngroups # to identify the fixed cluster specific intercepts and cluster specific tau's
-      bWmin = (ncol(yX)-length(ngroups))/(sum(ngroups)*(p-1)) # to identify sigma2 and the remaining fixed effects
-      pyb = marglike_H0(yX,ngroups,p,bB=bBmin,bW=bWmin)
-      py1 = marglike_H0(yX,ngroups,p,bB=1,bW=1)
-      outpHq = py1[[1]] - pyb[[1]]
+      bBmin <- 2/ngroups # to identify the fixed cluster specific intercepts and cluster specific tau's
+      bWmin <- (ncol(yX)-length(ngroups))/(sum(ngroups)*(p-1)) # to identify sigma2 and the remaining fixed effects
+      pyb <- marglike_H0(yX,ngroups,p,bB=bBmin,bW=bWmin)
+      py1 <- marglike_H0(yX,ngroups,p,bB=1,bW=1)
+      outpHq <- py1[[1]] - pyb[[1]]
     }else{
-      outpHq = marglike_H0(yX,ngroups,p,bB=1,bW=1)
+      outpHq <- marglike_H0(yX,ngroups,p,bB=1,bW=1)
     }
   }
   return(outpHq)
