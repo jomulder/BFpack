@@ -24,266 +24,266 @@ approxFisherTrans <- function(df,S,samsize=1e4){
   return(list(mean=meanvec,Sigma=covmatrix))
 }
 
-# The function will be called when called BFtest with parameter="correlation"
-BFcorr <- function(model,prior=NULL,constraints="exploratory",priorprob="default"){
-
-  #check if 'model' is a fitted mlm-object or list thereof
-  if(class(model)[1] == "mlm"){
-    numgroup <- 1
-    model <- list(model)
-  }else{ if(is.list(model)){
-    numgroup <- length(model)
-  }else{
-    stop("Error: 'model' should be a fitted mlm-object with multiple outcome variables or a list thereof.")
-  }
-  }
-
-  # number of outcome varibles
-  P <- ncol(model[[1]]$coefficients)
-  numcorrgroup <- P*(P-1)/2
-
-  # prior degrees of freedom
-  if(is.null(prior)){
-    delta <- 10
-  }else if(is.numeric(prior)){
-    if(prior>0){
-      delta <- prior
-    }else stop("Specify a positive value for the argument 'prior' or use default")
-  }else stop("Specify a positive value for the argument 'prior' or use default")
-  nu0 <- delta + P - 1
-  sd0 <- 1/sqrt(delta + 1) #sd of marginal prior of a correlation
-
-  # compute prior mean and covariance matrix of Fisher transformed correlations
-  FishApprox <- approxFisherTrans(df=nu0,S=diag(P))
-  mean0 <- meanN <- rep(0,numcorrgroup*numgroup)
-  covm0 <- covmN <- kronecker(diag(numgroup),FishApprox$Sigma)
-
-  # compute posterior mean and covariance matrix of Fisher transformed correlations
-  n <- SumSquares <- list()
-  for(g in 1:numgroup){
-    # extract sample size
-    n[[g]] <- nrow(model[[g]]$residuals)
-    # compute sums of squares matrix
-    SumSquares[[g]] <- cov(model[[g]]$resid)*(n[[g]]-1)
-    # posterior mean and covariance matrix of Fisher transformed correlations
-    FishApprox <- approxFisherTrans(df=nu0+n[[g]],S=diag(P)+SumSquares[[g]])
-    meanN[1:P+(g-1)*P] <- FishApprox$mean
-    covmN[1:P+(g-1)*P,1:P+(g-1)*P] <- FishApprox$Sigma
-  }
-
-  # compute BFs and posterior probs using
-  # prior mean en covmatrix mean0 and covm0
-  # post mean en covmatrix meanN and covmN
-  if(constraints=="exploratory"){
-    # H0: corr = 0
-    # H1: corr < 0
-    # H2: corr < 0
-    relfit <- matrix(c(dnorm(0,mean=meanN,sd=sqrt(diag(covmN))),
-                       pnorm(0,mean=meanN,sd=sqrt(diag(covmN))),
-                       1-pnorm(0,mean=meanN,sd=sqrt(diag(covmN)))),ncol=3)
-
-    relcomp <- matrix(c(dnorm(0,mean=mean0,sd=sqrt(diag(covm0))),
-                        pnorm(0,mean=mean0,sd=sqrt(diag(covm0))),
-                        1-pnorm(0,mean=mean0,sd=sqrt(diag(covm0)))),ncol=3)
-    BFtu <- relfit / relcomp
-    PHP <- round(BFtu / apply(BFtu,1,sum),3)
-    colnames(PHP) <- c("H0:corr=0","H1:corr<0","H2:corr>0")
-    # get names of correlations
-    corrmat <- diag(P)
-    row.names(corrmat) <- colnames(corrmat) <- row.names(SumSquares[[1]])
-    corr_names <- names(get_estimates(corrmat)$estimate)
-    matrix_names <- matrix(corr_names,nrow=3)
-    # equal correlations are at the opposite side of the vector
-    corr_names <- matrix_names[lower.tri(matrix_names)]
-
-    if(numgroup>1){
-      matcorrpop <- matrix(0,nrow=length(corr_names),ncol=numgroup)
-      for(c in 1:length(corr_names)){
-        matcorrpop[c,] <- unlist(lapply(1:numgroup,function(pop){
-          paste0(corr_names[c],"_gr",as.character(pop)) #or "_in_gr"
-        }))
-      }
-      corr_names <- c(matcorrpop)
-    }
-    row.names(PHP) <- corr_names
-    BFmatrix <- NULL
-
-  }else{
-    # confirmatory tests based on input constraints
-
-    corrmat <- diag(P)
-    row.names(corrmat) <- colnames(corrmat) <- row.names(SumSquares[[1]])
-    corr_names <- names(get_estimates(corrmat)$estimate)
-    matrix_names <- matrix(corr_names,nrow=P)
-    # equal correlations are at the opposite side of the vector
-    corr_names <- c(matrix_names[lower.tri(matrix_names)],
-      t(matrix_names)[lower.tri(matrix_names)])
-    if(numgroup>1){
-      matcorrpop <- matrix(0,nrow=length(corr_names),ncol=numgroup)
-      for(c in 1:length(corr_names)){
-        matcorrpop[c,] <- unlist(lapply(1:numgroup,function(pop){
-          paste0(corr_names[c],"_gr",as.character(pop)) #or "_in_gr"
-        }))
-      }
-      corr_names <- c(matcorrpop)
-    }
-
-    parse_hyp <- parse_hypothesis(corr_names,constraints)
-    select1 <- rep(1:numcorrgroup,numgroup) + rep((0:(numgroup-1))*2*numcorrgroup,each=numcorrgroup)
-    select2 <- rep(numcorrgroup+1:numcorrgroup,numgroup) + rep((0:(numgroup-1))*2*numcorrgroup,each=numcorrgroup)
-    #combine equivalent correlations, e.g., cor(Y1,Y2)=corr(Y2,Y1).
-    parse_hyp$hyp_mat <-
-      cbind(parse_hyp$hyp_mat[,select1] + parse_hyp$hyp_mat[,select2],parse_hyp$hyp_mat[,numcorrgroup*2*numgroup+1])
-    #create coefficient with equality and order constraints
-    RrList <- make_RrList(parse_hyp)
-    RrE <- RrList[[1]]
-    RrO <- RrList[[2]]
-
-    numhyp <- length(RrE)
-    relcomp <- t(matrix(unlist(lapply(1:numhyp,function(h){
-      Gaussian_measures(mean0,covm0,RrE[[h]],RrO[[h]])
-    })),nrow=2))
-    relfit <- t(matrix(unlist(lapply(1:numhyp,function(h){
-      Gaussian_measures(meanN,covmN,RrE[[h]],RrO[[h]])
-    })),nrow=2))
-
-    # get relative fit and complexity of complement hypothesis
-    relcomp <- Gaussian_prob_Hc(mean0,covm0,relcomp,RrO)
-    relfit <- Gaussian_prob_Hc(meanN,covmN,relfit,RrO)
-
-    Hnames <- c(unlist(lapply(1:numhyp,function(h){paste0("H",as.character(h))})),"Hc")
-    row.names(relcomp) <- Hnames
-    row.names(relfit) <- Hnames
-
-    # the BF for the complement hypothesis vs Hu needs to be computed.
-    BFtu <- c(apply(relfit / relcomp, 1, prod))
-    # Check input of prior probabilies
-    if(!(priorprob == "default" || (length(priorprob)==nrow(relfit) && min(priorprob)>0) )){
-      stop("'probprob' must be a vector of positive values or set to 'default'.")
-    }
-    # Change prior probs in case of default setting
-    if(priorprob=="default"){priorprobs <- rep(1,length(BFtu))}
-    PHP <- round(BFtu*priorprobs / sum(BFtu*priorprobs),3)
-    BFmatrix <- matrix(rep(BFtu,length(BFtu)),ncol=length(BFtu))/
-      t(matrix(rep(BFtu,length(BFtu)),ncol=length(BFtu)))
-    row.names(BFmatrix) <- Hnames
-    colnames(BFmatrix) <- Hnames
-  }
-
-  return(list(BFtu=BFtu,PHP=PHP,BFmatrix=BFmatrix,relfit=relfit,relcomp=relcomp,
-              SumSquares=SumSquares,n=n,constraints=constraints,nu0=nu0,mean0=mean0,
-              covm0=covm0,priorprob=priorprob,corr_names=corr_names))
-}
-
-# The update function for BFcorr of new data in fitted object 'model'
-BFcorrUpdate <- function(BFcorr1,model,prior=NULL,constraints="exploratory",priorprob="default"){
-
-  relcomp <- BFcorr1$relcomp
-  SumSquares <- BFcorr1$SumSquares
-  n <- BFcorr1$n
-  nu0 <- BFcorr1$nu0
-  mean0 <- meanN <- BFcorr1$mean0
-  covm0 <- covmN <- BFcorr1$covm0
-  constraints <- BFcorr1$constraints
-  priorprob <- BFcorr1$priorprob
-
-  #check if 'model' is a fitted mlm-object or list thereof
-  if(class(model)[1] == "mlm"){
-    numgroup <- 1
-    model <- list(model)
-  }else{ if(is.list(model)){
-    numgroup <- length(model)
-  }else{
-    stop("'model' should be a fitted mlm-object with multiple outcome variables or a list thereof.")
-  }
-  }
-  if(length(SumSquares)!=numgroup){
-    stop("The number of groups of the new data does not match with the dimensions with the historical data.")
-  }
-  for(g in 1:numgroup){
-    if(nrow(SumSquares[[g]])!=ncol(model[[g]]$coefficients)){
-      stop("The number of groups of the new data does not match with the dimensions with the historical data.")
-    }}
-
-  # number of outcome varibles
-  P <- ncol(model[[1]]$coefficients)
-  numcorrgroup <- P*(P-1)/2
-
-  # compute posterior mean and covariance matrix of Fisher transformed correlations
-  meanN <- rep(0,numcorrgroup*numgroup)
-  covmN <- matrix(0,numcorrgroup*numgroup,numcorrgroup*numgroup)
-  for(g in 1:numgroup){
-    # extract sample size
-    nnew_g <- nrow(model[[g]]$residuals)
-    n[[g]] <- n[[g]] + nnew_g
-    # compute sums of squares matrix
-    SumSquares[[g]] <- SumSquares[[g]] + cov(model[[g]]$resid)*(nnew_g-1)
-    # posterior mean and covariance matrix of Fisher transformed correlations
-    FishApprox <- approxFisherTrans(df=nu0+n[[g]],S=diag(P)+SumSquares[[g]])
-    meanN[1:P+(g-1)*P] <- FishApprox$mean
-    covmN[1:P+(g-1)*P,1:P+(g-1)*P] <- FishApprox$Sigma
-  }
-
-  # compute BFs and posterior probs using
-  # prior mean en covmatrix mean0 and covm0
-  # post mean en covmatrix meanN and covmN
-  if(constraints=="exploratory"){
-    # H0: corr = 0
-    # H1: corr < 0
-    # H2: corr < 0
-    relfit <- matrix(c(dnorm(0,mean=meanN,sd=sqrt(diag(covmN))),
-                       pnorm(0,mean=meanN,sd=sqrt(diag(covmN))),
-                       1-pnorm(0,mean=meanN,sd=sqrt(diag(covmN)))),ncol=3)
-    BFtu <- relfit / relcomp
-    PHP <- round(BFtu / apply(BFtu,1,sum),3)
-    colnames(PHP) <- c("H0:corr=0","H1:corr<0","H2:corr>0")
-    row.names(PHP) <- BFcorr1$corr_names
-    BFmatrix <- NULL
-
-  }else{
-    # confirmatory tests based on input constraints
-
-    parse_hyp <- parse_hypothesis(corr_names,constraints)
-    select1 <- rep(1:numcorrgroup,numgroup) + rep((0:(numgroup-1))*2*numcorrgroup,each=numcorrgroup)
-    select2 <- rep(numcorrgroup+1:numcorrgroup,numgroup) + rep((0:(numgroup-1))*2*numcorrgroup,each=numcorrgroup)
-    #combine equivalent correlations, e.g., cor(Y1,Y2)=corr(Y2,Y1).
-    parse_hyp$hyp_mat <-
-      cbind(parse_hyp$hyp_mat[,select1] + parse_hyp$hyp_mat[,select2],parse_hyp$hyp_mat[,numcorrgroup*2*numgroup+1])
-    #create coefficient with equality and order constraints
-    RrList <- make_RrList(parse_hyp)
-    RrE <- RrList[[1]]
-    RrO <- RrList[[2]]
-
-    numhyp <- length(RrE)
-    relfit <- t(matrix(unlist(lapply(1:numhyp,function(h){
-      Gaussian_measures(meanN,covmN,RrE[[h]],RrO[[h]])
-    })),nrow=2))
-
-    # get relative fit and complexity of complement hypothesis
-    relfit <- Gaussian_prob_Hc(meanN,covmN,relfit,RrO)
-
-    Hnames <- c(unlist(lapply(1:numhyp,function(h){paste0("H",as.character(h))})),"Hc")
-    row.names(relfit) <- Hnames
-
-    # the BF for the complement hypothesis vs Hu needs to be computed.
-    BFtu <- c(apply(relfit / relcomp, 1, prod))
-    # Check input of prior probabilies
-    if(!(priorprob == "default" || (length(priorprob)==nrow(relfit) && min(priorprob)>0) )){
-      stop("'probprob' must be a vector of positive values or set to 'default'.")
-    }
-    # Change prior probs in case of default setting
-    if(priorprob=="default"){priorprobs <- rep(1,length(BFtu))}
-    PHP <- round(BFtu*priorprobs / sum(BFtu*priorprobs),3)
-    BFmatrix <- matrix(rep(BFtu,length(BFtu)),ncol=length(BFtu))/
-      t(matrix(rep(BFtu,length(BFtu)),ncol=length(BFtu)))
-    row.names(BFmatrix) <- Hnames
-    colnames(BFmatrix) <- Hnames
-  }
-
-  return(list(BFtu=BFtu,PHP=PHP,BFmatrix=BFmatrix,relfit=relfit,relcomp=relcomp,
-              SumSquares=SumSquares,n=n,constraints=constraints,nu0=nu0,mean0=mean0,
-              covm0=covm0,priorprob=priorprob))
-}
+# # The function will be called when called BFtest with parameter="correlation"
+# BFcorr <- function(model,prior=NULL,constraints="exploratory",priorprob="default"){
+#
+#   #check if 'model' is a fitted mlm-object or list thereof
+#   if(class(model)[1] == "mlm"){
+#     numgroup <- 1
+#     model <- list(model)
+#   }else{ if(is.list(model)){
+#     numgroup <- length(model)
+#   }else{
+#     stop("Error: 'model' should be a fitted mlm-object with multiple outcome variables or a list thereof.")
+#   }
+#   }
+#
+#   # number of outcome varibles
+#   P <- ncol(model[[1]]$coefficients)
+#   numcorrgroup <- P*(P-1)/2
+#
+#   # prior degrees of freedom
+#   if(is.null(prior)){
+#     delta <- 10
+#   }else if(is.numeric(prior)){
+#     if(prior>0){
+#       delta <- prior
+#     }else stop("Specify a positive value for the argument 'prior' or use default")
+#   }else stop("Specify a positive value for the argument 'prior' or use default")
+#   nu0 <- delta + P - 1
+#   sd0 <- 1/sqrt(delta + 1) #sd of marginal prior of a correlation
+#
+#   # compute prior mean and covariance matrix of Fisher transformed correlations
+#   FishApprox <- approxFisherTrans(df=nu0,S=diag(P))
+#   mean0 <- meanN <- rep(0,numcorrgroup*numgroup)
+#   covm0 <- covmN <- kronecker(diag(numgroup),FishApprox$Sigma)
+#
+#   # compute posterior mean and covariance matrix of Fisher transformed correlations
+#   n <- SumSquares <- list()
+#   for(g in 1:numgroup){
+#     # extract sample size
+#     n[[g]] <- nrow(model[[g]]$residuals)
+#     # compute sums of squares matrix
+#     SumSquares[[g]] <- cov(model[[g]]$resid)*(n[[g]]-1)
+#     # posterior mean and covariance matrix of Fisher transformed correlations
+#     FishApprox <- approxFisherTrans(df=nu0+n[[g]],S=diag(P)+SumSquares[[g]])
+#     meanN[1:P+(g-1)*P] <- FishApprox$mean
+#     covmN[1:P+(g-1)*P,1:P+(g-1)*P] <- FishApprox$Sigma
+#   }
+#
+#   # compute BFs and posterior probs using
+#   # prior mean en covmatrix mean0 and covm0
+#   # post mean en covmatrix meanN and covmN
+#   if(constraints=="exploratory"){
+#     # H0: corr = 0
+#     # H1: corr < 0
+#     # H2: corr < 0
+#     relfit <- matrix(c(dnorm(0,mean=meanN,sd=sqrt(diag(covmN))),
+#                        pnorm(0,mean=meanN,sd=sqrt(diag(covmN))),
+#                        1-pnorm(0,mean=meanN,sd=sqrt(diag(covmN)))),ncol=3)
+#
+#     relcomp <- matrix(c(dnorm(0,mean=mean0,sd=sqrt(diag(covm0))),
+#                         pnorm(0,mean=mean0,sd=sqrt(diag(covm0))),
+#                         1-pnorm(0,mean=mean0,sd=sqrt(diag(covm0)))),ncol=3)
+#     BFtu <- relfit / relcomp
+#     PHP <- round(BFtu / apply(BFtu,1,sum),3)
+#     colnames(PHP) <- c("H0:corr=0","H1:corr<0","H2:corr>0")
+#     # get names of correlations
+#     corrmat <- diag(P)
+#     row.names(corrmat) <- colnames(corrmat) <- row.names(SumSquares[[1]])
+#     corr_names <- names(get_estimates(corrmat)$estimate)
+#     matrix_names <- matrix(corr_names,nrow=3)
+#     # equal correlations are at the opposite side of the vector
+#     corr_names <- matrix_names[lower.tri(matrix_names)]
+#
+#     if(numgroup>1){
+#       matcorrpop <- matrix(0,nrow=length(corr_names),ncol=numgroup)
+#       for(c in 1:length(corr_names)){
+#         matcorrpop[c,] <- unlist(lapply(1:numgroup,function(pop){
+#           paste0(corr_names[c],"_gr",as.character(pop)) #or "_in_gr"
+#         }))
+#       }
+#       corr_names <- c(matcorrpop)
+#     }
+#     row.names(PHP) <- corr_names
+#     BFmatrix <- NULL
+#
+#   }else{
+#     # confirmatory tests based on input constraints
+#
+#     corrmat <- diag(P)
+#     row.names(corrmat) <- colnames(corrmat) <- row.names(SumSquares[[1]])
+#     corr_names <- names(get_estimates(corrmat)$estimate)
+#     matrix_names <- matrix(corr_names,nrow=P)
+#     # equal correlations are at the opposite side of the vector
+#     corr_names <- c(matrix_names[lower.tri(matrix_names)],
+#       t(matrix_names)[lower.tri(matrix_names)])
+#     if(numgroup>1){
+#       matcorrpop <- matrix(0,nrow=length(corr_names),ncol=numgroup)
+#       for(c in 1:length(corr_names)){
+#         matcorrpop[c,] <- unlist(lapply(1:numgroup,function(pop){
+#           paste0(corr_names[c],"_gr",as.character(pop)) #or "_in_gr"
+#         }))
+#       }
+#       corr_names <- c(matcorrpop)
+#     }
+#
+#     parse_hyp <- parse_hypothesis(corr_names,constraints)
+#     select1 <- rep(1:numcorrgroup,numgroup) + rep((0:(numgroup-1))*2*numcorrgroup,each=numcorrgroup)
+#     select2 <- rep(numcorrgroup+1:numcorrgroup,numgroup) + rep((0:(numgroup-1))*2*numcorrgroup,each=numcorrgroup)
+#     #combine equivalent correlations, e.g., cor(Y1,Y2)=corr(Y2,Y1).
+#     parse_hyp$hyp_mat <-
+#       cbind(parse_hyp$hyp_mat[,select1] + parse_hyp$hyp_mat[,select2],parse_hyp$hyp_mat[,numcorrgroup*2*numgroup+1])
+#     #create coefficient with equality and order constraints
+#     RrList <- make_RrList(parse_hyp)
+#     RrE <- RrList[[1]]
+#     RrO <- RrList[[2]]
+#
+#     numhyp <- length(RrE)
+#     relcomp <- t(matrix(unlist(lapply(1:numhyp,function(h){
+#       Gaussian_measures(mean0,covm0,RrE[[h]],RrO[[h]])
+#     })),nrow=2))
+#     relfit <- t(matrix(unlist(lapply(1:numhyp,function(h){
+#       Gaussian_measures(meanN,covmN,RrE[[h]],RrO[[h]])
+#     })),nrow=2))
+#
+#     # get relative fit and complexity of complement hypothesis
+#     relcomp <- Gaussian_prob_Hc(mean0,covm0,relcomp,RrO)
+#     relfit <- Gaussian_prob_Hc(meanN,covmN,relfit,RrO)
+#
+#     Hnames <- c(unlist(lapply(1:numhyp,function(h){paste0("H",as.character(h))})),"Hc")
+#     row.names(relcomp) <- Hnames
+#     row.names(relfit) <- Hnames
+#
+#     # the BF for the complement hypothesis vs Hu needs to be computed.
+#     BFtu <- c(apply(relfit / relcomp, 1, prod))
+#     # Check input of prior probabilies
+#     if(!(priorprob == "default" || (length(priorprob)==nrow(relfit) && min(priorprob)>0) )){
+#       stop("'probprob' must be a vector of positive values or set to 'default'.")
+#     }
+#     # Change prior probs in case of default setting
+#     if(priorprob=="default"){priorprobs <- rep(1,length(BFtu))}
+#     PHP <- round(BFtu*priorprobs / sum(BFtu*priorprobs),3)
+#     BFmatrix <- matrix(rep(BFtu,length(BFtu)),ncol=length(BFtu))/
+#       t(matrix(rep(BFtu,length(BFtu)),ncol=length(BFtu)))
+#     row.names(BFmatrix) <- Hnames
+#     colnames(BFmatrix) <- Hnames
+#   }
+#
+#   return(list(BFtu=BFtu,PHP=PHP,BFmatrix=BFmatrix,relfit=relfit,relcomp=relcomp,
+#               SumSquares=SumSquares,n=n,constraints=constraints,nu0=nu0,mean0=mean0,
+#               covm0=covm0,priorprob=priorprob,corr_names=corr_names))
+# }
+#
+# # The update function for BFcorr of new data in fitted object 'model'
+# BFcorrUpdate <- function(BFcorr1,model,prior=NULL,constraints="exploratory",priorprob="default"){
+#
+#   relcomp <- BFcorr1$relcomp
+#   SumSquares <- BFcorr1$SumSquares
+#   n <- BFcorr1$n
+#   nu0 <- BFcorr1$nu0
+#   mean0 <- meanN <- BFcorr1$mean0
+#   covm0 <- covmN <- BFcorr1$covm0
+#   constraints <- BFcorr1$constraints
+#   priorprob <- BFcorr1$priorprob
+#
+#   #check if 'model' is a fitted mlm-object or list thereof
+#   if(class(model)[1] == "mlm"){
+#     numgroup <- 1
+#     model <- list(model)
+#   }else{ if(is.list(model)){
+#     numgroup <- length(model)
+#   }else{
+#     stop("'model' should be a fitted mlm-object with multiple outcome variables or a list thereof.")
+#   }
+#   }
+#   if(length(SumSquares)!=numgroup){
+#     stop("The number of groups of the new data does not match with the dimensions with the historical data.")
+#   }
+#   for(g in 1:numgroup){
+#     if(nrow(SumSquares[[g]])!=ncol(model[[g]]$coefficients)){
+#       stop("The number of groups of the new data does not match with the dimensions with the historical data.")
+#     }}
+#
+#   # number of outcome varibles
+#   P <- ncol(model[[1]]$coefficients)
+#   numcorrgroup <- P*(P-1)/2
+#
+#   # compute posterior mean and covariance matrix of Fisher transformed correlations
+#   meanN <- rep(0,numcorrgroup*numgroup)
+#   covmN <- matrix(0,numcorrgroup*numgroup,numcorrgroup*numgroup)
+#   for(g in 1:numgroup){
+#     # extract sample size
+#     nnew_g <- nrow(model[[g]]$residuals)
+#     n[[g]] <- n[[g]] + nnew_g
+#     # compute sums of squares matrix
+#     SumSquares[[g]] <- SumSquares[[g]] + cov(model[[g]]$resid)*(nnew_g-1)
+#     # posterior mean and covariance matrix of Fisher transformed correlations
+#     FishApprox <- approxFisherTrans(df=nu0+n[[g]],S=diag(P)+SumSquares[[g]])
+#     meanN[1:P+(g-1)*P] <- FishApprox$mean
+#     covmN[1:P+(g-1)*P,1:P+(g-1)*P] <- FishApprox$Sigma
+#   }
+#
+#   # compute BFs and posterior probs using
+#   # prior mean en covmatrix mean0 and covm0
+#   # post mean en covmatrix meanN and covmN
+#   if(constraints=="exploratory"){
+#     # H0: corr = 0
+#     # H1: corr < 0
+#     # H2: corr < 0
+#     relfit <- matrix(c(dnorm(0,mean=meanN,sd=sqrt(diag(covmN))),
+#                        pnorm(0,mean=meanN,sd=sqrt(diag(covmN))),
+#                        1-pnorm(0,mean=meanN,sd=sqrt(diag(covmN)))),ncol=3)
+#     BFtu <- relfit / relcomp
+#     PHP <- round(BFtu / apply(BFtu,1,sum),3)
+#     colnames(PHP) <- c("H0:corr=0","H1:corr<0","H2:corr>0")
+#     row.names(PHP) <- BFcorr1$corr_names
+#     BFmatrix <- NULL
+#
+#   }else{
+#     # confirmatory tests based on input constraints
+#
+#     parse_hyp <- parse_hypothesis(corr_names,constraints)
+#     select1 <- rep(1:numcorrgroup,numgroup) + rep((0:(numgroup-1))*2*numcorrgroup,each=numcorrgroup)
+#     select2 <- rep(numcorrgroup+1:numcorrgroup,numgroup) + rep((0:(numgroup-1))*2*numcorrgroup,each=numcorrgroup)
+#     #combine equivalent correlations, e.g., cor(Y1,Y2)=corr(Y2,Y1).
+#     parse_hyp$hyp_mat <-
+#       cbind(parse_hyp$hyp_mat[,select1] + parse_hyp$hyp_mat[,select2],parse_hyp$hyp_mat[,numcorrgroup*2*numgroup+1])
+#     #create coefficient with equality and order constraints
+#     RrList <- make_RrList(parse_hyp)
+#     RrE <- RrList[[1]]
+#     RrO <- RrList[[2]]
+#
+#     numhyp <- length(RrE)
+#     relfit <- t(matrix(unlist(lapply(1:numhyp,function(h){
+#       Gaussian_measures(meanN,covmN,RrE[[h]],RrO[[h]])
+#     })),nrow=2))
+#
+#     # get relative fit and complexity of complement hypothesis
+#     relfit <- Gaussian_prob_Hc(meanN,covmN,relfit,RrO)
+#
+#     Hnames <- c(unlist(lapply(1:numhyp,function(h){paste0("H",as.character(h))})),"Hc")
+#     row.names(relfit) <- Hnames
+#
+#     # the BF for the complement hypothesis vs Hu needs to be computed.
+#     BFtu <- c(apply(relfit / relcomp, 1, prod))
+#     # Check input of prior probabilies
+#     if(!(priorprob == "default" || (length(priorprob)==nrow(relfit) && min(priorprob)>0) )){
+#       stop("'probprob' must be a vector of positive values or set to 'default'.")
+#     }
+#     # Change prior probs in case of default setting
+#     if(priorprob=="default"){priorprobs <- rep(1,length(BFtu))}
+#     PHP <- round(BFtu*priorprobs / sum(BFtu*priorprobs),3)
+#     BFmatrix <- matrix(rep(BFtu,length(BFtu)),ncol=length(BFtu))/
+#       t(matrix(rep(BFtu,length(BFtu)),ncol=length(BFtu)))
+#     row.names(BFmatrix) <- Hnames
+#     colnames(BFmatrix) <- Hnames
+#   }
+#
+#   return(list(BFtu=BFtu,PHP=PHP,BFmatrix=BFmatrix,relfit=relfit,relcomp=relcomp,
+#               SumSquares=SumSquares,n=n,constraints=constraints,nu0=nu0,mean0=mean0,
+#               covm0=covm0,priorprob=priorprob))
+# }
 
 # compute relative meausures (fit or complexity) under a multivariate Student t distribution
 Gaussian_measures <- function(mean1,Sigma1,n1=0,RrE1,RrO1,names1=NULL,constraints1=NULL){

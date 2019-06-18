@@ -31,7 +31,28 @@ hypothesis = "
   Cat_fl_with_Fas_in_Group1 > Cat_fl_with_Fas_in_Group2 &
   Cat_fl_with_Rat_in_Group1 > Cat_fl_with_Rat_in_Group2 &
 
-  Fas_with_Rat_in_Group1 > Fas_with_Rat_in_Group2
+  Fas_with_Rat_in_Group1 > Fas_with_Rat_in_Group2;
+
+Im_fr_with_De_fr_in_Group1 = Im_fr_with_De_fr_in_Group2 &
+  Im_fr_with_De_fr_in_Group1 = Im_fr_with_WM_let_in_Group2 &
+  Im_fr_with_De_fr_in_Group1 = Im_fr_with_Cat_fl_in_Group2 &
+  Im_fr_with_De_fr_in_Group1 = Im_fr_with_Fas_in_Group2 &
+  Im_fr_with_De_fr_in_Group1 = Im_fr_with_Rat_in_Group2 &
+
+  De_fr_with_WM_let_in_Group1 = De_fr_with_WM_let_in_Group2 &
+  De_fr_with_Cat_fl_in_Group1 = De_fr_with_Cat_fl_in_Group2 &
+  De_fr_with_Fas_in_Group1 = De_fr_with_Fas_in_Group2 &
+  De_fr_with_Rat_in_Group1 = De_fr_with_Rat_in_Group2 &
+
+  WM_let_with_Cat_fl_in_Group1 = WM_let_with_Cat_fl_in_Group2 &
+  WM_let_with_Fas_in_Group1 = WM_let_with_Fas_in_Group2 &
+  WM_let_with_Rat_in_Group1 = WM_let_with_Rat_in_Group2 &
+
+  Cat_fl_with_Fas_in_Group1 = Cat_fl_with_Fas_in_Group2 &
+  Cat_fl_with_Rat_in_Group1 = Cat_fl_with_Rat_in_Group2 &
+
+  Fas_with_Rat_in_Group1 = Fas_with_Rat_in_Group2
+
   "
 
 library(nlme)

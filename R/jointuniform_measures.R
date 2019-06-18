@@ -3,7 +3,7 @@
 
 # Compute relative meausures for constraints on correlation based
 # on a joint uniform distribution on correlation matrix
-jointuniform_measures <- function(P,numcorrgroup,numG,RrE1,RrO1,Fisher=0){
+jointuniform_measures <- function(P,numcorrgroup,numG,RrE1,RrO1,Fisher=0,samsize=1e5){
   # If Fisher=1 then the evaluation is done on Fisher transformed space.
   relE <- relO <- 1
   numcorr <- numcorrgroup*numG
@@ -31,9 +31,7 @@ jointuniform_measures <- function(P,numcorrgroup,numG,RrE1,RrO1,Fisher=0){
 
     # get random draws from joint uniform distribution
     drawsJU <- matrix(0,nrow=samsize,ncol=numcorr)
-    drawsJU[,1:numcorrgroup] <- .Fortran("draw_ju",P=as.integer(P),drawscorr=drawsJU[,1:numcorrgroup],
-                                         samsize=as.integer(samsize),numcorrgroup=as.integer(numcorrgroup),
-                                         Fisher==as.integer(Fisher),seed=as.integer(seed))$drawscorr
+    drawsJU[,1:numcorrgroup] <- draw_ju(P,samsize=samsize,Fisher=Fisher,seed=123)
 
     #These draws can be used for the correlation matrices of the independent groups
     numcorr <- numcorrgroup * numG
@@ -56,8 +54,15 @@ jointuniform_measures <- function(P,numcorrgroup,numG,RrE1,RrO1,Fisher=0){
         rE1 <- RrE1[,numcorr+1]
       }
       drawsTrans = drawsJU%*%t(RE1)
-      relE <- .Fortran("compute_rcEt",numE=as.integer(nrow(RrE1)),drawsIn=drawsTrans,wIn=rE1,delta=.1,
-                       rcEt=relE,samsize=as.integer(samsize))$rcEt
+      relE <- get_relmeasE(drawsIn=drawsTrans,rE1,delta=.1,relE)$rcEt
+      if(relE==0){ #the hypothesis contains too many equality constraint to get an
+        #accurate estimate for relE. So use normal approximation estimate.
+        meanE <- apply(drawsTrans,2,mean)
+        covmE <- cov(drawsTrans)
+        relE <- dmvnorm(rE1,meanE,sigma=covmE)
+      }
+#        .Fortran("compute_rcEt",numE=as.integer(nrow(RrE1)),drawsIn=drawsTrans,wIn=rE1,delta=.1,
+#                       rcEt=relE,samsize=as.integer(samsize))$rcEt
     }else if(is.null(RrE1) && !is.null(RrO1)){ #only order constraints.
       # Use normal approximation.
       relO <- Gaussian_measures(mean1=apply(drawsJU,2,mean),Sigma1=cov(drawsJU),RrE1=NULL,RrO1=RrO1)[2]
@@ -85,6 +90,7 @@ jointuniform_measures <- function(P,numcorrgroup,numG,RrE1,RrO1,Fisher=0){
         covOE <- matrix(0,nrow=nrow(RrO1),ncol=nrow(RrO1))
         analysisE <- .Fortran("compute_rcEt2",numE=as.integer(nrow(RrE1)),drawsIn=drawsTrans,wIn=rE1,delta=.1,
                               rcEt=relE,meanOut=meanOE,covmOut=covOE,samsize=as.integer(samsize),numcorr=as.integer(nrow(R1)))
+        warning("TO DO. Create separate R function for this Fortran call.")
         relE <- analysisE$rcEt
         meanOE <- analysisE$meanOut
         covOE <- analysisE$covmOut
@@ -206,3 +212,9 @@ draw_ju <- function(P, samsize=50000,Fisher=1,seed=123){
   return(res$drawscorr)
 
 }
+
+get_relmeasE <- function(drawsIn,rE1,delta=.1,relE){
+  .Fortran("compute_rcEt",numE=as.integer(length(rE1)),drawsIn=drawsIn,wIn=rE1,delta=.1,
+           rcEt=relE,samsize=as.integer(nrow(drawsIn)))
+}
+

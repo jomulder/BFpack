@@ -459,6 +459,7 @@ BF.mlm <- function(x,
 
         #Check which are dummy variables corresponding to (adjusted) mean parameters
         dummyX <- rep(F,K)
+        names(dummyX) <- colnames(Xmat)
         for(k in 1:K){
           uniquek <- sort(unique(Xmat[,k]))
           if(length(uniquek)==2 && uniquek[1]==0 && uniquek[2]==1){dummyX[k]<-T} #group index of intercept
@@ -510,7 +511,7 @@ BF.mlm <- function(x,
         }
         YXlist <- lapply(1:numG,function(col){
           return(list(Y=Ymat[Xgroup[,col]==1,],
-                      X=Xmat[Xgroup[,col]==1,-colnum[-col]]))
+                      X=as.matrix(Xmat[Xgroup[,col]==1,-colnum[-col]])))
         })
         corr_names_exploratory0 <- matrix_names[lower.tri(matrix_names)]
         corr_names_exploratory <- unlist(lapply(1:length(groupcov),function(gr){
@@ -720,10 +721,28 @@ estimate_postMeanCov_FisherZ <- function(YXlist,numdraws=5e3){
                  sigmaDrawsStore=array(0,dim=c(samsize0,numG,P)),
                  CDrawsStore=array(0,dim=c(samsize0,numG,P,P)))
 
+  meansCovCorr <- lapply(1:numG,function(g){
+    Fdraws_g <- FisherZ(t(matrix(unlist(lapply(1:samsize0,function(s){
+      res$CDrawsStore[s,g,,][lower.tri(diag(P))]
+    })),ncol=samsize0)))
+    mean_g <- apply(Fdraws_g,2,mean)
+    covm_g <- cov(Fdraws_g)
+    return(list(mean_g,covm_g))
+  })
+  meanN <- unlist(lapply(1:numG,function(g){
+    meansCovCorr[[g]][[1]]
+  }))
+  covmN <- matrix(0,nrow=numcorr,ncol=numcorr)
+  numcorrg <- numcorr/numG
+  for(g in 1:numG){
+    covmN[(g-1)*numcorrg+1:numcorrg,(g-1)*numcorrg+1:numcorrg] <- meansCovCorr[[g]][[2]]
+  }
   return(list(corr_quantiles=res$C_quantiles,B_quantiles=res$B_quantiles,
-              sigma_quantiles=res$sigma_quantiles,meanN=res$postZmean,covmN=res$postZcov))
+              sigma_quantiles=res$sigma_quantiles,meanN=meanN,covmN=covmN))
 
 }
+
+
 
 
 
