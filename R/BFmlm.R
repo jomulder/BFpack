@@ -187,9 +187,10 @@ BF.mlm <- function(x,
           for(r1 in 1:sum(which0)){RrE_f[r1,which(which0)[r1]]<-1}
           RrE_f <- cbind(kronecker(diag(P),RrE_f),rep(0,sum(which0)*P))
           relcomp_f <- MatrixStudent_measures(Mean1=matrix(mean0,ncol=P),Scale1=S_b,tXXi1=tXXi_b,
-                                        df1=df0,RrE1=RrE_f,RrO1=NULL)
+                                        df1=df0,RrE1=RrE_f,RrO1=NULL,Names1=NULL,constraints1=NULL,
+                                        MCdraws=1e4)
           relfit_f <- MatrixStudent_measures(Mean1=BetaHat,Scale1=S,tXXi1=tXXi,df1=dfN,RrE1=RrE_f,
-                                       RrO1=NULL)
+                                       RrO1=NULL,Names1=NULL,constraints1=NULL,MCdraws=1e4)
           BFtu <- relfit_f[1]/relcomp_f[1]
           names(BFtu) <- name1
           return(c(BFtu,relfit_f[1],relcomp_f[1]))
@@ -232,10 +233,11 @@ BF.mlm <- function(x,
             for(r1 in 1:sum(whichx)){RrE_ia[r1,which(whichx)[r1]]<-1}
             RrE_ia <- cbind(kronecker(diag(P),RrE_ia),rep(0,sum(whichx)*P))
             relcomp_ia <- MatrixStudent_measures(Mean1=matrix(mean0,ncol=P),Scale1=S_b,tXXi1=tXXi_b,
-                                                df1=df0,RrE1=RrE_ia,RrO1=NULL)
+                                                df1=df0,RrE1=RrE_ia,RrO1=NULL,Names1=NULL,
+                                                constraints1=NULL,MCdraws=1e4)
             names(relcomp_ia) <- c("c=","c>")
             relfit_ia <- MatrixStudent_measures(Mean1=BetaHat,Scale1=S,tXXi1=tXXi,df1=dfN,RrE1=RrE_ia,
-                                               RrO1=NULL)
+                                               RrO1=NULL,Names1=NULL,constraints1=NULL,MCdraws=1e4)
             names(relfit_ia) <- c("f=","f>")
             BFtu_ia <- relfit_ia[1]/relcomp_ia[1]
             names(BFtu_ia) <- paste(interactionset,collapse=":")
@@ -377,7 +379,7 @@ BF.mlm <- function(x,
                          Names1=matrix(names_coef,ncol=P),constraints1=parse_hyp$original_hypothesis,
                          MCdraws=1e4)
           relcomp_h <- MatrixStudent_measures(Mean0,S_b,tXXi_b,df0,RrE[[h]],RrO[[h]],
-                          Names=matrix(names_coef,ncol=P),constraints=parse_hyp$original_hypothesis,
+                          Names1=matrix(names_coef,ncol=P),constraints1=parse_hyp$original_hypothesis,
                           MCdraws=1e4)
         }
         return(list(relfit_h,relcomp_h))
@@ -698,7 +700,7 @@ estimate_postMeanCov_FisherZ <- function(YXlist,numdraws=5e3){
   # call Fortran subroutine for Gibbs sampling using noninformative improper priors
   # for regression coefficients, Jeffreys priors for standard deviations, and a proper
   # joint uniform prior for the correlation matrices.
-  res <-.Fortran("estimate_postMeanCov_FisherZ",
+  res <-.Fortran("estimate_postmeancov_fisherz",
                  postZmean=matrix(0,numcorr,1),
                  postZcov=matrix(0,numcorr,numcorr),
                  P=as.integer(P),

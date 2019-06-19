@@ -21,7 +21,14 @@ BF.bain_htest <- function(x,
                       parameter = NULL,
                       ...){
 
+  if(is.null(prior)){
+    priorprob <- "default"
+  } else {
+    priorprob <- prior
+  }
+
   numpop <- length(x$estimate)
+
 
   if(numpop==1){ #one sample t test
     # tvalue <- x$statistic

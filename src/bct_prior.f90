@@ -257,7 +257,7 @@ end subroutine draw_ju
 
 
 
-subroutine compute_rcEt(numE,drawsIn,wIn,delta,rcEt, samsize)
+subroutine compute_rcet(numE,drawsIn,wIn,delta,rcEt, samsize)
 !estimates the density at 0 via a histogram estimate, e.g., mean(abs(draws)<delta)/(2*delta), with default delta=.1
     
     implicit none
@@ -282,11 +282,11 @@ subroutine compute_rcEt(numE,drawsIn,wIn,delta,rcEt, samsize)
     end do
     rcEt = 1.0/(2*delta)**real(numE)*sum(dummyvec1)/real(samsize)
 
-end subroutine compute_rcEt
+end subroutine compute_rcet
 
 
 
-subroutine compute_rcEt2(numE,drawsIn,wIn,delta,rcEt,meanOut,covmOut,samsize,numcorr)
+subroutine compute_rcet2(numE,drawsIn,wIn,delta,rcEt,meanOut,covmOut,samsize,numcorr)
 !estimates the density at 0 via a histogram estimate, e.g., mean(abs(draws)<delta)/(2*delta), with default delta=.1.
 !and compute conditional mean and covariance matrix of unconstrained parameters.    
     implicit none
@@ -327,7 +327,7 @@ subroutine compute_rcEt2(numE,drawsIn,wIn,delta,rcEt,meanOut,covmOut,samsize,num
     !covmDummy = covmDummy/real(tel1)
     covmOut(1:(numcorr-numE),1:(numcorr-numE)) = covmDummy((numE+1):numcorr,(numE+1):numcorr)
 !    
-end subroutine compute_rcEt2
+end subroutine compute_rcet2
 
 
 

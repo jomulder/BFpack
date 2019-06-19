@@ -3,7 +3,7 @@
 
 # Compute relative meausures for constraints on correlation based
 # on a joint uniform distribution on correlation matrix
-jointuniform_measures <- function(P,numcorrgroup,numG,RrE1,RrO1,Fisher=0,samsize=1e5){
+jointuniform_measures <- function(P,numcorrgroup,numG,RrE1,RrO1,Fisher=0,samsize=1e5,seed=123){
   # If Fisher=1 then the evaluation is done on Fisher transformed space.
   relE <- relO <- 1
   numcorr <- numcorrgroup*numG
@@ -31,7 +31,7 @@ jointuniform_measures <- function(P,numcorrgroup,numG,RrE1,RrO1,Fisher=0,samsize
 
     # get random draws from joint uniform distribution
     drawsJU <- matrix(0,nrow=samsize,ncol=numcorr)
-    drawsJU[,1:numcorrgroup] <- draw_ju(P,samsize=samsize,Fisher=Fisher,seed=123)
+    drawsJU[,1:numcorrgroup] <- draw_ju(P,samsize=samsize,Fisher=Fisher,seed=seed)
 
     #These draws can be used for the correlation matrices of the independent groups
     numcorr <- numcorrgroup * numG
@@ -88,9 +88,12 @@ jointuniform_measures <- function(P,numcorrgroup,numG,RrE1,RrO1,Fisher=0,samsize
 
         meanOE <- rep(0,nrow(RrO1))
         covOE <- matrix(0,nrow=nrow(RrO1),ncol=nrow(RrO1))
-        analysisE <- .Fortran("compute_rcEt2",numE=as.integer(nrow(RrE1)),drawsIn=drawsTrans,wIn=rE1,delta=.1,
-                              rcEt=relE,meanOut=meanOE,covmOut=covOE,samsize=as.integer(samsize),numcorr=as.integer(nrow(R1)))
-        warning("TO DO. Create separate R function for this Fortran call.")
+        # analysisE <- .Fortran("compute_rcet2",numE=as.integer(nrow(RrE1)),drawsIn=drawsTrans,
+        #                       wIn=rE1,delta=.1,
+        #                       rcEt=relE,meanOut=meanOE,covmOut=covOE,samsize=as.integer(samsize),
+        #                       numcorr=as.integer(nrow(R1)))
+        #
+        analysisE <- get_relmeasE2(drawsIn=drawsTrans,rE1,delta=.1)
         relE <- analysisE$rcEt
         meanOE <- analysisE$meanOut
         covOE <- analysisE$covmOut
@@ -109,8 +112,9 @@ jointuniform_measures <- function(P,numcorrgroup,numG,RrE1,RrO1,Fisher=0,samsize
 
         meanOE <- rep(0,numcorr-nrow(RE1))
         covOE <- matrix(0,nrow=numcorr-nrow(RE1),ncol=numcorr-nrow(RE1))
-        analysisE <- .Fortran("compute_rcEt2",numE=as.integer(nrow(RrE1)),drawsIn=drawsTrans,wIn=rE1,delta=.1,
-                              rcEt=relE,meanOut=meanOE,covmOut=covOE,samsize=as.integer(samsize),numcorr=as.integer(numcorr))
+        # analysisE <- .Fortran("compute_rcEt2",numE=as.integer(nrow(RrE1)),drawsIn=drawsTrans,wIn=rE1,delta=.1,
+        #                       rcEt=relE,meanOut=meanOE,covmOut=covOE,samsize=as.integer(samsize),numcorr=as.integer(numcorr))
+        analysisE <- get_relmeasE2(drawsIn=drawsTrans,rE1,delta=.1)
         relE <- analysisE$rcEt
         meanOE <- analysisE$meanOut
         covOE <- analysisE$covmOut
@@ -128,8 +132,9 @@ jointuniform_measures <- function(P,numcorrgroup,numG,RrE1,RrO1,Fisher=0,samsize
 
 # The function computes the probability of an unconstrained draw falling in the complement subspace of a
 # correlation matrix having a joint uniform distribution
-jointuniform_prob_Hc <- function(P,numcorrgroup,numG,relmeas,RrO,samsize0=1e4){
+jointuniform_prob_Hc <- function(P,numcorrgroup,numG,relmeas,RrO,samsize1=1e4,seed=123){
 
+  numpara <- numcorrgroup*numG
   numhyp <- nrow(relmeas)
   #relmeas <- relmeas[1:numhyp,]
   which_eq <- relmeas[,1] != 1
@@ -144,9 +149,9 @@ jointuniform_prob_Hc <- function(P,numcorrgroup,numG,relmeas,RrO,samsize0=1e4){
       rownames(relmeas)[numhyp+1] <- "complement"
     }else{ # So more than one hypothesis with only order constraints
 
-      drawsJU <- matrix(0,nrow=samsize,ncol=numcorr)
+      drawsJU <- matrix(0,nrow=samsize1,ncol=numcorr)
       drawsJU[,1:numcorrgroup] <- .Fortran("draw_ju",P=as.integer(P),drawscorr=drawsJU[,1:numcorrgroup],
-                                           samsize=as.integer(samsize),numcorrgroup=as.integer(numcorrgroup),
+                                           samsize=as.integer(samsize1),numcorrgroup=as.integer(numcorrgroup),
                                            seed=as.integer(seed))$drawscorr
       # REMINDER: Check if Fisher transformed draws are needed or nontransformed draws.
 
@@ -155,12 +160,12 @@ jointuniform_prob_Hc <- function(P,numcorrgroup,numG,relmeas,RrO,samsize0=1e4){
       teldummy <- numcorrgroup
       if(numG>1){
         for(i in 2:numG){
-          drawsJU[1:(samsize-i+1),(teldummy+1):(teldummy+numcorrgroup)] = drawsJU[i:samsize,1:numcorrgroup]
-          drawsJU[(samsize-i+2):samsize,(teldummy+1):(teldummy+numcorrgroup)] = drawsJU[1:(i-1),1:numcorrgroup]
+          drawsJU[1:(samsize1-i+1),(teldummy+1):(teldummy+numcorrgroup)] = drawsJU[i:samsize1,1:numcorrgroup]
+          drawsJU[(samsize1-i+2):samsize1,(teldummy+1):(teldummy+numcorrgroup)] = drawsJU[1:(i-1),1:numcorrgroup]
           teldummy <- teldummy + numcorrgroup
         }
       }
-      randomDraws <- mvtnorm::rmvnorm(samsize0,mean=rep(0,numpara),sigma=diag(numpara))
+      randomDraws <- mvtnorm::rmvnorm(samsize1,mean=rep(0,numpara),sigma=diag(numpara))
       #get draws that satisfy the constraints of the separate order constrained hypotheses
       checksOC <- lapply(welk,function(h){
         Rorder <- as.matrix(RrO[[h]][,-(1+numpara)])
@@ -168,27 +173,27 @@ jointuniform_prob_Hc <- function(P,numcorrgroup,numG,relmeas,RrO,samsize0=1e4){
           Rorder <- t(Rorder)
         }
         rorder <- as.matrix(RrO[[h]][,1+numpara])
-        apply(randomDraws%*%t(Rorder) > rep(1,samsize0)%*%t(rorder),1,prod)
+        apply(randomDraws%*%t(Rorder) > rep(1,samsize1)%*%t(rorder),1,prod)
       })
       checkOCplus <- Reduce("+",checksOC)
 
-      if(sum(checkOCplus > 0) < samsize0){ #then the joint order constrained hypotheses do not completely cover the parameter space.
+      if(sum(checkOCplus > 0) < samsize1){ #then the joint order constrained hypotheses do not completely cover the parameter space.
         if(sum(checkOCplus>1)==0){ # then order constrained spaces are nonoverlapping
           relmeas <- rbind(relmeas,rep(1,2))
           relmeas[numhyp+1,2] <- 1 - sum(relmeas[welk,2])
           rownames(relmeas)[numhyp+1] <- "complement"
         }else{ #the order constrained subspaces at least partly overlap
-          randomDraws <- mvtnorm::rmvnorm(samsize0,mean=mean1,sigma=Sigma1)
+          randomDraws <- mvtnorm::rmvnorm(samsize1,mean=rep(0,numpara),sigma=diag(numpara))
           checksOCpost <- lapply(welk,function(h){
             Rorder <- as.matrix(RrO[[h]][,-(1+numpara)])
             if(ncol(Rorder)==1){
               Rorder <- t(Rorder)
             }
             rorder <- as.matrix(RrO[[h]][,1+numpara])
-            apply(randomDraws%*%t(Rorder) > rep(1,samsize0)%*%t(rorder),1,prod)
+            apply(randomDraws%*%t(Rorder) > rep(1,samsize1)%*%t(rorder),1,prod)
           })
           relmeas <- rbind(relmeas,rep(1,2))
-          relmeas[numhyp+1,2] <- sum(Reduce("+",checksOCpost) == 0) / samsize0
+          relmeas[numhyp+1,2] <- sum(Reduce("+",checksOCpost) == 0) / samsize1
           rownames(relmeas)[numhyp+1] <- "complement"
         }
       }
@@ -200,7 +205,6 @@ jointuniform_prob_Hc <- function(P,numcorrgroup,numG,relmeas,RrO,samsize0=1e4){
 
 #get draws from joint uniform prior in Fisher transformed space
 #Call Fortran subroutine in from bct_prior.f90
-# dyn.load("/Users/jorismulder/surfdrive/R packages/BFpack/src/bct_prior.dll")
 draw_ju <- function(P, samsize=50000,Fisher=1,seed=123){
   testm<- matrix(0,ncol=.5*P*(P-1),nrow=samsize)
   res <-.Fortran("draw_ju",P = as.integer(P),
@@ -213,8 +217,34 @@ draw_ju <- function(P, samsize=50000,Fisher=1,seed=123){
 
 }
 
+#Compute prior density at equality given a joint uniform prior for a correlation matrix
 get_relmeasE <- function(drawsIn,rE1,delta=.1,relE){
-  .Fortran("compute_rcEt",numE=as.integer(length(rE1)),drawsIn=drawsIn,wIn=rE1,delta=.1,
+  .Fortran("compute_rcet",numE=as.integer(length(rE1)),drawsIn=drawsIn,wIn=rE1,delta=delta,
            rcEt=relE,samsize=as.integer(nrow(drawsIn)))
 }
+
+
+#Compute prior density at equality given a joint uniform prior for a correlation matrix
+#and give the approximated mean and covariance matrix of the free parameters given
+#the equality constraints.
+get_relmeasE2 <- function(drawsIn,rE1,delta=.1){
+  numcorrFree <- ncol(drawsIn) - length(rE1)
+  meanOE <- rep(0,numcorrFree)
+  covOE <- matrix(0,numcorrFree,numcorrFree)
+  rcEt <- 1.0
+  .Fortran("compute_rcet2",numE=as.integer(length(rE1)),drawsIn=drawsIn,wIn=rE1,
+                  delta=delta,rcEt=rcEt,meanOut=meanOE,covmOut=covOE,samsize=as.integer(nrow(drawsIn)),
+                  numcorr=as.integer(ncol(drawsIn)))
+}
+
+
+
+
+
+
+
+
+
+
+
 
