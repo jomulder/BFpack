@@ -321,9 +321,9 @@ BF.bain_htest <- function(x,
           stop("'probprob' must be a vector of positive values or set to 'default'.")
         }
         if(priorprob=="default"){
-          priorprobs <- rep(1/length(BFtu_confirmatory),length(BFtu_confirmatory))
+          priorprobs <- rep(1/nrow(relcomp),nrow(relcomp))
         }else{
-          priorprobs <- priorprobs/sum(priorprobs)
+          priorprobs <- priorprob/sum(priorprob)
         }
         BFtu_confirmatory <- c(apply(exp(relfit) / exp(relcomp), 1, prod))
         PHP_confirmatory <- BFtu_confirmatory*priorprobs / sum(BFtu_confirmatory*priorprobs)
@@ -413,8 +413,8 @@ BF.bain_htest <- function(x,
     BFtu_confirmatory=BFtu_confirmatory,
     PHP_confirmatory=PHP_confirmatory,
     BFmatrix_confirmatory=BFmatrix_confirmatory,
-    relative_fit=relfit,
-    relative_complexity=relcomp,
+    relative_fit=relative_fit,
+    relative_complexity=relative_complexity,
     model=x)
 
   class(BFlm_out) <- "BF"
