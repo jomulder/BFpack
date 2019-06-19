@@ -40,7 +40,7 @@ hyp <- "division = hierarchy = building; division > hierarchy = building;
 division > hierarchy > building; division > building > hierarchy"
 
 # Run Bain
-set.seed(8389)
+set.seed(819)
 results <- bain(est, hyp, n = sampSize, Sigma = covMat,
                 group_parameters = 0, joint_parameters = 3)
 

@@ -57,12 +57,15 @@ Gaussian_estimator <- function(meanN,
                         names1=names_coef,constraints1=parse_hyp$original_hypothesis)
     })),nrow=2))
 
+    row.names(relfit) <- row.names(relcomp) <- parse_hyp$original_hypothesis
+
     # get relative fit and complexity of complement hypothesis
     relcomp <- Gaussian_prob_Hc(mean1 = mean0, Sigma1 = covm0, relmeas = relcomp, RrO = RrO) #Note that input is a bit strange here, Gaussian_prob_Hc needs fixing
     relfit <- Gaussian_prob_Hc(mean1 = meanN, Sigma1 = covmN, relmeas = relfit, RrO = RrO)
 
-    Hnames <- c(unlist(lapply(1:numhyp,function(h){paste0("H",as.character(h))})),"Hc")
-    row.names(relcomp) <- row.names(relfit) <- Hnames
+    # Hnames <- c(unlist(lapply(1:numhyp,function(h){paste0("H",as.character(h))})),"Hc")
+    # row.names(relcomp) <- row.names(relfit) <- Hnames
+    Hnames <- row.names(relcomp)
     colnames(relcomp) <- c("c_E", "c_0")
     colnames(relfit) <- c("f_E", "f_0")
 
