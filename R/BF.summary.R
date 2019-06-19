@@ -1,10 +1,9 @@
 
 #' @method print BF
 #' @export
-print.BF <- function(x,
-                       digits = 3,
-                       na.print = "", ...){
-
+summary.BF <- function(x,
+                     digits = 3,
+                     na.print = "", ...){
 
   cat("BFpack: Exploratory Bayes factor tests for an object of class ", class(x$model)[1], ":\n\n", sep = "")
   cat("Coefficients:")

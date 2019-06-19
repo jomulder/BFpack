@@ -271,8 +271,13 @@ BF.lm <- function(x,
     RrO <- RrList[[2]]
 
     RrStack <- rbind(do.call(rbind,RrE),do.call(rbind,RrO))
-    RStack <- RrStack[,-(K+1)]
-    rStack <- RrStack[,(K+1)]
+    if(nrow(RrStack)>1){
+      RStack <- RrStack[,-(K+1)]
+      rStack <- RrStack[,(K+1)]
+    }else{
+      RStack <- matrix(RrStack[,-(K+1)],nrow=1)
+      rStack <- RrStack[,(K+1)]
+    }
 
     # check if a common boundary exists for prior location under all constrained hypotheses
     if(nrow(RrStack) > 1){
@@ -991,7 +996,11 @@ Student_measures <- function(mean1,Scale1,df1,RrE1,RrO1,names1=NULL,constraints1
     #a)Transformation matrix
     D <- diag(K) - t(RE1) %*% solve(RE1 %*% t(RE1)) %*% RE1
     D2 <- unique(round(D, 5))
-    D2 <- D2[as.logical(rowSums(D2 != 0)),]
+    if(length(as.logical(rowSums(D2 != 0)))==1){
+      D2 <- matrix(D2[as.logical(rowSums(D2 != 0)),],nrow=1)
+    }else{
+      D2 <- D2[as.logical(rowSums(D2 != 0)),]
+    }
     Tm <- rbind(RE1, D2)
 
     #b)

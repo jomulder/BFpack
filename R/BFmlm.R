@@ -171,9 +171,9 @@ BF.mlm <- function(x,
     # Additional exploratory tests in the case of an aov type object
     if(sum(class(x)=="aov")==1){
 
-      cat("Computing Bayes factors for testing main effects may take a few seconds.")
-      cat("\n")
-      cat("\n")
+      # cat("Computing Bayes factors for testing main effects may take a few seconds.")
+      # cat("\n")
+      # cat("\n")
 
       # check main effects
       BFmain <- unlist(lapply(1:length(numlevels),function(fac){
@@ -218,9 +218,9 @@ BF.mlm <- function(x,
       BFtu_interaction0 <- list()
       count_interaction <- 0
 
-      cat("Computing Bayes factors for testing interaction effects may take a few seconds.")
-      cat("\n")
-      cat("\n")
+      # cat("Computing Bayes factors for testing interaction effects may take a few seconds.")
+      # cat("\n")
+      # cat("\n")
 
       for(c1 in 1:ncol(matcov)){
         if(c1 < ncol(matcov)){
@@ -262,9 +262,9 @@ BF.mlm <- function(x,
 
     # confirmatory BF test
     if(constraints!="exploratory"){
-      cat("Computing Bayes factors for confirmatory hypothesis tests may take a few seconds.")
-      cat("\n")
-      cat("\n")
+      # cat("Computing Bayes factors for confirmatory hypothesis tests may take a few seconds.")
+      # cat("\n")
+      # cat("\n")
 
       #read constraints
       names_coef1 <- names(x$coefficients[,1])
@@ -631,7 +631,8 @@ BF.mlm <- function(x,
     relative_complexity=relcomp,
     hypotheses=hypotheses,
     model=x,
-    estimates=x$coefficients)
+    estimates=x$coefficients,
+    call=match.call())
 
   class(BFlm_out) <- "BF"
 
