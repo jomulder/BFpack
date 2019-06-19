@@ -9,7 +9,7 @@ BF.rem.dyad <- function(x,
                       ...){
 
   #Extract summary statistics
-  n <- x$n
+  n <- x$m
   covmN <- x$cov
   meanN <- x$coef
 
