@@ -72,7 +72,15 @@ BF.lm <- function(x,
         grepl(mains[faclev],names_coef[cf])
       }))
     })),nrow=length(names_coef)),1,max)==1
-    dummyX2 <- unlist(lapply(apply(Xmat,2,table),length))==2
+    if(is.matrix(apply(Xmat,2,table))){
+      if(nrow(apply(Xmat,2,table))){
+        dummyX2 <- rep(T,ncol(Xmat))
+      }else{
+        dummyX2 <- rep(F,ncol(Xmat))
+      }
+    }else{
+      dummyX2 <- unlist(lapply(apply(Xmat,2,table),length))==2
+    }
     dummyX <- dummyX1 * dummyX2 == 1
     #number of groups on variations of dummy combinations
     groupcode <- as.matrix(unique(Xmat[,dummyX]))
