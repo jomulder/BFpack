@@ -17,6 +17,7 @@
 #' }
 #' @rdname BF
 #' @export
+#' @useDynLib BFpack, .registration = TRUE
 #'
 # The functions below can be used for Bayesian hypothesis testing under univariate
 # and multivariate linear regression models. Also grouping variables (factors) are
