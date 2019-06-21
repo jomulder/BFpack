@@ -1,7 +1,7 @@
 ##Internal estimation function for the methods for classes glm, lavaan, coxph, rem, rem.dyad and glmerMod
 
 
-Gaussian_estimator <- function(meanN,
+BF_Gaussian <- function(meanN,
                        covmN,
                        n,
                        hypothesis,
@@ -15,30 +15,24 @@ Gaussian_estimator <- function(meanN,
   covm0 <- covmN * n
   mean0 <- as.matrix(rep(0, length(names_coef)))
 
-  # compute BFs and posterior probs using
-  # prior mean and covmatrix mean0 and covm0
-  # post mean and covmatrix meanN and covmN
-    # H0: corr = 0
-    # H1: corr < 0
-    # H2: corr < 0
-    relfit <- matrix(c(dnorm(0,mean=meanN,sd=sqrt(diag(covmN))), #[Anton] Are these relfit/relcomp computations general or specific to correlations? [Joris] This is general. So it also works for these parameters.
-                       pnorm(0,mean=meanN,sd=sqrt(diag(covmN))),
-                       1-pnorm(0,mean=meanN,sd=sqrt(diag(covmN)))),ncol=3)
+  # compute exploratory BFs for each parameter
+  relfit <- matrix(c(dnorm(0,mean=meanN,sd=sqrt(diag(covmN))), #[Anton] Are these relfit/relcomp computations general or specific to correlations? [Joris] This is general. So it also works for these parameters.
+                     pnorm(0,mean=meanN,sd=sqrt(diag(covmN))),
+                     1-pnorm(0,mean=meanN,sd=sqrt(diag(covmN)))),ncol=3)
 
-    relcomp <- matrix(c(dnorm(0,mean=mean0,sd=sqrt(diag(covm0))),
-                        pnorm(0,mean=mean0,sd=sqrt(diag(covm0))),
-                        1-pnorm(0,mean=mean0,sd=sqrt(diag(covm0)))),ncol=3)
-    BFtu_exploratory <- relfit / relcomp
-    PHP_exploratory <- round(BFtu_exploratory / apply(BFtu_exploratory,1,sum),3)
-    colnames(PHP_exploratory) <- c("p(=0)","Pr(<0)","Pr(>0)")
-    row.names(PHP_exploratory) <- names_coef
+  relcomp <- matrix(c(dnorm(0,mean=mean0,sd=sqrt(diag(covm0))),
+                      pnorm(0,mean=mean0,sd=sqrt(diag(covm0))),
+                      1-pnorm(0,mean=mean0,sd=sqrt(diag(covm0)))),ncol=3)
+  BFtu_exploratory <- relfit / relcomp
+  PHP_exploratory <- round(BFtu_exploratory / apply(BFtu_exploratory,1,sum),3)
+  colnames(PHP_exploratory) <- c("p(=0)","Pr(<0)","Pr(>0)")
+  row.names(PHP_exploratory) <- names_coef
 
   if(is.null(hypothesis)){
-    BFtu_confirmatory <- PHP_confirmatory <- BFmatrix_confirmatory <- relfit <- relcomp <- NULL
-
+    BFtu_confirmatory <- PHP_confirmatory <- BFmatrix_confirmatory <- relfit <-
+      relcomp <- BFtable <- hypotheses <- NULL
   }else{
     # confirmatory tests based on input constraints
-
     parse_hyp <- parse_hypothesis(names_coef,hypothesis)
 
     #create coefficient with equality and order constraints
@@ -56,7 +50,6 @@ Gaussian_estimator <- function(meanN,
       Gaussian_measures(mean1 = meanN, Sigma1 = covmN, RrE1 = RrE[[h]], RrO1 = RrO[[h]],
                         names1=names_coef,constraints1=parse_hyp$original_hypothesis)
     })),nrow=2))
-
     row.names(relfit) <- row.names(relcomp) <- parse_hyp$original_hypothesis
 
     # get relative fit and complexity of complement hypothesis
@@ -69,21 +62,30 @@ Gaussian_estimator <- function(meanN,
     colnames(relcomp) <- c("c_E", "c_0")
     colnames(relfit) <- c("f_E", "f_0")
 
-
     # the BF for the complement hypothesis vs Hu needs to be computed.
     BFtu_confirmatory <- c(apply(relfit / relcomp, 1, prod))
     # Check input of prior probabilies
-    if(!(is.null(prior) || (length(prior)==nrow(relfit) && min(prior)>0) )){
-      stop("'prior' must be a vector of positive values or set to 'NULL'.")
+    if(is.null(prior)){
+      priorprobs <- rep(1/length(BFtu_confirmatory),length(BFtu_confirmatory))
+    }else{
+      if(!is.numeric(prior) || length(prior)!=length(BFtu_confirmatory)){
+        warning(paste0("Argument 'prior' should be numeric and of length ",as.character(length(BFtu_confirmatory)),". Equal prior probabilities are used."))
+        priorprobs <- rep(1/length(BFtu_confirmatory),length(BFtu_confirmatory))
+      }else{
+        priorprobs <- prior
+      }
     }
-    # Change prior probs in case of default setting
-    if(is.null(prior)){prior <- rep(1,length(BFtu_confirmatory))}
 
-    PHP_confirmatory <- round(BFtu_confirmatory*prior / sum(BFtu_confirmatory*prior),3)
+    PHP_confirmatory <- round(BFtu_confirmatory*priorprobs / sum(BFtu_confirmatory*priorprobs),3)
+    BFtable <- cbind(relcomp,relfit,relfit[,1]/relcomp[,1],relfit[,2]/relcomp[,2],
+                     apply(relfit,1,prod)/apply(relcomp,1,prod),PHP_confirmatory)
+    row.names(BFtable) <- names(PHP_confirmatory)
+    colnames(BFtable) <- c("comp_E","comp_O","fit_E","fit_O","BF_E","BF_O","BF","PHP")
     BFmatrix_confirmatory <- matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory))/
       t(matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory)))
     row.names(BFmatrix_confirmatory) <- Hnames
     colnames(BFmatrix_confirmatory) <- Hnames
+    hypotheses <- Hnames
   }
 
     out <- list(
@@ -92,15 +94,179 @@ Gaussian_estimator <- function(meanN,
       BFtu_confirmatory=BFtu_confirmatory,
       PHP_confirmatory=PHP_confirmatory,
       BFmatrix_confirmatory=BFmatrix_confirmatory,
+      BFtable_confirmatory=BFtable,
+      hypotheses=hypotheses,
       relative_fit=relfit,
       relative_complexity=relcomp,
       estimates=meanN,
       constraints=hypothesis,
-      priorprob=prior)
+      priorprob=prior,
+      call=match.call())
 
     class(out) <- "BF"
 
     out
 
 }
+
+
+
+# compute relative meausures (fit or complexity) under a multivariate Gaussian distribution
+Gaussian_measures <- function(mean1,Sigma1,n1=0,RrE1,RrO1,names1=NULL,constraints1=NULL){
+  K <- length(mean1)
+  relE <- relO <- 1
+  if(!is.null(RrE1) && is.null(RrO1)){ #only equality constraints
+    RE1 <- RrE1[,-(K+1)]
+    if(!is.matrix(RE1)){
+      RE1 <- t(as.matrix(RE1))
+    }
+    rE1 <- RrE1[,(K+1)]
+    qE1 <- nrow(RE1)
+    meanE <- RE1%*%mean1
+    SigmaE <- RE1%*%Sigma1%*%t(RE1)
+    relE <- mvtnorm::dmvnorm(rE1,mean=c(meanE),sigma=SigmaE,log=FALSE)
+  }
+  if(is.null(RrE1) && !is.null(RrO1)){ #only order constraints
+    RO1 <- RrO1[,-(K+1)]
+    if(!is.matrix(RO1)){
+      RO1 <- t(as.matrix(RO1))
+    }
+    qO1 <- nrow(RO1)
+    rO1 <- RrO1[,(K+1)]
+
+    if(Matrix::rankMatrix(RO1)[[1]]==nrow(RO1)){ #RO1 is of full row rank. So use transformation.
+      meanO <- c(RO1%*%mean1)
+      SigmaO <- RO1%*%Sigma1%*%t(RO1)
+      relO <- mvtnorm::pmvnorm(lower=rO1,upper=Inf,mean=meanO,sigma=SigmaO)[1]
+    }else{ #no linear transformation can be used; pmvt cannot be used. Use bain with a multivariate normal approximation
+      names(mean1) <- names1
+      if(n1>0){ # we need prior measures
+        bain_res <- bain(x=c(mean1),hypothesis=constraints1,Sigma=Sigma1,n=n1)
+        relO <- bain_res$fit[1,4]
+      }else { # we need posterior measures (there is very little information)
+        bain_res <- bain(x=c(mean1),hypothesis=constraints1,Sigma=Sigma1,n=999) #n not used in computation
+        relO <- bain_res$fit[1,3]
+      }
+    }
+  }
+  if(!is.null(RrE1) && !is.null(RrO1)){ #hypothesis with equality and order constraints
+
+    RE1 <- RrE1[,-(K+1)]
+    if(!is.matrix(RE1)){
+      RE1 <- t(as.matrix(RE1))
+    }
+    rE1 <- RrE1[,(K+1)]
+    qE1 <- nrow(RE1)
+    RO1 <- RrO1[,-(K+1)]
+    if(!is.matrix(RO1)){
+      RO1 <- t(as.matrix(RO1))
+    }
+    qO1 <- nrow(RO1)
+    rO1 <- RrO1[,(K+1)]
+
+    if(Matrix::rankMatrix(RrO1)[[1]] == nrow(RrO1)){
+
+      R1 <- rbind(RE1,RO1)
+
+      #b)
+      Tmean1 <- R1 %*% mean1
+      TSigma1 <- R1 %*% Sigma1 %*% t(R1)
+
+      # relative meausure for equalities
+      relE <- mvtnorm::dmvnorm(x=rE1,mean=Tmean1[1:qE1],sigma=matrix(TSigma1[1:qE1,1:qE1],ncol=qE1),log=FALSE)
+
+      # Partitioning equality part and order part
+      Tmean1E <- Tmean1[1:qE1]
+      Tmean1O <- Tmean1[qE1+1:qO1]
+
+      TSigma1EE <- TSigma1[1:qE1,1:qE1]
+      TSigma1OE <- matrix(c(TSigma1[qE1+1:qO1,1:qE1]),nrow=qO1)
+      TSigma1OO <- TSigma1[qE1+1:qO1,qE1+1:qO1]
+
+      #conditional location and covariance matrix
+      Tmean1OgE <- Tmean1O + TSigma1OE %*% solve(TSigma1EE) %*% (rE1-Tmean1E)
+      TSigma1OgE <- TSigma1OO - TSigma1OE %*% solve(TSigma1EE) %*% t(TSigma1OE)
+
+      relO <- mvtnorm::pmvnorm(lower=rO1,upper=Inf,mean=c(Tmean1OgE),sigma=TSigma1OgE)[1]
+
+    }else{ #use bain for the computation of the probability
+      names(mean1) <- names1
+      if(n1>0){ # we need prior measures
+        bain_res <- bain(x=c(mean1),hypothesis=constraints1,Sigma=Sigma1,n=n1)
+        relO <- bain_res$fit[1,4]
+        relE <- bain_res$fit[1,2]
+      }else { # we need posterior measures (there is very little information)
+        bain_res <- bain(x=c(mean1),hypothesis=constraints1,Sigma=Sigma1,n=999) #n not used in computation
+        relO <- bain_res$fit[1,3]
+        relE <- bain_res$fit[1,1]
+      }
+    }
+  }
+
+  return(c(relE,relO))
+}
+
+# The function computes the probability of an unconstrained draw falling in the complement subspace under a multivariate Gaussian distribution.
+Gaussian_prob_Hc <- function(mean1,Sigma1,relmeas,RrO){
+
+  numpara <- length(mean1)
+  numhyp <- nrow(relmeas)
+  which_eq <- relmeas[,1] != 1
+  if(sum(which_eq)==numhyp){ # Then the complement is equivalent to the unconstrained hypothesis.
+    relmeas <- rbind(relmeas,rep(1,2))
+    rownames(relmeas)[numhyp+1] <- "complement"
+  }else{ # So there is at least one hypothesis with only order constraints
+    welk <- which(!which_eq)
+    if(length(welk)==1){ # There is one hypothesis with only order constraints. Hc is complement of this hypothesis.
+      relmeas <- rbind(relmeas,rep(1,2))
+      relmeas[numhyp+1,2] <- 1 - relmeas[welk,2]
+      rownames(relmeas)[numhyp+1] <- "complement"
+    }else{ # So more than one hypothesis with only order constraints
+      # First we check whether ther is an overlap between the order constrained spaces.
+      draws2 <- 1e4
+      randomDraws <- mvtnorm::rmvnorm(draws2,mean=rep(0,numpara),sigma=diag(numpara))
+      #get draws that satisfy the constraints of the separate order constrained hypotheses
+      checksOC <- lapply(welk,function(h){
+        Rorder <- as.matrix(RrO[[h]][,-(1+numpara)])
+        if(ncol(Rorder)==1){
+          Rorder <- t(Rorder)
+        }
+        rorder <- as.matrix(RrO[[h]][,1+numpara])
+        apply(randomDraws%*%t(Rorder) > rep(1,draws2)%*%t(rorder),1,prod)
+      })
+      checkOCplus <- Reduce("+",checksOC)
+
+      if(sum(checkOCplus > 0) < draws2){ #then the joint order constrained hypotheses do not completely cover the parameter space.
+        if(sum(checkOCplus>1)==0){ # then order constrained spaces are nonoverlapping
+          relmeas <- rbind(relmeas,rep(1,2))
+          relmeas[numhyp+1,2] <- 1 - sum(relmeas[welk,2])
+          rownames(relmeas)[numhyp+1] <- "complement"
+        }else{ #the order constrained subspaces at least partly overlap
+
+          # funtion below gives a rough estimate of the posterior probability under Hc
+          # a bain type of algorithm would be better of course. but for now this is ok.
+
+          randomDraws <- mvtnorm::rmvnorm(draws2,mean=mean1,sigma=Sigma1)
+          checksOCpost <- lapply(welk,function(h){
+            Rorder <- as.matrix(RrO[[h]][,-(1+numpara)])
+            if(ncol(Rorder)==1){
+              Rorder <- t(Rorder)
+            }
+            rorder <- as.matrix(RrO[[h]][,1+numpara])
+            apply(randomDraws%*%t(Rorder) > rep(1,draws2)%*%t(rorder),1,prod)
+          })
+          relmeas <- rbind(relmeas,rep(1,2))
+          relmeas[numhyp+1,2] <- sum(Reduce("+",checksOCpost) == 0) / draws2
+          rownames(relmeas)[numhyp+1] <- "complement"
+        }
+      }
+    }
+  }
+
+  return(relmeas)
+}
+
+
+
+
 

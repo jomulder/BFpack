@@ -16,6 +16,8 @@ var_test <- function(...){ # ALLE argumenten van bartlett.test gebruiken
   bart
 }
 
+
+#' @importFrom stats rchisq
 #' @method BF BF_bartlett
 #' @export
 BF.BF_bartlett <- function(x,
@@ -171,7 +173,8 @@ BF.BF_bartlett <- function(x,
     model=x,
     estimates=x$vars,
     hypothesis=hypothesis,
-    prior=prior)
+    prior=prior,
+    call=match.call())
 
   class(BFlm_out) <- "BF"
 

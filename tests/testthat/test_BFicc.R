@@ -73,17 +73,19 @@
 # #
 # # library(lme4)
 # # ## for one year (2011) and countries (4 countries)
-# timssICC_subset <- subset(timssICC, timssICC$groupNL11==1 | timssICC$groupHR11==1) #| timssICC$groupDE11==1 | timssICC$groupDK11==1)
-# outlme1 <- lmer(math ~ -1 + gender + weight + lln
-#                   + groupNL11 + (0+groupNL11 | schoolID)
-#                   + groupHR11 + (0+groupHR11 | schoolID)
-#                   # + groupDE11 + (0+groupDE11 | schoolID)
-#                   # + groupDK11 + (0+groupDK11 | schoolID)
-#                 ,data=timssICC_subset)
-# summary(outlme1)
-# BF(outlme1)
-# BFout <- BF(outlme1,hypothesis="0<icc_groupNL11<icc_groupHR11;
+
+timssICC_subset <- subset(timssICC, timssICC$groupNL11==1 || timssICC$groupHR11==1) #| timssICC$groupDE11==1 | timssICC$groupDK11==1)
+outlme1 <- lme4::lmer(math ~ -1 + gender + weight + lln
+                  + groupNL11 + (0+groupNL11 | schoolID)
+                  + groupHR11 + (0+groupHR11 | schoolID)
+                  # + groupDE11 + (0+groupDE11 | schoolID)
+                  # + groupDK11 + (0+groupDK11 | schoolID)
+                ,data=timssICC_subset)
+summary(outlme1)
+BF(outlme1)
+# BFout <- BF(x=outlme1,hypothesis="0<icc_groupNL11<icc_groupHR11;
 #             0=icc_groupNL11=icc_groupHR11")
+# BFout$BFtable_confirmatory
 # # BFout <- BF(outlme1,hypothesis="icc_groupNL11<icc_groupHR11;
 # #             icc_groupNL11=icc_groupHR11")
 # #

@@ -18,35 +18,13 @@ BF.lm <- function(x,
   } else {
     constraints <- hypothesis
   }
-  if(is.null(prior)){
-    priorprob <- "default"
-  } else {
-    priorprob <- prior
-  }
 
-  # default BF on location parameters in a univarite normal linear model
-  # Note that it is recommended that the fitten model is based on standardized covariates.
-#  if(!is.matrix(x$coefficients)){
+  # default BF on location parameters in a univariate normal linear model
   P <- 1
   N <- length(x$residuals)
   K <- length(x$coefficients) # dimension of predictors
   dummyX <- rep(F,K)
   names(dummyX) <- names(x$coefficients)
-  # } else {
-  #   P <- ncol(x$residuals)
-  #   N <- nrow(x$residuals)
-  #   K <- length(x$coefficients)/P # dimension of predictors per dependent variable
-  #   dummyX <- rep(F,K)
-  #   names(dummyX) <- row.names(x$coefficients)
-  # }
-
-  # if(is.null(covariates)){
-  # noncovs <- 1:K
-  # } else { # covariates must be a vector of integers denoting which predictor variables
-  #          # are not grouping variables.
-  #   noncovs <- (1:K)[-covariates]
-  # }
-
   Xmat <- model.matrix(x)
   Ymat <- model.matrix(x)%*%x$coefficients + x$residuals
   # check which are grouping covariates
@@ -142,17 +120,7 @@ BF.lm <- function(x,
   S_b <- tYY_b - t(tXY_b)%*%solve(tXX_b)%*%tXY_b
 
   # BF computation for exploratory analysis of separate parameters
-  # if(P==1){
   names_coef <- names(x$coefficients)
-  # }else{
-  #   names_coef1 <- names(x$coefficients[,1])
-  #   names_coef2 <- names(x$coefficients[1,])
-  #   names_coef <- unlist(lapply(1:P,function(p){
-  #     lapply(1:K,function(k){
-  #       paste(names_coef1[k],".",names_coef2[p],sep="")
-  #     })
-  #   }))
-  # }
 
   # prior hyperparameters
   df0 <- 1 # should be the same as sum(rep(bj,times=Nj))-K-P+1
@@ -259,20 +227,8 @@ BF.lm <- function(x,
   }else{ PHP_interaction <- BFtu_interaction <- PHP_main <- BFtu_main <- NULL}
 
   # confirmatory BF test
-  if(constraints!="exploratory"){
+  if(!is.null(hypothesis)){
     #read constraints
-    # if(P==1){
-    # names_coef <- names(x$coefficients)
-    # }else{
-    #   names_coef1 <- names(x$coefficients[,1])
-    #   names_coef2 <- names(x$coefficients[1,])
-    #   names_coef <- unlist(lapply(1:P,function(p){
-    #     lapply(1:K,function(k){
-    #       paste(names_coef1[k],".",names_coef2[p],sep="")
-    #     })
-    #   }))
-    # }
-    # translate named constraints to matrices with coefficients for constraints
     parse_hyp <- parse_hypothesis(names_coef,constraints)
     RrList <- make_RrList2(parse_hyp)
     RrE <- RrList[[1]]
@@ -298,9 +254,8 @@ BF.lm <- function(x,
         }
       }
     }
+    # default prior location
     adjmean <- ginv(RStack)%*%rStack
-
-    # if(P==1){ # then the unconstrained prior and posterior have multivariate Student t distributions
 
     # prior hyperparameters
     df0 <- 1 # should be the same as sum(rep(bj,times=Nj))-K-P+1
@@ -332,135 +287,33 @@ BF.lm <- function(x,
     colnames(relcomp) <- c("c_E","c_O")
     colnames(relfit) <- c("f_E","f_O")
 
-    # }else{
-    #
-    #   #number of hypotheses that are specified
-    #   numhyp <- length(RrO)
-    #   Mean0 <- matrix(c(adjmean),nrow=K,ncol=P)
-    #
-    #   relmeasunlist <- unlist(lapply(1:numhyp,function(h){
-    #     # Check whether the constraints are on a single row or column, if so
-    #     # use the analytic expression, else using a Monte Carlo estimate.
-    #     RrStack <- rbind(RrE[[h]],RrO[[h]])
-    #     Rcheck <- Reduce("+",lapply(1:nrow(RrStack),function(row1){
-    #       abs(matrix(RrStack[row1,-(K*P+1)],nrow=K))
-    #     }))
-    #     RcheckRow <- apply(Rcheck,1,sum)
-    #     RcheckCol <- apply(Rcheck,2,sum)
-    #     if(sum(RcheckRow!=0)==1){ # use multivariate Student distributions
-    #       K1 <- which(RcheckRow!=0)
-    #       # posterior hyperparameters
-    #       dfN <- N-K-P+1
-    #       ScaleN <- S*tXXi[K1,K1]/(N-K-P+1) # off-diagonal elements have no meaning
-    #       meanN <- as.matrix(c(BetaHat[K1,]))
-    #       # exclude inactive rows
-    #       if(is.null(RrE[[h]])){RrE_h=NULL
-    #       }else{
-    #         if(nrow(RrE[[h]])==1){
-    #           RrE_h <- t(as.matrix(RrE[[h]][,c((0:(P-1))*K+K1,P*K+1)]))
-    #         }else{
-    #           RrE_h <- RrE[[h]][,c((0:(P-1))*K+K1,P*K+1)]
-    #         }
-    #       }
-    #       if(is.null(RrO[[h]])){RrO_h=NULL
-    #       }else{
-    #         if(nrow(RrO[[h]])==1){
-    #           RrO_h <- t(as.matrix(RrO[[h]][,c((0:(P-1))*K+K1,P*K+1)]))
-    #         }else{
-    #           RrO_h <- RrO[[h]][,c((0:(P-1))*K+K1,P*K+1)]
-    #         }
-    #       }
-    #       # prior hyperparameters
-    #       df0 <- 1 # should be the same as sum(rep(bj,times=Nj))-K-P+1
-    #       Scale0 <- S_b*tXXi_b[K1,K1]
-    #       mean0 <- Mean0[K1,]
-    #       # compute relative measures of fit and complexity
-    #       relcomp_h <- Student_measures(mean0,Scale0,df0,RrE_h,RrO_h)
-    #       relfit_h <- Student_measures(meanN,ScaleN,dfN,RrE_h,RrO_h)
-    #
-    #     }else if(sum(RcheckCol!=0)==1){ # use multivariate Student distributions
-    #       P1 <- which(RcheckCol!=0)
-    #       # prior hyperparameters
-    #       df0 <- 1 # should be the same as sum(rep(bj,times=Nj))-K-P+1
-    #       Scale0 <- S_b[P1,P1]*tXXi_b
-    #       mean0 <- Mean0[,P1]
-    #       # posterior hyperparameters
-    #       dfN <- N-K-P+1
-    #       ScaleN <- S[P1,P1]*tXXi/(N-K-P+1) # off-diagonal elements have no meaning
-    #       meanN <- as.matrix(c(BetaHat[,P1]))
-    #       # exclude inactive rows
-    #       if(is.null(RrE[[h]])){RrE_h=NULL
-    #       }else{
-    #         if(nrow(RrE[[h]])==1){
-    #           RrE_h <- t(as.matrix(RrE[[h]][,c((P1-1)*K+1:K,P*K+1)]))
-    #         }else{
-    #           RrE_h <- RrE[[h]][,c((P1-1)*K+1:K,P*K+1)]
-    #         }
-    #       }
-    #       if(is.null(RrO[[h]])){RrO_h=NULL
-    #       }else{
-    #         if(nrow(RrO[[h]])==1){
-    #           RrO_h <- t(as.matrix(RrO[[h]][,c((P1-1)*K+1:K,P*K+1)]))
-    #         }else{
-    #           RrO_h <- RrO[[h]][,c((P1-1)*K+1:K,P*K+1)]
-    #         }
-    #       }
-    #       # compute relative measures of fit and complexity
-    #       relcomp_h <- Student_measures(mean0,Scale0,df0,RrE_h,RrO_h)
-    #       relfit_h <- Student_measures(meanN,ScaleN,dfN,RrE_h,RrO_h)
-    #
-    #     }else{ #use Matrix-Student distributions with Monte Carlo estimate
-    #
-    #       df0 <- 1
-    #       dfN <- N-K-P+1
-    #       relfit_h <- MatrixStudent_measures(BetaHat,S,tXXi,dfN,RrE[[h]],RrO[[h]],MCdraws=1e4)
-    #       relcomp_h <- MatrixStudent_measures(Mean0,S_b,tXXi_b,df0,RrE[[h]],RrO[[h]],MCdraws=1e4)
-    #     }
-    #     return(list(relfit_h,relcomp_h))
-    #   }))
-    #
-    #   relfit <- t(matrix(unlist(relmeasunlist)[rep((0:(numhyp-1))*4,each=2)+rep(1:2,numhyp)],nrow=2))
-    #   row.names(relfit) <- parse_hyp$original_hypothesis
-    #   colnames(relfit) <- c("f_E","f_O")
-    #   relcomp <- t(matrix(unlist(relmeasunlist)[rep((0:(numhyp-1))*4,each=2)+rep(3:4,numhyp)],nrow=2))
-    #   row.names(relcomp) <- parse_hyp$original_hypothesis
-    #   colnames(relcomp) <- c("c_E","c_O")
-    #
-    #   # Compute relative fit/complexity for the complement hypothesis
-    #   relfit <- MatrixStudent_prob_Hc(BetaHat,S,tXXi,N-K-P+1,as.matrix(relfit),RrO)
-    #   relcomp <- MatrixStudent_prob_Hc(Mean0,S_b,tXXi_b,1,as.matrix(relcomp),RrO)
-    # }
-
     # the BF for the complement hypothesis vs Hu needs to be computed.
     BFtu_confirmatory <- c(apply(relfit / relcomp, 1, prod))
     # Check input of prior probabilies
-    if(!(priorprob == "default" || (length(priorprob)==nrow(relfit) && min(priorprob)>0) )){
-      stop("'probprob' must be a vector of positive values or set to 'default'.")
-    }
-    # Change prior probs in case of default setting
-    if(priorprob=="default"){
+    if(is.null(prior)){
       priorprobs <- rep(1/length(BFtu_confirmatory),length(BFtu_confirmatory))
     }else{
-      priorprobs <- priorprobs/sum(priorprobs)
+      if(!is.numeric(prior) || length(prior)!=length(BFtu_confirmatory)){
+        warning(paste0("Argument 'prior' should be numeric and of length ",as.character(length(BFtu_confirmatory)),". Equal prior probabilities are used."))
+        priorprobs <- rep(1/length(BFtu_confirmatory),length(BFtu_confirmatory))
+      }else{
+        priorprobs <- prior
+      }
     }
     names(priorprobs) <- names(BFtu_confirmatory)
     PHP_confirmatory <- BFtu_confirmatory*priorprobs / sum(BFtu_confirmatory*priorprobs)
-    # names(PHP_confirmatory) <- unlist(lapply(1:length(parse_hyp$original_hypothesis),function(hyp){
-    #   paste0("Pr(",parse_hyp$original_hypothesis,")")
-    # }))
+    BFtable <- cbind(relcomp,relfit,relfit[,1]/relcomp[,1],relfit[,2]/relcomp[,2],
+                     apply(relfit,1,prod)/apply(relcomp,1,prod),PHP_confirmatory)
+    row.names(BFtable) <- names(BFtu_confirmatory)
+    colnames(BFtable) <- c("comp_E","comp_O","fit_E","fit_O","BF_E","BF_O","BF","PHP")
     BFmatrix_confirmatory <- matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory))/
       t(matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory)))
     row.names(BFmatrix_confirmatory) <- colnames(BFmatrix_confirmatory) <- names(BFtu_confirmatory)
     #tested hypotheses
-    if(nrow(relfit)==length(parse_hyp$original_hypothesis)){
-      hypotheses <- parse_hyp$original_hypothesis
-    }else{
-      hypotheses <- c(parse_hyp$original_hypothesis,"complement")
-    }
+    hypotheses <- row.names(relfit)
   }else{
     BFtu_confirmatory <- PHP_confirmatory <- BFmatrix_confirmatory <- relfit <-
-      relcomp <- NULL
-    hypotheses <- "exploratory"
+      relcomp <- hypotheses <- NULL
   }
 
   BFlm_out <- list(
@@ -477,7 +330,8 @@ BF.lm <- function(x,
     relative_complexity=relcomp,
     hypotheses=hypotheses,
     model=x,
-    estimates=x$coefficients)
+    estimates=x$coefficients,
+    call=match.call())
 
   class(BFlm_out) <- "BF"
 

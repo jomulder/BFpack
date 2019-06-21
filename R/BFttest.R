@@ -31,17 +31,6 @@ BF.bain_htest <- function(x,
 
 
   if(numpop==1){ #one sample t test
-    # tvalue <- x$statistic
-    # names(tvalue) <- NULL
-    # n <- x$parameter + 1
-    # names(n) <- NULL
-    # mu0 <- x$null.value
-    # names(mu0) <- NULL
-    # xbar <- x$estimate
-    # names(xbar) <- NULL
-
-    #
-    #
     tvalue <- x$statistic
     mu0 <- x$null.value
     xbar <- x$estimate
@@ -65,10 +54,6 @@ BF.bain_htest <- function(x,
     PHP_exploratory <- BFtu_exploratory/sum(BFtu_exploratory)
     colnames(PHP_exploratory) <- c(paste0("Pr(=",as.character(mu0),")"),paste0("Pr(<",as.character(mu0),")"),paste0("Pr(>",as.character(mu0),")"))
     row.names(PHP_exploratory) <- "mu"
-#    BFmatrix <- matrix(rep(BFtu,3),ncol=3) / matrix(rep(BFtu,3),ncol=3,byrow=T)
-#    logBFmatrix <- matrix(rep(logBFtu,3),ncol=3) - matrix(rep(logBFtu,3),ncol=3,byrow=T)
-#    row.names(BFmatrix) <- row.names(logBFmatrix) <- hypotheses
-#    colnames(BFmatrix) <- colnames(logBFmatrix) <- hypotheses
     relfit_exploratory <- matrix(c(exp(relfit0),rep(1,3),exp(relfit1),exp(relfit2)),ncol=2)
     relcomp_exploratory <- matrix(c(exp(relcomp0),rep(1,3),rep(.5,2)),ncol=2)
     row.names(relfit_exploratory) <- row.names(relcomp_exploratory) <- hypotheses_exploratory
@@ -89,99 +74,6 @@ BF.bain_htest <- function(x,
       BFmatrix_confirmatory <- BFlm1$BFmatrix_confirmatory
       relative_fit <- BFlm1$relative_fit
       relative_complexity <- BFlm1$relative_complexity
-    #
-    #   if(x$alternative=="two.sided"){
-    #     if(!grepl("Paired",x$method)){
-    #       hypotheses <- c(paste0("mu=",as.character(mu0)),paste0("mu!=",as.character(mu0)))
-    #     }else{
-    #       hypotheses <- c("true difference is equal to 0","true difference is not equal to 0")
-    #     }
-    #     logBFtu <- c(relfit0-relcomp0,0)
-    #     names(logBFtu) <- hypotheses
-    #     BFtu <- exp(logBFtu)
-    #     PHP <- BFtu/sum(BFtu)
-    #     BFmatrix <- matrix(rep(BFtu,2),ncol=2) / matrix(rep(BFtu,2),ncol=2,byrow=T)
-    #     logBFmatrix <- matrix(rep(logBFtu,2),ncol=2) - matrix(rep(logBFtu,2),ncol=2,byrow=T)
-    #     row.names(BFmatrix) <- row.names(logBFmatrix) <- hypotheses
-    #     colnames(BFmatrix) <- colnames(logBFmatrix) <- hypotheses
-    #     relfit <- matrix(c(exp(relfit0),rep(1,3)),ncol=2)
-    #     relcomp <- matrix(c(exp(relcomp0),rep(1,3)),ncol=2)
-    #     row.names(relfit) <- row.names(relcomp) <- hypotheses
-    #     colnames(relfit) <- c("f=","f>")
-    #     colnames(relcomp) <- c("c=","c>")
-    #
-    #     # BF1 <- BF(lm1,hypothesis=paste0("mu_minus_mu0=",as.character(mu0)),
-    #     #           prior=prior)
-    #   } else if(x$alternative=="less"){
-    #     if(!grepl("Paired",x$method)){
-    #       hypotheses <- c(paste0("mu>=",as.character(mu0)),paste0("mu<",as.character(mu0)))
-    #     }else{
-    #       hypotheses <- c("true difference is greater than or equal to 0","true difference is less than 0")
-    #     }
-    #     logBFtu <- c(relfit2-relcomp2,relfit1-relcomp1)
-    #     names(logBFtu) <- hypotheses
-    #     BFtu <- exp(logBFtu)
-    #     PHP <- BFtu/sum(BFtu)
-    #     BFmatrix <- matrix(rep(BFtu,2),ncol=2) / matrix(rep(BFtu,2),ncol=2,byrow=T)
-    #     logBFmatrix <- matrix(rep(logBFtu,2),ncol=2) - matrix(rep(logBFtu,2),ncol=2,byrow=T)
-    #     row.names(BFmatrix) <- row.names(logBFmatrix) <- hypotheses
-    #     colnames(BFmatrix) <- colnames(logBFmatrix) <- hypotheses
-    #     relfit <- matrix(c(rep(1,2),exp(relfit2),exp(relfit1)),ncol=2)
-    #     relcomp <- matrix(c(rep(1,2),rep(.5,2)),ncol=2)
-    #     row.names(relfit) <- row.names(relcomp) <- hypotheses
-    #     colnames(relfit) <- c("f=","f>")
-    #     colnames(relcomp) <- c("c=","c>")
-    #     # BF1 <- BF(lm1,hypothesis=paste0("mu_minus_mu0>",as.character(mu0)),
-    #     #           prior=prior)
-    #   } else if(x$alternative=="greater"){
-    #     if(!grepl("Paired",x$method)){
-    #       hypotheses <- c(paste0("mu<=",as.character(mu0)),paste0("mu>",as.character(mu0)))
-    #     }else{
-    #       hypotheses <- c("true difference is smaller than or equal to 0","true difference is greater than 0")
-    #     }
-    #     logBFtu <- c(relfit1-relcomp1,relfit2-relcomp2)
-    #     names(logBFtu) <- hypotheses
-    #     BFtu <- exp(logBFtu)
-    #     PHP <- BFtu/sum(BFtu)
-    #     BFmatrix <- matrix(rep(BFtu,2),ncol=2) / matrix(rep(BFtu,2),ncol=2,byrow=T)
-    #     logBFmatrix <- matrix(rep(logBFtu,2),ncol=2) - matrix(rep(logBFtu,2),ncol=2,byrow=T)
-    #     row.names(BFmatrix) <- row.names(logBFmatrix) <- hypotheses
-    #     colnames(BFmatrix) <- colnames(logBFmatrix) <- hypotheses
-    #     relfit <- matrix(c(rep(1,2),exp(relfit1),exp(relfit2)),ncol=2)
-    #     relcomp <- matrix(c(rep(1,2),rep(.5,2)),ncol=2)
-    #     row.names(relfit) <- row.names(relcomp) <- hypotheses
-    #     colnames(relfit) <- c("f=","f>")
-    #     colnames(relcomp) <- c("c=","c>")
-    #     # BF1 <- BF(lm1,hypothesis=paste0("mu_minus_mu0<",as.character(mu0)),
-    #     #           prior=prior)
-    #   }
-    # } else if(hypothesis=="exploratory"){
-    #   if(!grepl("Paired",x$method)){
-    #     hypotheses <- c(paste0("mu=",as.character(mu0)),paste0("mu<",as.character(mu0)),paste0("mu>",as.character(mu0)))
-    #   }else{
-    #     hypotheses <- c("difference=0","difference<0","difference>0")
-    #   }
-    #   logBFtu <- c(relfit0-relcomp0,relfit1-relcomp1,relfit2-relcomp2)
-    #   names(logBFtu) <- hypotheses
-    #   BFtu <- exp(logBFtu)
-    #   PHP <- BFtu/sum(BFtu)
-    #   BFmatrix <- matrix(rep(BFtu,3),ncol=3) / matrix(rep(BFtu,3),ncol=3,byrow=T)
-    #   logBFmatrix <- matrix(rep(logBFtu,3),ncol=3) - matrix(rep(logBFtu,3),ncol=3,byrow=T)
-    #   row.names(BFmatrix) <- row.names(logBFmatrix) <- hypotheses
-    #   colnames(BFmatrix) <- colnames(logBFmatrix) <- hypotheses
-    #   relfit <- matrix(c(exp(relfit0),rep(1,3),exp(relfit1),exp(relfit2)),ncol=2)
-    #   relcomp <- matrix(c(exp(relcomp0),rep(1,3),rep(.5,2)),ncol=2)
-    #   row.names(relfit) <- row.names(relcomp) <- hypotheses
-    #   colnames(relfit) <- c("f=","f>")
-    #   colnames(relcomp) <- c("c=","c>")
-    #
-    #   # BF1 <- BF(x=lm1,prior=prior)
-    # } else {
-    #   stop("hypothesis should be NULL or 'exploratory'.")
-    # }
-    }else{
-      BFtu_confirmatory <- PHP_confirmatory <- BFmatrix_confirmatory <- relative_fit <-
-        relative_complexity <- NULL
     }
 
   }else{ # two samples t test
@@ -207,35 +99,12 @@ BF.bain_htest <- function(x,
       PHP_exploratory <- t(as.matrix(BFlm1$PHP_exploratory[1,]))
       row.names(BFtu_exploratory) <- row.names(PHP_exploratory) <- "difference"
 #
-#       #exploratory Bayes factor testing
-#       hypotheses_exploratory <- c("difference=0","difference<0","difference>0")
-#       logBFtu_exploratory <- c(relfit0-relcomp0,relfit1-relcomp1,relfit2-relcomp2)
-#       names(logBFtu_exploratory) <- hypotheses_exploratory
-#       BFtu_exploratory <- matrix(exp(logBFtu_exploratory),nrow=1)
-#       PHP_exploratory <- BFtu_exploratory/sum(BFtu_exploratory)
-#       colnames(PHP_exploratory) <- c("Pr(=0)","Pr(<0)","Pr(>0)")
-#       row.names(PHP_exploratory) <- "difference"
-# #      row.names(PHP_exploratory) <- "mean of x - mean of y"
-#
-#       # BFmatrix <- matrix(rep(BFtu,3),ncol=3) / matrix(rep(BFtu,3),ncol=3,byrow=T)
-#       # logBFmatrix <- matrix(rep(logBFtu,3),ncol=3) - matrix(rep(logBFtu,3),ncol=3,byrow=T)
-#       # row.names(BFmatrix) <- row.names(logBFmatrix) <- hypotheses
-#       # colnames(BFmatrix) <- colnames(logBFmatrix) <- hypotheses
-#       relfit <- matrix(c(exp(relfit0),rep(1,3),exp(relfit1),exp(relfit2)),ncol=2)
-#       relcomp <- matrix(c(exp(relcomp0),rep(1,3),rep(.5,2)),ncol=2)
-#       row.names(relfit) <- row.names(relcomp) <- hypotheses_exploratory
-#       colnames(relfit) <- c("f=","f>")
-#       colnames(relcomp) <- c("c=","c>")
-
       if(!is.null(hypothesis)){
         BFtu_confirmatory <- BFlm1$BFtu_confirmatory
         PHP_confirmatory <- BFlm1$PHP_confirmatory
         BFmatrix_confirmatory <- BFlm1$BFmatrix_confirmatory
         relative_fit <- BFlm1$relative_fit
         relative_complexity <- BFlm1$relative_complexity
-      }else{
-        BFtu_confirmatory <- PHP_confirmatory <- BFmatrix_confirmatory <- relative_fit <-
-          relative_complexity <- NULL
       }
     }else{ #equal variances not assumed. BF.lm cannot be used
 
@@ -261,10 +130,6 @@ BF.bain_htest <- function(x,
       PHP_exploratory <- matrix(BFtu_exploratory/sum(BFtu_exploratory),nrow=1)
       colnames(PHP_exploratory) <- c("Pr(=0)","Pr(<0)","Pr(>0)")
       row.names(PHP_exploratory) <- "difference"
-      # BFmatrix <- matrix(rep(BFtu,3),ncol=3) / matrix(rep(BFtu,3),ncol=3,byrow=T)
-      # logBFmatrix <- matrix(rep(logBFtu,3),ncol=3) - matrix(rep(logBFtu,3),ncol=3,byrow=T)
-      # row.names(BFmatrix) <- row.names(logBFmatrix) <- hypotheses
-      # colnames(BFmatrix) <- colnames(logBFmatrix) <- hypotheses
       relfit <- matrix(c(exp(relfit0),rep(1,3),exp(relfit1),exp(relfit2)),ncol=2)
       relcomp <- matrix(c(exp(relcomp0),rep(1,3),rep(.5,2)),ncol=2)
       row.names(relfit) <- row.names(relcomp) <- hypotheses_exploratory
@@ -332,80 +197,21 @@ BF.bain_htest <- function(x,
         row.names(BFmatrix_confirmatory) <- colnames(BFmatrix_confirmatory) <- names(BFtu_confirmatory)
         relative_fit <- relfit
         relative_complexity <- relcomp
-#
-#         if(x$alternative=="two.sided"){
-#           hypotheses <- c("true difference is equal to 0","true difference is not equal to 0")
-#           logBFtu <- c(relfit0-relcomp0,0)
-#           names(logBFtu) <- hypotheses
-#           BFtu <- exp(logBFtu)
-#           PHP <- BFtu/sum(BFtu)
-#           BFmatrix <- matrix(rep(BFtu,2),ncol=2) / matrix(rep(BFtu,2),ncol=2,byrow=T)
-#           logBFmatrix <- matrix(rep(logBFtu,2),ncol=2) - matrix(rep(logBFtu,2),ncol=2,byrow=T)
-#           row.names(BFmatrix) <- row.names(logBFmatrix) <- hypotheses
-#           colnames(BFmatrix) <- colnames(logBFmatrix) <- hypotheses
-#           relfit <- matrix(c(exp(relfit0),rep(1,3)),ncol=2)
-#           relcomp <- matrix(c(exp(relcomp0),rep(1,3)),ncol=2)
-#           row.names(relfit) <- row.names(relcomp) <- hypotheses
-#           colnames(relfit) <- c("f=","f>")
-#           colnames(relcomp) <- c("c=","c>")
-#
-#         }else if(x$alternative=="less"){
-#           hypotheses <- c("true difference is greater than or equal to 0","true difference is less than 0")
-#           logBFtu <- c(relfit2-relcomp2,relfit1-relcomp1)
-#           names(logBFtu) <- hypotheses
-#           BFtu <- exp(logBFtu)
-#           PHP <- BFtu/sum(BFtu)
-#           BFmatrix <- matrix(rep(BFtu,2),ncol=2) / matrix(rep(BFtu,2),ncol=2,byrow=T)
-#           logBFmatrix <- matrix(rep(logBFtu,2),ncol=2) - matrix(rep(logBFtu,2),ncol=2,byrow=T)
-#           row.names(BFmatrix) <- row.names(logBFmatrix) <- hypotheses
-#           colnames(BFmatrix) <- colnames(logBFmatrix) <- hypotheses
-#           relfit <- matrix(c(rep(1,2),exp(relfit2),exp(relfit1)),ncol=2)
-#           relcomp <- matrix(c(rep(1,2),rep(.5,2)),ncol=2)
-#           row.names(relfit) <- row.names(relcomp) <- hypotheses
-#           colnames(relfit) <- c("f=","f>")
-#           colnames(relcomp) <- c("c=","c>")
-#           # BF1 <- BF(lm1,hypothesis=paste0("mu_minus_mu0>",as.character(mu0)),
-#           #           prior=prior)
-#         } else if(x$alternative=="greater"){
-#           hypotheses <- c("true difference is less than or equal to 0","true difference is greater than 0")
-#           logBFtu <- c(relfit1-relcomp1,relfit2-relcomp2)
-#           names(logBFtu) <- hypotheses
-#           BFtu <- exp(logBFtu)
-#           PHP <- BFtu/sum(BFtu)
-#           BFmatrix <- matrix(rep(BFtu,2),ncol=2) / matrix(rep(BFtu,2),ncol=2,byrow=T)
-#           logBFmatrix <- matrix(rep(logBFtu,2),ncol=2) - matrix(rep(logBFtu,2),ncol=2,byrow=T)
-#           row.names(BFmatrix) <- row.names(logBFmatrix) <- hypotheses
-#           colnames(BFmatrix) <- colnames(logBFmatrix) <- hypotheses
-#           relfit <- matrix(c(rep(1,2),exp(relfit1),exp(relfit2)),ncol=2)
-#           relcomp <- matrix(c(rep(1,2),rep(.5,2)),ncol=2)
-#           row.names(relfit) <- row.names(relcomp) <- hypotheses
-#           colnames(relfit) <- c("f=","f>")
-#           colnames(relcomp) <- c("c=","c>")
-#           # BF1 <- BF(lm1,hypothesis=paste0("mu_minus_mu0<",as.character(mu0)),
-#           #           prior=prior)
-#         }else if(hypothesis=="exploratory"){
-#           hypotheses <- c("true difference is equal to 0","true difference is less than 0",
-#                           "true difference is greater than 0")
-#           logBFtu <- c(relfit0-relcomp0,relfit1-relcomp1,relfit2-relcomp2)
-#           names(logBFtu) <- hypotheses
-#           BFtu <- exp(logBFtu)
-#           PHP <- BFtu/sum(BFtu)
-#           BFmatrix <- matrix(rep(BFtu,3),ncol=3) / matrix(rep(BFtu,3),ncol=3,byrow=T)
-#           logBFmatrix <- matrix(rep(logBFtu,3),ncol=3) - matrix(rep(logBFtu,3),ncol=3,byrow=T)
-#           row.names(BFmatrix) <- row.names(logBFmatrix) <- hypotheses
-#           colnames(BFmatrix) <- colnames(logBFmatrix) <- hypotheses
-#           relfit <- matrix(c(exp(relfit0),rep(1,3),exp(relfit1),exp(relfit2)),ncol=2)
-#           relcomp <- matrix(c(exp(relcomp0),rep(1,3),rep(.5,2)),ncol=2)
-#           row.names(relfit) <- row.names(relcomp) <- hypotheses
-#           colnames(relfit) <- c("f=","f>")
-#           colnames(relcomp) <- c("c=","c>")
-#         }
-      }else{
-        BFtu_confirmatory <- PHP_confirmatory <- BFmatrix_confirmatory <- relative_fit <-
-          relative_complexity <- NULL
       }
     }
   }
+
+  if(!is.null(hypothesis)){
+    BFtable <- cbind(relative_complexity,relative_fit,relative_fit[,1]/relative_complexity[,1],
+                     relative_fit[,2]/relative_complexity[,2],apply(relative_fit,1,prod)/
+                       apply(relative_complexity,1,prod),PHP_confirmatory)
+    row.names(BFtable) <- names(BFtu_confirmatory)
+    colnames(BFtable) <- c("comp_E","comp_O","fit_E","fit_O","BF_E","BF_O","BF","PHP")
+    hypotheses <- row.names(relative_complexity)
+  }else{
+    BFtu_confirmatory <- PHP_confirmatory <- BFmatrix_confirmatory <- relative_fit <-
+      relative_complexity <- BFtable <- hypotheses <- NULL
+    }
 
   BFlm_out <- list(
     BFtu_exploratory=BFtu_exploratory,
@@ -413,20 +219,25 @@ BF.bain_htest <- function(x,
     BFtu_confirmatory=BFtu_confirmatory,
     PHP_confirmatory=PHP_confirmatory,
     BFmatrix_confirmatory=BFmatrix_confirmatory,
-    relative_fit=relative_fit,
-    relative_complexity=relative_complexity,
-    model=x)
+    BFtable_confirmatory=BFtable,
+    hypotheses=hypotheses,
+    model=x$estimate,
+    estimates=x$coefficients,
+    call=match.call())
 
   class(BFlm_out) <- "BF"
   return(BFlm_out)
 }
 
 
-BFupdate.htest <- function(BF1,
-                     x,
-                     ...){
-  stop("REMINDER: Needs to be done.")
-}
+
+
+
+
+
+
+
+
 
 
 

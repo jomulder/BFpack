@@ -14,16 +14,6 @@ BF.mlm <- function(x,
                   parameter = NULL,
                   ...){
 
-  if(is.null(hypothesis)){
-    constraints <- "exploratory"
-  } else {
-    constraints <- hypothesis
-  }
-  if(is.null(prior)){
-    priorprob <- "default"
-  } else {
-    priorprob <- prior
-  }
   if(is.null(parameter)){
     parametertest <- "regression"
   }else if(parameter=="correlation"){
@@ -261,11 +251,7 @@ BF.mlm <- function(x,
     }else{ PHP_interaction <- BFtu_interaction <- PHP_main <- BFtu_main <- NULL}
 
     # confirmatory BF test
-    if(constraints!="exploratory"){
-      # cat("Computing Bayes factors for confirmatory hypothesis tests may take a few seconds.")
-      # cat("\n")
-      # cat("\n")
-
+    if(!is.null(hypothesis)){
       #read constraints
       names_coef1 <- names(x$coefficients[,1])
       names_coef2 <- names(x$coefficients[1,])
@@ -276,14 +262,19 @@ BF.mlm <- function(x,
       }))
 
       # translate named constraints to matrices with coefficients for constraints
-      parse_hyp <- parse_hypothesis(names_coef,constraints)
+      parse_hyp <- parse_hypothesis(names_coef,hypothesis)
       RrList <- make_RrList2(parse_hyp)
       RrE <- RrList[[1]]
       RrO <- RrList[[2]]
 
       RrStack <- rbind(do.call(rbind,RrE),do.call(rbind,RrO))
-      RStack <- RrStack[,-(K+1)]
-      rStack <- RrStack[,(K+1)]
+      if(nrow(RrStack)>1){
+        RStack <- RrStack[,-(K*P+1)]
+        rStack <- RrStack[,(K*P+1)]
+      }else{
+        RStack <- matrix(RrStack[,-(K*P+1)],nrow=1)
+        rStack <- RrStack[,(K*P+1)]
+      }
 
       # check if a common boundary exists for prior location under all constrained hypotheses
       if(nrow(RrStack) > 1){
@@ -299,7 +290,8 @@ BF.mlm <- function(x,
 
       #number of hypotheses that are specified
       numhyp <- length(RrO)
-      Mean0 <- matrix(0,nrow=K,ncol=P)
+      #default prior location
+      Mean0 <- matrix(c(ginv(RStack)%*%rStack),nrow=K,ncol=P)
 
       relmeasunlist <- unlist(lapply(1:numhyp,function(h){
         # Check whether the constraints are on a single row or column, if so
@@ -399,20 +391,22 @@ BF.mlm <- function(x,
       # the BF for the complement hypothesis vs Hu needs to be computed.
       BFtu_confirmatory <- c(apply(relfit / relcomp, 1, prod))
       # Check input of prior probabilies
-      if(!(priorprob == "default" || (length(priorprob)==nrow(relfit) && min(priorprob)>0) )){
-        stop("'probprob' must be a vector of positive values or set to 'default'.")
-      }
-      # Change prior probs in case of default setting
-      if(priorprob=="default"){
+      if(is.null(prior)){
         priorprobs <- rep(1/length(BFtu_confirmatory),length(BFtu_confirmatory))
       }else{
-        priorprobs <- priorprobs/sum(priorprobs)
+        if(!is.numeric(prior) || length(prior)!=length(BFtu_confirmatory)){
+          warning(paste0("Argument 'prior' should be numeric and of length ",as.character(length(BFtu_confirmatory)),". Equal prior probabilities are used."))
+          priorprobs <- rep(1/length(BFtu_confirmatory),length(BFtu_confirmatory))
+        }else{
+          priorprobs <- prior
+        }
       }
       names(priorprobs) <- names(BFtu_confirmatory)
       PHP_confirmatory <- BFtu_confirmatory*priorprobs / sum(BFtu_confirmatory*priorprobs)
-      # names(PHP_confirmatory) <- unlist(lapply(1:length(parse_hyp$original_hypothesis),function(hyp){
-      #   paste0("Pr(",parse_hyp$original_hypothesis,")")
-      # }))
+      BFtable <- cbind(relcomp,relfit,relfit[,1]/relcomp[,1],relfit[,2]/relcomp[,2],
+                       apply(relfit,1,prod)/apply(relcomp,1,prod),PHP_confirmatory)
+      row.names(BFtable) <- names(PHP_confirmatory)
+      colnames(BFtable) <- c("comp_E","comp_O","fit_E","fit_O","BF_E","BF_O","BF","PHP")
       BFmatrix_confirmatory <- matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory))/
         t(matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory)))
       row.names(BFmatrix_confirmatory) <- colnames(BFmatrix_confirmatory) <- names(BFtu_confirmatory)
@@ -423,7 +417,7 @@ BF.mlm <- function(x,
       }
     }else{
       BFtu_confirmatory <- PHP_confirmatory <- BFmatrix_confirmatory <- relfit <-
-        relcomp <- NULL
+        relcomp <- BFtable <- NULL
       hypotheses <- "exploratory"
     }
   }else{ #perform tests on correlations
@@ -437,14 +431,14 @@ BF.mlm <- function(x,
     corr_names <- c(matrix_names[lower.tri(matrix_names)],
                     t(matrix_names)[lower.tri(matrix_names)])
     # sum(abs(apply(checkLabels,1,sum)-rep(1,length(params_in_hyp1))))==0
-    if(constraints=="exploratory"){
+    if(is.null(hypothesis)){
       #constraints are formulated on correlations from one population/group
       numG <- 1
       ngroups <- nrow(Ymat)
       YXlist <- list(list(Ymat,Xmat))
       corr_names_exploratory <- matrix_names[lower.tri(matrix_names)]
     }else{
-      params_in_hyp1 <- params_in_hyp(constraints)
+      params_in_hyp1 <- params_in_hyp(hypothesis)
       # check if labels of correlations in hypotheses match with actual correlations
       checkLabels <- matrix(unlist(lapply(1:length(params_in_hyp1),function(par){
         params_in_hyp1[par]==corr_names
@@ -550,8 +544,8 @@ BF.mlm <- function(x,
     colnames(BFtu_exploratory) <- c("Pr(=0)","Pr(<0)","Pr(>0)")
     PHP_exploratory <- round(BFtu_exploratory / apply(BFtu_exploratory,1,sum),3)
 
-    if(constraints!="exploratory"){
-      parse_hyp <- parse_hypothesis(corr_names,constraints)
+    if(!is.null(hypothesis)){
+      parse_hyp <- parse_hypothesis(corr_names,hypothesis)
       if(nrow(parse_hyp$hyp_mat)==1){
         select1 <- rep(1:numcorrgroup,numG) + rep((0:(numG-1))*2*numcorrgroup,each=numcorrgroup)
         select2 <- rep(numcorrgroup+1:numcorrgroup,numG) + rep((0:(numG-1))*2*numcorrgroup,each=numcorrgroup)
@@ -582,37 +576,34 @@ BF.mlm <- function(x,
       })),nrow=2))
       row.names(relfit) <- row.names(relcomp) <- parse_hyp$original_hypothesis
       relfit <- Gaussian_prob_Hc(meanN,covmN,relfit,RrO)
-      relcomp <- jointuniform_prob_Hc(P,numcorrgroup,numG,relcomp,constraints,RrO)
+      relcomp <- jointuniform_prob_Hc(P,numcorrgroup,numG,relcomp,RrO)
 
       # the BF for the complement hypothesis vs Hu needs to be computed.
       BFtu_confirmatory <- c(apply(relfit / relcomp, 1, prod))
       # Check input of prior probabilies
-      if(!(priorprob == "default" || (length(priorprob)==nrow(relfit) && min(priorprob)>0) )){
-        stop("'probprob' must be a vector of positive values or set to 'default'.")
-      }
-      # Change prior probs in case of default setting
-      if(priorprob=="default"){
+      if(is.null(prior)){
         priorprobs <- rep(1/length(BFtu_confirmatory),length(BFtu_confirmatory))
       }else{
-        priorprobs <- priorprobs/sum(priorprobs)
+        if(!is.numeric(prior) || length(prior)!=length(BFtu_confirmatory)){
+          warning(paste0("Argument 'prior' should be numeric and of length ",as.character(length(BFtu_confirmatory)),". Equal prior probabilities are used."))
+          priorprobs <- rep(1/length(BFtu_confirmatory),length(BFtu_confirmatory))
+        }else{
+          priorprobs <- prior
+        }
       }
       names(priorprobs) <- names(BFtu_confirmatory)
       PHP_confirmatory <- BFtu_confirmatory*priorprobs / sum(BFtu_confirmatory*priorprobs)
-      # names(PHP_confirmatory) <- unlist(lapply(1:length(parse_hyp$original_hypothesis),function(hyp){
-      #   paste0("Pr(",parse_hyp$original_hypothesis,")")
-      # }))
+      BFtable <- cbind(relcomp,relfit,relfit[,1]/relcomp[,1],relfit[,2]/relcomp[,2],
+                       apply(relfit,1,prod)/apply(relcomp,1,prod),PHP_confirmatory)
+      row.names(BFtable) <- names(BFtu_confirmatory)
+      colnames(BFtable) <- c("comp_E","comp_O","fit_E","fit_O","BF_E","BF_O","BF","PHP")
       BFmatrix_confirmatory <- matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory))/
         t(matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory)))
       row.names(BFmatrix_confirmatory) <- colnames(BFmatrix_confirmatory) <- names(BFtu_confirmatory)
-      if(nrow(relfit)==length(parse_hyp$original_hypothesis)){
-        hypotheses <- parse_hyp$original_hypothesis
-      }else{
-        hypotheses <- c(parse_hyp$original_hypothesis,"complement")
-      }
+      hypotheses <- row.names(relfit)
     }else{
       BFtu_confirmatory <- PHP_confirmatory <- BFmatrix_confirmatory <- relfit <-
-        relcomp <- NULL
-      hypotheses <- "exploratory"
+        relcomp <- hypotheses <- BFtable <- NULL
     }
     PHP_interaction <- BFtu_interaction <- PHP_main <- BFtu_main <- NULL
   }
@@ -623,12 +614,11 @@ BF.mlm <- function(x,
     BFtu_confirmatory=BFtu_confirmatory,
     PHP_confirmatory=PHP_confirmatory,
     BFmatrix_confirmatory=BFmatrix_confirmatory,
+    BFtable_confirmatory=BFtable,
     BFtu_main=BFtu_main,
     PHP_main=PHP_main,
     BFtu_interaction=PHP_interaction,
     PHP_interaction=PHP_interaction,
-    relative_fit=relfit,
-    relative_complexity=relcomp,
     hypotheses=hypotheses,
     model=x,
     estimates=x$coefficients,
