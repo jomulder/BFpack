@@ -7,8 +7,8 @@ print.BF <- function(x,
 
 
   cat("BFpack: Exploratory Bayes factor tests for an object of class ", class(x$model)[1], ":\n\n", sep = "")
-  cat("Coefficients:")
-  cat("\n")
+  # cat("Coefficients:")
+  # cat("\n")
   print(round(x$PHP_exploratory,digits))
 
   cat("\n")

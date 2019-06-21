@@ -19,7 +19,7 @@ var_test <- function(...){ # ALLE argumenten van bartlett.test gebruiken
 #' @method BF BF_bartlett
 #' @export
 BF.BF_bartlett <- function(x,
-                           hypothesis,
+                           hypothesis = NULL,
                            prior = NULL,
                            parameter = NULL,
                            ...) {
@@ -39,8 +39,8 @@ BF.BF_bartlett <- function(x,
   BF0u <- 3 #and the replace 3 by the actual BF
 
   BFtu_exploratory <- c(BF0u,1)
-  colnames(BFtu_exploratory) <- c("homogeneity of variances","no homogeneity of variances")
-  PHP_exploratory <- BFtu_exploratory / apply(BFtu_exploratory,1,sum)
+  names(BFtu_exploratory) <- c("homogeneity of variances","no homogeneity of variances")
+  PHP_exploratory <- BFtu_exploratory / sum(BFtu_exploratory)
 
   if(!is.null(hypothesis)){ # execute confirmatory Bayes factor test based on hypothesis input
 
