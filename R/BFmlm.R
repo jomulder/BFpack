@@ -746,6 +746,7 @@ estimate_postMeanCov_FisherZ <- function(YXlist,numdraws=5e3){
 }
 
 
-
+# Fisher Z tranformation for sampled correlations
+FisherZ <- function(r){.5*log((1+r)/(1-r))}
 
 

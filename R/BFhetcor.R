@@ -13,11 +13,6 @@ BF.hetcor <- function(x,
   } else {
     constraints <- hypothesis
   }
-  if(is.null(prior)){
-    priorprob <- "default"
-  } else {
-    priorprob <- prior
-  }
 
   P <- nrow(x$std.errors)
   numcorr <- P*(P-1)/2
@@ -76,14 +71,15 @@ BF.hetcor <- function(x,
     # the BF for the complement hypothesis vs Hu needs to be computed.
     BFtu_confirmatory <- c(apply(relfit / relcomp, 1, prod))
     # Check input of prior probabilies
-    if(!(priorprob == "default" || (length(priorprob)==nrow(relfit) && min(priorprob)>0) )){
-      stop("'probprob' must be a vector of positive values or set to 'default'.")
-    }
-    # Change prior probs in case of default setting
-    if(priorprob=="default"){
+    if(is.null(prior)){
       priorprobs <- rep(1/length(BFtu_confirmatory),length(BFtu_confirmatory))
     }else{
-      priorprobs <- priorprobs/sum(priorprobs)
+      if(!is.numeric(prior) || length(prior)!=length(BFtu_confirmatory)){
+        warning(paste0("Argument 'prior' should be numeric and of length ",as.character(length(BFtu_confirmatory)),". Equal prior probabilities are used."))
+        priorprobs <- rep(1/length(BFtu_confirmatory),length(BFtu_confirmatory))
+      }else{
+        priorprobs <- prior
+      }
     }
     names(priorprobs) <- names(BFtu_confirmatory)
     PHP_confirmatory <- BFtu_confirmatory*priorprobs / sum(BFtu_confirmatory*priorprobs)
