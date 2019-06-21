@@ -61,7 +61,7 @@ BF.hetcor <- function(x,
       jointuniform_measures(P,numcorr,1,RrE[[h]],RrO[[h]],Fisher=0)
     })),nrow=2))
     relfit <- t(matrix(unlist(lapply(1:numhyp,function(h){
-      Gaussian_measures(estimates,errcov,RrE[[h]],RrO[[h]],names1=corr_names_lower,
+      Gaussian_measures(estimates,errcov,RrE1=RrE[[h]],RrO1=RrO[[h]],names1=corr_names_lower,
                         constraints1=parse_hyp$original_hypothesis[h])
     })),nrow=2))
     row.names(relcomp) <- parse_hyp$original_hypothesis
@@ -108,10 +108,8 @@ BF.hetcor <- function(x,
     relative_fit=relfit,
     relative_complexity=relcomp,
     model=x,
-    P=P,
-    ngroups=1,
-    constraints=constraints,
-    priorprob=priorprob)
+    hypothesis=hypothesis,
+    prior=prior)
 
   class(BFlm_out) <- "BF"
 

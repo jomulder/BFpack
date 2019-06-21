@@ -1,7 +1,7 @@
 # test BF for t test
 
-
 # one sample t test
+library(bain)
 ttest1 <- t_test(therapeutic,mu=5)
 BF(ttest1)
 BF(ttest1,"mu=5;mu<5")

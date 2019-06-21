@@ -9,7 +9,7 @@ BF.htest <-
            prior = NULL,
            parameter = NULL,
            ...) {
-    stop("The standard t.test() function from the 'stats' package does not return variance and sample size, which are required to run bain. Please use the function t_test() from the 'bain' package instead. It accepts the same arguments.")
+    stop("Please use the function t_test() from the 'bain' package for a t-test or var_test() from the 'BFpack' package for a test on group variances.")
   }
 
 
