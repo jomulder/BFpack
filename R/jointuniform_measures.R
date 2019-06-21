@@ -149,12 +149,10 @@ jointuniform_prob_Hc <- function(P,numcorrgroup,numG,relmeas,RrO,samsize1=1e4,se
       rownames(relmeas)[numhyp+1] <- "complement"
     }else{ # So more than one hypothesis with only order constraints
 
-      drawsJU <- matrix(0,nrow=samsize1,ncol=numcorr)
+      drawsJU <- matrix(0,nrow=samsize1,ncol=numpara)
       drawsJU[,1:numcorrgroup] <- .Fortran("draw_ju",P=as.integer(P),drawscorr=drawsJU[,1:numcorrgroup],
                                            samsize=as.integer(samsize1),numcorrgroup=as.integer(numcorrgroup),
                                            seed=as.integer(seed))$drawscorr
-      # REMINDER: Check if Fisher transformed draws are needed or nontransformed draws.
-
       #These draws can be used for the correlation matrices of the independent groups
       numcorr <- numcorrgroup * numG
       teldummy <- numcorrgroup

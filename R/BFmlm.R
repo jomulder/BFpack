@@ -638,8 +638,6 @@ params_in_hyp <- function(hyp){
 }
 
 
-
-
 #dyn.load("/Users/jorismulder/surfdrive/R packages/BFpack/scr/bct_continuous_final.dll")
 # R function to call Fortran subroutine for Gibbs sampling using noninformative improper
 # priors for regression coefficients, Jeffreys priors for standard deviations, and a proper
