@@ -5,6 +5,9 @@
 #the structure "y4~~y4" or "ind60=~x2"
 
 
+#' @importFrom stats nobs
+#' @importFrom stats vcov
+#' @importFrom stats coef
 #' @method BF lavaan
 #' @export
 BF.lavaan <- function(x,
