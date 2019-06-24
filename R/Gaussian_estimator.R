@@ -30,7 +30,7 @@ BF_Gaussian <- function(meanN,
 
   if(is.null(hypothesis)){
     BFtu_confirmatory <- PHP_confirmatory <- BFmatrix_confirmatory <- relfit <-
-      relcomp <- BFtable <- hypotheses <- NULL
+      relcomp <- BFtable <- hypotheses <- priorprobs <- NULL
   }else{
     # confirmatory tests based on input constraints
     parse_hyp <- parse_hypothesis(names_coef,hypothesis)
@@ -88,24 +88,19 @@ BF_Gaussian <- function(meanN,
     hypotheses <- Hnames
   }
 
-    out <- list(
+    BF_out <- list(
       BFtu_exploratory=BFtu_exploratory,
       PHP_exploratory=PHP_exploratory,
       BFtu_confirmatory=BFtu_confirmatory,
       PHP_confirmatory=PHP_confirmatory,
       BFmatrix_confirmatory=BFmatrix_confirmatory,
       BFtable_confirmatory=BFtable,
-      hypotheses=hypotheses,
-      relative_fit=relfit,
-      relative_complexity=relcomp,
-      estimates=meanN,
-      constraints=hypothesis,
-      priorprob=prior,
-      call=match.call())
+      prior=priorprobs,
+      hypotheses=hypotheses)
 
-    class(out) <- "BF"
+    class(BF_out) <- "BF"
 
-    out
+    BF_out
 
 }
 

@@ -93,7 +93,7 @@ BF.hetcor <- function(x,
     hypotheses <- row.names(relcomp)
   }else{
     BFtu_confirmatory <- PHP_confirmatory <- BFmatrix_confirmatory <- relfit <-
-      relcomp <- hypotheses <- BFtable <- NULL
+      relcomp <- hypotheses <- BFtable <- priorprobs <- NULL
   }
 
   # Store in output
@@ -104,11 +104,9 @@ BF.hetcor <- function(x,
     PHP_confirmatory=PHP_confirmatory,
     BFmatrix_confirmatory=BFmatrix_confirmatory,
     BFtable_confirmatory=BFtable,
-    relative_fit=relfit,
-    relative_complexity=relcomp,
-    model=x,
+    prior=priorprobs,
     hypotheses=hypotheses,
-    prior=prior,
+    model=x,
     call=match.call())
 
   class(BF_out) <- "BF"

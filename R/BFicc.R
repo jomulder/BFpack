@@ -18,7 +18,7 @@ BF.lmerMod <- function(x,
     x@cnms[[ca]]
   }))
   if(numcat>1){
-    iccnames <- unlist(lapply(1:numcat,function(nc){paste0("icc_",namescat[nc])}))
+    iccnames <- unlist(lapply(1:numcat,function(nc){namescat[nc]}))
   }else{ iccnames <- "icc" }
 
   # check if the lmer-model only has a random intercept or category specific random intercepts
@@ -257,7 +257,8 @@ BF.lmerMod <- function(x,
     hypotheses <- names(BFta_confirmatory_icc)
 
   }else{
-    BFmatrix_confirmatory_icc <- PHP_confirmatory_icc <- BFtu_confirmatory_icc <- NULL
+    BFmatrix_confirmatory_icc <- PHP_confirmatory_icc <- BFtu_confirmatory_icc <- relfit <-
+      relcomp <- hypotheses <- BFtable <- priorprobs <- NULL
   }
   #####
   #
@@ -272,12 +273,9 @@ BF.lmerMod <- function(x,
     PHP_confirmatory=PHP_confirmatory_icc,
     BFmatrix_confirmatory=BFmatrix_confirmatory_icc,
     BFtable_confirmatory=BFtable,
-    relative_fit=NULL,
-    relative_complexity=NULL,
-    model=x,
+    prior=priorprobs,
     hypotheses=hypotheses,
-    priorprobs=priorprobs,
-    estimates=postestimates,
+    model=x,
     call=match.call())
 
   class(BFlm_out) <- "BF"

@@ -157,9 +157,11 @@ BF.BF_bartlett <- function(x,
       }
     }
     PHP_confirmatory <- BFtu_confirmatory * priorprobs / sum(BFtu_confirmatory * priorprobs)
+    hypotheses <- row.names(relcomp)
+    BFtable <- NULL #need to be added when Florian's code is finished.
   }else{
     BFtu_confirmatory <- PHP_confirmatory <- BFmatrix_confirmatory <- relfit <-
-      relcomp <- NULL
+      relcomp <- hypotheses <- BFtable <- priorprobs <- NULL
   }
 
   BFlm_out <- list(
@@ -168,12 +170,10 @@ BF.BF_bartlett <- function(x,
     BFtu_confirmatory=BFtu_confirmatory,
     PHP_confirmatory=PHP_confirmatory,
     BFmatrix_confirmatory=BFmatrix_confirmatory,
-#    relative_fit=relfit,
-#    relative_complexity=relcomp,
+    BFtable_confirmatory=BFtable,
+    prior=priorprobs,
+    hypotheses=hypotheses,
     model=x,
-    estimates=x$vars,
-    hypothesis=hypothesis,
-    prior=prior,
     call=match.call())
 
   class(BFlm_out) <- "BF"

@@ -415,10 +415,6 @@ BF.mlm <- function(x,
       }else{
         hypotheses <- c(parse_hyp$original_hypothesis,"complement")
       }
-    }else{
-      BFtu_confirmatory <- PHP_confirmatory <- BFmatrix_confirmatory <- relfit <-
-        relcomp <- BFtable <- NULL
-      hypotheses <- "exploratory"
     }
   }else{ #perform tests on correlations
 
@@ -601,11 +597,13 @@ BF.mlm <- function(x,
         t(matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory)))
       row.names(BFmatrix_confirmatory) <- colnames(BFmatrix_confirmatory) <- names(BFtu_confirmatory)
       hypotheses <- row.names(relfit)
-    }else{
-      BFtu_confirmatory <- PHP_confirmatory <- BFmatrix_confirmatory <- relfit <-
-        relcomp <- hypotheses <- BFtable <- NULL
     }
     PHP_interaction <- BFtu_interaction <- PHP_main <- BFtu_main <- NULL
+  }
+
+  if(is.null(hypothesis)){
+    BFtu_confirmatory <- PHP_confirmatory <- BFmatrix_confirmatory <- relfit <-
+      relcomp <- hypotheses <- BFtable <- priorprobs <- NULL
   }
 
   BFlm_out <- list(
@@ -619,9 +617,9 @@ BF.mlm <- function(x,
     PHP_main=PHP_main,
     BFtu_interaction=PHP_interaction,
     PHP_interaction=PHP_interaction,
+    prior=priorprobs,
     hypotheses=hypotheses,
     model=x,
-    estimates=x$coefficients,
     call=match.call())
 
   class(BFlm_out) <- "BF"

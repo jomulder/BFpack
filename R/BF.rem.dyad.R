@@ -15,6 +15,7 @@ BF.rem.dyad <- function(x,
 
   out <- BF_Gaussian(meanN, covmN, n, hypothesis, prior)
   out$model <- x
+  out$call <- match.call()
   out
 
 }
