@@ -220,6 +220,17 @@ BF.lm <- function(x,
     }else{ PHP_interaction <- BFtu_interaction <- NULL}
   }else{ PHP_interaction <- BFtu_interaction <- PHP_main <- BFtu_main <- NULL}
 
+  # compute posterior estimates
+  postestimates <- cbind(meanN,meanN,
+                         t(matrix(unlist(lapply(1:length(meanN),function(coef){
+                           ub <- qt(p=.975,df=dfN)*sqrt(ScaleN[coef,coef])+meanN[coef,1]
+                           lb <- qt(p=.025,df=dfN)*sqrt(ScaleN[coef,coef])+meanN[coef,1]
+                           return(c(lb,ub))
+                         })),nrow=2))
+  )
+  row.names(postestimates) <- names_coef
+  colnames(postestimates) <- c("mean","median","2.5%","97.5%")
+
   # confirmatory BF test
   if(!is.null(hypothesis)){
     #read constraints
@@ -323,6 +334,7 @@ BF.lm <- function(x,
     PHP_interaction=PHP_interaction,
     prior=priorprobs,
     hypotheses=hypotheses,
+    estimates=postestimates,
     model=x,
     call=match.call())
 

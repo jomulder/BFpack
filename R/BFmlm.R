@@ -157,6 +157,16 @@ BF.mlm <- function(x,
     colnames(BFtu_exploratory) <- c("Pr(=0)","Pr(<0)","Pr(>0)")
     PHP_exploratory <- BFtu_exploratory / apply(BFtu_exploratory,1,sum)
 
+    #compute estimates
+    postestimates <- cbind(meanN,meanN,
+      t(matrix(unlist(lapply(1:length(meanN),function(coef){
+        ub <- qt(p=.975,df=dfN)*sqrt(ScaleN[coef,coef])+meanN[coef,1]
+        lb <- qt(p=.025,df=dfN)*sqrt(ScaleN[coef,coef])+meanN[coef,1]
+        return(c(ub,lb))
+      })),nrow=2))
+    )
+    row.names(postestimates) <- names_coef
+    colnames(postestimates) <- c("mean","median","2.5%","97.5%")
 
     # Additional exploratory tests in the case of an aov type object
     if(sum(class(x)=="aov")==1){
@@ -521,7 +531,6 @@ BF.mlm <- function(x,
     # find posterior mean and covariance matrix of correlations in Fisher transformed
     # space having an approximate multivariate normal distribution.
     Gibbs_output <- estimate_postMeanCov_FisherZ(YXlist,numdraws=8e3)
-    correlation_estimates <- Gibbs_output$corr_quantiles
     meanN <- Gibbs_output$meanN
     covmN <- Gibbs_output$covmN
     numcorr <- length(meanN)
@@ -539,6 +548,17 @@ BF.mlm <- function(x,
     row.names(BFtu_exploratory) <- corr_names_exploratory
     colnames(BFtu_exploratory) <- c("Pr(=0)","Pr(<0)","Pr(>0)")
     PHP_exploratory <- round(BFtu_exploratory / apply(BFtu_exploratory,1,sum),3)
+    # posterior estimates
+    postestimates <- Reduce(rbind,
+                            lapply(1:numG,function(g){
+                              means <- Gibbs_output$corr_means[[g]]
+                              medians <- Gibbs_output$corr_quantiles[g,,,2][lower.tri(diag(P))]
+                              lb <- Gibbs_output$corr_quantiles[g,,,1][lower.tri(diag(P))]
+                              ub <- Gibbs_output$corr_quantiles[g,,,3][lower.tri(diag(P))]
+                              return(cbind(means,medians,lb,ub))
+                            }))
+    row.names(postestimates) <- corr_names_exploratory
+    colnames(postestimates) <- c("mean","median","2.5%","97.5%")
 
     if(!is.null(hypothesis)){
       parse_hyp <- parse_hypothesis(corr_names,hypothesis)
@@ -619,6 +639,7 @@ BF.mlm <- function(x,
     PHP_interaction=PHP_interaction,
     prior=priorprobs,
     hypotheses=hypotheses,
+    estimates=postestimates,
     model=x,
     call=match.call())
 
@@ -634,7 +655,6 @@ params_in_hyp <- function(hyp){
   params_in_hyp <- params_in_hyp[!sapply(params_in_hyp, grepl, pattern = "^[0-9]*\\.?[0-9]+$")]
   params_in_hyp[grepl("^[a-zA-Z]", params_in_hyp)]
 }
-
 
 #dyn.load("/Users/jorismulder/surfdrive/R packages/BFpack/scr/bct_continuous_final.dll")
 # R function to call Fortran subroutine for Gibbs sampling using noninformative improper
@@ -710,7 +730,7 @@ estimate_postMeanCov_FisherZ <- function(YXlist,numdraws=5e3){
                  sigmaDrawsStore=array(0,dim=c(samsize0,numG,P)),
                  CDrawsStore=array(0,dim=c(samsize0,numG,P,P)))
 
-  meansCovCorr <- lapply(1:numG,function(g){
+  FmeansCovCorr <- lapply(1:numG,function(g){
     Fdraws_g <- FisherZ(t(matrix(unlist(lapply(1:samsize0,function(s){
       res$CDrawsStore[s,g,,][lower.tri(diag(P))]
     })),ncol=samsize0)))
@@ -718,17 +738,24 @@ estimate_postMeanCov_FisherZ <- function(YXlist,numdraws=5e3){
     covm_g <- cov(Fdraws_g)
     return(list(mean_g,covm_g))
   })
+  meansCovCorr <- lapply(1:numG,function(g){
+    draws_g <- t(matrix(unlist(lapply(1:samsize0,function(s){
+      res$CDrawsStore[s,g,,][lower.tri(diag(P))]
+    })),ncol=samsize0))
+    mean_g <- apply(draws_g,2,mean)
+    return(mean_g)
+  })
   meanN <- unlist(lapply(1:numG,function(g){
-    meansCovCorr[[g]][[1]]
+    FmeansCovCorr[[g]][[1]]
   }))
   covmN <- matrix(0,nrow=numcorr,ncol=numcorr)
   numcorrg <- numcorr/numG
   for(g in 1:numG){
-    covmN[(g-1)*numcorrg+1:numcorrg,(g-1)*numcorrg+1:numcorrg] <- meansCovCorr[[g]][[2]]
+    covmN[(g-1)*numcorrg+1:numcorrg,(g-1)*numcorrg+1:numcorrg] <- FmeansCovCorr[[g]][[2]]
   }
   return(list(corr_quantiles=res$C_quantiles,B_quantiles=res$B_quantiles,
-              sigma_quantiles=res$sigma_quantiles,meanN=meanN,covmN=covmN))
-
+              sigma_quantiles=res$sigma_quantiles,meanN=meanN,covmN=covmN,
+              corr_means=meansCovCorr))
 }
 
 

@@ -8,11 +8,6 @@ BF.hetcor <- function(x,
                        hypothesis = NULL,
                        prior = NULL,
                        ...){
-  if(is.null(hypothesis)){
-    constraints <- "exploratory"
-  } else {
-    constraints <- hypothesis
-  }
 
   P <- nrow(x$std.errors)
   numcorr <- P*(P-1)/2
@@ -39,10 +34,22 @@ BF.hetcor <- function(x,
   colnames(BFtu_exploratory) <- colnames(BFtu_exploratory) <-  c("Pr(=0)","Pr(<0)","Pr(>0)")
   PHP_exploratory <- BFtu_exploratory / apply(BFtu_exploratory,1,sum)
 
-  #confirmatory BF testing
-  if(constraints!="exploratory"){
+  # # compute posterior estimates
+  # postestimates <- cbind(estimates,estimates,
+  #                        t(matrix(unlist(lapply(1:length(estimates),function(coef){
+  #                          ub <- qnorm(p=.975)*sqrt(errcov[coef,coef])+estimates[coef]
+  #                          lb <- qnorm(p=.025)*sqrt(errcov[coef,coef])+estimates[coef]
+  #                          return(c(lb,ub))
+  #                        })),nrow=2))
+  # )
+  # row.names(postestimates) <- corr_names_lower
+  # colnames(postestimates) <- c("mean","median","2.5%","97.5%")
+  postestimates <- NULL #currently no proper method available to get posterior mean, median, CI based on hetcor object
 
-    parse_hyp <- parse_hypothesis(corr_names_all,constraints)
+  #confirmatory BF testing
+  if(!is.null(hypothesis)){
+
+    parse_hyp <- parse_hypothesis(corr_names_all,hypothesis)
     #combine equivalent correlations, e.g., cor(Y1,Y2)=corr(Y2,Y1).
     parse_hyp$hyp_mat <- cbind(parse_hyp$hyp_mat[,1:numcorr] + parse_hyp$hyp_mat[,numcorr+1:numcorr],
             parse_hyp$hyp_mat[,numcorr*2+1])
@@ -106,6 +113,7 @@ BF.hetcor <- function(x,
     BFtable_confirmatory=BFtable,
     prior=priorprobs,
     hypotheses=hypotheses,
+    estimates=postestimates,
     model=x,
     call=match.call())
 

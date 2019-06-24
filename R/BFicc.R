@@ -3,7 +3,7 @@
 
 
 #' @importFrom MCMCpack rinvgamma
-# #' @importFrom lme4 getME
+#' @importFrom lme4 getME
 #' @method BF lmerMod
 #' @export
 BF.lmerMod <- function(x,
@@ -275,6 +275,7 @@ BF.lmerMod <- function(x,
     BFtable_confirmatory=BFtable,
     prior=priorprobs,
     hypotheses=hypotheses,
+    estimates=postestimates,
     model=x,
     call=match.call())
 

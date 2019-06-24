@@ -28,6 +28,17 @@ BF_Gaussian <- function(meanN,
   colnames(PHP_exploratory) <- c("p(=0)","Pr(<0)","Pr(>0)")
   row.names(PHP_exploratory) <- names_coef
 
+  # compute posterior estimates
+  postestimates <- cbind(meanN,meanN,
+                         t(matrix(unlist(lapply(1:length(meanN),function(coef){
+                           ub <- qnorm(p=.975)*sqrt(covmN[coef,coef])+meanN[coef]
+                           lb <- qnorm(p=.025)*sqrt(covmN[coef,coef])+meanN[coef]
+                           return(c(lb,ub))
+                         })),nrow=2))
+  )
+  row.names(postestimates) <- names_coef
+  colnames(postestimates) <- c("mean","median","2.5%","97.5%")
+
   if(is.null(hypothesis)){
     BFtu_confirmatory <- PHP_confirmatory <- BFmatrix_confirmatory <- relfit <-
       relcomp <- BFtable <- hypotheses <- priorprobs <- NULL
@@ -96,7 +107,8 @@ BF_Gaussian <- function(meanN,
       BFmatrix_confirmatory=BFmatrix_confirmatory,
       BFtable_confirmatory=BFtable,
       prior=priorprobs,
-      hypotheses=hypotheses)
+      hypotheses=hypotheses,
+      estimates=postestimates)
 
     class(BF_out) <- "BF"
 
@@ -260,7 +272,6 @@ Gaussian_prob_Hc <- function(mean1,Sigma1,relmeas,RrO){
 
   return(relmeas)
 }
-
 
 
 
