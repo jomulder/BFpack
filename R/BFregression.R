@@ -475,7 +475,6 @@ MatrixStudent_measures <- function(Mean1,Scale1,tXXi1,df1,RrE1,RrO1,Names1=NULL,
   }
   return(c(relE,relO))
 }
-
 # compute relative meausures (fit or complexity) under a multivariate Student t distribution
 Student_measures <- function(mean1,Scale1,df1,RrE1,RrO1,names1=NULL,constraints1=NULL){ # Volgens mij moet je hier ook N meegeven
   K <- length(mean1)
@@ -570,9 +569,9 @@ Student_measures <- function(mean1,Scale1,df1,RrE1,RrO1,names1=NULL,constraints1
     Tmean1E <- Tmean1[1:qE1]
     Tmean1O <- Tmean1[(qE1 + 1):K]
 
-    Tscale1EE <- Tscale1[1:qE1, 1:qE1]
-    Tscale1OE <- Tscale1[(qE1 + 1):K, 1:qE1]
-    Tscale1OO <- Tscale1[(qE1 + 1):K, (qE1 + 1):K]
+    Tscale1EE <- as.matrix(Tscale1[1:qE1, 1:qE1],nrow=qE1)
+    Tscale1OE <- t(as.matrix(Tscale1[(qE1 + 1):K, 1:qE1],ncol=qE1))
+    Tscale1OO <- as.matrix(Tscale1[(qE1 + 1):K, (qE1 + 1):K],ncol=K-qE1)
 
     #conditional location and scale matrix
     Tmean1OgE <- Tmean1O + Tscale1OE %*% solve(Tscale1EE) %*% matrix(rE1 - Tmean1E)
