@@ -223,7 +223,7 @@ BF.bain_htest <- function(x,
     BFtable_confirmatory=BFtable,
     prior=priorprobs,
     hypotheses=hypotheses,
-    model=x$estimate,
+    model=x,
     estimates=x$coefficients,
     call=match.call())
 
