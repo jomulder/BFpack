@@ -1,45 +1,44 @@
 
 #' @method summary BF
 #' @export
-summary.BF <- function(x,
-                     digits = 3,
-                     na.print = "", ...){
+summary.BF <- function(object, ...){
 
   cat("Call:")
   cat("\n")
-  print(x$call)
+  print(object$call)
 
   cat("\n")
+  digits <- 3
 
-  cat("BFpack: Exploratory Bayes factor tests for an object of class ", class(x$model)[1], ":\n\n", sep = "")
+  cat("BFpack: Exploratory Bayes factor tests for an object of class ", class(object$model)[1], ":\n\n", sep = "")
   # cat("Coefficients:")
   # cat("\n")
-  print(round(x$PHP_exploratory,digits))
+  print(round(object$PHP_exploratory,digits))
 
   cat("\n")
 
-  if(class(x$model)[1]=="aov"){
-    if(!is.null(x$BFtu_main)){
+  if(class(object$model)[1]=="aov"){
+    if(!is.null(object$BFtu_main)){
       cat("Main effects:")
       cat("\n")
-      print(round(x$PHP_main,digits))
+      print(round(object$PHP_main,digits))
     }
     cat("\n")
 
-    if(!is.null(x$BFtu_interaction)){
+    if(!is.null(object$BFtu_interaction)){
       cat("Interaction effects:")
       cat("\n")
-      print(round(x$PHP_interaction,digits))
+      print(round(object$PHP_interaction,digits))
     }
     cat("\n")
   }
 
-  if(!is.null(x$BFtu_confirmatory)){
-    cat("BFpack: Confirmatory Bayes factor tests for an object of class ", class(x$model)[1], ":\n\n", sep = "")
+  if(!is.null(object$BFtu_confirmatory)){
+    cat("BFpack: Confirmatory Bayes factor tests for an object of class ", class(object$model)[1], ":\n\n", sep = "")
     cat("Posterior probabilities:")
     cat("\n")
 
-    PHPmatrix <- as.matrix(round(x$PHP_confirmatory,digits))
+    PHPmatrix <- as.matrix(round(object$PHP_confirmatory,digits))
     colnames(PHPmatrix) <- "Pr(hypothesis|data)"
     hypnumbers <- unlist(lapply(1:nrow(PHPmatrix),function(r){
       paste0("H",as.character(r))
@@ -51,7 +50,7 @@ summary.BF <- function(x,
     cat("Evidence matrix:")
     cat("\n")
 
-    BFmat <- round(x$BFmatrix_confirmatory,digits)
+    BFmat <- round(object$BFmatrix_confirmatory,digits)
     row.names(BFmat) <- colnames(BFmat) <- hypnumbers
     print(BFmat)
 
@@ -59,7 +58,7 @@ summary.BF <- function(x,
     cat("Specification table:")
     cat("\n")
 
-    BFtable <- round(x$BFtable_confirmatory,digits)
+    BFtable <- round(object$BFtable_confirmatory,digits)
     row.names(BFtable) <- hypnumbers
     print(BFtable)
 
@@ -71,11 +70,11 @@ summary.BF <- function(x,
     # row.names(hyps) <- hypnumbers
     # colnames(hyps) <- NULL
     # print(hyps)
-    for(h in 1:length(x$hypotheses)){
+    for(h in 1:length(object$hypotheses)){
       # hyp <- x$hypotheses[h]
       # names(hyp) <- hypnumbers[h]
       # print(hyp)
-      cat(paste0(hypnumbers[h],": ",x$hypotheses[h]))
+      cat(paste0(hypnumbers[h],": ",object$hypotheses[h]))
       cat("\n")
     }
     # hypfull <- unlist(lapply(1:length(x$hypotheses),function(r){

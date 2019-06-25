@@ -12,6 +12,8 @@ print.BF <- function(x,
 
   cat("\n")
 
+  digits <- 3
+
   if(is.null(x$BFtu_confirmatory)){
     cat("BFpack: Exploratory Bayes factor tests for an object of class ", class(x$model)[1], ":\n\n", sep = "")
     # cat("Coefficients:")

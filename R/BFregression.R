@@ -3,7 +3,7 @@
 #' @importFrom pracma rref
 #' @importFrom mvtnorm dmvnorm pmvnorm rmvnorm dmvt pmvt rmvt
 #' @importFrom Matrix rankMatrix
-#' @importFrom stats rWishart
+#' @importFrom stats rWishart qt
 #' @importFrom MCMCpack rinvgamma
 #' @importFrom MASS ginv
 #' @method BF lm

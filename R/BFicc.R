@@ -3,7 +3,8 @@
 
 
 #' @importFrom MCMCpack rinvgamma
-#' @importFrom lme4 getME
+# #' @importFrom lme4 getME
+# #' @importFrom utils getME
 #' @method BF lmerMod
 #' @export
 BF.lmerMod <- function(x,

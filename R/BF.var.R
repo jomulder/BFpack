@@ -1,5 +1,5 @@
 
-var_test <- function(...){ # ALLE argumenten van bartlett.test gebruiken
+var_test <- function(y, g, ...){ # ALLE argumenten van bartlett.test gebruiken
 
   temp <-  list(y = y, g = g)
   names(temp) <- c("y", "g")
@@ -17,6 +17,7 @@ var_test <- function(...){ # ALLE argumenten van bartlett.test gebruiken
 }
 
 
+#' @importFrom MCMCpack rinvgamma
 #' @importFrom stats rchisq
 #' @method BF BF_bartlett
 #' @export
@@ -28,38 +29,56 @@ BF.BF_bartlett <- function(x,
 
   nsim <- 1e5
   s2 <- x$vars
-  n <- x$n
+  n <- c(x$n)
+  b <- 2/n
   J <- length(n)
+  names_coef <- names(n)
 
-  #exploratory BF for equality of variances
-
-  #####
-  #
-  #FLORIAN CAN YOU ADD THE COMPUTATION OF THIS BF WHERE ALL GROUPS ARE EQUAL AGAINST UNC?
-  #
-  #####
-  BF0u <- 3 #and the replace 3 by the actual BF
+  # exploratory BF for equality of variances:
+  logmx0 <- - 1 / 2 * sum((1 - b) * n) * log(pi) + 1 / 2 * log(prod(b)) +
+    lgamma((sum(n) - J) / 2) - lgamma((sum(b * n) - J) / 2) -
+    1 / 2 * (sum(n) - J) * log(sum((n - 1) * s2)) +
+    1 / 2 * (sum(b * n) - J) * log(sum(b * (n - 1) * s2))
+  logmxu <- - 1 / 2 * sum((1 - b) * n) * log(pi) + 1 / 2 * log(prod(b)) +
+    sum(lgamma((n - 1) / 2) - lgamma((b * n - 1) / 2) -
+          1 / 2 * (n - 1) * log((n - 1) * s2) +
+          1 / 2 * (b * n - 1) * log(b * (n - 1) * s2))
+  BF0u <- exp(logmx0 - logmxu)
 
   BFtu_exploratory <- c(BF0u,1)
   names(BFtu_exploratory) <- c("homogeneity of variances","no homogeneity of variances")
   PHP_exploratory <- BFtu_exploratory / sum(BFtu_exploratory)
 
-  if(!is.null(hypothesis)){ # execute confirmatory Bayes factor test based on hypothesis input
-
+  if (!is.null(hypothesis)) {
     parse_hyp <- parse_hypothesis(names_coef, hypothesis)
     RrList <- make_RrList2(parse_hyp)
     RrE <- RrList[[1]]
     RrO <- RrList[[2]]
-    b <- 2/n
-    Th <- length(RrE)
-    if (is.null(prior_probs)) {
-      prior_probs <- rep(1 / Th, times = Th)
+  }
+
+  if (is.null(hypothesis)) {
+    BFmatrix_confirmatory <- PHP_confirmatory <- BFtu_confirmatory <- relfit <-
+      relcomp <- hypotheses <- BFtable <- priorprobs <- NULL
+  } else if (all(unlist(lapply(append(RrE, RrO), is.null)))) {
+    BFmatrix_confirmatory <- PHP_confirmatory <- BFtu_confirmatory <- relfit <-
+      relcomp <- hypotheses <- BFtable <- priorprobs <- NULL
+  } else { # execute confirmatory Bayes factor test based on hypothesis input
+
+    # check if hypotheses are admissible:
+    RrCheck <- do.call(rbind, append(RrE, RrO))
+    RrCheck_count <- t(apply(RrCheck[, -ncol(RrCheck)], 1,
+                             function(x) {sapply(list(-1, 1), function(y) {sum(y == x)})}))
+    if (any(RrCheck_count != 1) || any(RrCheck[, ncol(RrCheck)] != 0)) {
+      stop(paste0("The hypotheses contain inadmissible constraints."))
     }
-    logmx <- rep(NA, times = Th)
-    Pr <- matrix(NA, nrow = 2, ncol = Th,
-                 dimnames = list(c("Fit", "Complexity"),
-                                 paste("H_", as.character(1:Th), sep = "")))
+
+    Th <- length(RrE)
+    logmx <- relfit <- relcomp <- logmxE <- rep(NA, times = Th)
+    names(logmx) <- names(relfit) <- names(relcomp) <- names(logmxE) <-
+      parse_hyp$original_hypothesis
+
     for (h in 1:Th) {
+
       if (is.null(RrE[[h]])) {
         unique_vars <- as.list(1:J)
       } else {
@@ -97,14 +116,12 @@ BF.BF_bartlett <- function(x,
         SS[i]  <- sum((nlist[[i]] - 1) * s2list[[i]])
         SSb[i] <- sum(blist[[i]] * (nlist[[i]] - 1) * s2list[[i]])
       }
-      logmx[h] <- - 1 / 2 * sum((1 - unlist(blist)) * unlist(nlist)) * log(pi) +
+      logmxE[h] <- - 1 / 2 * sum((1 - unlist(blist)) * unlist(nlist)) * log(pi) +
         1 / 2 * log(prod(unlist(blist))) + sum(lgamma(df / 2) - lgamma(dfb / 2) -
                                                  1 / 2 * df * log(SS) + 1 / 2 * dfb * log(SSb))
-      logmxu <- - 1 / 2 * sum((1 - b) * n) * log(pi) + 1 / 2 * log(prod(b)) +
-        sum(lgamma((n - 1) / 2) - lgamma((b * n - 1) / 2) -
-              1 / 2 * (n - 1) * log((n - 1) * s2) +
-              1 / 2 * (b * n - 1) * log(b * (n - 1) * s2))
-      if (!is.null(RrO[[h]])) {
+      if (is.null(RrO[[h]])) {
+        logmx[h] <- logmxE[h]
+      } else {
         RrOh <- RrO[[h]][, -ncol(RrO[[h]])]
         if (!is.matrix(RrOh)) {
           RrOh <- t(as.matrix(RrOh))
@@ -128,24 +145,27 @@ BF.BF_bartlett <- function(x,
           indi_prior <- indi_prior * (prior_samp[, unique_vars_order[i, 1]] <
                                         prior_samp[, unique_vars_order[i, 2]])
         }
-        Pr[1, h] <- sum(indi_post) / nsim
-        Pr[2, h] <- sum(indi_prior) / nsim
-        logmx[h] <- log(Pr[1, h] / Pr[2, h]) + logmx[h]
+        relfit[h] <- sum(indi_post) / nsim
+        relcomp[h] <- sum(indi_prior) / nsim
+        logmx[h] <- log(relfit[h] / relcomp[h]) + logmxE[h]
       }
     }
-    #####
-    #
-    # FLORIAN CAN YOU ALSO PROVIDE THE OUTPUTS 'relfit' AND 'relcomp'
-    #
-    ####
-    #
-    # FLORIAN THE COMPUTATION OF THE COMPLEMENT HYPOTHESIS CAN BE ADDED HERE.
-    #
-    #####
+    #compute marginal likelihood for complement hypothesis
+    relfit <- inversegamma_prob_Hc(shape1=(n-1)/2,scale1=s2*(n-1)/(2*n),relmeas=relfit,RrE1=RrE,RrO1=RrO)
+    relcomp <- inversegamma_prob_Hc(shape1=rep(.5,length(n)),scale1=rep(.5,length(n)),relmeas=relcomp,RrE1=RrE,RrO1=RrO)
+    if(length(relfit)>Th){
+      logmxE <- c(logmxE,logmxu)
+      logmx <- c(logmx,logmxu + log(relfit[Th+1]/relcomp[Th+1]))
+      names(logmx)[Th+1] <- "complement"
+      hypotheses <- names(logmx)
+    }
+
     BFtu_confirmatory <- exp(logmx - logmxu)
-    names(BFtu_confirmatory) <- parse_hyp$original_hypothesis
     BFmatrix_confirmatory <- BFtu_confirmatory %*% t(1 / BFtu_confirmatory)
+    names(BFtu_confirmatory) <- row.names(BFmatrix_confirmatory) <-
+      colnames(BFmatrix_confirmatory) <- hypotheses
     diag(BFmatrix_confirmatory) <- 1
+
     if(is.null(prior)){
       priorprobs <- rep(1/length(BFtu_confirmatory),length(BFtu_confirmatory))
     }else{
@@ -156,12 +176,15 @@ BF.BF_bartlett <- function(x,
         priorprobs <- prior
       }
     }
+
     PHP_confirmatory <- BFtu_confirmatory * priorprobs / sum(BFtu_confirmatory * priorprobs)
-    hypotheses <- row.names(relcomp)
-    BFtable <- NULL #need to be added when Florian's code is finished.
-  }else{
-    BFtu_confirmatory <- PHP_confirmatory <- BFmatrix_confirmatory <- relfit <-
-      relcomp <- hypotheses <- BFtable <- priorprobs <- NULL
+    relcomp[which(is.na(relcomp))] <- 1
+    relfit[which(is.na(relfit))] <- 1
+    BF_E <- exp(logmxE - logmxu)
+    BFtable <- cbind(rep(NA,length(relfit)),relcomp,rep(NA,length(relfit)),relfit,BF_E,
+                     relfit/relcomp,BF_E*relfit/relcomp,PHP_confirmatory)
+    row.names(BFtable) <- names(PHP_confirmatory)
+    colnames(BFtable) <- c("comp_E","comp_O","fit_E","fit_O","BF_E","BF_O","BF","PHP")
   }
 
   BFlm_out <- list(
@@ -173,6 +196,7 @@ BF.BF_bartlett <- function(x,
     BFtable_confirmatory=BFtable,
     prior=priorprobs,
     hypotheses=hypotheses,
+    estimates=s2,
     model=x,
     call=match.call())
 
@@ -182,4 +206,67 @@ BF.BF_bartlett <- function(x,
 }
 
 
+# The function computes the probability of the complement hypothesis
+inversegamma_prob_Hc <- function(shape1,scale1,relmeas,RrE1,RrO1,samsize1=1e5){
 
+  numhyp <- length(RrE1)
+  whichO <- unlist(lapply(1:numhyp,function(h){is.null(RrE1[[h]])}))
+  numO <- sum(whichO)
+  numpara <- length(shape1)
+
+  if(numO==length(RrE1)){ # Then the complement is equivalent to the unconstrained hypothesis.
+    relmeas <- c(relmeas,1)
+    names(relmeas)[numhyp+1] <- "complement"
+  }else{ # So there is at least one hypothesis with only order constraints
+    if(numO==1){ # There is one hypothesis with only order constraints. Hc is complement of this hypothesis.
+      relmeas <- c(relmeas,1-relmeas[whichO])
+      names(relmeas)[numhyp+1] <- "complement"
+    }else{ # So more than one hypothesis with only order constraints
+      randomDraws <- rmvnorm(samsize1,mean=rep(0,numpara),sigma=diag(numpara))
+      #get draws that satisfy the constraints of the separate order constrained hypotheses
+      checksOC <- lapply(which(whichO),function(h){
+        Rorder <- as.matrix(RrO1[[h]][,-(1+numpara)])
+        if(ncol(Rorder)==1){
+          Rorder <- t(Rorder)
+        }
+        rorder <- as.matrix(RrO1[[h]][,1+numpara])
+        apply(randomDraws%*%t(Rorder) > rep(1,samsize1)%*%t(rorder),1,prod)
+      })
+      checkOCplus <- Reduce("+",checksOC)
+
+      if(sum(checkOCplus > 0) < samsize1){ #then the joint order constrained hypotheses do not completely cover the parameter space.
+        if(sum(checkOCplus>1)==0){ # then order constrained spaces are nonoverlapping
+          relmeas <- c(relmeas,1-sum(relmeas[whichO]))
+          names(relmeas)[numhyp+1] <- "complement"
+        }else{ #the order constrained subspaces at least partly overlap
+          randomDraws <- matrix(unlist(lapply(1:numpara,function(par){
+            rinvgamma(1e5,shape=shape1[par]/2,scale=scale1[par])
+          })),ncol=numpara)
+          checksOCpost <- lapply(which(whichO),function(h){
+            Rorder <- as.matrix(RrO1[[h]][,-(1+numpara)])
+            if(ncol(Rorder)==1){
+              Rorder <- t(Rorder)
+            }
+            rorder <- as.matrix(RrO1[[h]][,1+numpara])
+            apply(randomDraws%*%t(Rorder) > rep(1,samsize1)%*%t(rorder),1,prod)
+          })
+          relmeas <- c(relmeas,sum(Reduce("+",checksOCpost) == 0) / samsize1)
+          rownames(relmeas)[numhyp+1] <- "complement"
+        }
+      }
+    }
+  }
+  return(relmeas)
+}
+
+
+
+
+
+#
+#
+# y1 <- rnorm(100)
+# g1 <- as.factor(sample(c("g1","g2","g3"), 100, replace = T))
+# x <- var_test(y1,g1)
+# hypothesis <- "g1<g2<g3;g1<g2>g3;g1=g2=g3"
+# BF(vtest1,hypothesis)

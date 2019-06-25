@@ -1,6 +1,6 @@
 ##Internal estimation function for the methods for classes glm, lavaan, coxph, rem, rem.dyad and glmerMod
 
-
+#' @importFrom stats qnorm
 BF_Gaussian <- function(meanN,
                        covmN,
                        n,

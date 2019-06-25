@@ -1,8 +1,7 @@
 
 
 
-# Compute relative meausures for constraints on correlation based
-# on a joint uniform distribution on correlation matrix
+
 jointuniform_measures <- function(P,numcorrgroup,numG,RrE1,RrO1,Fisher=0,samsize=1e5,seed=123){
   # If Fisher=1 then the evaluation is done on Fisher transformed space.
   relE <- relO <- 1
@@ -144,7 +143,7 @@ jointuniform_prob_Hc <- function(P,numcorrgroup,numG,relmeas,RrO,samsize1=1e4,se
   which_eq <- relmeas[,1] != 1
   if(sum(which_eq)==numhyp){ # Then the complement is equivalent to the unconstrained hypothesis.
     relmeas <- rbind(relmeas,rep(1,2))
-    rownames(relmeas)[relmeas+1] <- "complement"
+    rownames(relmeas)[numhyp+1] <- "complement"
   }else{ # So there is at least one hypothesis with only order constraints
     welk <- which(!which_eq)
     if(length(welk)==1){ # There is one hypothesis with only order constraints. Hc is complement of this hypothesis.
