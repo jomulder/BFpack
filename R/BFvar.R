@@ -1,21 +1,33 @@
+#' Bartlett Test of Homogeneity of Variances
+#'
+#' @rdname var_test
+#' @export
+var_test <- function(x, ...) UseMethod("var_test", x)
 
-var_test <- function(y, g, ...){ # ALLE argumenten van bartlett.test gebruiken
 
-  temp <-  list(y = y, g = g)
-  names(temp) <- c("y", "g")
+#' @method var_test default
+#' @rdname var_test
+#' @export
+var_test.default <- function(x, g, ...){
+
+  temp <-  list(x = x, g = g)
+  names(temp) <- c("x", "g")
 
   if(!is.factor(temp$g)) stop("g must be a factor")
-  if(!is.numeric(temp$y)) stop("y must be a numeric")
+  if(!is.numeric(temp$x)) stop("x must be a numeric")
 
-  vars <- tapply(temp$y, temp$g, var)
+  vars <- tapply(temp$x, temp$g, var)
   n <- table(g)
-  bart <- bartlett.test(x = temp$y, g = temp$g)
+  bart <- bartlett.test(x = temp$x, g = temp$g)
   class(bart) <- c("BF_bartlett", class(bart))
   bart$vars <- vars
   bart$n <- n
   bart
 }
 
+# require(stats)
+# exists("bartlett.test.default") # false
+# getS3method("bartlett.test", "default")
 
 #' @importFrom MCMCpack rinvgamma
 #' @importFrom stats rchisq
@@ -49,7 +61,7 @@ BF.BF_bartlett <- function(x,
   names(BFtu_exploratory) <- c("homogeneity of variances","no homogeneity of variances")
   PHP_exploratory <- BFtu_exploratory / sum(BFtu_exploratory)
 
-  if (!is.null(hypothesis)) {
+  if (!is.null(hypothesis)){
     parse_hyp <- parse_hypothesis(names_coef, hypothesis)
     RrList <- make_RrList2(parse_hyp)
     RrE <- RrList[[1]]
@@ -263,10 +275,3 @@ inversegamma_prob_Hc <- function(shape1,scale1,relmeas,RrE1,RrO1,samsize1=1e5){
 
 
 
-#
-#
-# y1 <- rnorm(100)
-# g1 <- as.factor(sample(c("g1","g2","g3"), 100, replace = T))
-# x <- var_test(y1,g1)
-# hypothesis <- "g1<g2<g3;g1<g2>g3;g1=g2=g3"
-# BF(vtest1,hypothesis)
