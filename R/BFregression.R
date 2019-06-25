@@ -3,6 +3,7 @@
 #' @importFrom pracma rref
 #' @importFrom mvtnorm dmvnorm pmvnorm rmvnorm dmvt pmvt rmvt
 #' @importFrom Matrix rankMatrix
+#' @importFrom stats rWishart
 #' @importFrom MCMCpack rinvgamma
 #' @importFrom MASS ginv
 #' @method BF lm
@@ -343,6 +344,7 @@ BF.lm <- function(x,
   return(BFlm_out)
 }
 
+
 # compute relative meausures (fit or complexity) under a multivariate Student t distribution
 MatrixStudent_measures <- function(Mean1,Scale1,tXXi1,df1,RrE1,RrO1,Names1=NULL,
                                    constraints1=NULL,MCdraws=1e4){
@@ -437,7 +439,6 @@ MatrixStudent_measures <- function(Mean1,Scale1,tXXi1,df1,RrE1,RrO1,Names1=NULL,
       relE <- mean(unlist(lapply(covm1_E,function(temp) dmvnorm(mean1_E,mean=mean1_E,sigma=temp))))
 
       if(rankMatrix(RrO1)[[1]] == nrow(RrO1)){
-
         covm1_O <- lapply(SigmaList,function(temp) R1%*%(kronecker(temp,tXXi1))%*%t(R1) )
         mean1_O <- c(RO1%*%mean1) - rO1  ## mu_zeta_O in the paper
 
@@ -446,11 +447,12 @@ MatrixStudent_measures <- function(Mean1,Scale1,tXXi1,df1,RrE1,RrO1,Names1=NULL,
         covm1_OE <- lapply(covm1_O,function(temp) temp[(qE1+1):qC1,(qE1+1):qC1] - ## phi_zeta_OO -
                              temp[(qE1+1):qC1,1:qE1]%*%solve(temp[1:qE1,1:qE1])%*%temp[1:qE1,(qE1+1):qC1]) ##phi_zeta_OE*phi_zeta_EE^-1*phi_zeta_EO
         #check covariance because some can be nonsymmetric due to a generation error
-        covm1_OE <- covm1_OE[(unlist(lapply(covm1_OE,function(temp) isSymmetric(temp,
-                                                                                tol = sqrt(.Machine$double.eps),check.attributes = FALSE))))]
+        welk1 <- which(unlist(lapply(covm1_OE,function(temp) isSymmetric(temp,
+                             tol = sqrt(.Machine$double.eps),check.attributes = FALSE)))==T)
+        covm1_OE <- covm1_OE[welk1]
+        mean1_OE <- mean1_OE[welk1]
         relO <- mean(mapply(function(mu_temp,Sigma_temp) pmvnorm(lower=rep(0,qO1),
-                                                                          upper=rep(Inf,qO1),mean=mu_temp,sigma=Sigma_temp)[1],mean1_OE,covm1_OE))
-
+                             upper=rep(Inf,qO1),mean=mu_temp,sigma=Sigma_temp)[1],mean1_OE,covm1_OE))
       }else{ #use bain for the computation of the probability
 
         mean1 <- c(Mean1)
@@ -468,10 +470,6 @@ MatrixStudent_measures <- function(Mean1,Scale1,tXXi1,df1,RrE1,RrO1,Names1=NULL,
           bain_res <- bain(x=mean1,hypothesis=constraints1,Sigma=covm1,n=df1) #n not used in computation
           relO <- bain_res$fit[1,4]
         }
-
-        # bain1 <- bain::bain(mean1,Sigma1=covm1,RrE1=NULL,RrO1=RO1tilde,n=10) # choice of n does not matter
-        # extract posterior probability (Fit_eq) from bain-object)
-        # stop("REMINDER. This case should still be implemented.")
       }
     }
   }
@@ -633,7 +631,7 @@ MatrixStudent_prob_Hc <- function(Mean1,Scale1,tXXi1,df1,relmeas,RrO1){
   which_eq <- relmeas[,1] != 1
   if(sum(which_eq)==numhyp){ # Then the complement is equivalent to the unconstrained hypothesis.
     relmeas <- rbind(relmeas,rep(1,2))
-    rownames(relfit)[numhyp+1] <- "complement"
+    rownames(relmeas)[numhyp+1] <- "complement"
   }else{ # So there is at least one hypothesis with only order constraints
     welk <- which(!which_eq)
     if(length(welk)==1){ # There is one hypothesis with only order constraints. Hc is complement of this hypothesis.

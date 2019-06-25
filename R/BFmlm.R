@@ -380,7 +380,7 @@ BF.mlm <- function(x,
           relfit_h <- MatrixStudent_measures(BetaHat,S,tXXi,dfN,RrE[[h]],RrO[[h]],
                          Names1=matrix(names_coef,ncol=P),constraints1=parse_hyp$original_hypothesis,
                          MCdraws=1e4)
-          relcomp_h <- MatrixStudent_measures(Mean0,S_b,tXXi_b,df0,RrE[[h]],RrO[[h]],
+          relcomp_h <- MatrixStudent_measures(Mean1=Mean0,Scale1=S_b,tXXi1=tXXi_b,df1=df0,RrE1=RrE[[h]],RrO1=RrO[[h]],
                           Names1=matrix(names_coef,ncol=P),constraints1=parse_hyp$original_hypothesis,
                           MCdraws=1e4)
         }

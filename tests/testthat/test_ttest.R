@@ -5,6 +5,7 @@ library(bain)
 ttest1 <- t_test(therapeutic,mu=5)
 BF1 <- BF(ttest1)
 summary(BF1)
+BF1$BFtu_confirmatory
 BF1 <- BF(ttest1,"mu=5;mu<5")
 summary(BF1)
 
