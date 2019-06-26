@@ -51,6 +51,32 @@ BF_Gaussian <- function(meanN,
     RrE <- RrList[[1]]
     RrO <- RrList[[2]]
 
+    # RrStack is used to check conflicting constraints, and for the default prior location
+    RrStack <- rbind(do.call(rbind,RrE),do.call(rbind,RrO))
+    RrStack <- interval_RrStack(RrStack)
+    K <- length(meanN)
+    if(nrow(RrStack)>1){
+      RStack <- RrStack[,-(K+1)]
+      rStack <- RrStack[,(K+1)]
+    }else{
+      RStack <- matrix(RrStack[,-(K+1)],nrow=1)
+      rStack <- RrStack[,(K+1)]
+    }
+
+    # check if a common boundary exists for prior location under all constrained hypotheses
+    if(nrow(RrStack) > 1){
+      rref_ei <- rref(RrStack)
+      nonzero <- RrStack[,K+1]!=0
+      if(max(nonzero)>0){
+        row1 <- max(which(nonzero))
+        if(sum(abs(rref_ei[row1,1:K]))==0){
+          stop("No common boundary point for prior location. Conflicting constraints.")
+        }
+      }
+    }
+    # default prior location
+    mean0 <- ginv(RStack)%*%rStack
+
     #get relative fit and complexity of hypotheses
     numhyp <- length(RrE)
     relcomp <- t(matrix(unlist(lapply(1:numhyp,function(h){
@@ -148,10 +174,14 @@ Gaussian_measures <- function(mean1,Sigma1,n1=0,RrE1,RrO1,names1=NULL,constraint
     }else{ #no linear transformation can be used; pmvt cannot be used. Use bain with a multivariate normal approximation
       names(mean1) <- names1
       if(n1>0){ # we need prior measures
-        bain_res <- bain(x=c(mean1),hypothesis=constraints1,Sigma=Sigma1,n=n1)
+        mean1vec <- c(mean1)
+        names(mean1vec) <- names1
+        bain_res <- bain(x=mean1vec,hypothesis=constraints1,Sigma=Sigma1,n=n1)
         relO <- bain_res$fit[1,4]
       }else { # we need posterior measures (there is very little information)
-        bain_res <- bain(x=c(mean1),hypothesis=constraints1,Sigma=Sigma1,n=999) #n not used in computation
+        mean1vec <- c(mean1)
+        names(mean1vec) <- names1
+        bain_res <- bain(x=mean1vec,hypothesis=constraints1,Sigma=Sigma1,n=999) #n not used in computation
         relO <- bain_res$fit[1,3]
       }
     }

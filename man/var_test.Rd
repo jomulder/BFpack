@@ -5,7 +5,7 @@
 \alias{var_test.default}
 \title{Bartlett Test of Homogeneity of Variances}
 \usage{
-var_test(x, ...)
+var_test(x, g, ...)
 
 \method{var_test}{default}(x, g, ...)
 }

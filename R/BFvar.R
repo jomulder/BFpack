@@ -2,9 +2,10 @@
 #'
 #' @rdname var_test
 #' @export
-var_test <- function(x, ...) UseMethod("var_test", x)
+var_test <- function(x, g, ...) UseMethod("var_test", x, g)
 
 
+#' @importFrom stats bartlett.test
 #' @method var_test default
 #' @rdname var_test
 #' @export

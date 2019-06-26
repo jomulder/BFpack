@@ -240,7 +240,9 @@ BF.lm <- function(x,
     RrE <- RrList[[1]]
     RrO <- RrList[[2]]
 
+    # RrStack is used to check conflicting constraints, and for the default prior location
     RrStack <- rbind(do.call(rbind,RrE),do.call(rbind,RrO))
+    RrStack <- interval_RrStack(RrStack)
     if(nrow(RrStack)>1){
       RStack <- RrStack[,-(K+1)]
       rStack <- RrStack[,(K+1)]
@@ -254,8 +256,8 @@ BF.lm <- function(x,
       rref_ei <- rref(RrStack)
       nonzero <- RrStack[,K+1]!=0
       if(max(nonzero)>0){
-        row1 <- max(which(nonzero==T))
-        if(sum(abs(RrStack[row1,1:K]))==0){
+        row1 <- max(which(nonzero))
+        if(sum(abs(rref_ei[row1,1:K]))==0){
           stop("No common boundary point for prior location. Conflicting constraints.")
         }
       }
@@ -513,24 +515,23 @@ Student_measures <- function(mean1,Scale1,df1,RrE1,RrO1,names1=NULL,constraints1
       row.names(mean1) <- names1
       if(df1>2){ # we need posterior measures
         covm1 <- Scale1/(df1-2)
-        bain_res <- bain(x=c(mean1),hypothesis=constraints1,Sigma=covm1,n=999) #n not used in computation
+        mean1vec <- c(mean1)
+        names(mean1vec) <- row.names(mean1)
+        bain_res <- bain(x=mean1vec,hypothesis=constraints1,Sigma=covm1,n=999) #n not used in computation
         relO <- bain_res$fit[1,3]
       }else if(df1==2){ # we need posterior measures (there is very little information)
         covm1 <- Scale1/(df1-1)
-        bain_res <- bain(x=c(mean1),hypothesis=constraints1,Sigma=covm1,n=999) #n not used in computation
+        mean1vec <- c(mean1)
+        names(mean1vec) <- row.names(mean1)
+        bain_res <- bain(x=mean1vec,hypothesis=constraints1,Sigma=covm1,n=999) #n not used in computation
         relO <- bain_res$fit[1,3]
       }else{ #then df=1, so we need prior measures
         covm1 <- Scale1 #for prior with df1==1, probability independent of common factor of scale1
-        bain_res <- bain(x=c(mean1),hypothesis=constraints1,Sigma=covm1,n=df1) #n not used in computation
+        mean1vec <- c(mean1)
+        names(mean1vec) <- row.names(mean1)
+        bain_res <- bain(x=mean1vec,hypothesis=constraints1,Sigma=covm1,n=df1) #n not used in computation
         relO <- bain_res$fit[1,4]
       }
-
-      # Sigma1 <- ifelse(df1>2,
-      #                  df1/(df1-2)*Scale1,
-      #                  Scale1) #for prior with df1==1, probability independent of common factor of scale1
-      # # bain1 <- bain::bain(mean1,Sigma1=Sigma1,RrE1,RrO1,n=10) # choice of n does not matter
-      # # extract posterior probability (Fit_eq) from bain-object)
-      # stop("REMINDER. This situation should still be implemented.")
     }
   }
   if(!is.null(RrE1) && !is.null(RrO1)){ #hypothesis with equality and order constraints
@@ -599,15 +600,21 @@ Student_measures <- function(mean1,Scale1,df1,RrE1,RrO1,names1=NULL,constraints1
       row.names(mean1) <- names1
       if(df1>2){ # we need posterior measures
         covm1 <- Scale1/(df1-2)
-        bain_res <- bain(x=c(mean1),hypothesis=constraints1,Sigma=covm1,n=999) #n not used in computation
+        mean1vec <- c(mean1)
+        names(mean1vec) <- row.names(mean1)
+        bain_res <- bain(x=mean1vec,hypothesis=constraints1,Sigma=covm1,n=999) #n not used in computation
         relO <- bain_res$fit[1,3]
       }else if(df1==2){ # we need posterior measures (there is very little information)
         covm1 <- Scale1/(df1-1)
-        bain_res <- bain(x=c(mean1),hypothesis=constraints1,Sigma=covm1,n=999) #n not used in computation
+        mean1vec <- c(mean1)
+        names(mean1vec) <- row.names(mean1)
+        bain_res <- bain(x=mean1vec,hypothesis=constraints1,Sigma=covm1,n=999) #n not used in computation
         relO <- bain_res$fit[1,3]
       }else{ #then df=1, so we need prior measures
         covm1 <- Scale1 #for prior with df1==1, probability independent of common factor of scale1
-        bain_res <- bain(x=c(mean1),hypothesis=constraints1,Sigma=covm1,n=df1) #n not used in computation
+        mean1vec <- c(mean1)
+        names(mean1vec) <- row.names(mean1)
+        bain_res <- bain(x=mean1vec,hypothesis=constraints1,Sigma=covm1,n=df1) #n not used in computation
         relO <- bain_res$fit[1,4]
       }
     }
@@ -806,5 +813,47 @@ make_RrList2 <- function(parse_hyp2){
   })
   return(list(RrE,RrO))
 }
+
+#for checking whether constraints are conflicting replace interval constraints by equality constraints
+#RrStack <- rbind(do.call(rbind,RrE),do.call(rbind,RrO))
+interval_RrStack <- function(RrStack){
+  q1 <- nrow(RrStack)
+  q2 <- ncol(RrStack)
+  RrStack_out <- RrStack
+  if(q1 > 1){
+    row1 <- 1
+    while(row1 < q1){
+      for(row2 in (row1+1):q1){
+        if(sum(abs(RrStack_out[row1,-q2] + RrStack_out[row2,-q2]))==0){
+          #together row1 and row2 imply an interval constraint
+          whichcol <- abs(RrStack_out[row1,-q2])!=0
+          whichcol1 <- which(whichcol)
+          if(sum(whichcol)==1){
+            welkpos <- ifelse(RrStack_out[row1,c(whichcol,F)]>0,row1,row2)
+            welkneg <- ifelse(RrStack_out[row1,c(whichcol,F)]<0,row1,row2)
+            lb <- RrStack_out[welkpos,q2]
+            ub <- -RrStack_out[welkneg,q2]
+            RrStack_out[row1,] <- RrStack_out[welkpos,]
+            RrStack_out[row1,q2] <- (ub+lb)/2
+            RrStack_out <- RrStack_out[-row2,]
+            q1 <- q1 - 1
+          }else{
+            RrStack_out[row1,q2] <- 0
+            RrStack_out <- RrStack_out[-row2,]
+            q1 <- q1 - 1
+          }
+        }
+      }
+      row1 <- row1 + 1
+    }
+  }
+  if(is.matrix(RrStack_out)==F){
+    RrStack_out <- t(RrStack_out)
+  }
+  return(RrStack_out)
+}
+
+
+
 
 

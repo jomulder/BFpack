@@ -278,6 +278,7 @@ BF.mlm <- function(x,
       RrO <- RrList[[2]]
 
       RrStack <- rbind(do.call(rbind,RrE),do.call(rbind,RrO))
+      RrStack <- interval_RrStack(RrStack)
       if(nrow(RrStack)>1){
         RStack <- RrStack[,-(K*P+1)]
         rStack <- RrStack[,(K*P+1)]
@@ -292,7 +293,7 @@ BF.mlm <- function(x,
         nonzero <- RrStack[,K+1]!=0
         if(max(nonzero)>0){
           row1 <- max(which(nonzero==T))
-          if(sum(abs(RrStack[row1,1:K]))==0){
+          if(sum(abs(rref_ei[row1,1:K]))==0){
             stop("No common boundary point for prior location. Conflicting constraints.")
           }
         }
