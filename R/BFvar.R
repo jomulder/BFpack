@@ -95,7 +95,6 @@ BF.BF_bartlett <- function(x,
         unique_vars <- as.list(1:J)
       } else {
         RrEh <- RrE[[h]][, -ncol(RrE[[h]])]
-        names_coef <- colnames(RrEh)
         if (!is.matrix(RrEh)) {
           RrEh <- t(as.matrix(RrEh))
         }
