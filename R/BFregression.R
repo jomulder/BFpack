@@ -436,16 +436,19 @@ MatrixStudent_measures <- function(Mean1,Scale1,tXXi1,df1,RrE1,RrO1,Names1=NULL,
       SigmaList <- lapply(temp2,solve)
       covm1_E <- lapply(SigmaList,function(temp) RE1%*%(kronecker(temp,tXXi1))%*%t(RE1) )
       mean1_E <- RE1 %*% mean1
-      relE <- mean(unlist(lapply(covm1_E,function(temp) dmvnorm(mean1_E,mean=mean1_E,sigma=temp))))
+      relE <- mean(unlist(lapply(covm1_E,function(temp) dmvnorm(c(mean1_E),mean=mean1_E,sigma=temp))))
 
       if(rankMatrix(RrO1)[[1]] == nrow(RrO1)){
         covm1_O <- lapply(SigmaList,function(temp) R1%*%(kronecker(temp,tXXi1))%*%t(R1) )
         mean1_O <- c(RO1%*%mean1) - rO1  ## mu_zeta_O in the paper
 
-        mean1_OE <- lapply(covm1_O,function(temp) as.vector(mean1_O +
-                                                              temp[1:qE1,(qE1+1):qC1]%*%solve(temp[1:qE1,1:qE1])%*%(rE1-mean1_E)))
-        covm1_OE <- lapply(covm1_O,function(temp) temp[(qE1+1):qC1,(qE1+1):qC1] - ## phi_zeta_OO -
-                             temp[(qE1+1):qC1,1:qE1]%*%solve(temp[1:qE1,1:qE1])%*%temp[1:qE1,(qE1+1):qC1]) ##phi_zeta_OE*phi_zeta_EE^-1*phi_zeta_EO
+        mean1_OE <- lapply(covm1_O,function(temp){
+          as.vector(mean1_O +
+                      matrix(temp[(qE1+1):qC1,1:qE1],ncol=qE1)%*%solve(temp[1:qE1,1:qE1])%*%(rE1-mean1_E))
+        })
+        covm1_OE <- lapply(covm1_O,function(temp) temp[(qE1+1):qC1,(qE1+1):qC1] -
+                             matrix(temp[(qE1+1):qC1,1:qE1],ncol=qE1)%*%solve(temp[1:qE1,1:qE1])%*%
+                             matrix(temp[1:qE1,(qE1+1):qC1],nrow=qE1))
         #check covariance because some can be nonsymmetric due to a generation error
         welk1 <- which(unlist(lapply(covm1_OE,function(temp) isSymmetric(temp,
                              tol = sqrt(.Machine$double.eps),check.attributes = FALSE)))==T)
@@ -475,6 +478,7 @@ MatrixStudent_measures <- function(Mean1,Scale1,tXXi1,df1,RrE1,RrO1,Names1=NULL,
   }
   return(c(relE,relO))
 }
+
 # compute relative meausures (fit or complexity) under a multivariate Student t distribution
 Student_measures <- function(mean1,Scale1,df1,RrE1,RrO1,names1=NULL,constraints1=NULL){ # Volgens mij moet je hier ook N meegeven
   K <- length(mean1)
@@ -606,13 +610,6 @@ Student_measures <- function(mean1,Scale1,df1,RrE1,RrO1,names1=NULL,constraints1
         bain_res <- bain(x=c(mean1),hypothesis=constraints1,Sigma=covm1,n=df1) #n not used in computation
         relO <- bain_res$fit[1,4]
       }
-
-      # Sigma1 <- ifelse(df1>2,
-      #                  df1/(df1-2)*Tscale1OgE,
-      #                  Tscale1OgE) #for prior with df1==1, probability independent of common factor of scale1
-      # # bain1 <- bain::bain(mean1,Sigma1=Sigma1,RrE1=NULL,RrO1=RO1tilde,n=10) # choice of n does not matter
-      # # extract posterior probability (Fit_eq) from bain-object)
-      # stop("REMINDER. This situation should still be implemented.")
     }
   }
 
