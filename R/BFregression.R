@@ -815,7 +815,8 @@ make_RrList2 <- function(parse_hyp2){
 }
 
 #for checking whether constraints are conflicting replace interval constraints by equality constraints
-#RrStack <- rbind(do.call(rbind,RrE),do.call(rbind,RrO))
+# RrStack <- rbind(do.call(rbind,RrE),do.call(rbind,RrO))
+# row.names(RrStack) <- colnames(RrStack) <- NULL
 interval_RrStack <- function(RrStack){
   q1 <- nrow(RrStack)
   q2 <- ncol(RrStack)
@@ -824,7 +825,8 @@ interval_RrStack <- function(RrStack){
     row1 <- 1
     while(row1 < q1){
       for(row2 in (row1+1):q1){
-        if(sum(abs(RrStack_out[row1,-q2] + RrStack_out[row2,-q2]))==0){
+#        print(row2)
+        if(sum(abs(RrStack_out[row1,-q2] + RrStack_out[row2,-q2]))==0 && RrStack_out[row1,q2]!=RrStack_out[row2,q2] ){
           #together row1 and row2 imply an interval constraint
           whichcol <- abs(RrStack_out[row1,-q2])!=0
           whichcol1 <- which(whichcol)
@@ -842,6 +844,7 @@ interval_RrStack <- function(RrStack){
             RrStack_out <- RrStack_out[-row2,]
             q1 <- q1 - 1
           }
+          break
         }
       }
       row1 <- row1 + 1
