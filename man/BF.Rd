@@ -83,3 +83,9 @@ BF1 <- BF(res,hypothesis="(Middle_with_Superficial,Deep_with_Superficial,Deep_wi
    summary(BF1)
 
 }
+\references{
+Mulder, J., Gu, X., van Lissa, C., A. Tomarken, F. Boing-Messing,
+J.A.O.C. Olsson-Collentine, Marlyne Bosman-Meyerink, D.R. Williams, J. Menke,
+J.-P. Fox, Y. Rosseel, E.J. Wagenmakers, and H. Hoijtink. (submitted). BFpack:
+Flexible Bayes Factor Testing of Scientific Theories in R.
+}

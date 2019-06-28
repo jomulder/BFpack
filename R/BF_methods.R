@@ -23,6 +23,10 @@
 #' package), \code{aov}, \code{manova}, \code{lm}, \code{glm} (\code{stats} package),
 #' \code{hetcor} (\code{polycor} package), \code{lmer} (\code{lme4} package), \code{coxph}
 #' (\code{survival} package), \code{rem} and \code{rem.dyad} (\code{relevent} package).
+#' @references Mulder, J., Gu, X., van Lissa, C., A. Tomarken, F. Boing-Messing,
+#' J.A.O.C. Olsson-Collentine, Marlyne Bosman-Meyerink, D.R. Williams, J. Menke,
+#' J.-P. Fox, Y. Rosseel, E.J. Wagenmakers, and H. Hoijtink. (submitted). BFpack:
+#' Flexible Bayes Factor Testing of Scientific Theories in R.
 #' @examples
 #'
 #' # load R package BFpack and bain
