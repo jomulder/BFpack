@@ -1,6 +1,9 @@
 
 aov1 <- aov(price ~ anchor*motivation,data=tvprices)
-BF(aov1)
+names(aov1$coefficients)
+BF1 <- BF(aov1,hypothesis="anchorrounded=motivationlow;
+   anchorrounded<motivationlow;
+   anchorrounded>motivationlow")
 
 
 

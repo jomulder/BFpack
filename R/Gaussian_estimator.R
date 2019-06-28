@@ -81,11 +81,11 @@ BF_Gaussian <- function(meanN,
     numhyp <- length(RrE)
     relcomp <- t(matrix(unlist(lapply(1:numhyp,function(h){
       Gaussian_measures(mean1 = mean0, Sigma1 = covm0, RrE1 = RrE[[h]], RrO1 = RrO[[h]],
-                        names1=names_coef,constraints1=parse_hyp$original_hypothesis)
+                        names1=names_coef,constraints1=parse_hyp$original_hypothesis[h])
     })),nrow=2))
     relfit <- t(matrix(unlist(lapply(1:numhyp,function(h){
       Gaussian_measures(mean1 = meanN, Sigma1 = covmN, RrE1 = RrE[[h]], RrO1 = RrO[[h]],
-                        names1=names_coef,constraints1=parse_hyp$original_hypothesis)
+                        names1=names_coef,constraints1=parse_hyp$original_hypothesis[h])
     })),nrow=2))
     row.names(relfit) <- row.names(relcomp) <- parse_hyp$original_hypothesis
 
@@ -151,7 +151,7 @@ Gaussian_measures <- function(mean1,Sigma1,n1=0,RrE1,RrO1,names1=NULL,constraint
   if(!is.null(RrE1) && is.null(RrO1)){ #only equality constraints
     RE1 <- RrE1[,-(K+1)]
     if(!is.matrix(RE1)){
-      RE1 <- t(as.matrix(RE1))
+      RE1 <- matrix(RE1,ncol=K)
     }
     rE1 <- RrE1[,(K+1)]
     qE1 <- nrow(RE1)
@@ -162,7 +162,7 @@ Gaussian_measures <- function(mean1,Sigma1,n1=0,RrE1,RrO1,names1=NULL,constraint
   if(is.null(RrE1) && !is.null(RrO1)){ #only order constraints
     RO1 <- RrO1[,-(K+1)]
     if(!is.matrix(RO1)){
-      RO1 <- t(as.matrix(RO1))
+      RO1 <- matrix(RO1,ncol=K)
     }
     qO1 <- nrow(RO1)
     rO1 <- RrO1[,(K+1)]
@@ -190,13 +190,13 @@ Gaussian_measures <- function(mean1,Sigma1,n1=0,RrE1,RrO1,names1=NULL,constraint
 
     RE1 <- RrE1[,-(K+1)]
     if(!is.matrix(RE1)){
-      RE1 <- t(as.matrix(RE1))
+      RE1 <- matrix(RE1,ncol=K)
     }
     rE1 <- RrE1[,(K+1)]
     qE1 <- nrow(RE1)
     RO1 <- RrO1[,-(K+1)]
     if(!is.matrix(RO1)){
-      RO1 <- t(as.matrix(RO1))
+      RO1 <- matrix(RO1,ncol=K)
     }
     qO1 <- nrow(RO1)
     rO1 <- RrO1[,(K+1)]

@@ -361,7 +361,7 @@ MatrixStudent_measures <- function(Mean1,Scale1,tXXi1,df1,RrE1,RrO1,Names1=NULL,
   if(!is.null(RrE1) && is.null(RrO1)){ #only equality constraints
     RE1 <- RrE1[,-(K*P+1)]
     if(!is.matrix(RE1)){
-      RE1 <- t(as.matrix(RE1))
+      RE1 <- matrix(RE1,ncol=K*P)
     }
     rE1 <- RrE1[,(K*P+1)]
     qE1 <- nrow(RE1)
@@ -377,7 +377,7 @@ MatrixStudent_measures <- function(Mean1,Scale1,tXXi1,df1,RrE1,RrO1,Names1=NULL,
     if(is.null(RrE1) && !is.null(RrO1)){ #only order constraints
       RO1 <- RrO1[,-(K*P+1)]
       if(!is.matrix(RO1)){
-        RO1 <- t(as.matrix(RO1))
+        RO1 <- matrix(RO1,ncol=K*P)
       }
       qO1 <- nrow(RO1)
       rO1 <- RrO1[,(K*P+1)]
@@ -418,13 +418,13 @@ MatrixStudent_measures <- function(Mean1,Scale1,tXXi1,df1,RrE1,RrO1,Names1=NULL,
 
       RE1 <- RrE1[,-(K*P+1)]
       if(!is.matrix(RE1)){
-        RE1 <- t(as.matrix(RE1))
+        RE1 <- matrix(RE1,ncol=K*P)
       }
       rE1 <- RrE1[,(K*P+1)]
       qE1 <- nrow(RE1)
       RO1 <- RrO1[,-(K*P+1)]
       if(!is.matrix(RO1)){
-        RO1 <- t(as.matrix(RO1))
+        RO1 <- matrix(RO1,ncol=K*P)
       }
       qO1 <- nrow(RO1)
       rO1 <- RrO1[,(K*P+1)]
@@ -488,7 +488,7 @@ Student_measures <- function(mean1,Scale1,df1,RrE1,RrO1,names1=NULL,constraints1
   if(!is.null(RrE1) && is.null(RrO1)){ #only equality constraints
     RE1 <- RrE1[,-(K+1)]
     if(!is.matrix(RE1)){
-      RE1 <- t(as.matrix(RE1))
+      RE1 <- matrix(RE1,ncol=K)
     }
     rE1 <- RrE1[,(K+1)]
     qE1 <- nrow(RE1)
@@ -499,7 +499,7 @@ Student_measures <- function(mean1,Scale1,df1,RrE1,RrO1,names1=NULL,constraints1
   if(is.null(RrE1) && !is.null(RrO1)){ #only order constraints
     RO1 <- RrO1[,-(K+1)]
     if(!is.matrix(RO1)){
-      RO1 <- t(as.matrix(RO1))
+      RO1 <- matrix(RO1,ncol=K)
     }
     qO1 <- nrow(RO1)
     rO1 <- RrO1[,(K+1)]
@@ -538,13 +538,13 @@ Student_measures <- function(mean1,Scale1,df1,RrE1,RrO1,names1=NULL,constraints1
 
     RE1 <- RrE1[,-(K+1)]
     if(!is.matrix(RE1)){
-      RE1 <- t(as.matrix(RE1))
+      RE1 <- matrix(RE1,ncol=K)
     }
     rE1 <- RrE1[,(K+1)]
     qE1 <- nrow(RE1)
     RO1 <- RrO1[,-(K+1)]
     if(!is.matrix(RO1)){
-      RO1 <- t(as.matrix(RO1))
+      RO1 <- matrix(RO1,ncol=K)
     }
     qO1 <- nrow(RO1)
     rO1 <- RrO1[,(K+1)]
@@ -575,7 +575,7 @@ Student_measures <- function(mean1,Scale1,df1,RrE1,RrO1,names1=NULL,constraints1
     Tmean1O <- Tmean1[(qE1 + 1):K]
 
     Tscale1EE <- as.matrix(Tscale1[1:qE1, 1:qE1],nrow=qE1)
-    Tscale1OE <- t(as.matrix(Tscale1[(qE1 + 1):K, 1:qE1],ncol=qE1))
+    Tscale1OE <- matrix(Tscale1[(qE1 + 1):K, 1:qE1],ncol=qE1)
     Tscale1OO <- as.matrix(Tscale1[(qE1 + 1):K, (qE1 + 1):K],ncol=K-qE1)
 
     #conditional location and scale matrix

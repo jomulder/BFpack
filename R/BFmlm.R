@@ -270,12 +270,15 @@ BF.mlm <- function(x,
           paste(names_coef1[k],"_on_",names_coef2[p],sep="")
         })
       }))
+      matrixnames <- matrix(names_coef,nrow=K)
 
       # translate named constraints to matrices with coefficients for constraints
       parse_hyp <- parse_hypothesis(names_coef,hypothesis)
       RrList <- make_RrList2(parse_hyp)
       RrE <- RrList[[1]]
       RrO <- RrList[[2]]
+      # row.names(RrO[[1]]) <- colnames(RrO[[1]]) <- row.names(RrE[[1]]) <- colnames(RrE[[1]]) <- NULL
+      # row.names(RrO[[2]]) <- colnames(RrO[[2]]) <- row.names(RrE[[2]]) <- colnames(RrE[[2]]) <- NULL
 
       RrStack <- rbind(do.call(rbind,RrE),do.call(rbind,RrO))
       RrStack <- interval_RrStack(RrStack)
@@ -341,8 +344,10 @@ BF.mlm <- function(x,
           Scale0 <- S_b*tXXi_b[K1,K1]
           mean0 <- Mean0[K1,]
           # compute relative measures of fit and complexity
-          relcomp_h <- Student_measures(mean0,Scale0,df0,RrE_h,RrO_h)
-          relfit_h <- Student_measures(meanN,ScaleN,dfN,RrE_h,RrO_h)
+          relcomp_h <- Student_measures(mean0,Scale0,df0,RrE_h,RrO_h,names1=matrixnames[K1,],
+                                        constraints1=parse_hyp$original_hypothesis[h])
+          relfit_h <- Student_measures(meanN,ScaleN,dfN,RrE_h,RrO_h,names1=matrixnames[K1,],
+                                       constraints1=parse_hyp$original_hypothesis[h])
 
         }else if(sum(RcheckCol!=0)==1){ # use multivariate Student distributions
           P1 <- which(RcheckCol!=0)
@@ -372,17 +377,19 @@ BF.mlm <- function(x,
             }
           }
           # compute relative measures of fit and complexity
-          relcomp_h <- Student_measures(mean0,Scale0,df0,RrE_h,RrO_h)
-          relfit_h <- Student_measures(meanN,ScaleN,dfN,RrE_h,RrO_h)
+          relcomp_h <- Student_measures(mean0,Scale0,df0,RrE_h,RrO_h,names1=matrixnames[,P1],
+                                        constraints1=parse_hyp$original_hypothesis[h])
+          relfit_h <- Student_measures(meanN,ScaleN,dfN,RrE_h,RrO_h,names1=matrixnames[,P1],
+                                       constraints1=parse_hyp$original_hypothesis[h])
 
         }else{ #use Matrix-Student distributions with Monte Carlo estimate
           df0 <- 1
           dfN <- N-K-P+1
           relfit_h <- MatrixStudent_measures(BetaHat,S,tXXi,dfN,RrE[[h]],RrO[[h]],
-                         Names1=matrix(names_coef,ncol=P),constraints1=parse_hyp$original_hypothesis,
+                         Names1=matrix(names_coef,ncol=P),constraints1=parse_hyp$original_hypothesis[h],
                          MCdraws=1e4)
           relcomp_h <- MatrixStudent_measures(Mean1=Mean0,Scale1=S_b,tXXi1=tXXi_b,df1=df0,RrE1=RrE[[h]],RrO1=RrO[[h]],
-                          Names1=matrix(names_coef,ncol=P),constraints1=parse_hyp$original_hypothesis,
+                          Names1=matrix(names_coef,ncol=P),constraints1=parse_hyp$original_hypothesis[h],
                           MCdraws=1e4)
         }
         return(list(relfit_h,relcomp_h))
