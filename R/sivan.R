@@ -1,4 +1,4 @@
-#' Wason task perormance and morality
+#' Wason task performance and morality
 #'
 #' Data from an experimental study, using the Wason selection task (Wason 1968)
 #' to examine whether humans have cognitive adaptations for detecting violations

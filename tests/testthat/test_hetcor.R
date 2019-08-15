@@ -1,10 +1,12 @@
 
 # test for correlation test on hetcor object
-library(polycor)
-my_data <- mtcars[, c(1,3,4,5,6,7)]
-res <- hetcor(my_data)
-BF(res)
-# BF(res,hypothesis="disp_with_mpg > wt_with_mpg > 0")
+require(polycor)
+res <- hetcor(fmri[,3:5])
+BF1 <- BF(res)
+summary(BF1)
+BF1 <- BF(res,hypothesis="(Middle_with_Superficial,Deep_with_Superficial,Deep_with_Middle) > 0;
+          Middle_with_Superficial=Deep_with_Superficial=Deep_with_Middle= 0")
+summary(BF1)
 
 
 

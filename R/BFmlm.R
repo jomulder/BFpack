@@ -14,16 +14,6 @@ BF.mlm <- function(x,
                   parameter = NULL,
                   ...){
 
-  if(is.null(hypothesis)){
-    constraints <- "exploratory"
-  } else {
-    constraints <- hypothesis
-  }
-  if(is.null(prior)){
-    priorprob <- "default"
-  } else {
-    priorprob <- prior
-  }
   if(is.null(parameter)){
     parametertest <- "regression"
   }else if(parameter=="correlation"){
@@ -167,6 +157,16 @@ BF.mlm <- function(x,
     colnames(BFtu_exploratory) <- c("Pr(=0)","Pr(<0)","Pr(>0)")
     PHP_exploratory <- BFtu_exploratory / apply(BFtu_exploratory,1,sum)
 
+    #compute estimates
+    postestimates <- cbind(meanN,meanN,
+      t(matrix(unlist(lapply(1:length(meanN),function(coef){
+        ub <- qt(p=.975,df=dfN)*sqrt(ScaleN[coef,coef])+meanN[coef,1]
+        lb <- qt(p=.025,df=dfN)*sqrt(ScaleN[coef,coef])+meanN[coef,1]
+        return(c(ub,lb))
+      })),nrow=2))
+    )
+    row.names(postestimates) <- names_coef
+    colnames(postestimates) <- c("mean","median","2.5%","97.5%")
 
     # Additional exploratory tests in the case of an aov type object
     if(sum(class(x)=="aov")==1){
@@ -261,11 +261,7 @@ BF.mlm <- function(x,
     }else{ PHP_interaction <- BFtu_interaction <- PHP_main <- BFtu_main <- NULL}
 
     # confirmatory BF test
-    if(constraints!="exploratory"){
-      # cat("Computing Bayes factors for confirmatory hypothesis tests may take a few seconds.")
-      # cat("\n")
-      # cat("\n")
-
+    if(!is.null(hypothesis)){
       #read constraints
       names_coef1 <- names(x$coefficients[,1])
       names_coef2 <- names(x$coefficients[1,])
@@ -274,16 +270,25 @@ BF.mlm <- function(x,
           paste(names_coef1[k],"_on_",names_coef2[p],sep="")
         })
       }))
+      matrixnames <- matrix(names_coef,nrow=K)
 
       # translate named constraints to matrices with coefficients for constraints
-      parse_hyp <- parse_hypothesis(names_coef,constraints)
+      parse_hyp <- parse_hypothesis(names_coef,hypothesis)
       RrList <- make_RrList2(parse_hyp)
       RrE <- RrList[[1]]
       RrO <- RrList[[2]]
+      # row.names(RrO[[1]]) <- colnames(RrO[[1]]) <- row.names(RrE[[1]]) <- colnames(RrE[[1]]) <- NULL
+      # row.names(RrO[[2]]) <- colnames(RrO[[2]]) <- row.names(RrE[[2]]) <- colnames(RrE[[2]]) <- NULL
 
       RrStack <- rbind(do.call(rbind,RrE),do.call(rbind,RrO))
-      RStack <- RrStack[,-(K+1)]
-      rStack <- RrStack[,(K+1)]
+      RrStack <- interval_RrStack(RrStack)
+      if(nrow(RrStack)>1){
+        RStack <- RrStack[,-(K*P+1)]
+        rStack <- RrStack[,(K*P+1)]
+      }else{
+        RStack <- matrix(RrStack[,-(K*P+1)],nrow=1)
+        rStack <- RrStack[,(K*P+1)]
+      }
 
       # check if a common boundary exists for prior location under all constrained hypotheses
       if(nrow(RrStack) > 1){
@@ -291,7 +296,7 @@ BF.mlm <- function(x,
         nonzero <- RrStack[,K+1]!=0
         if(max(nonzero)>0){
           row1 <- max(which(nonzero==T))
-          if(sum(abs(RrStack[row1,1:K]))==0){
+          if(sum(abs(rref_ei[row1,1:K]))==0){
             stop("No common boundary point for prior location. Conflicting constraints.")
           }
         }
@@ -299,7 +304,8 @@ BF.mlm <- function(x,
 
       #number of hypotheses that are specified
       numhyp <- length(RrO)
-      Mean0 <- matrix(0,nrow=K,ncol=P)
+      #default prior location
+      Mean0 <- matrix(c(ginv(RStack)%*%rStack),nrow=K,ncol=P)
 
       relmeasunlist <- unlist(lapply(1:numhyp,function(h){
         # Check whether the constraints are on a single row or column, if so
@@ -338,8 +344,10 @@ BF.mlm <- function(x,
           Scale0 <- S_b*tXXi_b[K1,K1]
           mean0 <- Mean0[K1,]
           # compute relative measures of fit and complexity
-          relcomp_h <- Student_measures(mean0,Scale0,df0,RrE_h,RrO_h)
-          relfit_h <- Student_measures(meanN,ScaleN,dfN,RrE_h,RrO_h)
+          relcomp_h <- Student_measures(mean0,Scale0,df0,RrE_h,RrO_h,names1=matrixnames[K1,],
+                                        constraints1=parse_hyp$original_hypothesis[h])
+          relfit_h <- Student_measures(meanN,ScaleN,dfN,RrE_h,RrO_h,names1=matrixnames[K1,],
+                                       constraints1=parse_hyp$original_hypothesis[h])
 
         }else if(sum(RcheckCol!=0)==1){ # use multivariate Student distributions
           P1 <- which(RcheckCol!=0)
@@ -369,17 +377,19 @@ BF.mlm <- function(x,
             }
           }
           # compute relative measures of fit and complexity
-          relcomp_h <- Student_measures(mean0,Scale0,df0,RrE_h,RrO_h)
-          relfit_h <- Student_measures(meanN,ScaleN,dfN,RrE_h,RrO_h)
+          relcomp_h <- Student_measures(mean0,Scale0,df0,RrE_h,RrO_h,names1=matrixnames[,P1],
+                                        constraints1=parse_hyp$original_hypothesis[h])
+          relfit_h <- Student_measures(meanN,ScaleN,dfN,RrE_h,RrO_h,names1=matrixnames[,P1],
+                                       constraints1=parse_hyp$original_hypothesis[h])
 
         }else{ #use Matrix-Student distributions with Monte Carlo estimate
           df0 <- 1
           dfN <- N-K-P+1
           relfit_h <- MatrixStudent_measures(BetaHat,S,tXXi,dfN,RrE[[h]],RrO[[h]],
-                         Names1=matrix(names_coef,ncol=P),constraints1=parse_hyp$original_hypothesis,
+                         Names1=matrix(names_coef,ncol=P),constraints1=parse_hyp$original_hypothesis[h],
                          MCdraws=1e4)
-          relcomp_h <- MatrixStudent_measures(Mean0,S_b,tXXi_b,df0,RrE[[h]],RrO[[h]],
-                          Names1=matrix(names_coef,ncol=P),constraints1=parse_hyp$original_hypothesis,
+          relcomp_h <- MatrixStudent_measures(Mean1=Mean0,Scale1=S_b,tXXi1=tXXi_b,df1=df0,RrE1=RrE[[h]],RrO1=RrO[[h]],
+                          Names1=matrix(names_coef,ncol=P),constraints1=parse_hyp$original_hypothesis[h],
                           MCdraws=1e4)
         }
         return(list(relfit_h,relcomp_h))
@@ -399,20 +409,22 @@ BF.mlm <- function(x,
       # the BF for the complement hypothesis vs Hu needs to be computed.
       BFtu_confirmatory <- c(apply(relfit / relcomp, 1, prod))
       # Check input of prior probabilies
-      if(!(priorprob == "default" || (length(priorprob)==nrow(relfit) && min(priorprob)>0) )){
-        stop("'probprob' must be a vector of positive values or set to 'default'.")
-      }
-      # Change prior probs in case of default setting
-      if(priorprob=="default"){
+      if(is.null(prior)){
         priorprobs <- rep(1/length(BFtu_confirmatory),length(BFtu_confirmatory))
       }else{
-        priorprobs <- priorprobs/sum(priorprobs)
+        if(!is.numeric(prior) || length(prior)!=length(BFtu_confirmatory)){
+          warning(paste0("Argument 'prior' should be numeric and of length ",as.character(length(BFtu_confirmatory)),". Equal prior probabilities are used."))
+          priorprobs <- rep(1/length(BFtu_confirmatory),length(BFtu_confirmatory))
+        }else{
+          priorprobs <- prior
+        }
       }
       names(priorprobs) <- names(BFtu_confirmatory)
       PHP_confirmatory <- BFtu_confirmatory*priorprobs / sum(BFtu_confirmatory*priorprobs)
-      # names(PHP_confirmatory) <- unlist(lapply(1:length(parse_hyp$original_hypothesis),function(hyp){
-      #   paste0("Pr(",parse_hyp$original_hypothesis,")")
-      # }))
+      BFtable <- cbind(relcomp,relfit,relfit[,1]/relcomp[,1],relfit[,2]/relcomp[,2],
+                       apply(relfit,1,prod)/apply(relcomp,1,prod),PHP_confirmatory)
+      row.names(BFtable) <- names(PHP_confirmatory)
+      colnames(BFtable) <- c("comp_E","comp_O","fit_E","fit_O","BF_E","BF_O","BF","PHP")
       BFmatrix_confirmatory <- matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory))/
         t(matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory)))
       row.names(BFmatrix_confirmatory) <- colnames(BFmatrix_confirmatory) <- names(BFtu_confirmatory)
@@ -421,10 +433,6 @@ BF.mlm <- function(x,
       }else{
         hypotheses <- c(parse_hyp$original_hypothesis,"complement")
       }
-    }else{
-      BFtu_confirmatory <- PHP_confirmatory <- BFmatrix_confirmatory <- relfit <-
-        relcomp <- NULL
-      hypotheses <- "exploratory"
     }
   }else{ #perform tests on correlations
 
@@ -437,14 +445,14 @@ BF.mlm <- function(x,
     corr_names <- c(matrix_names[lower.tri(matrix_names)],
                     t(matrix_names)[lower.tri(matrix_names)])
     # sum(abs(apply(checkLabels,1,sum)-rep(1,length(params_in_hyp1))))==0
-    if(constraints=="exploratory"){
+    if(is.null(hypothesis)){
       #constraints are formulated on correlations from one population/group
       numG <- 1
       ngroups <- nrow(Ymat)
       YXlist <- list(list(Ymat,Xmat))
       corr_names_exploratory <- matrix_names[lower.tri(matrix_names)]
     }else{
-      params_in_hyp1 <- params_in_hyp(constraints)
+      params_in_hyp1 <- params_in_hyp(hypothesis)
       # check if labels of correlations in hypotheses match with actual correlations
       checkLabels <- matrix(unlist(lapply(1:length(params_in_hyp1),function(par){
         params_in_hyp1[par]==corr_names
@@ -531,7 +539,6 @@ BF.mlm <- function(x,
     # find posterior mean and covariance matrix of correlations in Fisher transformed
     # space having an approximate multivariate normal distribution.
     Gibbs_output <- estimate_postMeanCov_FisherZ(YXlist,numdraws=8e3)
-    correlation_estimates <- Gibbs_output$corr_quantiles
     meanN <- Gibbs_output$meanN
     covmN <- Gibbs_output$covmN
     numcorr <- length(meanN)
@@ -549,9 +556,20 @@ BF.mlm <- function(x,
     row.names(BFtu_exploratory) <- corr_names_exploratory
     colnames(BFtu_exploratory) <- c("Pr(=0)","Pr(<0)","Pr(>0)")
     PHP_exploratory <- round(BFtu_exploratory / apply(BFtu_exploratory,1,sum),3)
+    # posterior estimates
+    postestimates <- Reduce(rbind,
+                            lapply(1:numG,function(g){
+                              means <- Gibbs_output$corr_means[[g]]
+                              medians <- Gibbs_output$corr_quantiles[g,,,2][lower.tri(diag(P))]
+                              lb <- Gibbs_output$corr_quantiles[g,,,1][lower.tri(diag(P))]
+                              ub <- Gibbs_output$corr_quantiles[g,,,3][lower.tri(diag(P))]
+                              return(cbind(means,medians,lb,ub))
+                            }))
+    row.names(postestimates) <- corr_names_exploratory
+    colnames(postestimates) <- c("mean","median","2.5%","97.5%")
 
-    if(constraints!="exploratory"){
-      parse_hyp <- parse_hypothesis(corr_names,constraints)
+    if(!is.null(hypothesis)){
+      parse_hyp <- parse_hypothesis(corr_names,hypothesis)
       if(nrow(parse_hyp$hyp_mat)==1){
         select1 <- rep(1:numcorrgroup,numG) + rep((0:(numG-1))*2*numcorrgroup,each=numcorrgroup)
         select2 <- rep(numcorrgroup+1:numcorrgroup,numG) + rep((0:(numG-1))*2*numcorrgroup,each=numcorrgroup)
@@ -582,39 +600,38 @@ BF.mlm <- function(x,
       })),nrow=2))
       row.names(relfit) <- row.names(relcomp) <- parse_hyp$original_hypothesis
       relfit <- Gaussian_prob_Hc(meanN,covmN,relfit,RrO)
-      relcomp <- jointuniform_prob_Hc(P,numcorrgroup,numG,relcomp,constraints,RrO)
+      relcomp <- jointuniform_prob_Hc(P,numcorrgroup,numG,relcomp,RrO)
 
       # the BF for the complement hypothesis vs Hu needs to be computed.
       BFtu_confirmatory <- c(apply(relfit / relcomp, 1, prod))
       # Check input of prior probabilies
-      if(!(priorprob == "default" || (length(priorprob)==nrow(relfit) && min(priorprob)>0) )){
-        stop("'probprob' must be a vector of positive values or set to 'default'.")
-      }
-      # Change prior probs in case of default setting
-      if(priorprob=="default"){
+      if(is.null(prior)){
         priorprobs <- rep(1/length(BFtu_confirmatory),length(BFtu_confirmatory))
       }else{
-        priorprobs <- priorprobs/sum(priorprobs)
+        if(!is.numeric(prior) || length(prior)!=length(BFtu_confirmatory)){
+          warning(paste0("Argument 'prior' should be numeric and of length ",as.character(length(BFtu_confirmatory)),". Equal prior probabilities are used."))
+          priorprobs <- rep(1/length(BFtu_confirmatory),length(BFtu_confirmatory))
+        }else{
+          priorprobs <- prior
+        }
       }
       names(priorprobs) <- names(BFtu_confirmatory)
       PHP_confirmatory <- BFtu_confirmatory*priorprobs / sum(BFtu_confirmatory*priorprobs)
-      # names(PHP_confirmatory) <- unlist(lapply(1:length(parse_hyp$original_hypothesis),function(hyp){
-      #   paste0("Pr(",parse_hyp$original_hypothesis,")")
-      # }))
+      BFtable <- cbind(relcomp,relfit,relfit[,1]/relcomp[,1],relfit[,2]/relcomp[,2],
+                       apply(relfit,1,prod)/apply(relcomp,1,prod),PHP_confirmatory)
+      row.names(BFtable) <- names(BFtu_confirmatory)
+      colnames(BFtable) <- c("comp_E","comp_O","fit_E","fit_O","BF_E","BF_O","BF","PHP")
       BFmatrix_confirmatory <- matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory))/
         t(matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory)))
       row.names(BFmatrix_confirmatory) <- colnames(BFmatrix_confirmatory) <- names(BFtu_confirmatory)
-      if(nrow(relfit)==length(parse_hyp$original_hypothesis)){
-        hypotheses <- parse_hyp$original_hypothesis
-      }else{
-        hypotheses <- c(parse_hyp$original_hypothesis,"complement")
-      }
-    }else{
-      BFtu_confirmatory <- PHP_confirmatory <- BFmatrix_confirmatory <- relfit <-
-        relcomp <- NULL
-      hypotheses <- "exploratory"
+      hypotheses <- row.names(relfit)
     }
     PHP_interaction <- BFtu_interaction <- PHP_main <- BFtu_main <- NULL
+  }
+
+  if(is.null(hypothesis)){
+    BFtu_confirmatory <- PHP_confirmatory <- BFmatrix_confirmatory <- relfit <-
+      relcomp <- hypotheses <- BFtable <- priorprobs <- NULL
   }
 
   BFlm_out <- list(
@@ -623,15 +640,15 @@ BF.mlm <- function(x,
     BFtu_confirmatory=BFtu_confirmatory,
     PHP_confirmatory=PHP_confirmatory,
     BFmatrix_confirmatory=BFmatrix_confirmatory,
+    BFtable_confirmatory=BFtable,
     BFtu_main=BFtu_main,
     PHP_main=PHP_main,
     BFtu_interaction=PHP_interaction,
     PHP_interaction=PHP_interaction,
-    relative_fit=relfit,
-    relative_complexity=relcomp,
+    prior=priorprobs,
     hypotheses=hypotheses,
+    estimates=postestimates,
     model=x,
-    estimates=x$coefficients,
     call=match.call())
 
   class(BFlm_out) <- "BF"
@@ -646,9 +663,6 @@ params_in_hyp <- function(hyp){
   params_in_hyp <- params_in_hyp[!sapply(params_in_hyp, grepl, pattern = "^[0-9]*\\.?[0-9]+$")]
   params_in_hyp[grepl("^[a-zA-Z]", params_in_hyp)]
 }
-
-
-
 
 #dyn.load("/Users/jorismulder/surfdrive/R packages/BFpack/scr/bct_continuous_final.dll")
 # R function to call Fortran subroutine for Gibbs sampling using noninformative improper
@@ -724,7 +738,7 @@ estimate_postMeanCov_FisherZ <- function(YXlist,numdraws=5e3){
                  sigmaDrawsStore=array(0,dim=c(samsize0,numG,P)),
                  CDrawsStore=array(0,dim=c(samsize0,numG,P,P)))
 
-  meansCovCorr <- lapply(1:numG,function(g){
+  FmeansCovCorr <- lapply(1:numG,function(g){
     Fdraws_g <- FisherZ(t(matrix(unlist(lapply(1:samsize0,function(s){
       res$CDrawsStore[s,g,,][lower.tri(diag(P))]
     })),ncol=samsize0)))
@@ -732,20 +746,28 @@ estimate_postMeanCov_FisherZ <- function(YXlist,numdraws=5e3){
     covm_g <- cov(Fdraws_g)
     return(list(mean_g,covm_g))
   })
+  meansCovCorr <- lapply(1:numG,function(g){
+    draws_g <- t(matrix(unlist(lapply(1:samsize0,function(s){
+      res$CDrawsStore[s,g,,][lower.tri(diag(P))]
+    })),ncol=samsize0))
+    mean_g <- apply(draws_g,2,mean)
+    return(mean_g)
+  })
   meanN <- unlist(lapply(1:numG,function(g){
-    meansCovCorr[[g]][[1]]
+    FmeansCovCorr[[g]][[1]]
   }))
   covmN <- matrix(0,nrow=numcorr,ncol=numcorr)
   numcorrg <- numcorr/numG
   for(g in 1:numG){
-    covmN[(g-1)*numcorrg+1:numcorrg,(g-1)*numcorrg+1:numcorrg] <- meansCovCorr[[g]][[2]]
+    covmN[(g-1)*numcorrg+1:numcorrg,(g-1)*numcorrg+1:numcorrg] <- FmeansCovCorr[[g]][[2]]
   }
   return(list(corr_quantiles=res$C_quantiles,B_quantiles=res$B_quantiles,
-              sigma_quantiles=res$sigma_quantiles,meanN=meanN,covmN=covmN))
-
+              sigma_quantiles=res$sigma_quantiles,meanN=meanN,covmN=covmN,
+              corr_means=meansCovCorr))
 }
 
 
-
+# Fisher Z tranformation for sampled correlations
+FisherZ <- function(r){.5*log((1+r)/(1-r))}
 
 

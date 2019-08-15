@@ -4,17 +4,20 @@
 #' @method BF rem.dyad
 #' @export
 BF.rem.dyad <- function(x,
-                      hypothesis = NULL,
-                      prior = NULL,
-                      ...){
+                        hypothesis = NULL,
+                        prior = NULL,
+                        ...){
 
   #Extract summary statistics
   n <- x$m
   covmN <- x$cov
   meanN <- x$coef
 
-  out <- Gaussian_estimator(meanN, covmN, n, hypothesis, prior)
+  out <- BF_Gaussian(meanN, covmN, n, hypothesis, prior)
   out$model <- x
+  out$call <- match.call()
   out
 
 }
+
+

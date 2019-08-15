@@ -8,16 +8,6 @@ BF.hetcor <- function(x,
                        hypothesis = NULL,
                        prior = NULL,
                        ...){
-  if(is.null(hypothesis)){
-    constraints <- "exploratory"
-  } else {
-    constraints <- hypothesis
-  }
-  if(is.null(prior)){
-    priorprob <- "default"
-  } else {
-    priorprob <- prior
-  }
 
   P <- nrow(x$std.errors)
   numcorr <- P*(P-1)/2
@@ -44,10 +34,22 @@ BF.hetcor <- function(x,
   colnames(BFtu_exploratory) <- colnames(BFtu_exploratory) <-  c("Pr(=0)","Pr(<0)","Pr(>0)")
   PHP_exploratory <- BFtu_exploratory / apply(BFtu_exploratory,1,sum)
 
-  #confirmatory BF testing
-  if(constraints!="exploratory"){
+  # # compute posterior estimates
+  # postestimates <- cbind(estimates,estimates,
+  #                        t(matrix(unlist(lapply(1:length(estimates),function(coef){
+  #                          ub <- qnorm(p=.975)*sqrt(errcov[coef,coef])+estimates[coef]
+  #                          lb <- qnorm(p=.025)*sqrt(errcov[coef,coef])+estimates[coef]
+  #                          return(c(lb,ub))
+  #                        })),nrow=2))
+  # )
+  # row.names(postestimates) <- corr_names_lower
+  # colnames(postestimates) <- c("mean","median","2.5%","97.5%")
+  postestimates <- NULL #currently no proper method available to get posterior mean, median, CI based on hetcor object
 
-    parse_hyp <- parse_hypothesis(corr_names_all,constraints)
+  #confirmatory BF testing
+  if(!is.null(hypothesis)){
+
+    parse_hyp <- parse_hypothesis(corr_names_all,hypothesis)
     #combine equivalent correlations, e.g., cor(Y1,Y2)=corr(Y2,Y1).
     parse_hyp$hyp_mat <- cbind(parse_hyp$hyp_mat[,1:numcorr] + parse_hyp$hyp_mat[,numcorr+1:numcorr],
             parse_hyp$hyp_mat[,numcorr*2+1])
@@ -61,7 +63,7 @@ BF.hetcor <- function(x,
       jointuniform_measures(P,numcorr,1,RrE[[h]],RrO[[h]],Fisher=0)
     })),nrow=2))
     relfit <- t(matrix(unlist(lapply(1:numhyp,function(h){
-      Gaussian_measures(estimates,errcov,RrE[[h]],RrO[[h]],names1=corr_names_lower,
+      Gaussian_measures(estimates,errcov,RrE1=RrE[[h]],RrO1=RrO[[h]],names1=corr_names_lower,
                         constraints1=parse_hyp$original_hypothesis[h])
     })),nrow=2))
     row.names(relcomp) <- parse_hyp$original_hypothesis
@@ -76,52 +78,48 @@ BF.hetcor <- function(x,
     # the BF for the complement hypothesis vs Hu needs to be computed.
     BFtu_confirmatory <- c(apply(relfit / relcomp, 1, prod))
     # Check input of prior probabilies
-    if(!(priorprob == "default" || (length(priorprob)==nrow(relfit) && min(priorprob)>0) )){
-      stop("'probprob' must be a vector of positive values or set to 'default'.")
-    }
-    # Change prior probs in case of default setting
-    if(priorprob=="default"){
+    if(is.null(prior)){
       priorprobs <- rep(1/length(BFtu_confirmatory),length(BFtu_confirmatory))
     }else{
-      priorprobs <- priorprobs/sum(priorprobs)
+      if(!is.numeric(prior) || length(prior)!=length(BFtu_confirmatory)){
+        warning(paste0("Argument 'prior' should be numeric and of length ",as.character(length(BFtu_confirmatory)),". Equal prior probabilities are used."))
+        priorprobs <- rep(1/length(BFtu_confirmatory),length(BFtu_confirmatory))
+      }else{
+        priorprobs <- prior
+      }
     }
     names(priorprobs) <- names(BFtu_confirmatory)
     PHP_confirmatory <- BFtu_confirmatory*priorprobs / sum(BFtu_confirmatory*priorprobs)
-    # names(PHP_confirmatory) <- unlist(lapply(1:length(parse_hyp$original_hypothesis),function(hyp){
-    #   paste0("Pr(",parse_hyp$original_hypothesis,")")
-    # }))
+    BFtable <- cbind(relcomp,relfit,relfit[,1]/relcomp[,1],relfit[,2]/relcomp[,2],
+                     apply(relfit,1,prod)/apply(relcomp,1,prod),PHP_confirmatory)
+    row.names(BFtable) <- names(BFtu_confirmatory)
+    colnames(BFtable) <- c("comp_E","comp_O","fit_E","fit_O","BF_E","BF_O","BF","PHP")
     BFmatrix_confirmatory <- matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory))/
       t(matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory)))
     row.names(BFmatrix_confirmatory) <- colnames(BFmatrix_confirmatory) <- names(BFtu_confirmatory)
+    hypotheses <- row.names(relcomp)
   }else{
     BFtu_confirmatory <- PHP_confirmatory <- BFmatrix_confirmatory <- relfit <-
-      relcomp <- NULL
+      relcomp <- hypotheses <- BFtable <- priorprobs <- NULL
   }
 
   # Store in output
-  BFlm_out <- list(
+  BF_out <- list(
     BFtu_exploratory=BFtu_exploratory,
     PHP_exploratory=PHP_exploratory,
     BFtu_confirmatory=BFtu_confirmatory,
     PHP_confirmatory=PHP_confirmatory,
     BFmatrix_confirmatory=BFmatrix_confirmatory,
-    relative_fit=relfit,
-    relative_complexity=relcomp,
+    BFtable_confirmatory=BFtable,
+    prior=priorprobs,
+    hypotheses=hypotheses,
+    estimates=postestimates,
     model=x,
-    P=P,
-    ngroups=1,
-    constraints=constraints,
-    priorprob=priorprob)
+    call=match.call())
 
-  class(BFlm_out) <- "BF"
+  class(BF_out) <- "BF"
 
-  return(BFlm_out)
+  return(BF_out)
 
 }
-
-
-
-
-
-
 

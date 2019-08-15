@@ -1,8 +1,7 @@
 
 
 
-# Compute relative meausures for constraints on correlation based
-# on a joint uniform distribution on correlation matrix
+
 jointuniform_measures <- function(P,numcorrgroup,numG,RrE1,RrO1,Fisher=0,samsize=1e5,seed=123){
   # If Fisher=1 then the evaluation is done on Fisher transformed space.
   relE <- relO <- 1
@@ -12,9 +11,13 @@ jointuniform_measures <- function(P,numcorrgroup,numG,RrE1,RrO1,Fisher=0,samsize
   if(numcorr==1){ #use analytic expression in case of a single correlation
     # RrE1=RrO1=matrix(c(-1,1,-.5,.3),nrow=2)
     if(!is.null(RrE1)){ # only inequality constraint(s). Copmute prior proportion.
-      relE <- .5
-      warning("TO DO: relative measure should be on Fisher space yes/no for P=2")
-    }else if(!is.null(RrO1)){
+      drawsJU <- draw_ju(P,samsize=5000,Fisher=Fisher,seed=123)
+      if(Fisher==0){
+        relE <- approxfun(density(drawsJU[,1]))(RrE1[1,2])
+      }else{
+        relE <- approxfun(density(drawsJU[,1]))(FisherZ(RrE1[1,2]))
+      }
+    }else if(!is.null(RrO1)){ #probability of order constraints invariant of Fisher transformation
       if(nrow(RrO1)==1){
         relO <- .5*ifelse(RrO1[1,1]>0,1-RrO1[1,2]/RrO1[1,1],RrO1[1,2]/RrO1[1,1]+1)
       }else if(nrow(RrO1)==2){
@@ -140,7 +143,7 @@ jointuniform_prob_Hc <- function(P,numcorrgroup,numG,relmeas,RrO,samsize1=1e4,se
   which_eq <- relmeas[,1] != 1
   if(sum(which_eq)==numhyp){ # Then the complement is equivalent to the unconstrained hypothesis.
     relmeas <- rbind(relmeas,rep(1,2))
-    rownames(relmeas)[relmeas+1] <- "complement"
+    rownames(relmeas)[numhyp+1] <- "complement"
   }else{ # So there is at least one hypothesis with only order constraints
     welk <- which(!which_eq)
     if(length(welk)==1){ # There is one hypothesis with only order constraints. Hc is complement of this hypothesis.
@@ -148,13 +151,10 @@ jointuniform_prob_Hc <- function(P,numcorrgroup,numG,relmeas,RrO,samsize1=1e4,se
       relmeas[numhyp+1,2] <- 1 - relmeas[welk,2]
       rownames(relmeas)[numhyp+1] <- "complement"
     }else{ # So more than one hypothesis with only order constraints
-
-      drawsJU <- matrix(0,nrow=samsize1,ncol=numcorr)
+      drawsJU <- matrix(0,nrow=samsize1,ncol=numpara)
       drawsJU[,1:numcorrgroup] <- .Fortran("draw_ju",P=as.integer(P),drawscorr=drawsJU[,1:numcorrgroup],
                                            samsize=as.integer(samsize1),numcorrgroup=as.integer(numcorrgroup),
                                            seed=as.integer(seed))$drawscorr
-      # REMINDER: Check if Fisher transformed draws are needed or nontransformed draws.
-
       #These draws can be used for the correlation matrices of the independent groups
       numcorr <- numcorrgroup * numG
       teldummy <- numcorrgroup

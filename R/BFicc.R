@@ -4,6 +4,7 @@
 
 #' @importFrom MCMCpack rinvgamma
 # #' @importFrom lme4 getME
+# #' @importFrom utils getME
 #' @method BF lmerMod
 #' @export
 BF.lmerMod <- function(x,
@@ -11,78 +12,6 @@ BF.lmerMod <- function(x,
                    prior = NULL,
                    parameter = NULL,
                    ...){
-  # check if constrained hypotheses are formulated for confirmatory testing
-  if(is.null(hypothesis)){
-    constraints <- "exploratory"
-  } else {
-    constraints <- hypothesis
-  }
-
-  #prior probabilities of hypotheses
-  if(is.null(prior)){
-    priorprob <- "default"
-  } else {
-    priorprob <- prior
-  }
-
-  # ############ REPLACE THIS PART THAT ASSUMES AN INPUT OF A LIST OF LMERMOD-OBJECTS
-  #
-  # designX <- yobs <- group <- sorts <- list()
-  # numcat <- length(x)
-  # for(ca in 1:numcat){
-  #   designX1 <- getME(x[[ca]],"X")
-  #   yobs[[ca]] <- getME(x[[ca]],"y")
-  #   group[[ca]] <- getME(x[[ca]],"flist")$Subject
-  #   sorts <- order(group[[ca]])
-  #   # sort data per category so that data from same groups are clustered over the rows
-  #   yobs[[ca]] <- yobs[[ca]][sorts]
-  #   designX1 <- designX1[sorts,]
-  #   designX[[ca]] <- cbind(matrix(0,nrow=nrow(designX1),ncol=numcat),designX1[,-1])
-  #   designX[[ca]][,ca] <- 1
-  #   group[[ca]] <- group[[ca]][sorts]
-  # }
-  # ngroups <- rep(0,numcat)
-  # for(ca in 1:numcat){
-  #   # check that all groups/clusters are of equal size
-  #   if(length(table(table(group[[ca]]))) != 1){stop("message")}
-  #   # get number of groups per category
-  #   ngroups[ca] <- length(levels(group[[ca]]))
-  # }
-  # for(ca in 1:(numcat-1)){
-  #   if(names(table(table(group[[ca]]))) != names(table(table(group[[ca+1]])))){stop("message")}
-  # }
-  # p <- table(group[[ca]])[1]
-  # names(p) <- NULL
-  # ystack <- Reduce(c,yobs)
-  # names(ystack) <- NULL
-  # Xstack <- Reduce(rbind,designX)
-  # row.names(Xstack) <- colnames(Xstack) <- NULL
-  # yXstack <- cbind(ystack,Xstack)
-  # #give names for icc's
-  # iccnames <- unlist(lapply(1:numcat,function(nc){paste0("icc",as.character(nc))}))
-  #
-  # ############## END. REPLACE THIS PART
-
-  # REPLACE THIS WITH PART WHERE DATA ARE NOT SORTED BY CLUSTERS
-  # groups <- getME(x,"flist")[[1]]
-  # if(length(table(table(groups)))>1){stop("Clusters are of unequal size.")}
-  # p <- table(groups)[1]
-  # # The data needs to be stacked per cluster.
-  # ystack <- getME(x,"y")
-  # Xstack <- getME(x,"X")
-  # if(is.null(grouping_variables)){
-  #   numcat <- 1
-  #   ngroups <- nrow(Xstack)/p
-  #   iccnames <- "icc"
-  # }else{
-  #   numcat <- length(grouping_variables)
-  #   ngroups <- unlist(lapply(1:numcat,function(nc){
-  #     sum(yX[,grouping_variables[nc]])/p
-  #   }))
-  #   iccnames <- unlist(lapply(1:numcat,function(nc){paste0("icc_",grouping_variables[nc])}))
-  # }
-  # END REPLACE 2
-
 
   #get names of the categories of clusters
   numcat <- length(x@cnms)
@@ -90,7 +19,7 @@ BF.lmerMod <- function(x,
     x@cnms[[ca]]
   }))
   if(numcat>1){
-    iccnames <- unlist(lapply(1:numcat,function(nc){paste0("icc_",namescat[nc])}))
+    iccnames <- unlist(lapply(1:numcat,function(nc){namescat[nc]}))
   }else{ iccnames <- "icc" }
 
   # check if the lmer-model only has a random intercept or category specific random intercepts
@@ -218,10 +147,10 @@ BF.lmerMod <- function(x,
   cat("\n")
   cat("\n")
   cat("\n")
-  if(constraints!="exploratory"){ # confirmatory test with constrained hypotheses on icc's.
+  if(!is.null(hypothesis)){ # confirmatory test with constrained hypotheses on icc's.
     cat("Finally, Bayes factor computation for confirmatory testing of icc's...")
     cat("\n")
-    parse_hyp <- parse_hypothesis(iccnames,constraints)
+    parse_hyp <- parse_hypothesis(iccnames,hypothesis)
     RrList <- make_RrList2(parse_hyp)
     RrE <- RrList[[1]]
     RrO <- RrList[[2]]
@@ -276,11 +205,14 @@ BF.lmerMod <- function(x,
           inequalities_h[,u] <- apply(as.matrix(RrO[[h]][,which(unique_h == u)]),1,sum)
         }
       } else inequalities_h = 0
-
       marglike2_h <- marglike2_Hq(cbind(ystack,Xstack),ngroups,p,shape1=shape0[1],shape2=shape0[2],samsize1=5e3,samsize2=5e3,
                                   unique=unique_h,inequalities=inequalities_h)[1:3]
+      if(is.null(RrE[[h]])){
+        marglike2_h[1] <- marglike_Hu[[1]] + log(marglike2_h[[2]]) -log(marglike2_h[[3]])
+      }
       return(c(unlist(marglike2_h),ifelse(is.null(RrE[[h]]),1,0)))
     })),nrow=4))
+    #compute BF for complement hypothesis
     if(sum(output_marglike_icc[,4])==0){ #the complement is equivalent to the unconstrained model
       output_marglike_icc <- rbind(output_marglike_icc,c(unlist(marglike_Hu),1))
     } else { #the complement is the complement of the joint of the order hypotheses
@@ -296,8 +228,11 @@ BF.lmerMod <- function(x,
       }
     }
     row.names(output_marglike_icc) <- c(parse_hyp$original_hypothesis,"complement")
+    relcomp <- matrix(c(rep(NA,nrow(output_marglike_icc)),output_marglike_icc[,3]),ncol=2)
+    relfit <- matrix(c(rep(NA,nrow(output_marglike_icc)),output_marglike_icc[,2]),ncol=2)
+    #compute log marginal likelihood for H* without order constraints
+    BF_E <- exp(output_marglike_icc[,1] - log(output_marglike_icc[,2]) + log(output_marglike_icc[,3]) - marglike_Hu[[1]])
     BFtu_confirmatory_icc <- exp(output_marglike_icc[,1] - marglike_Hu[[1]])
-
     #compute BFmatrix and PHPs
     logBFmatrix <- matrix(rep(output_marglike_icc[,1],numhyp+1),nrow=numhyp+1) -
       matrix(rep(output_marglike_icc[,1],each=numhyp+1),nrow=numhyp+1)
@@ -305,27 +240,31 @@ BF.lmerMod <- function(x,
     BFmatrix_confirmatory_icc <- round(exp(logBFmatrix),3)
     BFta_confirmatory_icc <- exp(output_marglike_icc[,1] - max(output_marglike_icc[,1]))
     # Change prior probs in case of default setting
-    if(priorprob=="default"){
-      priorprobs <- rep(1/length(BFta_confirmatory_icc),length(BFta_confirmatory_icc))
+    if(is.null(prior)){
+      priorprobs <- rep(1/length(BFtu_confirmatory_icc),length(BFtu_confirmatory_icc))
     }else{
-      priorprobs <- priorprobs/sum(priorprobs)
+      if(!is.numeric(prior) || length(prior)!=length(BFtu_confirmatory_icc)){
+        warning(paste0("Argument 'prior' should be numeric and of length ",as.character(length(BFtu_confirmatory_icc)),". Equal prior probabilities are used."))
+        priorprobs <- rep(1/length(BFtu_confirmatory_icc),length(BFtu_confirmatory_icc))
+      }else{
+        priorprobs <- prior
+      }
     }
-    PHP_confirmatory_icc <- round(priorprobs*BFta_confirmatory_icc / sum(priorprobs*BFta_confirmatory_icc),3)
+    PHP_confirmatory_icc <- priorprobs*BFta_confirmatory_icc / sum(priorprobs*BFta_confirmatory_icc)
+    BFtable <- cbind(relcomp,relfit,BF_E,relfit[,2]/relcomp[,2],
+                     BF_E*relfit[,2]/relcomp[,2],PHP_confirmatory_icc)
+    row.names(BFtable) <- names(PHP_confirmatory_icc)
+    colnames(BFtable) <- c("comp_E","comp_O","fit_E","fit_O","BF_E","BF_O","BF","PHP")
+    hypotheses <- names(BFta_confirmatory_icc)
+
   }else{
-    BFmatrix_confirmatory_icc <- PHP_confirmatory_icc <- BFtu_confirmatory_icc <- NULL
+    BFmatrix_confirmatory_icc <- PHP_confirmatory_icc <- BFtu_confirmatory_icc <- relfit <-
+      relcomp <- hypotheses <- BFtable <- priorprobs <- NULL
   }
-  # }else{
-  #   BFtu_exploratory_icc <- PHP_exploratory_icc <- BFtu_confirmatory_icc <-
-  #     PHP_confirmatory_icc <- BFmatrix_confirmatory_icc <- postestimates <-
-  #     priorprobs <- NULL
-  # }
-
-  #### Code for testing the fixed effects here.
-
-  #### End code for testing the fixed effects here.
-
   #####
-  # Combine results of tests of fixed effects and
+  #
+  # Test fixed effects
+  #
   #####
 
   BFlm_out <- list(
@@ -334,28 +273,18 @@ BF.lmerMod <- function(x,
     BFtu_confirmatory=BFtu_confirmatory_icc,
     PHP_confirmatory=PHP_confirmatory_icc,
     BFmatrix_confirmatory=BFmatrix_confirmatory_icc,
-    relative_fit=NULL,
-    relative_complexity=NULL,
-    model=x,
-    ngroups=ngroups,
-    p=p,
-    Xstack=Xstack,
-    Zstack=Zstack,
-    ystack=ystack,
-    constraints=constraints,
-    priorprobs=priorprobs,
+    BFtable_confirmatory=BFtable,
+    prior=priorprobs,
+    hypotheses=hypotheses,
     estimates=postestimates,
-    categories=namescat)
+    model=x,
+    call=match.call())
 
   class(BFlm_out) <- "BF"
 
   return(BFlm_out)
 }
 
-BFupdatelmer <- function(x,
-                         ...){
-  stop("REMINDER: still needs to be finished.")
-}
 
 
 # Functions that are called when computing marginal likelihoods for constrained

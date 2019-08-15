@@ -5,6 +5,9 @@
 #the structure "y4~~y4" or "ind60=~x2"
 
 
+#' @importFrom stats nobs
+#' @importFrom stats vcov
+#' @importFrom stats coef
 #' @method BF lavaan
 #' @export
 BF.lavaan <- function(x,
@@ -17,8 +20,9 @@ BF.lavaan <- function(x,
   covmN <- vcov(x)
   meanN <- coef(x)
 
-  out <- Gaussian_estimator(meanN, covmN, n, hypothesis, prior)
+  out <- BF_Gaussian(meanN, covmN, n, hypothesis, prior)
   out$model <- x
+  out$call <- match.call()
   out
 
 }
