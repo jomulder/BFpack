@@ -1,12 +1,9 @@
 # Load packages
-library(relevent)				# Fitting a relational event model
-library(bain)						# Bayes factors for informative hypotheses
-
-# Step 1: Fit a relational event model
-# ---------------------------------------
-# Load package
-library(relevent)
-
+data(actors)
+data(same_division)
+data(same_hierarchy)
+data(same_building)
+data(relevents)
 # Combine the event statistics into a CovEvent array:
 # a 3-dimensional p by n by n array
 CovEventEff <- array(NA, dim = c(3, nrow(actors), nrow(actors)))
@@ -23,7 +20,7 @@ fit <- rem.dyad(edgelist = relevents, n = nrow(actors), effects = "CovEvent",
 # Step 2: Compare informative hypotheses
 # ---------------------------------------
 # Load package
-library(bain)						# Bayes factors for informative hypotheses
+
 
 # Obtain the parameter estimates
 est <- fit$coef
