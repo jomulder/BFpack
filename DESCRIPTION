@@ -32,4 +32,6 @@ Imports:
     pracma,
     bain
 Suggests: 
-    testthat
+    testthat,
+    relevent,
+    polycor

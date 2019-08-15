@@ -1,6 +1,5 @@
-
+data(fmri)
 # test for correlation test on hetcor object
-require(polycor)
 res <- hetcor(fmri[,3:5])
 BF1 <- BF(res)
 summary(BF1)
