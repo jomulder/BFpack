@@ -200,8 +200,9 @@ Gaussian_measures <- function(mean1,Sigma1,n1=0,RrE1,RrO1,names1=NULL,constraint
     }
     qO1 <- nrow(RO1)
     rO1 <- RrO1[,(K+1)]
+    Rr1 <- rbind(RrE1,RrO1)
 
-    if(Matrix::rankMatrix(RrO1)[[1]] == nrow(RrO1)){
+    if(Matrix::rankMatrix(Rr1)[[1]] == nrow(Rr1)){
 
       R1 <- rbind(RE1,RO1)
 

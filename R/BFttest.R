@@ -5,7 +5,7 @@
 #' @export
 BF.htest <-
   function(x,
-           hypothesis,
+           hypothesis = NULL,
            prior = NULL,
            parameter = NULL,
            ...) {
