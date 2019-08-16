@@ -254,7 +254,7 @@ BF.lm <- function(x,
     # check if a common boundary exists for prior location under all constrained hypotheses
     if(nrow(RrStack) > 1){
       rref_ei <- rref(RrStack)
-      nonzero <- RrStack[,K+1]!=0
+      nonzero <- rref_ei[,K+1]!=0
       if(max(nonzero)>0){
         row1 <- max(which(nonzero))
         if(sum(abs(rref_ei[row1,1:K]))==0){
@@ -311,7 +311,7 @@ BF.lm <- function(x,
     names(priorprobs) <- names(BFtu_confirmatory)
     PHP_confirmatory <- BFtu_confirmatory*priorprobs / sum(BFtu_confirmatory*priorprobs)
     BFtable <- cbind(relcomp,relfit,relfit[,1]/relcomp[,1],relfit[,2]/relcomp[,2],
-                     apply(relfit,1,prod)/apply(relcomp,1,prod),PHP_confirmatory)
+                     BFtu_confirmatory,PHP_confirmatory)
     row.names(BFtable) <- names(BFtu_confirmatory)
     colnames(BFtable) <- c("comp_E","comp_O","fit_E","fit_O","BF_E","BF_O","BF","PHP")
     BFmatrix_confirmatory <- matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory))/
@@ -371,7 +371,7 @@ MatrixStudent_measures <- function(Mean1,Scale1,tXXi1,df1,RrE1,RrO1,Names1=NULL,
     SigmaList <- lapply(temp2,solve)
     covm1_E <- lapply(SigmaList,function(temp) RE1%*%(kronecker(temp,tXXi1))%*%t(RE1) )
     mean1_E <- c(RE1 %*% mean1)
-    relE <- mean(unlist(lapply(covm1_E,function(temp) dmvnorm(mean1_E,mean=mean1_E,sigma=temp))))
+    relE <- mean(unlist(lapply(covm1_E,function(temp) dmvnorm(rE1,mean=mean1_E,sigma=temp))))
 
   }else{
     if(is.null(RrE1) && !is.null(RrO1)){ #only order constraints
@@ -438,25 +438,26 @@ MatrixStudent_measures <- function(Mean1,Scale1,tXXi1,df1,RrE1,RrO1,Names1=NULL,
       SigmaList <- lapply(temp2,solve)
       covm1_E <- lapply(SigmaList,function(temp) RE1%*%(kronecker(temp,tXXi1))%*%t(RE1) )
       mean1_E <- RE1 %*% mean1
-      relE <- mean(unlist(lapply(covm1_E,function(temp) dmvnorm(c(mean1_E),mean=mean1_E,sigma=temp))))
+      relE <- mean(unlist(lapply(covm1_E,function(temp) dmvnorm(rE1,mean=mean1_E,sigma=temp))))
 
-      if(rankMatrix(RrO1)[[1]] == nrow(RrO1)){
+      if(rankMatrix(Rr1)[[1]] == nrow(Rr1)){
         covm1_O <- lapply(SigmaList,function(temp) R1%*%(kronecker(temp,tXXi1))%*%t(R1) )
-        mean1_O <- c(RO1%*%mean1) - rO1  ## mu_zeta_O in the paper
+        mean1_O <- c(R1%*%mean1)
 
         mean1_OE <- lapply(covm1_O,function(temp){
-          as.vector(mean1_O +
-                      matrix(temp[(qE1+1):qC1,1:qE1],ncol=qE1)%*%solve(temp[1:qE1,1:qE1])%*%(rE1-mean1_E))
+          as.vector(mean1_O[(qE1+1):qC1] +
+                      c(matrix(temp[(qE1+1):qC1,1:qE1],ncol=qE1)%*%solve(temp[1:qE1,1:qE1])%*%(rE1-mean1_E)))
         })
         covm1_OE <- lapply(covm1_O,function(temp) temp[(qE1+1):qC1,(qE1+1):qC1] -
                              matrix(temp[(qE1+1):qC1,1:qE1],ncol=qE1)%*%solve(temp[1:qE1,1:qE1])%*%
                              matrix(temp[1:qE1,(qE1+1):qC1],nrow=qE1))
         #check covariance because some can be nonsymmetric due to a generation error
         welk1 <- which(unlist(lapply(covm1_OE,function(temp) isSymmetric(temp,
-                             tol = sqrt(.Machine$double.eps),check.attributes = FALSE)))==T)
+                             tol = sqrt(.Machine$double.eps),check.attributes = FALSE) &&
+                              min(eigen(temp)$values)>sqrt(.Machine$double.eps) ))==T)
         covm1_OE <- covm1_OE[welk1]
         mean1_OE <- mean1_OE[welk1]
-        relO <- mean(mapply(function(mu_temp,Sigma_temp) pmvnorm(lower=rep(0,qO1),
+        relO <- mean(mapply(function(mu_temp,Sigma_temp) pmvnorm(lower=rO1,
                              upper=rep(Inf,qO1),mean=mu_temp,sigma=Sigma_temp)[1],mean1_OE,covm1_OE))
       }else{ #use bain for the computation of the probability
 
