@@ -788,6 +788,7 @@ make_RrList <- function(parse_hyp){
   })
   return(list(RrE,RrO))
 }
+
 # from the output of the constraints in 'parse_hypothesis' create lists for the equality and order matrices
 # different format parse_hyp object
 make_RrList2 <- function(parse_hyp2){
