@@ -10,7 +10,7 @@ BF.glm <- function(x,
 
   #Extract summary statistics
   n <- nobs(x)
-  covmN <- vcov(x)
+  covmN <- vcov(x) #test
   meanN <- coef(x)
 
   out <- BF_Gaussian(meanN, covmN, n, hypothesis, prior)
