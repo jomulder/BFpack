@@ -10,7 +10,7 @@ BF.rem <- function(x,
 
   #Extract summary statistics
   n <- x$df.null
-  covmN <- x$cov
+  covmN <- x$cov #test
   meanN <- x$coef
 
   out <- BF_Gaussian(meanN, covmN, n, hypothesis, prior)
