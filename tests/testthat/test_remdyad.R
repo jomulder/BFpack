@@ -44,8 +44,6 @@ results <- bain(est, hyp, n = sampSize, Sigma = covMat,
 # Print results
 print(results)
 
-
-
 fit <- rem.dyad(edgelist = relevents, n = nrow(actors), effects = "CovEvent",
                 ordinal = FALSE, covar = list(CovEvent = CovEventEff), hessian = TRUE,
                 fit.method = "BPM")
