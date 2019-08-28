@@ -57,7 +57,7 @@
 #' fit <- glm(sent ~ ztrust + zfWHR + zAfro + glasses + attract + maturity +
 #'    tattoos, family = binomial(), data = wilson)
 #' BF1 <- BF(fit, hypothesis = "ztrust > (zfWHR, zAfro) > 0;
-#'    ztrust > (zfWHR, zAfro) = 0")
+#'    ztrust > 0 & zfWHR=zAfro= 0")
 #' summary(BF1)
 #'
 #' # EXAMPLE 4. Correlation analysis
@@ -77,9 +77,6 @@
 #' @export
 #' @useDynLib BFpack, .registration = TRUE
 #'
-# The functions below can be used for Bayesian hypothesis testing under univariate
-# and multivariate linear regression models. Also grouping variables (factors) are
-# properly dealt with using group specific fractions for the default priors.
 BF <- function(x, hypothesis, prior, parameter, ...) {
   UseMethod("BF", x)
 }

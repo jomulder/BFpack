@@ -30,6 +30,7 @@ Imports:
     Matrix,
     mvtnorm,
     pracma,
+    lme4,
     bain
 Suggests: 
     testthat,

@@ -3,8 +3,9 @@
 
 
 #' @importFrom MCMCpack rinvgamma
-# #' @importFrom lme4 getME
+#' @importFrom lme4 getME
 # #' @importFrom utils getME
+# #' @importFrom lme4 fixef getME
 #' @method BF lmerMod
 #' @export
 BF.lmerMod <- function(x,
@@ -364,7 +365,7 @@ Gibbs2 <- function(zW,ngroups,p,shape1,shape2,bB,bW,unique,T0,V1,inequalities=0,
     scale.sigma2 <- sum((diffs[-select1])**2)*bW/2 +
       sum(sumsquares.tau[1:T0]*bB[1:T0])/2*T0check
     shape.sigma2 <- bW*N*(p-1)/2 + sum(bB[1:T0]*ngroups[1:T0])/2*T0check
-    sigma2 <- MCMCpack::rinvgamma(1,shape=shape.sigma2,scale=scale.sigma2)
+    sigma2 <- rinvgamma(1,shape=shape.sigma2,scale=scale.sigma2)
 
     #2b. draw psi | sigma2, beta, y
     # if psi.check==F then psi is set to zero
@@ -375,7 +376,7 @@ Gibbs2 <- function(zW,ngroups,p,shape1,shape2,bB,bW,unique,T0,V1,inequalities=0,
     #2c. draw tau | sigma2, psi, beta, y
     scale.tau <- c(t(sumsquares.tau*bB)%*%transMatrix)/(2*p) + psi
     shape.tau = c(t(bB*ngroups)%*%transMatrix)/2 + shape2
-    tauV <- MCMCpack::rinvgamma(V1,shape=shape.tau,scale=scale.tau) - sigma2/p #+ .00001
+    tauV <- rinvgamma(V1,shape=shape.tau,scale=scale.tau) - sigma2/p #+ .00001
 
     #    setTxtProgressBar(pb,ss)
   }
@@ -405,7 +406,7 @@ Gibbs2 <- function(zW,ngroups,p,shape1,shape2,bB,bW,unique,T0,V1,inequalities=0,
     scale.sigma2 <- sum((diffs[-select1])**2)*bW/2 +
       sum(sumsquares.tau[1:T0]*bB[1:T0])/2*T0check
     shape.sigma2 <- bW*N*(p-1)/2 + sum(bB[1:T0]*ngroups[1:T0])/2*T0check
-    sigma2 <- MCMCpack::rinvgamma(1,shape=shape.sigma2,scale=scale.sigma2)
+    sigma2 <- rinvgamma(1,shape=shape.sigma2,scale=scale.sigma2)
 
     #2b. draw psi | sigma2, beta, y
     # if psi.check==F then psi is set to zero
@@ -416,7 +417,7 @@ Gibbs2 <- function(zW,ngroups,p,shape1,shape2,bB,bW,unique,T0,V1,inequalities=0,
     #2c. draw tau | sigma2, psi, beta, y
     scale.tau <- c(t(sumsquares.tau*bB)%*%transMatrix)/(2*p) + psi
     shape.tau <- c(t(bB*ngroups)%*%transMatrix)/2 + shape2
-    tauV <- MCMCpack::rinvgamma(V1,shape=shape.tau,scale=scale.tau) - sigma2/p #+ .00001
+    tauV <- rinvgamma(V1,shape=shape.tau,scale=scale.tau) - sigma2/p #+ .00001
 
     #2d. compute rho
     rho <- tauV/(tauV+sigma2)

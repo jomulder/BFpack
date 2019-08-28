@@ -385,10 +385,10 @@ BF.mlm <- function(x,
         }else{ #use Matrix-Student distributions with Monte Carlo estimate
           df0 <- 1
           dfN <- N-K-P+1
-          relfit_h <- BFpack:::MatrixStudent_measures(Mean1=BetaHat,Scale1=S,tXXi1=tXXi,df1=dfN,RrE1=RrE[[h]],RrO1=RrO[[h]],
+          relfit_h <- MatrixStudent_measures(Mean1=BetaHat,Scale1=S,tXXi1=tXXi,df1=dfN,RrE1=RrE[[h]],RrO1=RrO[[h]],
                          Names1=matrix(names_coef,ncol=P),constraints1=parse_hyp$original_hypothesis[h],
                          MCdraws=1e4)
-          relcomp_h <- BFpack:::MatrixStudent_measures(Mean1=Mean0,Scale1=S_b,tXXi1=tXXi_b,df1=df0,RrE1=RrE[[h]],RrO1=RrO[[h]],
+          relcomp_h <- MatrixStudent_measures(Mean1=Mean0,Scale1=S_b,tXXi1=tXXi_b,df1=df0,RrE1=RrE[[h]],RrO1=RrO[[h]],
                           Names1=matrix(names_coef,ncol=P),constraints1=parse_hyp$original_hypothesis[h],
                           MCdraws=1e4)
         }
