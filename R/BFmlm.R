@@ -544,7 +544,7 @@ BF.mlm <- function(x,
     numcorr <- length(meanN)
 
     #get height of prior density at 0 of Fisher transformed correlation
-    drawsJU <- draw_ju(P,samsize=50000,Fisher=1,seed=123)
+    drawsJU <- draw_ju_r(P,samsize=50000,Fisher=1,seed=123)
     relcomp0 <- approxfun(density(drawsJU[,1]))(0)
     # compute exploratory BFs
     relfit <- matrix(c(dnorm(0,mean=meanN,sd=sqrt(diag(covmN))),

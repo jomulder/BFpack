@@ -712,7 +712,7 @@ SUBROUTINE FINDInv(matrix, inverse, n, errorflag)
                     EXIT
                 ENDIF
                 IF (FLAG .EQV. .FALSE.) THEN
-                    PRINT*, "Matrix is non - invertible"
+!                    PRINT*, "Matrix is non - invertible"
                     inverse = 0
                     errorflag = -1
                     return
@@ -730,7 +730,7 @@ SUBROUTINE FINDInv(matrix, inverse, n, errorflag)
     !Test for invertibility
     DO i = 1, n
         IF (augmatrix(i,i) == 0) THEN
-            PRINT*, "Matrix is non - invertible"
+!            PRINT*, "Matrix is non - invertible"
             inverse = 0
             errorflag = -1
             return
@@ -1024,9 +1024,9 @@ SUBROUTINE setgmn(meanv,covm,p,parm)
 !     TEST THE INPUT
 !
       IF (.NOT. (p.LE.0)) GO TO 10
-      WRITE (*,*) 'P nonpositive in SETGMN'
-      WRITE (*,*) 'Value of P: ',p
-      STOP 'P nonpositive in SETGMN'
+!      WRITE (*,*) 'P nonpositive in SETGMN'
+!      WRITE (*,*) 'Value of P: ',p
+!      STOP 'P nonpositive in SETGMN'
 
    10 parm(1) = p
 !
@@ -1040,8 +1040,8 @@ SUBROUTINE setgmn(meanv,covm,p,parm)
 !
       CALL spofa(covm,p,p,info)
       IF (.NOT. (info.NE.0)) GO TO 30
-      WRITE (*,*) ' !OVM not positive definite in SETGMN'
-      STOP ' COVM not positive definite in SETGMN'
+!      WRITE (*,*) ' !OVM not positive definite in SETGMN'
+!      STOP ' COVM not positive definite in SETGMN'
 
    30 icount = p + 1
 !
