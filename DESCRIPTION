@@ -1,6 +1,6 @@
 Package: BFpack
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Flexible Bayes Factor Testing of Scientific Expectations
 Version: 0.1.0
 Authors@R: 
     c(person(given = c("Joris"),
@@ -12,8 +12,19 @@ Authors@R:
              role = "aut",
              email = "c.j.vanlissa@uu.nl"))
 Maintainer: Joris Mulder <j.mulder3@uvt.nl>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
+Description: The package provides a set of Bayes factors
+    for testing statistical hypotheses. The package is
+    intented for applied quantitative researchers in the
+    social and behavioral sciences, medical research,
+    and related fields. The Bayes factor tests can be
+    executed for statistical models such as 
+    univariate and multivariate normal linear models,
+    generalized linear models, special cases of 
+    linear mixed models, survival models, relational
+    event models. Parameters that can be tested are
+    location parameters (e.g., regression coefficients),
+    variances (e.g., group variances), and measures of 
+    association (e.g,. bivariate correlations).
 License: GPL (>= 3)
 BugReports: https://github.com/jomulder/BFpack/issues
 Encoding: UTF-8

@@ -405,6 +405,8 @@ BF.mlm <- function(x,
       # Compute relative fit/complexity for the complement hypothesis
       relfit <- MatrixStudent_prob_Hc(BetaHat,S,tXXi,N-K-P+1,as.matrix(relfit),RrO)
       relcomp <- MatrixStudent_prob_Hc(Mean0,S_b,tXXi_b,1,as.matrix(relcomp),RrO)
+      hypothesisshort <- unlist(lapply(1:nrow(relfit),function(h) paste0("H",as.character(h))))
+      row.names(relfit) <- row.names(relfit) <- hypothesisshort
 
       # the BF for the complement hypothesis vs Hu needs to be computed.
       BFtu_confirmatory <- c(apply(relfit / relcomp, 1, prod))
@@ -419,6 +421,7 @@ BF.mlm <- function(x,
           priorprobs <- prior
         }
       }
+
       names(priorprobs) <- names(BFtu_confirmatory)
       PHP_confirmatory <- BFtu_confirmatory*priorprobs / sum(BFtu_confirmatory*priorprobs)
       BFtable <- cbind(relcomp,relfit,relfit[,1]/relcomp[,1],relfit[,2]/relcomp[,2],
@@ -601,6 +604,8 @@ BF.mlm <- function(x,
       row.names(relfit) <- row.names(relcomp) <- parse_hyp$original_hypothesis
       relfit <- Gaussian_prob_Hc(meanN,covmN,relfit,RrO)
       relcomp <- jointuniform_prob_Hc(P,numcorrgroup,numG,relcomp,RrO)
+      hypothesisshort <- unlist(lapply(1:nrow(relfit),function(h) paste0("H",as.character(h))))
+      row.names(relfit) <- row.names(relfit) <- hypothesisshort
 
       # the BF for the complement hypothesis vs Hu needs to be computed.
       BFtu_confirmatory <- c(apply(relfit / relcomp, 1, prod))
@@ -624,7 +629,11 @@ BF.mlm <- function(x,
       BFmatrix_confirmatory <- matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory))/
         t(matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory)))
       row.names(BFmatrix_confirmatory) <- colnames(BFmatrix_confirmatory) <- names(BFtu_confirmatory)
-      hypotheses <- row.names(relfit)
+      if(nrow(relfit)==length(parse_hyp$original_hypothesis)){
+        hypotheses <- parse_hyp$original_hypothesis
+      }else{
+        hypotheses <- c(parse_hyp$original_hypothesis,"complement")
+      }
     }
     PHP_interaction <- BFtu_interaction <- PHP_main <- BFtu_main <- NULL
   }

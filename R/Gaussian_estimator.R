@@ -92,10 +92,8 @@ BF_Gaussian <- function(meanN,
     # get relative fit and complexity of complement hypothesis
     relcomp <- Gaussian_prob_Hc(mean1 = mean0, Sigma1 = covm0, relmeas = relcomp, RrO = RrO) #Note that input is a bit strange here, Gaussian_prob_Hc needs fixing
     relfit <- Gaussian_prob_Hc(mean1 = meanN, Sigma1 = covmN, relmeas = relfit, RrO = RrO)
-
-    # Hnames <- c(unlist(lapply(1:numhyp,function(h){paste0("H",as.character(h))})),"Hc")
-    # row.names(relcomp) <- row.names(relfit) <- Hnames
-    Hnames <- row.names(relcomp)
+    hypothesisshort <- unlist(lapply(1:nrow(relfit),function(h) paste0("H",as.character(h))))
+    row.names(relfit) <- row.names(relfit) <- hypothesisshort
     colnames(relcomp) <- c("c_E", "c_0")
     colnames(relfit) <- c("f_E", "f_0")
 
@@ -112,6 +110,7 @@ BF_Gaussian <- function(meanN,
         priorprobs <- prior
       }
     }
+    names(priorprobs) <- hypothesisshort
 
     PHP_confirmatory <- round(BFtu_confirmatory*priorprobs / sum(BFtu_confirmatory*priorprobs),3)
     BFtable <- cbind(relcomp,relfit,relfit[,1]/relcomp[,1],relfit[,2]/relcomp[,2],
@@ -120,9 +119,13 @@ BF_Gaussian <- function(meanN,
     colnames(BFtable) <- c("comp_E","comp_O","fit_E","fit_O","BF_E","BF_O","BF","PHP")
     BFmatrix_confirmatory <- matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory))/
       t(matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory)))
-    row.names(BFmatrix_confirmatory) <- Hnames
-    colnames(BFmatrix_confirmatory) <- Hnames
-    hypotheses <- Hnames
+    # row.names(BFmatrix_confirmatory) <- Hnames
+    # colnames(BFmatrix_confirmatory) <- Hnames
+    if(nrow(relfit)==length(parse_hyp$original_hypothesis)){
+      hypotheses <- parse_hyp$original_hypothesis
+    }else{
+      hypotheses <- c(parse_hyp$original_hypothesis,"complement")
+    }
   }
 
     BF_out <- list(
