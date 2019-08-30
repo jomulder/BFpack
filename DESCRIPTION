@@ -104,4 +104,5 @@ Imports:
 Suggests: 
     testthat,
     relevent,
-    polycor
+    polycor,
+    survival
