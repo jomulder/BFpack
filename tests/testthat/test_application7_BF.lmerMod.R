@@ -8,13 +8,14 @@ set.seed(123)
 BFicc <- BF(outlme1,hypothesis=
               "groupNL11<groupHR11;
                groupNL11=groupHR11")
+
 #check results confirmatory test
 expect_equivalent(
-  BFicc$PHP_confirmatory,c(0.45315181,0.46133681,0.08551138)
+  round(BFicc$PHP_confirmatory,7),c(0.5928385,0.2342143,0.1729472)
 )
 #check results exploratory test
-matrixPHP <- matrix(c(0.288,0.011,0.701,
-                    0.000,0.000,1.000),nrow=2,byrow=T)
+matrixPHP <- matrix(c(0.845, 0.052, 0.103,
+                      0.000, 0.000, 1.000),nrow=2,byrow=T)
 expect_equivalent(
   BFicc$PHP_exploratory,matrixPHP
 )

@@ -678,7 +678,7 @@ params_in_hyp <- function(hyp){
 # priors for regression coefficients, Jeffreys priors for standard deviations, and a proper
 # joint uniform prior for the correlation matrices.
 # dyn.load("/Users/jorismulder/surfdrive/R packages/BFpack/src/bct_continuous_final.dll")
-estimate_postMeanCov_FisherZ <- function(YXlist,numdraws=5e3){
+estimate_postMeanCov_FisherZ <- function(YXlist,numdraws=5e3,seed=123){
   # YXlist should be a list of length number of independent groups, of which each
   # element is another list of which the first element is a matrix of dependent
   # variables in the group, and the second element is a matrix of covariate variables
@@ -745,7 +745,8 @@ estimate_postMeanCov_FisherZ <- function(YXlist,numdraws=5e3){
                  B_quantiles=array(0,dim=c(numG,K,P,3)),
                  BDrawsStore=array(0,dim=c(samsize0,numG,K,P)),
                  sigmaDrawsStore=array(0,dim=c(samsize0,numG,P)),
-                 CDrawsStore=array(0,dim=c(samsize0,numG,P,P)))
+                 CDrawsStore=array(0,dim=c(samsize0,numG,P,P)),
+                 seed=as.integer(seed))
 
   FmeansCovCorr <- lapply(1:numG,function(g){
     Fdraws_g <- FisherZ(t(matrix(unlist(lapply(1:samsize0,function(s){

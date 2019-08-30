@@ -9,11 +9,11 @@ expect_equivalent(
 )
 #check results conformatory test
 expect_equivalent(
-  BF_glm$PHP_confirmatory,c(0.071,0.006,.922)
+  BF_glm$PHP_confirmatory,c(0.079, 0.006, 0.915)
 )
 #check equal prior probabilities
 expect_true(
-  all.equal(BF_glm$prior,rep(1,3)/3)
+  all.equal(unname(BF_glm$prior),rep(1,3)/3)
 )
 
 #check that complement is not added the complete parameter space is covered by hypotheses

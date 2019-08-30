@@ -1,5 +1,4 @@
 
-library(relevent)
 CovEventEff <- array(NA, dim = c(3, nrow(actors), nrow(actors)))
 CovEventEff[1,,] <- as.matrix(same_division)
 CovEventEff[2,,] <- as.matrix(same_hierarchy)

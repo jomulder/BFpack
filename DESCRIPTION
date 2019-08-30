@@ -9,8 +9,54 @@ Authors@R:
              email = "j.mulder3@uvt.nl"),
       person(given = "Caspar",
              family = "van Lissa",
+             role = c("aut", "ctb"),
+             email = "c.j.vanlissa@uu.nl"),
+      person(given = "Xin",
+             family = "Gu",
              role = "aut",
-             email = "c.j.vanlissa@uu.nl"))
+             email = "guxin57@hotmail.com"),
+      person(given = "Herbert",
+             family = "Hoijtink",
+             role = "aut",
+             email = "h.hoijtink@uu.nl"),
+      person(given = "Anton",
+             family = "Olsson-Collentine",
+             role = c("aut", "ctb"),
+             email = "J.A.E.OlssonCollentine@tilburguniversity.edu"),
+      person(given = "Andrew",
+             family = "Tomarken",
+             role = c("aut"),
+             email = "andrew.j.tomarken@vanderbilt.edu"),
+      person(given = "Florian",
+             family = "Boeing-Messing",
+             role = c("aut", "ctb"),
+             email = "F.Boeing-Messing@uvt.nl"),
+      person(given = "Marlyne",
+             family = "Meijerink-Bosman",
+             role = c("aut"),
+             email = "M.L.Meijerink@uvt.nl"),       
+      person(given = "Donald R.",
+             family = "Williams",
+             role = c("aut"),
+             email = "drwwilliams@ucdavis.edu"),
+      person(given = "Janosch",
+             family = "Menke",
+             role = c("aut"),
+             email = "j.menke@uu.nl"),
+      person(given = "Jean-Paul",
+             family = "Fox",
+             role = c("aut"),
+             email = "g.j.a.fox@utwente.nl"),
+      person(given = "Yves",
+             family = "Rosseel",
+             role = c("aut"),
+             email = "Yves.Rosseel@ugent.be"),
+      person(given = "Eric-Jan",
+             family = "Wagenmakers",
+             role = c("aut"),
+             email = "ej.wagenmakers@gmail.com"),
+      person("The R Core Team", role = "cph")
+             )
 Maintainer: Joris Mulder <j.mulder3@uvt.nl>
 Description: The package provides a set of Bayes factors
     for testing statistical hypotheses. The package is
@@ -25,6 +71,18 @@ Description: The package provides a set of Bayes factors
     location parameters (e.g., regression coefficients),
     variances (e.g., group variances), and measures of 
     association (e.g,. bivariate correlations).
+    The statistical underpinnings are
+    described in 
+    Mulder, Hoijtink, and Xin (2019) <arXiv:1904.00679>,
+    Mulder and Gelissen (2019) <arXiv:1807.05819>,
+    Mulder (2016) <doi:10.1016/j.jmp.2014.09.004>,
+    Mulder and Fox (2019) <doi:10.1214/18-BA1115>,
+    Mulder and Fox (2013) <doi:10.1007/s11222-011-9295-3>,
+    Boeing-Messing, van Assen, Hofman, Hoijtink, and Mulder <doi:10.1037/met0000116>,
+    Hoijtink, Mulder, van Lissa, and Gu, (2018) <doi:10.31234/osf.io/v3shc>,
+    Gu, Mulder, and Hoijtink, (2018) <doi:10.1111/bmsp.12110>,
+    Hoijtink, Gu, and Mulder, (2018) <doi:10.1111/bmsp.12145>, and
+    Hoijtink, Gu, Mulder, and Rosseel, (2018) <doi:10.1037/met0000187>.
 License: GPL (>= 3)
 BugReports: https://github.com/jomulder/BFpack/issues
 Encoding: UTF-8
