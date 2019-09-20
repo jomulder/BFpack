@@ -10,10 +10,10 @@ BF.glm <- function(x,
 
   #Extract summary statistics
   n <- nobs(x)
-  covmN <- vcov(x)
-  meanN <- coef(x)
+  sigma <- vcov(x)
+  estimate <- coef(x)
 
-  out <- BF_Gaussian(meanN, covmN, n, hypothesis, prior)
+  out <- BF_Gaussian(estimate, sigma, n, hypothesis, prior)
   out$model <- x
   out$call <- match.call()
   out

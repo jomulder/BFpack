@@ -10,10 +10,10 @@ BF.rem.dyad <- function(x,
 
   #Extract summary statistics
   n <- x$m
-  covmN <- x$cov
-  meanN <- x$coef
+  sigma <- x$cov
+  estimate <- x$coef
 
-  out <- BF_Gaussian(meanN, covmN, n, hypothesis, prior)
+  out <- BF_Gaussian(estimate, sigma, n, hypothesis, prior)
   out$model <- x
   out$call <- match.call()
   out

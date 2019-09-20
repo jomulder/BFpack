@@ -1,17 +1,17 @@
-#BF method for rem class objects
+#BF method for survreg classes
 
 
-#' @method BF rem
+#' @method BF survreg
 #' @export
-BF.rem <- function(x,
+BF.survreg <- function(x,
                    hypothesis = NULL,
                    prior = NULL,
                    ...){
 
   #Extract summary statistics
-  n <- x$df.null
-  sigma <- x$cov
-  estimate <- x$coef
+  n <- length(x$y)
+  sigma <- x$var
+  estimate <- x$coefficients
 
   out <- BF_Gaussian(estimate, sigma, n, hypothesis, prior)
   out$model <- x
@@ -19,3 +19,5 @@ BF.rem <- function(x,
   out
 
 }
+
+

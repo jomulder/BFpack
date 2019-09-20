@@ -15,10 +15,6 @@ Authors@R:
              family = "Gu",
              role = "aut",
              email = "guxin57@hotmail.com"),
-      person(given = "Herbert",
-             family = "Hoijtink",
-             role = "aut",
-             email = "h.hoijtink@uu.nl"),
       person(given = "Anton",
              family = "Olsson-Collentine",
              role = c("aut", "ctb"),
@@ -58,7 +54,7 @@ Authors@R:
       person("The R Core Team", role = "cph")
              )
 Maintainer: Joris Mulder <j.mulder3@uvt.nl>
-Description: The package provides a set of Bayes factors
+Description: The package contains various Bayes factors
     for testing statistical hypotheses. The package is
     intented for applied quantitative researchers in the
     social and behavioral sciences, medical research,

@@ -1,15 +1,65 @@
 ##Internal estimation function for the methods for classes glm, lavaan, coxph, rem, rem.dyad and glmerMod
 
-#' @importFrom stats qnorm
-BF_Gaussian <- function(meanN,
-                       covmN,
+
+#' @title Bayes factor testing based on Gaussian approximations
+#' @description The function \code{BF_Gaussian} can be used for hypothesis testing
+#' and model selection using the Bayes factor using a Gaussian approximation of the
+#' likelihood function. By default exploratory hypothesis tests are
+#' performed of whether each model parameter equals zero, is negative, or is positive.
+#' Confirmatory hypothesis tests can be executed by specifying hypotheses with
+#' equality and/or order constraints on the parameters of interest.
+#'
+#' @param estimate A named vector containing the estimates of the parameters that
+#' are tested.
+#' @param sigma The error covariance matrix of the estimates.
+#' @param n The sample size.
+#' @param hypothesis A character string containing the informative hypotheses to
+#' evaluate. The default is NULL, which will result in an exploratory analysis.
+#' @param prior A vector specifying the prior probabilities of the hypotheses.
+#' The default is NULL which will specify equal prior probabilities.
+#' @return The output is an object of class \code{BF}. The object has elements:
+#' BFtu_exploratory, PHP_exploratory, BFtu_confirmatory, PHP_confirmatory,
+#' BFmatrix_confirmatory, BFtable_confirmatory, BFtu_main, PHP_main,
+#' BFtu_interaction, PHP_interaction, prior, hypotheses, estimates, model, call.
+#' @details The function requires a named vector \code{estimate} together with
+#' its error covariance matrix \code{sigma} and the sample size \code{n} of the
+#' data that were used to get the estimates of the fitted model.
+#' @references Mulder, J., Gu, X., van Lissa, C., A. Tomarken, F. Boing-Messing,
+#' J.A.O.C. Olsson-Collentine, Marlyne Bosman-Meyerink, D.R. Williams, J. Menke,
+#' J.-P. Fox, Y. Rosseel, E.J. Wagenmakers, and H. Hoijtink. (submitted). BFpack:
+#' Flexible Bayes Factor Testing of Scientific Theories in R.
+#' @examples
+#'
+#' # load R package BFpack
+#' library(BFpack)
+#'
+#' # Logistic regression
+#' fit1 <- glm(sent ~ ztrust + zfWHR + zAfro + glasses + attract + maturity +
+#'    tattoos, family = binomial(), data = wilson)
+#' estimate <- coef(fit1)
+#' sigma <- vcov(fit1)
+#' n <- nobs(fit1)
+#'
+#' BF1 <- BF_Gaussian(estimate, sigma, n, hypothesis="ztrust > 0 & zfWHR=zAfro= 0")
+#' summary(BF1)
+#'
+#' #the result is the same as when running
+#' BF(fit1, hypothesis = "ztrust > 0 & zfWHR=zAfro= 0")
+#' @importFrom stats qnorm dnorm pnorm
+#' @export
+#' @export BF_Gaussian
+BF_Gaussian <- function(estimate,
+                       sigma,
                        n,
-                       hypothesis,
-                       prior){
+                       hypothesis = NULL,
+                       prior = NULL){
 
   #Input is a named mean vector, covariance matrix and number of observations
   #These are extracted by the relevant method functions from a model object and
   #passed together with the hypothesis and prior to the Gaussian_estimator
+
+  meanN <- estimate #the posterior mean is approximated with the estimate
+  covmN <- sigma    #the posterior covariance matrix is approximated with the error covariance matrix
 
   names_coef <- names(meanN)
   covm0 <- covmN * n
