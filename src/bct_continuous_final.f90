@@ -3,11 +3,11 @@
 
 
 subroutine estimate_postmeancov_fisherz(postZmean, postZcov, P, numcorr, K, numG, BHat, sdHat, CHat, XtXi, samsize0, Njs, &
-    Ygroups, Xgroups, Ntot, C_quantiles, sigma_quantiles, B_quantiles, BDrawsStore, sigmaDrawsStore, CDrawsStore)
+    Ygroups, Xgroups, Ntot, C_quantiles, sigma_quantiles, B_quantiles, BDrawsStore, sigmaDrawsStore, CDrawsStore, seed)
 !
     implicit none
 
-    integer, intent(in) :: P, numcorr, K, numG, samsize0, Njs(numG), Ntot
+    integer, intent(in) :: P, numcorr, K, numG, samsize0, Njs(numG), Ntot, seed
     real(8), intent(in) :: BHat(numG,K,P), sdHat(numG,P), CHat(numG,P,P), XtXi(numG,K,K)
     real(8), intent(out):: postZmean(numcorr,1), postZcov(numcorr,numcorr), Ygroups(numG,Ntot,P), Xgroups(numG,Ntot,K),&
                            B_quantiles(numG,K,P,3), C_quantiles(numG,P,P,3), sigma_quantiles(numG,P,3), &
@@ -19,7 +19,14 @@ subroutine estimate_postmeancov_fisherz(postZmean, postZcov, P, numcorr, K, numG
                            varz1, varz2, varz1z2Plus, varz1z2Min, Cinv(P,P), Zcorr_sample(samsize0,numcorr), &
                            acceptSigma(numG,P), acceptC(numG), covBeta(P*K,P*K), betaDrawj(1,P*K), dummyPP(P,P), &
                            dummy3(samsize0), dummy2(samsize0), meanO(P*K), para(((P*K)*((P*K)+3)/2 + 1)), SS2(P,P)
-    integer             :: s1, g1, i1, corrteller, c1, c2, p1, p2, k1, errorflag, lower_int, median_int, upper_int
+    integer             :: s1, g1, i1, corrteller, c1, c2, p1, p2, k1, errorflag, lower_int, median_int, upper_int, nn
+    integer, allocatable, dimension(:) :: iseed
+!
+    !set seed
+    call RANDOM_SEED(size=nn)
+    allocate(iseed(nn))
+    iseed(:)=seed
+    call RANDOM_SEED(put=iseed)
 !    
     !initial posterior draws start at MLEs    
     BDraws = BHat
@@ -712,7 +719,7 @@ SUBROUTINE FINDInv(matrix, inverse, n, errorflag)
                     EXIT
                 ENDIF
                 IF (FLAG .EQV. .FALSE.) THEN
-                    PRINT*, "Matrix is non - invertible"
+!                    PRINT*, "Matrix is non - invertible"
                     inverse = 0
                     errorflag = -1
                     return
@@ -730,7 +737,7 @@ SUBROUTINE FINDInv(matrix, inverse, n, errorflag)
     !Test for invertibility
     DO i = 1, n
         IF (augmatrix(i,i) == 0) THEN
-            PRINT*, "Matrix is non - invertible"
+!            PRINT*, "Matrix is non - invertible"
             inverse = 0
             errorflag = -1
             return
@@ -1024,9 +1031,9 @@ SUBROUTINE setgmn(meanv,covm,p,parm)
 !     TEST THE INPUT
 !
       IF (.NOT. (p.LE.0)) GO TO 10
-      WRITE (*,*) 'P nonpositive in SETGMN'
-      WRITE (*,*) 'Value of P: ',p
-      STOP 'P nonpositive in SETGMN'
+!      WRITE (*,*) 'P nonpositive in SETGMN'
+!      WRITE (*,*) 'Value of P: ',p
+!      STOP 'P nonpositive in SETGMN'
 
    10 parm(1) = p
 !
@@ -1040,8 +1047,8 @@ SUBROUTINE setgmn(meanv,covm,p,parm)
 !
       CALL spofa(covm,p,p,info)
       IF (.NOT. (info.NE.0)) GO TO 30
-      WRITE (*,*) ' !OVM not positive definite in SETGMN'
-      STOP ' COVM not positive definite in SETGMN'
+!      WRITE (*,*) ' !OVM not positive definite in SETGMN'
+!      STOP ' COVM not positive definite in SETGMN'
 
    30 icount = p + 1
 !

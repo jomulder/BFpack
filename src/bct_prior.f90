@@ -257,7 +257,7 @@ end subroutine draw_ju
 
 
 
-subroutine compute_rcet(numE,drawsIn,wIn,delta,rcEt, samsize)
+subroutine compute_rcet(numE,drawsIn,wIn,delta,rcEt,samsize)
 !estimates the density at 0 via a histogram estimate, e.g., mean(abs(draws)<delta)/(2*delta), with default delta=.1
     
     implicit none

@@ -385,7 +385,7 @@ BF.mlm <- function(x,
         }else{ #use Matrix-Student distributions with Monte Carlo estimate
           df0 <- 1
           dfN <- N-K-P+1
-          relfit_h <- MatrixStudent_measures(BetaHat,S,tXXi,dfN,RrE[[h]],RrO[[h]],
+          relfit_h <- MatrixStudent_measures(Mean1=BetaHat,Scale1=S,tXXi1=tXXi,df1=dfN,RrE1=RrE[[h]],RrO1=RrO[[h]],
                          Names1=matrix(names_coef,ncol=P),constraints1=parse_hyp$original_hypothesis[h],
                          MCdraws=1e4)
           relcomp_h <- MatrixStudent_measures(Mean1=Mean0,Scale1=S_b,tXXi1=tXXi_b,df1=df0,RrE1=RrE[[h]],RrO1=RrO[[h]],
@@ -405,6 +405,8 @@ BF.mlm <- function(x,
       # Compute relative fit/complexity for the complement hypothesis
       relfit <- MatrixStudent_prob_Hc(BetaHat,S,tXXi,N-K-P+1,as.matrix(relfit),RrO)
       relcomp <- MatrixStudent_prob_Hc(Mean0,S_b,tXXi_b,1,as.matrix(relcomp),RrO)
+      hypothesisshort <- unlist(lapply(1:nrow(relfit),function(h) paste0("H",as.character(h))))
+      row.names(relfit) <- row.names(relfit) <- hypothesisshort
 
       # the BF for the complement hypothesis vs Hu needs to be computed.
       BFtu_confirmatory <- c(apply(relfit / relcomp, 1, prod))
@@ -419,6 +421,7 @@ BF.mlm <- function(x,
           priorprobs <- prior
         }
       }
+
       names(priorprobs) <- names(BFtu_confirmatory)
       PHP_confirmatory <- BFtu_confirmatory*priorprobs / sum(BFtu_confirmatory*priorprobs)
       BFtable <- cbind(relcomp,relfit,relfit[,1]/relcomp[,1],relfit[,2]/relcomp[,2],
@@ -544,7 +547,7 @@ BF.mlm <- function(x,
     numcorr <- length(meanN)
 
     #get height of prior density at 0 of Fisher transformed correlation
-    drawsJU <- draw_ju(P,samsize=50000,Fisher=1,seed=123)
+    drawsJU <- draw_ju_r(P,samsize=50000,Fisher=1,seed=123)
     relcomp0 <- approxfun(density(drawsJU[,1]))(0)
     # compute exploratory BFs
     relfit <- matrix(c(dnorm(0,mean=meanN,sd=sqrt(diag(covmN))),
@@ -601,6 +604,8 @@ BF.mlm <- function(x,
       row.names(relfit) <- row.names(relcomp) <- parse_hyp$original_hypothesis
       relfit <- Gaussian_prob_Hc(meanN,covmN,relfit,RrO)
       relcomp <- jointuniform_prob_Hc(P,numcorrgroup,numG,relcomp,RrO)
+      hypothesisshort <- unlist(lapply(1:nrow(relfit),function(h) paste0("H",as.character(h))))
+      row.names(relfit) <- row.names(relfit) <- hypothesisshort
 
       # the BF for the complement hypothesis vs Hu needs to be computed.
       BFtu_confirmatory <- c(apply(relfit / relcomp, 1, prod))
@@ -624,7 +629,11 @@ BF.mlm <- function(x,
       BFmatrix_confirmatory <- matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory))/
         t(matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory)))
       row.names(BFmatrix_confirmatory) <- colnames(BFmatrix_confirmatory) <- names(BFtu_confirmatory)
-      hypotheses <- row.names(relfit)
+      if(nrow(relfit)==length(parse_hyp$original_hypothesis)){
+        hypotheses <- parse_hyp$original_hypothesis
+      }else{
+        hypotheses <- c(parse_hyp$original_hypothesis,"complement")
+      }
     }
     PHP_interaction <- BFtu_interaction <- PHP_main <- BFtu_main <- NULL
   }
@@ -669,7 +678,7 @@ params_in_hyp <- function(hyp){
 # priors for regression coefficients, Jeffreys priors for standard deviations, and a proper
 # joint uniform prior for the correlation matrices.
 # dyn.load("/Users/jorismulder/surfdrive/R packages/BFpack/src/bct_continuous_final.dll")
-estimate_postMeanCov_FisherZ <- function(YXlist,numdraws=5e3){
+estimate_postMeanCov_FisherZ <- function(YXlist,numdraws=5e3,seed=123){
   # YXlist should be a list of length number of independent groups, of which each
   # element is another list of which the first element is a matrix of dependent
   # variables in the group, and the second element is a matrix of covariate variables
@@ -736,7 +745,8 @@ estimate_postMeanCov_FisherZ <- function(YXlist,numdraws=5e3){
                  B_quantiles=array(0,dim=c(numG,K,P,3)),
                  BDrawsStore=array(0,dim=c(samsize0,numG,K,P)),
                  sigmaDrawsStore=array(0,dim=c(samsize0,numG,P)),
-                 CDrawsStore=array(0,dim=c(samsize0,numG,P,P)))
+                 CDrawsStore=array(0,dim=c(samsize0,numG,P,P)),
+                 seed=as.integer(seed))
 
   FmeansCovCorr <- lapply(1:numG,function(g){
     Fdraws_g <- FisherZ(t(matrix(unlist(lapply(1:samsize0,function(s){

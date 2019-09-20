@@ -71,7 +71,7 @@ summary(BF1)
 fit <- glm(sent ~ ztrust + zfWHR + zAfro + glasses + attract + maturity +
    tattoos, family = binomial(), data = wilson)
 BF1 <- BF(fit, hypothesis = "ztrust > (zfWHR, zAfro) > 0;
-   ztrust > (zfWHR, zAfro) = 0")
+   ztrust > 0 & zfWHR=zAfro= 0")
 summary(BF1)
 
 # EXAMPLE 4. Correlation analysis

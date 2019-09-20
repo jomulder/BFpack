@@ -5,7 +5,7 @@
 #' @export
 BF.htest <-
   function(x,
-           hypothesis,
+           hypothesis = NULL,
            prior = NULL,
            parameter = NULL,
            ...) {
@@ -13,6 +13,8 @@ BF.htest <-
   }
 
 
+
+#' @importFrom stats approxfun
 #' @method BF bain_htest
 #' @export
 BF.bain_htest <- function(x,
@@ -107,13 +109,14 @@ BF.bain_htest <- function(x,
       dfN <- x$n-1
       scale0 <- (x$v)*(x$n-1)/(x$n)
       df0 <- rep(1,2)
-      drawsN <- rt(1e6,df=dfN[1])*sqrt(scaleN[1]) + meanN[1] - rt(1e5,df=dfN[2])*sqrt(scaleN[2]) - meanN[2]
-      densN <- approxfun(density(drawsN))
+      samsize <- 5e6
+      drawsN <- rt(samsize,df=dfN[1])*sqrt(scaleN[1]) + meanN[1] - rt(1e5,df=dfN[2])*sqrt(scaleN[2]) - meanN[2]
+      densN <- approxfun(density(drawsN),yleft=0,yright=0)
       relfit0 <- log(densN(0))
       relfit1 <- log(mean(drawsN<0))
       relfit2 <- log(mean(drawsN>0))
-      draws0 <- rt(1e6,df=df0[1])*sqrt(scale0[1])- rt(1e5,df=df0[2])*sqrt(scale0[2])
-      relcomp0 <- log((sum((draws0<1)*(draws0> -1))/1e6)/2)
+      draws0 <- rt(samsize,df=df0[1])*sqrt(scale0[1]) - rt(1e5,df=df0[2])*sqrt(scale0[2])
+      relcomp0 <- log(mean((draws0<1)*(draws0> -1))/2)
       relcomp1 <- relcomp2 <- log(.5)
 
       #exploratory Bayes factor test
@@ -136,9 +139,9 @@ BF.bain_htest <- function(x,
         RrList <- make_RrList2(parse_hyp)
         RrE <- RrList[[1]]
         RrO <- RrList[[2]]
-        if(ncol(do.call(rbind,RrE))>2 || ncol(do.call(rbind,RrO))>2){
-          stop("hypothesis should be formulated on the only parameter 'difference'.")
-        }
+        # if(ncol(do.call(rbind,RrE))>2 || ncol(do.call(rbind,RrO))>2){
+        #   stop("hypothesis should be formulated on the only parameter 'difference'.")
+        # }
         relfit <- t(matrix(unlist(lapply(1:length(RrE),function(h){
           if(!is.null(RrE[[h]]) & is.null(RrO[[h]])){ #only an equality constraint
             nullvalue <- RrE[[h]][1,2]/RrE[[h]][1,1]
@@ -164,7 +167,7 @@ BF.bain_htest <- function(x,
         colnames(relcomp) <- c("c=","c>")
         #add complement to analysis
         welk <- (relcomp==1)[,2]==F
-        if(sum((relcomp==1)[,2])>0){ #then there are order hypotheses
+        if(sum((relcomp==1)[,2])>0){ #then there are only order hypotheses
           relcomp_c <- 1-sum(exp(relcomp[welk,2]))
           if(relcomp_c!=0){ # then add complement
             relcomp <- rbind(relcomp,c(0,log(relcomp_c)))
@@ -191,7 +194,7 @@ BF.bain_htest <- function(x,
           }
         }
         #compute Bayes factors and posterior probabilities for confirmatory test
-        BFtu_confirmatory <- c(apply(exp(relfit) / exp(relcomp), 1, prod))
+        BFtu_confirmatory <- c(apply(relfit / relcomp, 1, prod))
         PHP_confirmatory <- BFtu_confirmatory*priorprobs / sum(BFtu_confirmatory*priorprobs)
         BFmatrix_confirmatory <- matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory))/
           t(matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory)))
