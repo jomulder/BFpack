@@ -35,11 +35,24 @@ Confirmatory hypothesis tests can be executed by specifying hypotheses with
 equality and/or order constraints on the parameters of interest.
 }
 \details{
-The function requires a fitted modeling object. Current R functions that
-are supported: \code{t_test} (\code{bain} package), \code{var_test}  (\code{BFpack}
-package), \code{aov}, \code{manova}, \code{lm}, \code{glm} (\code{stats} package),
-\code{hetcor} (\code{polycor} package), \code{lmer} (\code{lme4} package), \code{coxph}
-(\code{survival} package), \code{rem} and \code{rem.dyad} (\code{relevent} package).
+The function requires a fitted modeling object. Current model classes that
+are supported: \code{bain_htest} (\code{bain} package), \code{BF_bartlett}
+(\code{BFpack} package), \code{aov}, \code{manova}, \code{lm}, \code{mlm},
+\code{glm}
+(\code{stats} package), \code{hetcor} (\code{polycor} package), \code{lmerMod}
+(\code{lme4} package), \code{coxph}, \code{survreg} (\code{survival} package),
+\code{rem}, \code{rem.dyad} (\code{relevent} package), \code{zeroinfl}
+(\code{pscl} package), and \code{polr} (\code{MASS} package).
+
+For testing means and regression coefficients of model classes \code{bain_htest},
+\code{aov}, \code{manova}, \code{lm}, \code{mlm}, adjusted fractional Bayes factors
+are computed. For testing group variances of a model of class \code{BF_bartlett}
+adjusted fractional Bayes factors are computed.
+For testing measures of association (e.g., correlations) under
+model class \code{mlm} and for testing intraclass correlations under model class
+\code{lmerMod}, default Bayes factors based on uniform priors are computed. For
+all other model classes an approximate Bayes factor is computed using a Gaussian
+approximation of the posterior, similar as a classical Wald test.
 }
 \examples{
 
@@ -84,8 +97,8 @@ BF1 <- BF(res,hypothesis="(Middle_with_Superficial,Deep_with_Superficial,Deep_wi
 
 }
 \references{
-Mulder, J., Gu, X., van Lissa, C., A. Tomarken, F. Boing-Messing,
-J.A.O.C. Olsson-Collentine, Marlyne Bosman-Meyerink, D.R. Williams, J. Menke,
-J.-P. Fox, Y. Rosseel, E.J. Wagenmakers, and H. Hoijtink. (submitted). BFpack:
-Flexible Bayes Factor Testing of Scientific Theories in R.
+Mulder, J., Gu, X., A. Tomarken, F. Boing-Messing,
+J.A.O.C. Olsson-Collentine, Marlyne Meyerink, D.R. Williams, J. Menke,
+J.-P. Fox, Y. Rosseel, E.J. Wagenmakers, H. Hoijtink., and van Lissa, C.
+(submitted). BFpack: Flexible Bayes Factor Testing of Scientific Theories in R.
 }

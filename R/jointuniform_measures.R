@@ -2,7 +2,7 @@
 
 
 
-jointuniform_measures <- function(P,numcorrgroup,numG,RrE1,RrO1,Fisher=0,samsize=1e5,seed=123){
+jointuniform_measures <- function(P,numcorrgroup,numG,RrE1,RrO1,Fisher=0,samsize=1e5){
   # If Fisher=1 then the evaluation is done on Fisher transformed space.
   relE <- relO <- 1
   numcorr <- numcorrgroup*numG
@@ -11,7 +11,7 @@ jointuniform_measures <- function(P,numcorrgroup,numG,RrE1,RrO1,Fisher=0,samsize
   if(numcorr==1){ #use analytic expression in case of a single correlation
     # RrE1=RrO1=matrix(c(-1,1,-.5,.3),nrow=2)
     if(!is.null(RrE1)){ # only inequality constraint(s). Copmute prior proportion.
-      drawsJU <- draw_ju_r(P,samsize=5000,Fisher=Fisher,seed=123)
+      drawsJU <- draw_ju_r(P,samsize=5000,Fisher=Fisher)
       if(Fisher==0){
         relE <- approxfun(density(drawsJU[,1]))(RrE1[1,2])
       }else{
@@ -34,7 +34,7 @@ jointuniform_measures <- function(P,numcorrgroup,numG,RrE1,RrO1,Fisher=0,samsize
 
     # get random draws from joint uniform distribution
     drawsJU <- matrix(0,nrow=samsize,ncol=numcorr)
-    drawsJU[,1:numcorrgroup] <- draw_ju_r(P,samsize=samsize,Fisher=Fisher,seed=seed)
+    drawsJU[,1:numcorrgroup] <- draw_ju_r(P,samsize=samsize,Fisher=Fisher)
 
     #These draws can be used for the correlation matrices of the independent groups
     numcorr <- numcorrgroup * numG
@@ -155,7 +155,7 @@ jointuniform_prob_Hc <- function(P,numcorrgroup,numG,relmeas,RrO,samsize1=1e4,se
       # drawsJU[,1:numcorrgroup] <- .Fortran("draw_ju",P=as.integer(P),drawscorr=drawsJU[,1:numcorrgroup],
       #                                      samsize=as.integer(samsize1),numcorrgroup=as.integer(numcorrgroup),
       #                                      seed=as.integer(seed))$drawscorr
-      drawsJU[,1:numcorrgroup] <- draw_ju_r(P, samsize1,Fisher=1,seed)
+      drawsJU[,1:numcorrgroup] <- draw_ju_r(P, samsize1,Fisher=1)
       #These draws can be used for the correlation matrices of the independent groups
       numcorr <- numcorrgroup * numG
       teldummy <- numcorrgroup
@@ -206,14 +206,14 @@ jointuniform_prob_Hc <- function(P,numcorrgroup,numG,relmeas,RrO,samsize1=1e4,se
 
 #get draws from joint uniform prior in Fisher transformed space
 #Call Fortran subroutine in from bct_prior.f90
-draw_ju_r <- function(P, samsize=50000,Fisher=1,seed=123){
+draw_ju_r <- function(P, samsize=50000,Fisher=1){
   testm<- matrix(0,ncol=.5*P*(P-1),nrow=samsize)
   res <-.Fortran("draw_ju",P = as.integer(P),
                  drawscorr=testm,
                  samsize=as.integer(samsize),
                  numcorrgroup=as.integer(.5*P*(P-1)),
                  Fisher=as.integer(Fisher),
-                 seed=as.integer(seed),PACKAGE="BFpack")
+                 seed=as.integer(sample.int(1e6, 1)),PACKAGE="BFpack")
   return(res$drawscorr)
 
 }

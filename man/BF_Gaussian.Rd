@@ -58,8 +58,8 @@ summary(BF1)
 BF(fit1, hypothesis = "ztrust > 0 & zfWHR=zAfro= 0")
 }
 \references{
-Mulder, J., Gu, X., van Lissa, C., A. Tomarken, F. Boing-Messing,
+Mulder, J., Gu, X., A. Tomarken, F. Boing-Messing,
 J.A.O.C. Olsson-Collentine, Marlyne Bosman-Meyerink, D.R. Williams, J. Menke,
-J.-P. Fox, Y. Rosseel, E.J. Wagenmakers, and H. Hoijtink. (submitted). BFpack:
+J.-P. Fox, Y. Rosseel, E.J. Wagenmakers, H. Hoijtink., van Lissa, C. (submitted). BFpack:
 Flexible Bayes Factor Testing of Scientific Theories in R.
 }

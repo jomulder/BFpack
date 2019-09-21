@@ -10,14 +10,16 @@ BFicc <- BF(outlme1,hypothesis=
                groupNL11=groupHR11")
 
 #check results confirmatory test
-expect_equivalent(
-  round(BFicc$PHP_confirmatory,7),c(0.5928385,0.2342143,0.1729472)
-)
+test_that("lmerMod two hypotheses correctly evaluated", {
+  expect_equivalent(
+    round(BFicc$PHP_confirmatory,7),c(0.5928385,0.2342143,0.1729472)
+)})
 #check results exploratory test
 matrixPHP <- matrix(c(0.845, 0.052, 0.103,
                       0.000, 0.000, 1.000),nrow=2,byrow=T)
-expect_equivalent(
-  BFicc$PHP_exploratory,matrixPHP
-)
+test_that("lmerMod explortatory hypotheses correctly evaluated", {
+  expect_equivalent(
+    BFicc$PHP_exploratory,matrixPHP
+)})
 
 

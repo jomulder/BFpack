@@ -19,41 +19,17 @@ Authors@R:
              family = "Olsson-Collentine",
              role = c("aut", "ctb"),
              email = "J.A.E.OlssonCollentine@tilburguniversity.edu"),
-      person(given = "Andrew",
-             family = "Tomarken",
-             role = c("aut"),
-             email = "andrew.j.tomarken@vanderbilt.edu"),
       person(given = "Florian",
              family = "Boeing-Messing",
              role = c("aut", "ctb"),
              email = "F.Boeing-Messing@uvt.nl"),
-      person(given = "Marlyne",
-             family = "Meijerink-Bosman",
-             role = c("aut"),
-             email = "M.L.Meijerink@uvt.nl"),       
-      person(given = "Donald R.",
-             family = "Williams",
-             role = c("aut"),
-             email = "drwwilliams@ucdavis.edu"),
       person(given = "Janosch",
              family = "Menke",
              role = c("aut"),
              email = "j.menke@uu.nl"),
-      person(given = "Jean-Paul",
-             family = "Fox",
-             role = c("aut"),
-             email = "g.j.a.fox@utwente.nl"),
-      person(given = "Yves",
-             family = "Rosseel",
-             role = c("aut"),
-             email = "Yves.Rosseel@ugent.be"),
-      person(given = "Eric-Jan",
-             family = "Wagenmakers",
-             role = c("aut"),
-             email = "ej.wagenmakers@gmail.com"),
       person("The R Core Team", role = "cph")
              )
-Maintainer: Joris Mulder <j.mulder3@uvt.nl>
+Maintainer: Joris Mulder <j.mulder3@tilburguniversity.edu>
 Description: The package contains various Bayes factors
     for testing statistical hypotheses. The package is
     intented for applied quantitative researchers in the
@@ -101,4 +77,5 @@ Suggests:
     testthat,
     relevent,
     polycor,
-    survival
+    survival,
+    pscl

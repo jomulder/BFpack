@@ -18,13 +18,9 @@ BF6_cor <- BF(lm6,parameter="correlation", hypothesis=
     Cat_with_Rat_in_GroupHC > Cat_with_Rat_in_GroupSZ &
     Fas_with_Rat_in_GroupHC > Fas_with_Rat_in_GroupSZ")
 #check results
-expect_equivalent(
-  round(BF6_cor$BFmatrix_confirmatory[1,2],3),6201.679
-)
+test_that("correlation test on mlm object with multiple groups correctly evaluates", {
+  expect_equivalent(
+    round(BF6_cor$BFmatrix_confirmatory[1,2],3),6296.542
+)})
 
-#
-# install.packages("ggplot2")
-# ggplot(attention, aes(x = group, y = accuracy)) +
-#   geom_density_ridges(aes(fill = group)) +
-#   scale_fill_manual(values = c("#00AFBB", "#E7B800", "#FC4E07"))
 

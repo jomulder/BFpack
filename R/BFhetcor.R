@@ -44,15 +44,20 @@ BF.hetcor <- function(x,
   # )
   # row.names(postestimates) <- corr_names_lower
   # colnames(postestimates) <- c("mean","median","2.5%","97.5%")
-  postestimates <- NULL #currently no proper method available to get posterior mean, median, CI based on hetcor object
+  #currently no proper method available to get posterior mean, median, CI based on hetcor object
 
   #confirmatory BF testing
   if(!is.null(hypothesis)){
 
     parse_hyp <- parse_hypothesis(corr_names_all,hypothesis)
     #combine equivalent correlations, e.g., cor(Y1,Y2)=corr(Y2,Y1).
-    parse_hyp$hyp_mat <- cbind(parse_hyp$hyp_mat[,1:numcorr] + parse_hyp$hyp_mat[,numcorr+1:numcorr],
+    if(nrow(parse_hyp$hyp_mat)>1){
+      parse_hyp$hyp_mat <- cbind(parse_hyp$hyp_mat[,1:numcorr] + parse_hyp$hyp_mat[,numcorr+1:numcorr],
             parse_hyp$hyp_mat[,numcorr*2+1])
+    }else{
+      parse_hyp$hyp_mat <- cbind(t(parse_hyp$hyp_mat[,1:numcorr] + parse_hyp$hyp_mat[,numcorr+1:numcorr]),
+                                 parse_hyp$hyp_mat[,numcorr*2+1])
+    }
     #create coefficient with equality and order constraints
     RrList <- make_RrList2(parse_hyp)
     RrE <- RrList[[1]]
@@ -113,7 +118,7 @@ BF.hetcor <- function(x,
     BFtable_confirmatory=BFtable,
     prior=priorprobs,
     hypotheses=hypotheses,
-    estimates=postestimates,
+    estimates=estimates,
     model=x,
     call=match.call())
 
