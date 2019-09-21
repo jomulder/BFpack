@@ -48,9 +48,10 @@ BF.hetcor <- function(x,
 
   #confirmatory BF testing
   if(!is.null(hypothesis)){
-
-    parse_hyp <- parse_hypothesis(corr_names_all,hypothesis)
+    parse_hyp <- parse_hypothesis(corr_names_all,hypothesis, return_list = TRUE)
+    #browser()
     #combine equivalent correlations, e.g., cor(Y1,Y2)=corr(Y2,Y1).
+    parse_hyp$hyp_mat <- do.call(rbind, parse_hyp$hyp_mat)
     parse_hyp$hyp_mat <- cbind(parse_hyp$hyp_mat[,1:numcorr] + parse_hyp$hyp_mat[,numcorr+1:numcorr],
             parse_hyp$hyp_mat[,numcorr*2+1])
     #create coefficient with equality and order constraints
@@ -59,9 +60,11 @@ BF.hetcor <- function(x,
     RrO <- RrList[[2]]
 
     numhyp <- length(RrE)
-    relcomp <- t(matrix(unlist(lapply(1:numhyp,function(h){
-      jointuniform_measures(P,numcorr,1,RrE[[h]],RrO[[h]],Fisher=0)
-    })),nrow=2))
+    relcomp <- t(matrix(unlist(
+      lapply(1:numhyp, function(h){
+        jointuniform_measures(P,numcorr, 1, RrE[[h]], RrO[[h]], Fisher=0)
+    })
+    ),nrow=2))
     relfit <- t(matrix(unlist(lapply(1:numhyp,function(h){
       Gaussian_measures(estimates,errcov,RrE1=RrE[[h]],RrO1=RrO[[h]],names1=corr_names_lower,
                         constraints1=parse_hyp$original_hypothesis[h])
