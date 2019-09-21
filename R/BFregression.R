@@ -235,7 +235,8 @@ BF.lm <- function(x,
   # confirmatory BF test
   if(!is.null(hypothesis)){
     #read constraints
-    parse_hyp <- parse_hypothesis(names_coef,hypothesis)
+    parse_hyp <- parse_hypothesis(names_coef,hypothesis, return_list = TRUE)
+    parse_hyp$hyp_mat <- do.call(rbind, parse_hyp$hyp_mat)
     RrList <- make_RrList2(parse_hyp)
     RrE <- RrList[[1]]
     RrO <- RrList[[2]]

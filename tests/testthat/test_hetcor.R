@@ -1,15 +1,17 @@
 # test for correlation test on hetcor object
+set.seed(54)
 res <- polycor::hetcor(fmri[,3:5])
+#BF1 <- BF(res, hypothesis = "Deep_with_Superficial > Middle_with_Superficial")
 BF1 <- BF(res)
 PHPexplo <- matrix(c(0.535,  0.200,  0.265,
 0.517,  0.158,  0.325,
 0.538,  0.217,  0.245),nrow=3,byrow=T)
-expect_equivalent(
-  round(BF1$PHP_exploratory,3),PHPexplo
-)
-set.seed(123)
+test_that("Hetcor exploratory BF gives correct result", {expect_equivalent(
+  round(BF1$PHP_exploratory,3),PHPexplo)})
+set.seed(463)
 BF2 <- BF(res,hypothesis="(Middle_with_Superficial,Deep_with_Superficial,Deep_with_Middle) > 0;
           Middle_with_Superficial=Deep_with_Superficial=Deep_with_Middle= 0")
+<<<<<<< HEAD
 test_that("Hetcor two hypotheses correctly evaluated", {
   expect_equivalent(
     round(unname(BF2$BFtu_confirmatory),6),c(1.621700,14.558565,0.910662)
@@ -28,6 +30,9 @@ test_that("Hetcor one order hypothesis correctly evaluated", {
   expect_equivalent(
     round(unname(BF4$PHP_confirmatory),6),c(0.663753,0.336247)
   )})
+=======
+test_that("Hetcor two hypotheses correctly evaluated", {expect_equivalent(unname(BF2$BFtu_confirmatory), c(1.624, 14.125, 0.911), tolerance = .001)})
+>>>>>>> 60afeb7c34e91213295fc2449b5ef3fc13b0594f
 
 set.seed(164)
 BF5 <- BF(res,hypothesis="Middle_with_Superficial = Deep_with_Superficial > 0")
@@ -36,4 +41,7 @@ test_that("Hetcor one hypothesis with equality and order constraint correctly ev
     round(unname(BF5$PHP_confirmatory),6),c(0.726939,0.273061)
   )})
 
+set.seed(564)
+BF3 <- BF(res,hypothesis="Middle_with_Superficial > Deep_with_Superficial")
+test_that("Hetcor two hypotheses correctly evaluated", {expect_equivalent(unname(BF2$BFtu_confirmatory), c(1.624, 14.125, 0.911), tolerance = .001)})
 

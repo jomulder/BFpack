@@ -142,6 +142,14 @@ get_estimates.htest <- function(x, ...) {
   stop("To be able to run get_estimates on an object returned by t.test(), you must first load the 'bain' package, and then conduct your t.test. The standard t.test does not return group-specific variances and sample sizes, which are required by get_estimates. The 'bain' package contains a function, t_test(), which does return this necessary information.")
 }
 
+#' @method get_estimates hetcor
+#' @export
+get_estimates.hetcor <- function(x, ...){
+  cl <- match.call()
+  cl[[1]] <- as.name("get_estimates.matrix")
+  cl[["x"]] <- x$correlations
+  eval.parent(cl)
+}
 
 
 #' @title Label estimates from a model object
