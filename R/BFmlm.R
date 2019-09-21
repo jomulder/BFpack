@@ -273,7 +273,7 @@ BF.mlm <- function(x,
       matrixnames <- matrix(names_coef,nrow=K)
 
       # translate named constraints to matrices with coefficients for constraints
-      parse_hyp <- parse_hypothesis(names_coef,hypothesis, return_list = TRUE)
+      parse_hyp <- parse_hypothesis(names_coef,hypothesis) #, return_list = TRUE)
       parse_hyp$hyp_mat <- do.call(rbind, parse_hyp$hyp_mat)
       RrList <- make_RrList2(parse_hyp)
       RrE <- RrList[[1]]
@@ -575,7 +575,7 @@ BF.mlm <- function(x,
     colnames(postestimates) <- c("mean","median","2.5%","97.5%")
 
     if(!is.null(hypothesis)){
-      parse_hyp <- parse_hypothesis(corr_names,hypothesis, return_list = TRUE)
+      parse_hyp <- parse_hypothesis(corr_names,hypothesis) #, return_list = TRUE)
       parse_hyp$hyp_mat <- do.call(rbind, parse_hyp$hyp_mat)
       if(nrow(parse_hyp$hyp_mat)==1){
         select1 <- rep(1:numcorrgroup,numG) + rep((0:(numG-1))*2*numcorrgroup,each=numcorrgroup)

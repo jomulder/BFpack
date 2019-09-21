@@ -94,7 +94,7 @@ BF_Gaussian <- function(estimate,
       relcomp <- BFtable <- hypotheses <- priorprobs <- NULL
   }else{
     # confirmatory tests based on input constraints
-    parse_hyp <- parse_hypothesis(names_coef,hypothesis, return_list = TRUE)
+    parse_hyp <- parse_hypothesis(names_coef,hypothesis) #, return_list = TRUE)
     parse_hyp$hyp_mat <- do.call(rbind, parse_hyp$hyp_mat)
     #create coefficient with equality and order constraints
     RrList <- make_RrList2(parse_hyp)

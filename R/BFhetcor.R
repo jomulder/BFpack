@@ -48,16 +48,16 @@ BF.hetcor <- function(x,
 
   #confirmatory BF testing
   if(!is.null(hypothesis)){
-    parse_hyp <- parse_hypothesis(corr_names_all,hypothesis, return_list = TRUE)
+    parse_hyp <- parse_hypothesis(corr_names_all,hypothesis) #, return_list = TRUE)
     #browser()
     #combine equivalent correlations, e.g., cor(Y1,Y2)=corr(Y2,Y1).
-<<<<<<< HEAD
+#<<<<<<< HEAD
     if(nrow(parse_hyp$hyp_mat)>1){
-      parse_hyp$hyp_mat <- cbind(parse_hyp$hyp_mat[,1:numcorr] + parse_hyp$hyp_mat[,numcorr+1:numcorr],
-=======
+#    parse_hyp$hyp_mat <- cbind(parse_hyp$hyp_mat[,1:numcorr] + parse_hyp$hyp_mat[,numcorr+1:numcorr],
+# =======
     parse_hyp$hyp_mat <- do.call(rbind, parse_hyp$hyp_mat)
     parse_hyp$hyp_mat <- cbind(parse_hyp$hyp_mat[,1:numcorr] + parse_hyp$hyp_mat[,numcorr+1:numcorr],
->>>>>>> 60afeb7c34e91213295fc2449b5ef3fc13b0594f
+# >>>>>>> 60afeb7c34e91213295fc2449b5ef3fc13b0594f
             parse_hyp$hyp_mat[,numcorr*2+1])
     }else{
       parse_hyp$hyp_mat <- cbind(t(parse_hyp$hyp_mat[,1:numcorr] + parse_hyp$hyp_mat[,numcorr+1:numcorr]),

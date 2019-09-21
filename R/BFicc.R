@@ -151,7 +151,7 @@ BF.lmerMod <- function(x,
   if(!is.null(hypothesis)){ # confirmatory test with constrained hypotheses on icc's.
     cat("Finally, Bayes factor computation for confirmatory testing of icc's...")
     cat("\n")
-    parse_hyp <- parse_hypothesis(iccnames,hypothesis, return_list = TRUE)
+    parse_hyp <- parse_hypothesis(iccnames,hypothesis) #, return_list = TRUE)
     parse_hyp$hyp_mat <- do.call(rbind, parse_hyp$hyp_mat)
     RrList <- make_RrList2(parse_hyp)
     RrE <- RrList[[1]]
