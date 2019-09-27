@@ -235,7 +235,7 @@ BF.lm <- function(x,
   # confirmatory BF test
   if(!is.null(hypothesis)){
     #read constraints
-    parse_hyp <- parse_hypothesis(names_coef,hypothesis, return_list = TRUE)
+    parse_hyp <- parse_hypothesis(names_coef,hypothesis)
     parse_hyp$hyp_mat <- do.call(rbind, parse_hyp$hyp_mat)
     RrList <- make_RrList2(parse_hyp)
     RrE <- RrList[[1]]
@@ -455,7 +455,7 @@ MatrixStudent_measures <- function(Mean1,Scale1,tXXi1,df1,RrE1,RrO1,Names1=NULL,
         #check covariance because some can be nonsymmetric due to a generation error
         welk1 <- which(unlist(lapply(covm1_OE,function(temp) isSymmetric(temp,
                              tol = sqrt(.Machine$double.eps),check.attributes = FALSE) &&
-                              min(eigen(temp)$values)>sqrt(.Machine$double.eps) ))==T)
+                              min(eigen(temp)$values)>sqrt(.Machine$double.eps) )))
         covm1_OE <- covm1_OE[welk1]
         mean1_OE <- mean1_OE[welk1]
         relO <- mean(mapply(function(mu_temp,Sigma_temp) pmvnorm(lower=rO1,
@@ -558,6 +558,9 @@ Student_measures <- function(mean1,Scale1,df1,RrE1,RrO1,names1=NULL,constraints1
       D2 <- matrix(D2[as.logical(rowSums(D2 != 0)),],nrow=1)
     }else{
       D2 <- D2[as.logical(rowSums(D2 != 0)),]
+    }
+    if(!is.matrix(D2)){
+      D2 <- t(D2)
     }
     Tm <- rbind(RE1, D2)
 

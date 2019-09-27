@@ -273,7 +273,7 @@ BF.mlm <- function(x,
       matrixnames <- matrix(names_coef,nrow=K)
 
       # translate named constraints to matrices with coefficients for constraints
-      parse_hyp <- parse_hypothesis(names_coef,hypothesis, return_list = TRUE)
+      parse_hyp <- parse_hypothesis(names_coef,hypothesis) #, return_list = TRUE)
       parse_hyp$hyp_mat <- do.call(rbind, parse_hyp$hyp_mat)
       RrList <- make_RrList2(parse_hyp)
       RrE <- RrList[[1]]
@@ -345,10 +345,12 @@ BF.mlm <- function(x,
           Scale0 <- S_b*tXXi_b[K1,K1]
           mean0 <- Mean0[K1,]
           # compute relative measures of fit and complexity
-          relcomp_h <- Student_measures(mean0,Scale0,df0,RrE_h,RrO_h,names1=matrixnames[K1,],
-                                        constraints1=parse_hyp$original_hypothesis[h])
-          relfit_h <- Student_measures(meanN,ScaleN,dfN,RrE_h,RrO_h,names1=matrixnames[K1,],
-                                       constraints1=parse_hyp$original_hypothesis[h])
+          relcomp_h <- Student_measures(mean1=mean0,Scale1=Scale0,df1=df0,RrE1=RrE_h,
+                                                 RrO1=RrO_h,names1=matrixnames[K1,],
+                                                 constraints1=parse_hyp$original_hypothesis[h])
+          relfit_h <- Student_measures(mean1=meanN,Scale1=ScaleN,df1=dfN,RrE1=RrE_h,
+                                                RrO1=RrO_h,names1=matrixnames[K1,],
+                                                constraints1=parse_hyp$original_hypothesis[h])
 
         }else if(sum(RcheckCol!=0)==1){ # use multivariate Student distributions
           P1 <- which(RcheckCol!=0)
@@ -548,7 +550,7 @@ BF.mlm <- function(x,
     numcorr <- length(meanN)
 
     #get height of prior density at 0 of Fisher transformed correlation
-    drawsJU <- draw_ju_r(P,samsize=50000,Fisher=1,seed=123)
+    drawsJU <- draw_ju_r(P,samsize=50000,Fisher=1)
     relcomp0 <- approxfun(density(drawsJU[,1]))(0)
     # compute exploratory BFs
     relfit <- matrix(c(dnorm(0,mean=meanN,sd=sqrt(diag(covmN))),
@@ -573,7 +575,7 @@ BF.mlm <- function(x,
     colnames(postestimates) <- c("mean","median","2.5%","97.5%")
 
     if(!is.null(hypothesis)){
-      parse_hyp <- parse_hypothesis(corr_names,hypothesis, return_list = TRUE)
+      parse_hyp <- parse_hypothesis(corr_names,hypothesis)
       parse_hyp$hyp_mat <- do.call(rbind, parse_hyp$hyp_mat)
       if(nrow(parse_hyp$hyp_mat)==1){
         select1 <- rep(1:numcorrgroup,numG) + rep((0:(numG-1))*2*numcorrgroup,each=numcorrgroup)
@@ -680,7 +682,7 @@ params_in_hyp <- function(hyp){
 # priors for regression coefficients, Jeffreys priors for standard deviations, and a proper
 # joint uniform prior for the correlation matrices.
 # dyn.load("/Users/jorismulder/surfdrive/R packages/BFpack/src/bct_continuous_final.dll")
-estimate_postMeanCov_FisherZ <- function(YXlist,numdraws=5e3,seed=123){
+estimate_postMeanCov_FisherZ <- function(YXlist,numdraws=5e3){
   # YXlist should be a list of length number of independent groups, of which each
   # element is another list of which the first element is a matrix of dependent
   # variables in the group, and the second element is a matrix of covariate variables
@@ -748,7 +750,7 @@ estimate_postMeanCov_FisherZ <- function(YXlist,numdraws=5e3,seed=123){
                  BDrawsStore=array(0,dim=c(samsize0,numG,K,P)),
                  sigmaDrawsStore=array(0,dim=c(samsize0,numG,P)),
                  CDrawsStore=array(0,dim=c(samsize0,numG,P,P)),
-                 seed=as.integer(seed))
+                 seed=as.integer(sample.int(1e6, 1)))
 
   FmeansCovCorr <- lapply(1:numG,function(g){
     Fdraws_g <- FisherZ(t(matrix(unlist(lapply(1:samsize0,function(s){

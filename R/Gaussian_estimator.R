@@ -24,9 +24,9 @@
 #' @details The function requires a named vector \code{estimate} together with
 #' its error covariance matrix \code{sigma} and the sample size \code{n} of the
 #' data that were used to get the estimates of the fitted model.
-#' @references Mulder, J., Gu, X., van Lissa, C., A. Tomarken, F. Boing-Messing,
+#' @references Mulder, J., Gu, X., A. Tomarken, F. Boing-Messing,
 #' J.A.O.C. Olsson-Collentine, Marlyne Bosman-Meyerink, D.R. Williams, J. Menke,
-#' J.-P. Fox, Y. Rosseel, E.J. Wagenmakers, and H. Hoijtink. (submitted). BFpack:
+#' J.-P. Fox, Y. Rosseel, E.J. Wagenmakers, H. Hoijtink., van Lissa, C. (submitted). BFpack:
 #' Flexible Bayes Factor Testing of Scientific Theories in R.
 #' @examples
 #'
@@ -94,7 +94,7 @@ BF_Gaussian <- function(estimate,
       relcomp <- BFtable <- hypotheses <- priorprobs <- NULL
   }else{
     # confirmatory tests based on input constraints
-    parse_hyp <- parse_hypothesis(names_coef,hypothesis, return_list = TRUE)
+    parse_hyp <- parse_hypothesis(names_coef,hypothesis)
     parse_hyp$hyp_mat <- do.call(rbind, parse_hyp$hyp_mat)
     #create coefficient with equality and order constraints
     RrList <- make_RrList2(parse_hyp)
@@ -187,7 +187,8 @@ BF_Gaussian <- function(estimate,
       BFtable_confirmatory=BFtable,
       prior=priorprobs,
       hypotheses=hypotheses,
-      estimates=postestimates)
+      estimates=postestimates,
+      call=match.call())
 
     class(BF_out) <- "BF"
 

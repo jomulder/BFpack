@@ -126,7 +126,7 @@ BF.BF_bartlett <- function(x,
   PHP_exploratory <- BFtu_exploratory / sum(BFtu_exploratory)
 
   if (!is.null(hypothesis)){
-    parse_hyp <- parse_hypothesis(names_coef, hypothesis, return_list = TRUE)
+    parse_hyp <- parse_hypothesis(names_coef, hypothesis)
     parse_hyp$hyp_mat <- do.call(rbind, parse_hyp$hyp_mat)
     RrList <- make_RrList2(parse_hyp)
     RrE <- RrList[[1]]

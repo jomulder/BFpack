@@ -19,7 +19,8 @@ hyp <- "division = hierarchy = building;
 set.seed(8389)
 BF_rem <- BF(x = fit, hypothesis = hyp)
 # check results
-expect_equivalent(
-  BF_rem$PHP_confirmatory,c(0.000,0.715,0.063,0.222,0.000)
-)
+test_that("BF.rem.dyad four hypotheses correctly evaluated", {
+  expect_equivalent(
+    BF_rem$PHP_confirmatory,c(0.000,0.715,0.063,0.222,0.000)
+)})
 
