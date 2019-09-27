@@ -187,7 +187,8 @@ BF_Gaussian <- function(estimate,
       BFtable_confirmatory=BFtable,
       prior=priorprobs,
       hypotheses=hypotheses,
-      estimates=postestimates)
+      estimates=postestimates,
+      call=match.call())
 
     class(BF_out) <- "BF"
 
