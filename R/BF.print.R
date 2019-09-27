@@ -22,6 +22,7 @@ print.BF <- function(x,
     cat("Object: ",class(x$model)[1],"\n", sep = "")
     cat("Method: ",x$bayesfactor,"\n\n", sep = "")
     # cat("\n")
+    cat("Posterior probabilities:","\n", sep = "")
     print(round(x$PHP_exploratory,digits))
 
     cat("\n")

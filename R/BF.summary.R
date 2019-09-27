@@ -15,8 +15,7 @@ summary.BF <- function(object, ...){
   cat("Object: ",class(object$model)[1],"\n", sep = "")
   cat("Method: ",object$bayesfactor,"\n\n", sep = "")
 
-  # cat("Coefficients:")
-  # cat("\n")
+  cat("Posterior probabilities:","\n", sep = "")
   print(round(object$PHP_exploratory,digits))
 
   cat("\n")
