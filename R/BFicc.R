@@ -280,6 +280,8 @@ BF.lmerMod <- function(x,
     hypotheses=hypotheses,
     estimates=postestimates,
     model=x,
+    bayesfactor="Bayes factor using uniform priors",
+    parameter="intraclass correlations",
     call=match.call())
 
   class(BFlm_out) <- "BF"

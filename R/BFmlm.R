@@ -168,9 +168,10 @@ BF.mlm <- function(x,
     row.names(postestimates) <- names_coef
     colnames(postestimates) <- c("mean","median","2.5%","97.5%")
 
+    testedparameter <- "regression coefficients"
     # Additional exploratory tests in the case of an aov type object
     if(sum(class(x)=="aov")==1){
-
+      testedparameter <- "group means"
       # cat("Computing Bayes factors for testing main effects may take a few seconds.")
       # cat("\n")
       # cat("\n")
@@ -442,6 +443,8 @@ BF.mlm <- function(x,
     }
   }else{ #perform tests on correlations
 
+    testedparameter <- "correlations"
+
     corrmat <- diag(P)
     numcorrgroup <- P*(P-1)/2
     row.names(corrmat) <- colnames(corrmat) <- colnames(x$residuals)
@@ -662,6 +665,8 @@ BF.mlm <- function(x,
     hypotheses=hypotheses,
     estimates=postestimates,
     model=x,
+    bayesfactor="generalized adjusted fractional Bayes factor",
+    parameter=testedparameter,
     call=match.call())
 
   class(BFlm_out) <- "BF"

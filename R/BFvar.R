@@ -274,6 +274,8 @@ BF.BF_bartlett <- function(x,
     hypotheses=hypotheses,
     estimates=s2,
     model=x,
+    bayesfactor="generalized adjusted fractional Bayes factor",
+    parameter="group variances",
     call=match.call())
 
   class(BFlm_out) <- "BF"

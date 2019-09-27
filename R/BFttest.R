@@ -227,8 +227,10 @@ BF.bain_htest <- function(x,
     BFtable_confirmatory=BFtable,
     prior=priorprobs,
     hypotheses=hypotheses,
-    model=x,
     estimates=x$coefficients,
+    model=x,
+    bayesfactor="generalized adjusted fractional Bayes factor",
+    parameter="means",
     call=match.call())
 
   class(BFlm_out) <- "BF"

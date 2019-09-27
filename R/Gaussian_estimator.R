@@ -75,7 +75,7 @@ BF_Gaussian <- function(estimate,
                       1-pnorm(0,mean=mean0,sd=sqrt(diag(covm0)))),ncol=3)
   BFtu_exploratory <- relfit / relcomp
   PHP_exploratory <- round(BFtu_exploratory / apply(BFtu_exploratory,1,sum),3)
-  colnames(PHP_exploratory) <- c("p(=0)","Pr(<0)","Pr(>0)")
+  colnames(PHP_exploratory) <- c("Pr(=0)","Pr(<0)","Pr(>0)")
   row.names(PHP_exploratory) <- names_coef
 
   # compute posterior estimates
@@ -188,6 +188,9 @@ BF_Gaussian <- function(estimate,
       prior=priorprobs,
       hypotheses=hypotheses,
       estimates=postestimates,
+      model=estimate,
+      bayesfactor="approximated Bayes factor using Gaussian approximations",
+      parameter="parameter",
       call=match.call())
 
     class(BF_out) <- "BF"

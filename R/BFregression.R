@@ -147,8 +147,12 @@ BF.lm <- function(x,
   colnames(BFtu_exploratory) <- c("Pr(=0)","Pr(<0)","Pr(>0)")
   PHP_exploratory <- BFtu_exploratory / apply(BFtu_exploratory,1,sum)
 
+  testedparameter <- "regression coefficients"
   # Additional exploratory tests in the case of an aov-object
   if(class(x)[1]=="aov"){
+
+    testedparameter <- "group means"
+
     # check main effects
     BFmain <- unlist(lapply(1:length(numlevels),function(fac){
       name1 <- names(numlevels[fac])
@@ -340,6 +344,8 @@ BF.lm <- function(x,
     hypotheses=hypotheses,
     estimates=postestimates,
     model=x,
+    bayesfactor="generalized adjusted fractional Bayes factor",
+    parameter=testedparameter,
     call=match.call())
 
   class(BFlm_out) <- "BF"
