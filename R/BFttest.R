@@ -135,7 +135,7 @@ BF.bain_htest <- function(x,
 
       if(!is.null(hypothesis)){
         name1 <- "difference"
-        parse_hyp <- parse_hypothesis(name1,hypothesis) #, return_list = TRUE)
+        parse_hyp <- parse_hypothesis(name1,hypothesis)
         parse_hyp$hyp_mat <- do.call(rbind, parse_hyp$hyp_mat)
         RrList <- make_RrList2(parse_hyp)
         RrE <- RrList[[1]]

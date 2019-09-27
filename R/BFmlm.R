@@ -575,7 +575,7 @@ BF.mlm <- function(x,
     colnames(postestimates) <- c("mean","median","2.5%","97.5%")
 
     if(!is.null(hypothesis)){
-      parse_hyp <- parse_hypothesis(corr_names,hypothesis) #, return_list = TRUE)
+      parse_hyp <- parse_hypothesis(corr_names,hypothesis)
       parse_hyp$hyp_mat <- do.call(rbind, parse_hyp$hyp_mat)
       if(nrow(parse_hyp$hyp_mat)==1){
         select1 <- rep(1:numcorrgroup,numG) + rep((0:(numG-1))*2*numcorrgroup,each=numcorrgroup)

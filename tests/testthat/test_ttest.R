@@ -25,7 +25,7 @@ expect_equivalent(
 ######################################
 
 # check if posterior model probabilities are correct
-ttest3 <- t_test(therapeutic,therapeutic*.9+.1,var.equal=T)
+ttest3 <- t_test(therapeutic,therapeutic*.9+.1,var.equal=TRUE)
 BF3 <- BF(ttest3)
 test_that("2 samples t test of exploratory hypotheses correctly evaluated
           with equal variances", {
@@ -35,7 +35,7 @@ test_that("2 samples t test of exploratory hypotheses correctly evaluated
 })
 
 # test if one-sided PMP is same as one-sided p-value
-ttest4 <- t_test(therapeutic,therapeutic*.9+.1,var.equal=T,alternative="greater")
+ttest4 <- t_test(therapeutic,therapeutic*.9+.1,var.equal=TRUE,alternative="greater")
 BF4 <- BF(ttest4,"difference<0")
 test_that("2 samples t test of one-sided hypotheses correctly evaluated
           with equal variances", {
@@ -49,7 +49,7 @@ test_that("2 samples t test of one-sided hypotheses correctly evaluated
 ########################################
 
 # check posterior probabilities for a given data set
-ttest5 <- t_test(therapeutic,therapeutic*.7+2.5,"two.sided",var.equal=F)
+ttest5 <- t_test(therapeutic,therapeutic*.7+2.5,"two.sided",var.equal=FALSE)
 set.seed(123)
 BF5 <- BF(ttest5)
 test_that("2 samples t test of two-sided hypotheses correctly evaluated
