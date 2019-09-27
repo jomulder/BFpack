@@ -13,6 +13,7 @@ summary.BF <- function(object, ...){
   cat("Bayesian hypothesis test","\n", sep = "")
   cat("Type: Exploratory","\n", sep = "")
   cat("Object: ",class(object$model)[1],"\n", sep = "")
+  cat("Parameter: ",object$parameter,"\n", sep = "")
   cat("Method: ",object$bayesfactor,"\n\n", sep = "")
 
   cat("Posterior probabilities:","\n", sep = "")
@@ -41,6 +42,7 @@ summary.BF <- function(object, ...){
     cat("Bayesian hypothesis test","\n", sep = "")
     cat("Type: Confirmatory","\n", sep = "")
     cat("Object: ",class(object$model)[1],"\n", sep = "")
+    cat("Parameter: ",object$parameter,"\n", sep = "")
     cat("Method: ",object$bayesfactor,"\n\n", sep = "")
 
     cat("Posterior probabilities:")

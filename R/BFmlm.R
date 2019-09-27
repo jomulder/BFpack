@@ -37,6 +37,8 @@ BF.mlm <- function(x,
   Ymat <- model.matrix(x)%*%x$coefficients + x$residuals
   if(parametertest=="regression"){
 
+    bayesfactor="generalized adjusted fractional Bayes factor"
+
     if(length(x$xlevels)==0){ #no grouping covariates: 1 group
       J <- 1
       dummyX <- rep(F,K)
@@ -444,6 +446,7 @@ BF.mlm <- function(x,
   }else{ #perform tests on correlations
 
     testedparameter <- "correlations"
+    bayesfactor="Bayes factor based on joint uniform priors"
 
     corrmat <- diag(P)
     numcorrgroup <- P*(P-1)/2
@@ -665,7 +668,7 @@ BF.mlm <- function(x,
     hypotheses=hypotheses,
     estimates=postestimates,
     model=x,
-    bayesfactor="generalized adjusted fractional Bayes factor",
+    bayesfactor=bayesfactor,
     parameter=testedparameter,
     call=match.call())
 
