@@ -11,9 +11,8 @@ BF.survreg <- function(x,
   #Extract summary statistics
   n <- length(x$y)
   sigma <- x$var
-  estimate <- x$coefficients
 
-  out <- BF_Gaussian(estimate, sigma, n, hypothesis, prior)
+  out <- BF(x$coefficients, hypothesis, prior, sigma=sigma, n=n)
   out$model <- x
   out$call <- match.call()
   out

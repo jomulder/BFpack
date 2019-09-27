@@ -111,7 +111,7 @@ BF.hetcor <- function(x,
     estimates=estimates,
     model=x,
     bayesfactor="Bayes factor based on joint uniform priors",
-    parameter="correlations",
+    parameter="Correlations",
     call=match.call())
 
   class(BF_out) <- "BF"
