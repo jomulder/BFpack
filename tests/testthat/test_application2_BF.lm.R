@@ -10,5 +10,3 @@ test_that("BF.lm works for a specific exploratory ANOVA test", {
 expect_equivalent(
   round(BF1$PHP_exploratory[,1],3),c(0.808,0,0,.144)
 )})
-
-

@@ -11,9 +11,8 @@ BF.coxph <- function(x,
   #Extract summary statistics
   n <- x$nevent
   sigma <- vcov(x)
-  estimate <- coef(x)
 
-  out <- BF_Gaussian(estimate, sigma, n, hypothesis, prior)
+  out <- BF(coef(x), hypothesis, prior, sigma=sigma, n=n)
   out$model <- x
   out$call <- match.call()
   out

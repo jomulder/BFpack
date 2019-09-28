@@ -1,64 +1,22 @@
-##Internal estimation function for the methods for classes glm, lavaan, coxph, rem, rem.dyad and glmerMod
+#
 
 
-#' @title Bayes factor testing based on Gaussian approximations
-#' @description The function \code{BF_Gaussian} can be used for hypothesis testing
-#' and model selection using the Bayes factor using a Gaussian approximation of the
-#' likelihood function. By default exploratory hypothesis tests are
-#' performed of whether each model parameter equals zero, is negative, or is positive.
-#' Confirmatory hypothesis tests can be executed by specifying hypotheses with
-#' equality and/or order constraints on the parameters of interest.
-#'
-#' @param estimate A named vector containing the estimates of the parameters that
-#' are tested.
-#' @param sigma The error covariance matrix of the estimates.
-#' @param n The sample size.
-#' @param hypothesis A character string containing the informative hypotheses to
-#' evaluate. The default is NULL, which will result in an exploratory analysis.
-#' @param prior A vector specifying the prior probabilities of the hypotheses.
-#' The default is NULL which will specify equal prior probabilities.
-#' @return The output is an object of class \code{BF}. The object has elements:
-#' BFtu_exploratory, PHP_exploratory, BFtu_confirmatory, PHP_confirmatory,
-#' BFmatrix_confirmatory, BFtable_confirmatory, BFtu_main, PHP_main,
-#' BFtu_interaction, PHP_interaction, prior, hypotheses, estimates, model, call.
-#' @details The function requires a named vector \code{estimate} together with
-#' its error covariance matrix \code{sigma} and the sample size \code{n} of the
-#' data that were used to get the estimates of the fitted model.
-#' @references Mulder, J., Gu, X., A. Tomarken, F. Boing-Messing,
-#' J.A.O.C. Olsson-Collentine, Marlyne Bosman-Meyerink, D.R. Williams, J. Menke,
-#' J.-P. Fox, Y. Rosseel, E.J. Wagenmakers, H. Hoijtink., van Lissa, C. (submitted). BFpack:
-#' Flexible Bayes Factor Testing of Scientific Theories in R.
-#' @examples
-#'
-#' # load R package BFpack
-#' library(BFpack)
-#'
-#' # Logistic regression
-#' fit1 <- glm(sent ~ ztrust + zfWHR + zAfro + glasses + attract + maturity +
-#'    tattoos, family = binomial(), data = wilson)
-#' estimate <- coef(fit1)
-#' sigma <- vcov(fit1)
-#' n <- nobs(fit1)
-#'
-#' BF1 <- BF_Gaussian(estimate, sigma, n, hypothesis="ztrust > 0 & zfWHR=zAfro= 0")
-#' summary(BF1)
-#'
-#' #the result is the same as when running
-#' BF(fit1, hypothesis = "ztrust > 0 & zfWHR=zAfro= 0")
 #' @importFrom stats qnorm dnorm pnorm
+#' @method BF default
 #' @export
-#' @export BF_Gaussian
-BF_Gaussian <- function(estimate,
-                       sigma,
-                       n,
+BF.default <- function(x,
                        hypothesis = NULL,
-                       prior = NULL){
+                       prior = NULL,
+                       parameter = NULL,
+                       ...,
+                       sigma,
+                       n){
 
-  #Input is a named mean vector, covariance matrix and number of observations
+  #Input is a named mean vector x, covariance matrix and number of observations
   #These are extracted by the relevant method functions from a model object and
   #passed together with the hypothesis and prior to the Gaussian_estimator
 
-  meanN <- estimate #the posterior mean is approximated with the estimate
+  meanN <- x #the posterior mean is approximated with the estimate
   covmN <- sigma    #the posterior covariance matrix is approximated with the error covariance matrix
 
   names_coef <- names(meanN)
@@ -75,7 +33,7 @@ BF_Gaussian <- function(estimate,
                       1-pnorm(0,mean=mean0,sd=sqrt(diag(covm0)))),ncol=3)
   BFtu_exploratory <- relfit / relcomp
   PHP_exploratory <- round(BFtu_exploratory / apply(BFtu_exploratory,1,sum),3)
-  colnames(PHP_exploratory) <- c("p(=0)","Pr(<0)","Pr(>0)")
+  colnames(PHP_exploratory) <- c("Pr(=0)","Pr(<0)","Pr(>0)")
   row.names(PHP_exploratory) <- names_coef
 
   # compute posterior estimates
@@ -126,6 +84,8 @@ BF_Gaussian <- function(estimate,
     }
     # default prior location
     mean0 <- ginv(RStack)%*%rStack
+
+
 
     #get relative fit and complexity of hypotheses
     numhyp <- length(RrE)
@@ -178,21 +138,24 @@ BF_Gaussian <- function(estimate,
     }
   }
 
-    BF_out <- list(
-      BFtu_exploratory=BFtu_exploratory,
-      PHP_exploratory=PHP_exploratory,
-      BFtu_confirmatory=BFtu_confirmatory,
-      PHP_confirmatory=PHP_confirmatory,
-      BFmatrix_confirmatory=BFmatrix_confirmatory,
-      BFtable_confirmatory=BFtable,
-      prior=priorprobs,
-      hypotheses=hypotheses,
-      estimates=postestimates,
-      call=match.call())
+  BF_out <- list(
+    BFtu_exploratory=BFtu_exploratory,
+    PHP_exploratory=PHP_exploratory,
+    BFtu_confirmatory=BFtu_confirmatory,
+    PHP_confirmatory=PHP_confirmatory,
+    BFmatrix_confirmatory=BFmatrix_confirmatory,
+    BFtable_confirmatory=BFtable,
+    prior=priorprobs,
+    hypotheses=hypotheses,
+    estimates=postestimates,
+    model=x,
+    bayesfactor="Bayes factor using Gaussian approximations",
+    parameter="General",
+    call=match.call())
 
-    class(BF_out) <- "BF"
+  class(BF_out) <- "BF"
 
-    BF_out
+  BF_out
 
 }
 

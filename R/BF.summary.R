@@ -10,9 +10,13 @@ summary.BF <- function(object, ...){
   cat("\n")
   digits <- 3
 
-  cat("BFpack: Exploratory Bayes factor tests for an object of class ", class(object$model)[1], ":\n\n", sep = "")
-  # cat("Coefficients:")
-  # cat("\n")
+  cat("Bayesian hypothesis test","\n", sep = "")
+  cat("Type: Exploratory","\n", sep = "")
+  cat("Object: ",class(object$model)[1],"\n", sep = "")
+  cat("Parameter: ",object$parameter,"\n", sep = "")
+  cat("Method: ",object$bayesfactor,"\n\n", sep = "")
+
+  cat("Posterior probabilities:","\n", sep = "")
   print(round(object$PHP_exploratory,digits))
 
   cat("\n")
@@ -34,7 +38,13 @@ summary.BF <- function(object, ...){
   }
 
   if(!is.null(object$BFtu_confirmatory)){
-    cat("BFpack: Confirmatory Bayes factor tests for an object of class ", class(object$model)[1], ":\n\n", sep = "")
+
+    cat("Bayesian hypothesis test","\n", sep = "")
+    cat("Type: Confirmatory","\n", sep = "")
+    cat("Object: ",class(object$model)[1],"\n", sep = "")
+    cat("Parameter: ",object$parameter,"\n", sep = "")
+    cat("Method: ",object$bayesfactor,"\n\n", sep = "")
+
     cat("Posterior probabilities:")
     cat("\n")
 

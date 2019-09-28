@@ -9,11 +9,10 @@ BF.zeroinfl <- function(x,
                     ...){
 
   #Extract summary statistics
-  n <- nrow(x$fitted.values)
+  n <- length(x$residuals)
   sigma <- vcov(x)
-  estimate <- c(coef(x),x$zeta)
 
-  out <- BF_Gaussian(estimate, sigma, n, hypothesis, prior)
+  out <- BF(c(coef(x),x$zeta), hypothesis, prior, sigma=sigma, n=n)
   out$model <- x
   out$call <- match.call()
   out
