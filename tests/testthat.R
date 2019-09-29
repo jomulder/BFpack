@@ -1,6 +1,5 @@
 library(testthat)
 library(relevent)
-library(bain)
 library(BFpack)
 library(polycor)
 

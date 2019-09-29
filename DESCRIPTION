@@ -62,7 +62,8 @@ LazyData: true
 NeedsCompilation: yes
 RoxygenNote: 6.1.1
 Depends: 
-    R (>= 3.0.0)
+    R (>= 3.0.0),
+    bain
 Imports:
     stats,
     methods,
@@ -71,8 +72,7 @@ Imports:
     Matrix,
     mvtnorm,
     pracma,
-    lme4,
-    bain
+    lme4
 Suggests: 
     testthat,
     relevent,

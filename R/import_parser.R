@@ -1,5 +1,4 @@
 #' @importFrom utils getFromNamespace
-#' @importFrom bain t_test bain
 #' @importFrom stats approxfun coef complete.cases cov dbeta density dnorm dt lm median model.matrix
 #' @importFrom stats nobs pchisq pnorm pt quantile rWishart rbeta rgamma rnorm rt sd setNames var vcov
 parse_hypothesis <- getFromNamespace("parse_hypothesis", "bain")
