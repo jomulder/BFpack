@@ -68,13 +68,14 @@ BFtable <- structure(c(1, 1, 1, 0.0204763291181508, 0.0208215890818035,
 
 test_that("BF.mlm confirmatory hypotheses on correlations correctly evaluated", {
   expect_equivalent(
-    unname(BF2$BFtable_confirmatory[-c(16, 17, 19,20)]),unname(BFtable[-c(16, 17, 19,20)]), tolerance = .01
-)
+    as.vector(unname(BF2$BFtable_confirmatory))[-c(16, 17, 19, 20, 22, 24)], as.vector(unname(BFtable))[-c(16, 17, 19, 20, 22, 24)], tolerance = .01
+    )
   expect_equivalent(
-    BF2$BFtable_confirmatory[c(19,20)],BFtable[c(19,20)], tolerance = .3
+    as.vector(unname(BF2$BFtable_confirmatory))[c(22, 24)], as.vector(unname(BFtable))[c(22, 24)], tolerance = .02
   )
   expect_equivalent(
-    unname(BF2$BFtable_confirmatory[c(16, 17)]),unname(BFtable[c(16, 17)]), tolerance = .3
-  )})
+    as.vector(unname(BF2$BFtable_confirmatory))[c(16, 17, 19, 20)], as.vector(unname(BFtable))[c(16, 17, 19, 20)], tolerance = .4
+  )
+  })
 
 

@@ -162,6 +162,8 @@ BF.default <- function(x,
 
 
 # compute relative meausures (fit or complexity) under a multivariate Gaussian distribution
+#' @importFrom mvtnorm dmvnorm pmvnorm
+#' @importFrom Matrix rankMatrix
 Gaussian_measures <- function(mean1,Sigma1,n1=0,RrE1,RrO1,names1=NULL,constraints1=NULL){
   K <- length(mean1)
   relE <- relO <- 1
@@ -174,7 +176,7 @@ Gaussian_measures <- function(mean1,Sigma1,n1=0,RrE1,RrO1,names1=NULL,constraint
     qE1 <- nrow(RE1)
     meanE <- RE1%*%mean1
     SigmaE <- RE1%*%Sigma1%*%t(RE1)
-    relE <- mvtnorm::dmvnorm(rE1,mean=c(meanE),sigma=SigmaE,log=FALSE)
+    relE <- dmvnorm(rE1,mean=c(meanE),sigma=SigmaE,log=FALSE)
   }
   if(is.null(RrE1) && !is.null(RrO1)){ #only order constraints
     RO1 <- RrO1[,-(K+1)]
@@ -184,10 +186,10 @@ Gaussian_measures <- function(mean1,Sigma1,n1=0,RrE1,RrO1,names1=NULL,constraint
     qO1 <- nrow(RO1)
     rO1 <- RrO1[,(K+1)]
 
-    if(Matrix::rankMatrix(RO1)[[1]]==nrow(RO1)){ #RO1 is of full row rank. So use transformation.
+    if(rankMatrix(RO1)[[1]]==nrow(RO1)){ #RO1 is of full row rank. So use transformation.
       meanO <- c(RO1%*%mean1)
       SigmaO <- RO1%*%Sigma1%*%t(RO1)
-      relO <- mvtnorm::pmvnorm(lower=rO1,upper=Inf,mean=meanO,sigma=SigmaO)[1]
+      relO <- pmvnorm(lower=rO1,upper=Inf,mean=meanO,sigma=SigmaO)[1]
     }else{ #no linear transformation can be used; pmvt cannot be used. Use bain with a multivariate normal approximation
       names(mean1) <- names1
       if(n1>0){ # we need prior measures
@@ -219,7 +221,7 @@ Gaussian_measures <- function(mean1,Sigma1,n1=0,RrE1,RrO1,names1=NULL,constraint
     rO1 <- RrO1[,(K+1)]
     Rr1 <- rbind(RrE1,RrO1)
 
-    if(Matrix::rankMatrix(Rr1)[[1]] == nrow(Rr1)){
+    if(rankMatrix(Rr1)[[1]] == nrow(Rr1)){
 
       R1 <- rbind(RE1,RO1)
 
@@ -228,7 +230,7 @@ Gaussian_measures <- function(mean1,Sigma1,n1=0,RrE1,RrO1,names1=NULL,constraint
       TSigma1 <- R1 %*% Sigma1 %*% t(R1)
 
       # relative meausure for equalities
-      relE <- mvtnorm::dmvnorm(x=rE1,mean=Tmean1[1:qE1],sigma=matrix(TSigma1[1:qE1,1:qE1],ncol=qE1),log=FALSE)
+      relE <- dmvnorm(x=rE1,mean=Tmean1[1:qE1],sigma=matrix(TSigma1[1:qE1,1:qE1],ncol=qE1),log=FALSE)
 
       # Partitioning equality part and order part
       Tmean1E <- Tmean1[1:qE1]
@@ -242,7 +244,7 @@ Gaussian_measures <- function(mean1,Sigma1,n1=0,RrE1,RrO1,names1=NULL,constraint
       Tmean1OgE <- Tmean1O + TSigma1OE %*% solve(TSigma1EE) %*% (rE1-Tmean1E)
       TSigma1OgE <- TSigma1OO - TSigma1OE %*% solve(TSigma1EE) %*% t(TSigma1OE)
 
-      relO <- mvtnorm::pmvnorm(lower=rO1,upper=Inf,mean=c(Tmean1OgE),sigma=TSigma1OgE)[1]
+      relO <- pmvnorm(lower=rO1,upper=Inf,mean=c(Tmean1OgE),sigma=TSigma1OgE)[1]
 
     }else{ #use bain for the computation of the probability
       names(mean1) <- names1
@@ -262,6 +264,7 @@ Gaussian_measures <- function(mean1,Sigma1,n1=0,RrE1,RrO1,names1=NULL,constraint
 }
 
 # The function computes the probability of an unconstrained draw falling in the complement subspace under a multivariate Gaussian distribution.
+#' @importFrom mvtnorm rmvnorm
 Gaussian_prob_Hc <- function(mean1,Sigma1,relmeas,RrO){
 
   numpara <- length(mean1)
@@ -279,7 +282,7 @@ Gaussian_prob_Hc <- function(mean1,Sigma1,relmeas,RrO){
     }else{ # So more than one hypothesis with only order constraints
       # First we check whether ther is an overlap between the order constrained spaces.
       draws2 <- 1e4
-      randomDraws <- mvtnorm::rmvnorm(draws2,mean=rep(0,numpara),sigma=diag(numpara))
+      randomDraws <- rmvnorm(draws2,mean=rep(0,numpara),sigma=diag(numpara))
       #get draws that satisfy the constraints of the separate order constrained hypotheses
       checksOC <- lapply(welk,function(h){
         Rorder <- as.matrix(RrO[[h]][,-(1+numpara)])
@@ -301,7 +304,7 @@ Gaussian_prob_Hc <- function(mean1,Sigma1,relmeas,RrO){
           # funtion below gives a rough estimate of the posterior probability under Hc
           # a bain type of algorithm would be better of course. but for now this is ok.
 
-          randomDraws <- mvtnorm::rmvnorm(draws2,mean=mean1,sigma=Sigma1)
+          randomDraws <- rmvnorm(draws2,mean=mean1,sigma=Sigma1)
           checksOCpost <- lapply(welk,function(h){
             Rorder <- as.matrix(RrO[[h]][,-(1+numpara)])
             if(ncol(Rorder)==1){

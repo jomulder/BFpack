@@ -53,11 +53,39 @@
 #' (submitted). BFpack: Flexible Bayes Factor Testing of Scientific Theories
 #' in R.
 #' @examples
+#' \dontshow{
+#' # EXAMPLE 1. One-sample t test
+#' ttest1 <- t_test(therapeutic,mu=5)
+#' print(ttest1)
+#' # confirmatory Bayesian one sample t test
+#' BF1 <- BF(ttest1,"mu=5")
+#' summary(BF1)
+#' # exploratory Bayesian one sample t test
+#' BF(ttest1)
 #'
-#' # load R package BFpack and bain
-#' library(BFpack)
-#' library(bain)
+#' # EXAMPLE 2. ANOVA
+#' aov1 <- aov(price ~ anchor*motivation,data=tvprices)
+#' BF1 <- BF(aov1,hypothesis="anchorrounded=motivationlow;
+#'    anchorrounded<motivationlow")
+#' summary(BF1)
 #'
+#'
+#' # EXAMPLE 3. Logistic regression
+#' fit <- glm(sent ~ ztrust + zfWHR + zAfro + glasses + attract + maturity +
+#'    tattoos, family = binomial(), data = wilson)
+#' BF1 <- BF(fit, hypothesis = "ztrust > zfWHR > 0;
+#'                              ztrust > 0 & zfWHR = 0")
+#' summary(BF1)
+#'
+#' # EXAMPLE 4. Correlation analysis
+#' res <- polycor::hetcor(fmri[,3:4])
+#' BF1 <- BF(res)
+#' summary(BF1)
+#' BF1 <- BF(res,hypothesis="Middle_with_Superficial > 0;
+#'                           Middle_with_Superficial=0")
+#' summary(BF1)
+#' }
+#' \donttest{
 #' # EXAMPLE 1. One-sample t test
 #' ttest1 <- bain::t_test(therapeutic,mu=5)
 #' print(ttest1)
@@ -73,8 +101,8 @@
 #' # check the names of the model parameters
 #' names(aov1$coefficients)
 #' BF1 <- BF(aov1,hypothesis="anchorrounded=motivationlow;
-#'    anchorrounded<motivationlow;
-#'    anchorrounded>motivationlow")
+#'                            anchorrounded<motivationlow;
+#'                            anchorrounded>motivationlow")
 #' summary(BF1)
 #'
 #'
@@ -82,7 +110,7 @@
 #' fit <- glm(sent ~ ztrust + zfWHR + zAfro + glasses + attract + maturity +
 #'    tattoos, family = binomial(), data = wilson)
 #' BF1 <- BF(fit, hypothesis = "ztrust > (zfWHR, zAfro) > 0;
-#'    ztrust > 0 & zfWHR=zAfro= 0")
+#'                              ztrust > 0 & zfWHR=zAfro= 0")
 #' summary(BF1)
 #'
 #' # EXAMPLE 4. Correlation analysis
@@ -93,7 +121,8 @@
 #'                           Deep_with_Middle) > 0;
 #'                           Middle_with_Superficial=Deep_with_Superficial=
 #'                           Deep_with_Middle=0")
-#'    summary(BF1)
+#' summary(BF1)
+#' }
 #' @rdname BF
 #' @export
 #' @useDynLib BFpack, .registration = TRUE
