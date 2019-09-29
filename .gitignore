@@ -8,3 +8,4 @@ dev/
 src-i386/
 src-x64/
 .Rapp.history
+.DS_Store
