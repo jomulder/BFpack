@@ -9,15 +9,15 @@ BF.htest <-
            prior = NULL,
            parameter = NULL,
            ...) {
-    stop("Please use the function t_test() from the 'bain' package for a t-test or var_test() from the 'BFpack' package for a test on group variances.")
+    stop("Please use the function t_test() from the 'bain' package for a t-test or bartlett_test() from the 'BFpack' package for a test on group variances.")
   }
 
 
 
 #' @importFrom stats approxfun
-#' @method BF bain_htest
+#' @method BF t_test
 #' @export
-BF.bain_htest <- function(x,
+BF.t_test <- function(x,
                       hypothesis = NULL,
                       prior = NULL,
                       parameter = NULL,

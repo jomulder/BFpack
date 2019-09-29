@@ -2,7 +2,8 @@
 % Please edit documentation in R/BF_methods.R
 \name{BF}
 \alias{BF}
-\title{Bayes factors for Bayesian exploratory and confirmatory hypothesis testing}
+\title{Bayes factors for Bayesian exploratory and confirmatory hypothesis
+testing}
 \usage{
 BF(x, hypothesis, prior, parameter, ...)
 }
@@ -28,30 +29,39 @@ BFmatrix_confirmatory, BFtable_confirmatory, BFtu_main, PHP_main,
 BFtu_interaction, PHP_interaction, prior, hypotheses, estimates, model, call.
 }
 \description{
-The \code{BF} function can be used for hypothesis testing and model
+The \code{BF} function can be used for hypothesis testing and
+ model
 selection using the Bayes factor. By default exploratory hypothesis tests are
-performed of whether each model parameter equals zero, is negative, or is positive.
+performed of whether each model parameter equals zero, is negative, or is
+ positive.
 Confirmatory hypothesis tests can be executed by specifying hypotheses with
 equality and/or order constraints on the parameters of interest.
 }
 \details{
-The function requires a fitted modeling object. Current model classes that
-are supported: \code{bain_htest} (\code{bain} package), \code{BF_bartlett}
-(\code{BFpack} package), \code{aov}, \code{manova}, \code{lm}, \code{mlm},
-\code{glm}
-(\code{stats} package), \code{hetcor} (\code{polycor} package), \code{lmerMod}
-(\code{lme4} package), \code{coxph}, \code{survreg} (\code{survival} package),
-\code{rem}, \code{rem.dyad} (\code{relevent} package), \code{zeroinfl}
-(\code{pscl} package), and \code{polr} (\code{MASS} package).
+The function requires a fitted modeling object. Current analyses
+that are supported: \code{\link[bain]{t_test}},
+\code{\link[BFpack]{bartlett_test}},
+\code{\link[stats]{aov}}, \code{\link[stats]{manova}},
+\code{\link[stats]{lm}}, \code{mlm},
+\code{\link[stats]{glm}}, \code{\link[polycor]{hetcor}},
+\code{\link[lme4]{lmer}}, \code{\link[survival]{coxph}},
+\code{\link[survival]{survreg}},
+\code{\link[relevent]{rem}}, \code{\link[relevent]{rem.dyad}},
+\code{\link[pscl]{zeroinfl}}, and \code{\link[MASS]{polr}}.
 
-For testing means and regression coefficients of model classes \code{bain_htest},
-\code{aov}, \code{manova}, \code{lm}, \code{mlm}, adjusted fractional Bayes factors
-are computed. For testing group variances of a model of class \code{BF_bartlett}
+For testing means and regression coefficients of model classes \code{t_test},
+\code{aov}, \code{manova}, \code{lm}, \code{mlm}, adjusted fractional Bayes
+factors
+are computed. For testing group variances using
+\code{\link[BFpack]{bartlett_test}},
 adjusted fractional Bayes factors are computed.
 For testing measures of association (e.g., correlations) under
-model class \code{mlm} and for testing intraclass correlations under model class
-\code{lmerMod}, default Bayes factors based on uniform priors are computed. For
-all other model classes an approximate Bayes factor is computed using a Gaussian
+model class \code{mlm} and for testing intraclass correlations under model
+class
+\code{lmerMod}, default Bayes factors based on uniform priors are computed.
+For
+all other model classes an approximate Bayes factor is computed using a
+Gaussian
 approximation of the posterior, similar as a classical Wald test.
 }
 \examples{
@@ -91,14 +101,16 @@ summary(BF1)
 res <- polycor::hetcor(fmri[,3:5])
 BF1 <- BF(res)
 summary(BF1)
-BF1 <- BF(res,hypothesis="(Middle_with_Superficial,Deep_with_Superficial,Deep_with_Middle) > 0;
-   Middle_with_Superficial=Deep_with_Superficial=Deep_with_Middle=0")
+BF1 <- BF(res,hypothesis="(Middle_with_Superficial,Deep_with_Superficial,
+                          Deep_with_Middle) > 0;
+                          Middle_with_Superficial=Deep_with_Superficial=
+                          Deep_with_Middle=0")
    summary(BF1)
-
 }
 \references{
 Mulder, J., Gu, X., A. Tomarken, F. Boing-Messing,
 J.A.O.C. Olsson-Collentine, Marlyne Meyerink, D.R. Williams, J. Menke,
 J.-P. Fox, Y. Rosseel, E.J. Wagenmakers, H. Hoijtink., and van Lissa, C.
-(submitted). BFpack: Flexible Bayes Factor Testing of Scientific Theories in R.
+(submitted). BFpack: Flexible Bayes Factor Testing of Scientific Theories
+in R.
 }

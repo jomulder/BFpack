@@ -12,7 +12,7 @@ matrixmeasures <- matrix(c(0.2741948, 0.19630283, 0.7186756, 0.9998622,  2.62104
 
 test_that("for mlm object multiple hypotheses with equality and order constraints can be computed", {
 expect_equivalent(
-  BF_fmri1$BFtable_confirmatory,round(matrixmeasures,7)
+  BF_fmri1$BFtable_confirmatory, matrixmeasures, tolerance = .01
 )})
 
 #no seed required

@@ -1,6 +1,5 @@
-
-
 fm_zip <- pscl::zeroinfl(art ~ . | 1, data = pscl::bioChemists)
+set.seed(752)
 BF1 <- BF(fm_zip)
 test_that("BF.zeroinfl exploratory hypotheses correctly evaluated", {
   expect_equivalent(
