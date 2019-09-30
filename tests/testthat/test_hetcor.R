@@ -2,13 +2,13 @@
 set.seed(54)
 res <- polycor::hetcor(fmri[,3:5])
 #BF1 <- BF(res, hypothesis = "Deep_with_Superficial > Middle_with_Superficial")
-get_estimates(res)
+
 BF1 <- BF(res)
 PHPexplo <- matrix(c(0.535,  0.200,  0.265,
 0.517,  0.158,  0.325,
 0.538,  0.217,  0.245),nrow=3,byrow=T)
 test_that("Hetcor exploratory BF gives correct result", {expect_equivalent(
-  round(BF1$PHP_exploratory,3),PHPexplo)})
+  BF1$PHP_exploratory, PHPexplo, tolerance = .01)})
 set.seed(463)
 BF2 <- BF(res,hypothesis="(Middle_with_Superficial,Deep_with_Superficial,Deep_with_Middle) > 0;
           Middle_with_Superficial=Deep_with_Superficial=Deep_with_Middle= 0")

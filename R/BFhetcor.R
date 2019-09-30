@@ -16,10 +16,6 @@ BF.hetcor <- function(x,
 
   corr_names <- names(get_est$estimate)
   matrix_names <- matrix(corr_names,nrow=P)
-  # equal correlations are at the opposite side of the vector
-  #corr_names_lower <- matrix_names[lower.tri(matrix_names)]
-  #corr_names_all <- c(matrix_names[lower.tri(matrix_names)],
-  #                t(matrix_names)[lower.tri(matrix_names)])
 
   #exploratory BF testing
   relfit <- matrix(c(dnorm(0,mean=estimates,sd=sqrt(diag(errcov))),
@@ -37,14 +33,6 @@ BF.hetcor <- function(x,
   if(!is.null(hypothesis)){
     parse_hyp <- parse_hypothesis(names(estimates),hypothesis)
     parse_hyp$hyp_mat <- do.call(rbind, parse_hyp$hyp_mat)
-    #combine equivalent correlations, e.g., cor(Y1,Y2)=corr(Y2,Y1).
-    if(nrow(parse_hyp$hyp_mat)>1){
-    parse_hyp$hyp_mat <- cbind(parse_hyp$hyp_mat[,1:numcorr] + parse_hyp$hyp_mat[,numcorr+1:numcorr],
-            parse_hyp$hyp_mat[,numcorr*2+1])
-    }else{
-      parse_hyp$hyp_mat <- cbind(t(parse_hyp$hyp_mat[,1:numcorr] + parse_hyp$hyp_mat[,numcorr+1:numcorr]),
-                                 parse_hyp$hyp_mat[,numcorr*2+1])
-    }
     #create coefficient with equality and order constraints
     RrList <- make_RrList2(parse_hyp)
     RrE <- RrList[[1]]

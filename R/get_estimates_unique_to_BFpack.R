@@ -9,8 +9,12 @@ get_estimates.hetcor <- function(x, ...){
   out <- eval.parent(cl)
   retain <- matrix(1:length(out$estimate), nrow = nrow(x$std.errors))
   out$estimate <- out$estimate[retain[lower.tri(retain)]]
-  stderr <- x$std.errors[lower.tri(diag(P))]
-  errcov <- as.matrix(diag((stderr**2)))
-  out$Sigma <- list(errcov)
+  errcov <- x$std.errors**2
+  errcov <- errcov[lower.tri(retain)]
+  if(length(errcov) == 1){
+    out$Sigma <- list(matrix(errcov))
+  } else {
+    out$Sigma <- list(diag(errcov))
+  }
   out
 }

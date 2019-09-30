@@ -94,7 +94,7 @@ BF.default <- function(x,
 
     #default prior covariance
     #covm0 <- covmN * n / numindep
-
+browser()
     #get relative fit and complexity of hypotheses
     numhyp <- length(RrE)
     relcomp <- t(matrix(unlist(lapply(1:numhyp,function(h){
