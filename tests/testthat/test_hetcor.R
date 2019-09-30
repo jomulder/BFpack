@@ -2,6 +2,7 @@
 set.seed(54)
 res <- polycor::hetcor(fmri[,3:5])
 #BF1 <- BF(res, hypothesis = "Deep_with_Superficial > Middle_with_Superficial")
+get_estimates(res)
 BF1 <- BF(res)
 PHPexplo <- matrix(c(0.535,  0.200,  0.265,
 0.517,  0.158,  0.325,

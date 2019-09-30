@@ -81,11 +81,19 @@ BF.default <- function(x,
           stop("No common boundary point for prior location. Conflicting constraints.")
         }
       }
+      #determine fraction via number of independent rows (constraints)
+      numindep <- sum(apply(abs(rref_ei[,-(K+1)]),1,sum)!=0)
+    } else {
+      numindep <- 1
     }
     # default prior location
     mean0 <- ginv(RStack)%*%rStack
 
 
+# Uncomment this and fix tests --------------------------------------------
+
+    #default prior covariance
+    #covm0 <- covmN * n / numindep
 
     #get relative fit and complexity of hypotheses
     numhyp <- length(RrE)

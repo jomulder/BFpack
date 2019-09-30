@@ -11,16 +11,15 @@ BF.hetcor <- function(x,
   get_est <- get_estimates(x)
   P <- nrow(x$std.errors)
   numcorr <- P*(P-1)/2
-  estimates <- get_est$estimate #x$correlations[lower.tri(diag(P))]
-  #stderr <- as.matrix(x$std.errors[lower.tri(diag(P))])
-  #errcov <- as.matrix(diag(stderr**2))
+  estimates <- get_est$estimate
   errcov <- get_est$Sigma[[1]]
+
   corr_names <- names(get_est$estimate)
   matrix_names <- matrix(corr_names,nrow=P)
   # equal correlations are at the opposite side of the vector
-  corr_names_lower <- matrix_names[lower.tri(matrix_names)]
-  corr_names_all <- c(matrix_names[lower.tri(matrix_names)],
-                  t(matrix_names)[lower.tri(matrix_names)])
+  #corr_names_lower <- matrix_names[lower.tri(matrix_names)]
+  #corr_names_all <- c(matrix_names[lower.tri(matrix_names)],
+  #                t(matrix_names)[lower.tri(matrix_names)])
 
   #exploratory BF testing
   relfit <- matrix(c(dnorm(0,mean=estimates,sd=sqrt(diag(errcov))),
@@ -28,7 +27,7 @@ BF.hetcor <- function(x,
                      1-pnorm(0,mean=estimates,sd=sqrt(diag(errcov)))),ncol=3)
   relcomp <- matrix(c(dbeta(rep(.5,numcorr),shape1=P/2,shape2=P/2)*.5,
                       rep(.5,2*numcorr)),ncol=3)
-  row.names(relfit) <- row.names(relcomp) <- corr_names_lower
+  row.names(relfit) <- row.names(relcomp) <- names(estimates)
 
   BFtu_exploratory <- relfit / relcomp
   colnames(BFtu_exploratory) <- colnames(BFtu_exploratory) <-  c("Pr(=0)","Pr(<0)","Pr(>0)")
@@ -36,7 +35,7 @@ BF.hetcor <- function(x,
 
   #confirmatory BF testing
   if(!is.null(hypothesis)){
-    parse_hyp <- parse_hypothesis(corr_names_all,hypothesis)
+    parse_hyp <- parse_hypothesis(names(estimates),hypothesis)
     parse_hyp$hyp_mat <- do.call(rbind, parse_hyp$hyp_mat)
     #combine equivalent correlations, e.g., cor(Y1,Y2)=corr(Y2,Y1).
     if(nrow(parse_hyp$hyp_mat)>1){
@@ -58,7 +57,7 @@ BF.hetcor <- function(x,
     })
     ),nrow=2))
     relfit <- t(matrix(unlist(lapply(1:numhyp,function(h){
-      Gaussian_measures(estimates,errcov,RrE1=RrE[[h]],RrO1=RrO[[h]],names1=corr_names_lower,
+      Gaussian_measures(estimates,errcov,RrE1=RrE[[h]],RrO1=RrO[[h]],names1=names(estimates),
                         constraints1=parse_hyp$original_hypothesis[h])
     })),nrow=2))
     row.names(relcomp) <- parse_hyp$original_hypothesis
