@@ -9,10 +9,13 @@ BF.rem.dyad <- function(x,
                         ...){
 
   #Extract summary statistics
-  n <- x$m
-  sigma <- x$cov
-
-  out <- BF(x$coef, hypothesis, prior, sigma=sigma, n=n)
+  cl <- match.call()
+  get_est <- get_estimates(x)
+  cl[[1]] <- as.name("BF")
+  cl[["x"]] <- get_est$estimate
+  cl[["sigma"]] <- get_est$Sigma[[1]]
+  cl[["n"]] <- x$m
+  out <- eval.parent(cl)
   out$model <- x
   out$call <- match.call()
   out

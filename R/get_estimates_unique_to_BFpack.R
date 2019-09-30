@@ -16,5 +16,17 @@ get_estimates.hetcor <- function(x, ...){
   } else {
     out$Sigma <- list(diag(errcov))
   }
+  class(out) <- "model_estimates"
+  attr(out, "analysisType") <- "hetcor"
+  out
+}
+
+#' @method get_estimates rem.dyad
+#' @export
+get_estimates.rem.dyad <- function(x, ...){
+  out <- list(estimate = x$coef,
+              Sigma = list(x$cov))
+  class(out) <- "model_estimates"
+  attr(out, "analysisType") <- "rem.dyad"
   out
 }

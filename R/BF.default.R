@@ -94,9 +94,10 @@ BF.default <- function(x,
 
     #default prior covariance
     #covm0 <- covmN * n / numindep
-browser()
+
     #get relative fit and complexity of hypotheses
     numhyp <- length(RrE)
+
     relcomp <- t(matrix(unlist(lapply(1:numhyp,function(h){
       Gaussian_measures(mean1 = mean0, Sigma1 = covm0, RrE1 = RrE[[h]], RrO1 = RrO[[h]],
                         names1=names_coef,constraints1=parse_hyp$original_hypothesis[h])
@@ -197,6 +198,7 @@ Gaussian_measures <- function(mean1,Sigma1,n1=0,RrE1,RrO1,names1=NULL,constraint
     if(rankMatrix(RO1)[[1]]==nrow(RO1)){ #RO1 is of full row rank. So use transformation.
       meanO <- c(RO1%*%mean1)
       SigmaO <- RO1%*%Sigma1%*%t(RO1)
+      check_vcov(SigmaO)
       relO <- pmvnorm(lower=rO1,upper=Inf,mean=meanO,sigma=SigmaO)[1]
     }else{ #no linear transformation can be used; pmvt cannot be used. Use bain with a multivariate normal approximation
       names(mean1) <- names1
