@@ -8,14 +8,14 @@ BF.hetcor <- function(x,
                        hypothesis = NULL,
                        prior = NULL,
                        ...){
-  get_est <- get_estimates(x)
+
   P <- nrow(x$std.errors)
   numcorr <- P*(P-1)/2
-  estimates <- get_est$estimate #x$correlations[lower.tri(diag(P))]
-  #stderr <- as.matrix(x$std.errors[lower.tri(diag(P))])
-  #errcov <- as.matrix(diag(stderr**2))
-  errcov <- get_est$Sigma[[1]]
-  corr_names <- names(get_est$estimate)
+  estimates <- x$correlations[lower.tri(diag(P))]
+  stderr <- x$std.errors[lower.tri(diag(P))]
+  errcov <- diag(stderr**2)
+
+  corr_names <- names(get_estimates(x$correlations)$estimate)
   matrix_names <- matrix(corr_names,nrow=P)
   # equal correlations are at the opposite side of the vector
   corr_names_lower <- matrix_names[lower.tri(matrix_names)]

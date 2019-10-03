@@ -14,34 +14,37 @@ BF2 <- BF(res,hypothesis="(Middle_with_Superficial,Deep_with_Superficial,Deep_wi
 
 test_that("Hetcor two hypotheses correctly evaluated", {
   expect_equivalent(
-    unname(BF2$BFtu_confirmatory)[-2],
-    c(1.616808,16,0.911058)[-2],
-    tolerance = .05
-)
-  expect_equivalent(
-    unname(BF2$BFtu_confirmatory)[2],
-    c(1.616808,16,0.911058)[2],
-    tolerance = 1
-  )})
+    round(unname(BF2$BFtu_confirmatory),6),c(1.616808,14.831538,0.911058)
+)})
 
 set.seed(564)
 BF3 <- BF(res,hypothesis="Middle_with_Superficial > Deep_with_Superficial")
 test_that("Hetcor one order hypothesis correctly evaluated", {
   expect_equivalent(
-    unname(BF3$BFtu_confirmatory),c(0.849162,1.151505), tolerance = .01
+    round(unname(BF3$BFtu_confirmatory),6),c(0.849162,1.151505)
   )})
 
 set.seed(164)
 BF4 <- BF(res,hypothesis="Middle_with_Superficial = Deep_with_Superficial")
 test_that("Hetcor one order hypothesis correctly evaluated", {
   expect_equivalent(
-    round(unname(BF4$PHP_confirmatory),6),c(0.663753,0.336247), tolerance = .01
+    round(unname(BF4$PHP_confirmatory),6),c(0.663753,0.336247)
   )})
 
+test_that("Hetcor two hypotheses correctly evaluated",
+          {expect_equivalent(unname(BF2$BFtu_confirmatory),
+                             c(1.616,14.831,0.911), tolerance = .001)})
 
 set.seed(164)
 BF5 <- BF(res,hypothesis="Middle_with_Superficial = Deep_with_Superficial > 0")
 test_that("Hetcor one hypothesis with equality and order constraint correctly evaluated", {
   expect_equivalent(
-    round(unname(BF5$PHP_confirmatory),6),c(0.726939,0.273061), tolerance = .01
+    round(unname(BF5$PHP_confirmatory),6),c(0.726939,0.273061)
   )})
+
+set.seed(564)
+BF3 <- BF(res,hypothesis="Middle_with_Superficial > Deep_with_Superficial")
+test_that("Hetcor two hypotheses correctly evaluated",
+          {expect_equivalent(unname(BF2$BFtu_confirmatory), c(1.617,14.832,0.911),
+                             tolerance = .001)})
+

@@ -43,7 +43,7 @@ BF(aov1)
 
 # Application 3
 # Perform classical Bartlett test for homogeneity of group varianceson the accuracy data
-bartlett <- bartlett_test(x = attention$accuracy, g = attention$group)
+bartlett <- var_test(x = attention$accuracy, g = attention$group)
 # Specify informative hypotheses on the group variances based on substantive expectations
 hypothesis <- c("Controls=TS<ADHD;
     Controls<TS=ADHD;

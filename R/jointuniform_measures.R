@@ -1,8 +1,7 @@
 
 
 
-#' @importFrom Matrix rankMatrix
-#' @importFrom MASS ginv
+
 jointuniform_measures <- function(P,numcorrgroup,numG,RrE1,RrO1,Fisher=0,samsize=1e5){
   # If Fisher=1 then the evaluation is done on Fisher transformed space.
   relE <- relO <- 1
@@ -85,7 +84,7 @@ jointuniform_measures <- function(P,numcorrgroup,numG,RrE1,RrO1,Fisher=0,samsize
         RO1 <- RrO1[,-numcorr-1]
         rO1 <- RrO1[,numcorr+1]
       }
-      if(rankMatrix(RrO1)[[1]] == nrow(RrO1)){
+      if(Matrix::rankMatrix(RrO1)[[1]] == nrow(RrO1)){
         R1 <- rbind(RE1,RO1)
         r1 <- c(rE1,rO1)
         drawsTrans = drawsJU%*%t(R1)
@@ -123,8 +122,8 @@ jointuniform_measures <- function(P,numcorrgroup,numG,RrE1,RrO1,Fisher=0,samsize
         meanOE <- analysisE$meanOut
         covOE <- analysisE$covmOut
 
-        ROE1 <- RO1 %*% ginv(D2)
-        rOE1 <- rO1 - RO1 %*% ginv(RE1) %*% rE1
+        ROE1 <- RO1 %*% MASS::ginv(D2)
+        rOE1 <- rO1 - RO1 %*% MASS::ginv(RE1) %*% rE1
 
         # Use normal approximation for the conditional probability
         relO <- Gaussian_measures(mean1=meanOE,Sigma1=covOE,RrE1=NULL,RrO1=cbind(ROE1,rOE1))[2]
@@ -136,7 +135,6 @@ jointuniform_measures <- function(P,numcorrgroup,numG,RrE1,RrO1,Fisher=0,samsize
 
 # The function computes the probability of an unconstrained draw falling in the complement subspace of a
 # correlation matrix having a joint uniform distribution
-#' @importFrom mvtnorm rmvnorm
 jointuniform_prob_Hc <- function(P,numcorrgroup,numG,relmeas,RrO,samsize1=1e4,seed=123){
 
   numpara <- numcorrgroup*numG
@@ -168,7 +166,7 @@ jointuniform_prob_Hc <- function(P,numcorrgroup,numG,relmeas,RrO,samsize1=1e4,se
           teldummy <- teldummy + numcorrgroup
         }
       }
-      randomDraws <- rmvnorm(samsize1,mean=rep(0,numpara),sigma=diag(numpara))
+      randomDraws <- mvtnorm::rmvnorm(samsize1,mean=rep(0,numpara),sigma=diag(numpara))
       #get draws that satisfy the constraints of the separate order constrained hypotheses
       checksOC <- lapply(welk,function(h){
         Rorder <- as.matrix(RrO[[h]][,-(1+numpara)])
@@ -186,7 +184,7 @@ jointuniform_prob_Hc <- function(P,numcorrgroup,numG,relmeas,RrO,samsize1=1e4,se
           relmeas[numhyp+1,2] <- 1 - sum(relmeas[welk,2])
           rownames(relmeas)[numhyp+1] <- "complement"
         }else{ #the order constrained subspaces at least partly overlap
-          randomDraws <- rmvnorm(samsize1,mean=rep(0,numpara),sigma=diag(numpara))
+          randomDraws <- mvtnorm::rmvnorm(samsize1,mean=rep(0,numpara),sigma=diag(numpara))
           checksOCpost <- lapply(welk,function(h){
             Rorder <- as.matrix(RrO[[h]][,-(1+numpara)])
             if(ncol(Rorder)==1){

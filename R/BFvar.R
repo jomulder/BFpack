@@ -13,10 +13,10 @@
 #'function \code{bartlett.test.default}
 #'belong to the R Core Team, as indicated in the original license below.
 #'We make no claims to copyright and incur no liability with regard to the
-#'changes implemented in \code{bartlett_test}.
+#'changes implemented in \code{var_test}.
 #'
 #'This the original copyright notice by the R core team:
-#'File src/library/stats/R/bartlett_test.R
+#'File src/library/stats/R/var_test.R
 #'Part of the R package, https://www.R-project.org
 #'
 #'Copyright (C) 1995-2015 The R Core Team
@@ -34,7 +34,7 @@
 #' A copy of the GNU General Public License is available at
 #' https://www.R-project.org/Licenses/
 #'
-#'@aliases bartlett_test bartlett_test.default
+#'@aliases var_test var_test.default
 #'@param x a numeric vector of data values, or a list of
 #'numeric data vectors representing the respective samples,
 #'or fitted linear model objects (inheriting from class "lm").
@@ -42,7 +42,7 @@
 #'the corresponding elements of x. Ignored if x is a list.
 #'@param ... further arguments to be passed to or from methods.
 #'
-#'@return A list with class \code{"bartlett_htest"} containing the following
+#'@return A list with class \code{"BF_bartlett"} containing the following
 #'components: \item{statistic}{Bartlett's K-squared test statistic.}
 #'\item{parameter}{the degrees of freedom of the approximate chi-squared
 #'distribution of the test statistic.}
@@ -61,18 +61,18 @@
 #'require(graphics)
 #'
 #'plot(count ~ spray, data = InsectSprays)
-#'bartlett_test(InsectSprays$count, InsectSprays$spray)
+#'var_test(InsectSprays$count, InsectSprays$spray)
 #'
-#' @rdname bartlett_test
+#' @rdname var_test
 #' @export
-bartlett_test <- function(x, g, ...) UseMethod("bartlett_test", x)
+var_test <- function(x, g, ...) UseMethod("var_test", x)
 
 
 #' @importFrom stats bartlett.test
-#' @method bartlett_test default
-#' @rdname bartlett_test
+#' @method var_test default
+#' @rdname var_test
 #' @export
-bartlett_test.default <- function(x, g, ...){
+var_test.default <- function(x, g, ...){
 
   temp <-  list(x = x, g = g)
   names(temp) <- c("x", "g")
@@ -83,7 +83,7 @@ bartlett_test.default <- function(x, g, ...){
   vars <- tapply(temp$x, temp$g, var)
   n <- table(g)
   bart <- bartlett.test(x = temp$x, g = temp$g)
-  class(bart) <- c("bartlett_htest", class(bart))
+  class(bart) <- c("BF_bartlett", class(bart))
   bart$vars <- vars
   bart$n <- n
   bart
@@ -95,9 +95,9 @@ bartlett_test.default <- function(x, g, ...){
 
 #' @importFrom MCMCpack rinvgamma
 #' @importFrom stats rchisq
-#' @method BF bartlett_htest
+#' @method BF BF_bartlett
 #' @export
-BF.bartlett_htest <- function(x,
+BF.BF_bartlett <- function(x,
                            hypothesis = NULL,
                            prior = NULL,
                            parameter = NULL,

@@ -20,7 +20,7 @@ BF6_cor <- BF(lm6,parameter="correlation", hypothesis=
 #check results
 test_that("correlation test on mlm object with multiple groups correctly evaluates", {
   expect_equivalent(
-    BF6_cor$BFmatrix_confirmatory[1,2], 2894.586, tolerance = 1
+    round(BF6_cor$BFmatrix_confirmatory[1,2],3),6296.542
 )})
 
 

@@ -11,7 +11,7 @@ expect_equivalent(
 #check results conformatory test
 test_that("glm two hypotheses correctly evaluated via confirmatory test", {
   expect_equivalent(
-  BF_glm$PHP_confirmatory,c(0.076, 0.006, 0.918), tolerance = .005
+  BF_glm$PHP_confirmatory,c(0.076, 0.006, 0.918)
 )})
 #check equal prior probabilities
 test_that("glm use correct prior probabilities", {
