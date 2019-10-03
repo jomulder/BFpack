@@ -11,16 +11,10 @@ BF.hetcor <- function(x,
   get_est <- get_estimates(x)
   P <- nrow(x$std.errors)
   numcorr <- P*(P-1)/2
-  #estimates <- get_est$estimate #x$correlations[lower.tri(diag(P))]
+  estimates <- get_est$estimate #x$correlations[lower.tri(diag(P))]
   #stderr <- as.matrix(x$std.errors[lower.tri(diag(P))])
   #errcov <- as.matrix(diag(stderr**2))
-  #errcov <- get_est$Sigma[[1]]
-  estimates <- x$correlations[lower.tri(diag(P))]
-  if(P>2){
-    errcov <- diag((x$std.errors[lower.tri(diag(P))])**2)
-  }else{
-    errcov <- as.matrix((x$std.errors[lower.tri(diag(P))])**2)
-  }
+  errcov <- get_est$Sigma[[1]]
   corr_names <- names(get_est$estimate)
   matrix_names <- matrix(corr_names,nrow=P)
   # equal correlations are at the opposite side of the vector

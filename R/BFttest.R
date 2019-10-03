@@ -15,9 +15,9 @@ BF.htest <-
 
 
 #' @importFrom stats approxfun
-#' @method BF bain_htest
+#' @method BF t_test
 #' @export
-BF.bain_htest <- function(x,
+BF.t_test <- function(x,
                       hypothesis = NULL,
                       prior = NULL,
                       parameter = NULL,
