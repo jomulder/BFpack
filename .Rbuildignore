@@ -1,5 +1,0 @@
-^.*\.Rproj$
-^\.Rproj\.user$
-dev/
-^\.travis\.yml$
-^.*.RData$
