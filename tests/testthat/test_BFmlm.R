@@ -12,16 +12,21 @@ PHPexplo <- matrix(
   0.741,  0.178,  0.082,
   0.284,  0.017,  0.700,
   0.007,  0.000,  0.993,
-  0.697,  0.239,  0.064),nrow=9,byrow=T)
-expect_equivalent(
-  round(BF1$PHP_exploratory,3),PHPexplo
-)
+  0.697,  0.239,  0.064,
+  0.346,  0.592,  0.062,
+  0.297,  0.659,  0.044,
+  0.504,  0.230,  0.266),nrow=12,byrow=T)
+test_that("BF.mlm exploratory correctly evaluated for given data sets", {
+  expect_equivalent(
+    round(BF1$PHP_exploratory,3),PHPexplo, tolerance = .01
+  )})
+
 # tests on same predictor on different DVs
 set.seed(123)
 BF2 <- BF(x=lm1,hypothesis="disp_on_mpg>disp_on_cyl>disp_on_hp>0; disp_on_mpg=disp_on_cyl=disp_on_hp=0")
 test_that("BF.mlm two hypotheses for same IVs correctly evaluated", {
   expect_equivalent(
-    round(BF2$PHP_confirmatory,3),c(0.016,0.000,0.984)
+    round(BF2$PHP_confirmatory,3),c(0.016,0.000,0.984), tolerance = .01
 )})
 # tests on different predictors on same DVs
 set.seed(574)
@@ -42,7 +47,7 @@ test_that("BF.mlm two hypotheses different DVs and different IVs correctly evalu
 # testing correlations in multivariate normal model
 lm1 <- lm(cbind(mpg,cyl,hp,qsec) ~ disp + wt, data = mtcars)
 set.seed(123)
-BF1 <- BF(lm1,parameter="correlation")
+BF1 <- BF(lm1)
 PHPexplo <- matrix(
 c(0.340,  0.590,  0.070,
 0.354,  0.571,  0.074,
@@ -52,7 +57,7 @@ c(0.340,  0.590,  0.070,
 0.168,  0.800,  0.032),nrow=6,byrow=T)
 test_that("BF.mlm exploratory hypotheses on correlations correctly evaluated", {
   expect_equivalent(
-    BF1$PHP_exploratory,PHPexplo, tolerance = .02
+    BF1$PHP_exploratory[-(1:12),],PHPexplo, tolerance = .02
 )})
 # (dummy) hypotheses on the correlations
 set.seed(564574)

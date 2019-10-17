@@ -96,7 +96,6 @@ bartlett_test.default <- function(x, g, ...){
 BF.bartlett_htest <- function(x,
                            hypothesis = NULL,
                            prior = NULL,
-                           parameter = NULL,
                            ...) {
   get_est <- get_estimates(x)
   nsim <- 1e5

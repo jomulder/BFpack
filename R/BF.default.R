@@ -7,7 +7,6 @@
 BF.default <- function(x,
                        hypothesis = NULL,
                        prior = NULL,
-                       parameter = NULL,
                        ...,
                        Sigma,
                        n){

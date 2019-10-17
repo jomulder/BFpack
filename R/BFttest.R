@@ -7,7 +7,6 @@ BF.htest <-
   function(x,
            hypothesis = NULL,
            prior = NULL,
-           parameter = NULL,
            ...) {
     stop("Please use the function t_test() from the 'bain' package for a t-test or bartlett_test() from the 'BFpack' package for a test on group variances.")
   }
@@ -20,7 +19,6 @@ BF.htest <-
 BF.t_test <- function(x,
                       hypothesis = NULL,
                       prior = NULL,
-                      parameter = NULL,
                       ...){
 
   numpop <- length(x$estimate)

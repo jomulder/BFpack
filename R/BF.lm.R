@@ -9,7 +9,6 @@
 BF.lm <- function(x,
                   hypothesis = NULL,
                   prior = NULL,
-                  parameter = NULL,
                   ...){
 
   # default BF on location parameters in a univariate normal linear model

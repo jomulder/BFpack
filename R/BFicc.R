@@ -11,7 +11,6 @@
 BF.lmerMod <- function(x,
                    hypothesis = NULL,
                    prior = NULL,
-                   parameter = NULL,
                    ...){
 
   #get names of the categories of clusters
