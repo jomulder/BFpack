@@ -647,9 +647,8 @@ END FUNCTION sdot
 
 function diag(A, n)
 
-    
-    real(8)  A(n), check(n,n)
-    integer n,i
+    integer n,i    
+    real(8) A(n), check(n,n)
     real(8) diag(n,n)
     
 
@@ -662,8 +661,9 @@ function diag(A, n)
 end function diag
 
 function diagonals(A, n)
-    real(8) A(n,n), diagonals(n), check(n)
+
     integer n,i
+    real(8) A(n,n), diagonals(n), check(n)
 
     do i=1,n
         check(i)= A(i,i)
@@ -776,8 +776,9 @@ END SUBROUTINE FINDinv
 recursive function det(a,n,permanent) result(accumulation)
     ! setting permanent to 1 computes the permanent.
     ! setting permanent to -1 computes the determinant.
-    real(8), dimension(n,n), intent(in) :: a
+
     integer, intent(in) :: n, permanent
+    real(8), dimension(n,n), intent(in) :: a
     real(8), dimension(n-1, n-1) :: b
     real(8) :: accumulation
     integer :: i, sgn
@@ -871,8 +872,8 @@ subroutine gen_wish(A,nu,B,P)
 !
     !Declare local variables
 
-    real(8), intent (in)    :: A(P,P)
     integer, intent (in)    :: nu,P
+    real(8), intent (in)    :: A(P,P)
     real(8), intent (out)   :: B(P,P)
     real(8)                 :: RNmat(nu,P),para((P*(P+3)/2) + 1),m0(P)
     integer                 :: i
@@ -959,6 +960,7 @@ end
 
 
 SUBROUTINE piksrt(n,arr)
+
   integer:: n, i,j
   real(8):: arr(n), a
 
@@ -1155,6 +1157,7 @@ END
 
 
 subroutine spofa(a,lda,n,info)
+
       integer lda,n,info
       real(8) a(lda,1)
 
