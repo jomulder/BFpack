@@ -133,9 +133,10 @@ get_estimates.mlm <- function(x, ...){
   names(dummyX) <- colnames(Xmat)
   for(k in 1:K){
     uniquek <- sort(unique(Xmat[,k]))
-    if(length(uniquek)==2 && uniquek[1]==0 && uniquek[2]==1){dummyX[k]<-T} #group index of intercept
+    #group index of intercept
+    if(length(uniquek)==2 && uniquek[1]==0 && uniquek[2]==1){dummyX[k]<-T}
   }
-  if(sum(dummyX)==0){
+  if(sum(dummyX)==0 || is.null(unlist(x$xlevels)) ){
     # no dummy covariates for groups for correlations
     estimatesCorrGroup <- covmCorrGroup <- NULL
     estimates <- c(estimatesBeta,estimatesCorr)
@@ -144,7 +145,7 @@ get_estimates.mlm <- function(x, ...){
     row.names(covm) <- colnames(covm) <- names(estimates)
   }else{
     # get estimates of correlations per group (identified as dummy covariates)
-    corr_estimates_groups <- unlist(lapply(which(dummyX),function(k){
+    corr_estimates_groups_list <- lapply(which(dummyX),function(k){
       corr_names_group <- unlist(lapply(1:length(corr_names),function(naam){
         paste0(corr_names[naam],"_in_",names(dummyX[k]))
       }))
@@ -154,20 +155,25 @@ get_estimates.mlm <- function(x, ...){
       Xmat1 <- cbind(rep(1,N1),as.matrix(Xmat1[,apply(Xmat1,2,sd)!=0]))
       Ymat1 <- Ymat[which1,]
       tXX1 <- t(Xmat1)%*%Xmat1
-      if(det(tXX1)!=0){
+      tol <- 1e-5
+      if(abs(det(tXX1)) > tol){
         Bhat1 <- solve(tXX1)%*%t(Xmat1)%*%Ymat1
         SigmaEst1 <- t(Ymat1 - Xmat1%*%Bhat1)%*%(Ymat1 - Xmat1%*%Bhat1)/N1
         CorrMat1 <- diag(1/sqrt(diag(SigmaEst1)))%*%SigmaEst1%*%
           diag(1/sqrt(diag(SigmaEst1)))
         estimatesCorr1 <- rep(CorrMat[lower.tri(CorrMat1)],2)
         names(estimatesCorr1) <- corr_names_group
-        return(list(estimatesCorr1))
+        return(estimatesCorr1)
       }
-    }))
+    })
+    corr_estimates_groups <- unlist(corr_estimates_groups_list)
+    welke0 <- unlist(lapply(corr_estimates_groups_list,function(l){!is.null(l[[1]])}))
+
     Ngroups <- apply(Xmat[,dummyX],2,sum)
     #combine estimates and covariance matrix
     estimates <- c(estimatesBeta,estimatesCorr,corr_estimates_groups)
-    covm <- diag(c(rep(0,length(estimatesBeta)),rep(1/N,length(estimatesCorr)),rep(1/Ngroups,each=length(estimatesCorr))))
+    covm <- diag(c(rep(0,length(estimatesBeta)),rep(1/N,length(estimatesCorr)),
+                   rep(1/Ngroups[welke0],each=length(estimatesCorr))))
     covm[1:length(estimatesBeta),1:length(estimatesBeta)] <- covmBeta
     row.names(covm) <- colnames(covm) <- names(estimates)
   }

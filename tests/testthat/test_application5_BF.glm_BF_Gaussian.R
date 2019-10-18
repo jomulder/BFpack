@@ -1,7 +1,7 @@
 fit <- glm(sent ~ ztrust + zfWHR + zAfro + glasses + attract + maturity +
              tattoos, family = binomial(), data = wilson)
 set.seed(123)
-BF_glm <- BF(fit, hypothesis="ztrust > (zfWHR, zAfro) > 0;
+BF_glm <- BF(fit, hypothesis="ztrust > zfWHR > zAfro > 0;
              ztrust > 0 & zfWHR = zAfro = 0")
 #check results exploratory test
 test_that("glm two hypotheses correctly evaluated via exploratory test", {
@@ -11,7 +11,7 @@ expect_equivalent(
 #check results conformatory test
 test_that("glm two hypotheses correctly evaluated via confirmatory test", {
   expect_equivalent(
-  BF_glm$PHP_confirmatory,c(0.076, 0.006, 0.918), tolerance = .005
+  BF_glm$PHP_confirmatory,c(0.142, 0.002, 0.856), tolerance = .02
 )})
 #check equal prior probabilities
 test_that("glm use correct prior probabilities", {

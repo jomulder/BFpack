@@ -30,7 +30,7 @@ Authors@R:
       person(given = "Janosch",
              family = "Menke",
              role = c("ctb"),
-             email = "j.menke@uu.nl"),
+             email = "janosch.menke@uni-muenster.de"),
       person(given = "Barry",
              family = "Brown",
              role = "ctb"),
