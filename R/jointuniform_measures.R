@@ -210,13 +210,14 @@ jointuniform_prob_Hc <- function(P,numcorrgroup,numG,relmeas,RrO,samsize1=1e4,se
 #Call Fortran subroutine in from bct_prior.f90
 draw_ju_r <- function(P, samsize=50000,Fisher=1){
   testm<- matrix(0,ncol=.5*P*(P-1),nrow=samsize)
-  random1 <- rnorm(1)
+#  random1 <- rnorm(1)
+#  random1 <- (random1 - floor(random1))*1e6
   res <-.Fortran("draw_ju",P = as.integer(P),
                  drawscorr=testm,
                  samsize=as.integer(samsize),
                  numcorrgroup=as.integer(.5*P*(P-1)),
                  Fisher=as.integer(Fisher),
-                 seed=as.integer( (random1 - floor(random1))*1e6 ),PACKAGE="BFpack")
+                 seed=as.integer( sample.int(1e6,1) ),PACKAGE="BFpack")
   return(res$drawscorr)
 
 }
