@@ -23,6 +23,11 @@ subroutine draw_ju(P,drawscorr,samsize,numcorrgroup,Fisher,seed)
     allocate(iseed(nn))
     iseed(:) = seed
     call RANDOM_SEED(put=iseed)
+
+
+CALL RANDOM_NUMBER(Di1i2)
+drawsCorr(1,1) = Di1i2
+
     
     ! create corrIndex matrix
     teldummy = 1
@@ -36,7 +41,7 @@ subroutine draw_ju(P,drawscorr,samsize,numcorrgroup,Fisher,seed)
     end do
     
 
-    do s1=1,samsize
+    do s1=2,samsize
         
         ! create identity matrix
         do t1=1,P

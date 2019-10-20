@@ -1328,6 +1328,8 @@ estimate_postMeanCov_FisherZ <- function(YXlist,numdraws=5e3){
     CHat[g,,] <- diag(1/sdHat[g,])%*%Sigma_g%*%diag(1/sdHat[g,])
   }
   samsize0 <- numdraws
+  random1 <- rnorm(1)
+
   # call Fortran subroutine for Gibbs sampling using noninformative improper priors
   # for regression coefficients, Jeffreys priors for standard deviations, and a proper
   # joint uniform prior for the correlation matrices.
@@ -1353,7 +1355,7 @@ estimate_postMeanCov_FisherZ <- function(YXlist,numdraws=5e3){
                  BDrawsStore=array(0,dim=c(samsize0,numG,K,P)),
                  sigmaDrawsStore=array(0,dim=c(samsize0,numG,P)),
                  CDrawsStore=array(0,dim=c(samsize0,numG,P,P)),
-                 seed=as.integer(sample.int(1e6, 1)))
+                 seed=as.integer( (random1 - floor(random1))*1e6 ))
 
   FmeansCovCorr <- lapply(1:numG,function(g){
     Fdraws_g <- FisherZ(t(matrix(unlist(lapply(1:samsize0,function(s){
