@@ -21,7 +21,7 @@ subroutine draw_ju(P,drawscorr,samsize,numcorrgroup,Fisher,seed)
     !set seed
     call RANDOM_SEED(size=nn)
     allocate(iseed(nn))
-    iseed(:)=seed
+    iseed(:) = seed
     call RANDOM_SEED(put=iseed)
     
     ! create corrIndex matrix

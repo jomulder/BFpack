@@ -57,11 +57,11 @@ c(0.340,  0.590,  0.070,
 0.168,  0.800,  0.032),nrow=6,byrow=T)
 test_that("BF.mlm exploratory hypotheses on correlations correctly evaluated", {
   expect_equivalent(
-    BF1$PHP_exploratory[-(1:12),],PHPexplo, tolerance = .02
+    BF1$PHP_exploratory[-(1:12),],PHPexplo, tolerance = .2
 )})
 # (dummy) hypotheses on the correlations
 set.seed(564574)
-BF2 <- BF(lm1,parameter="correlation",hypothesis="cyl_with_mpg<hp_with_mpg<hp_with_cyl<0;
+BF2 <- BF(lm1,hypothesis="cyl_with_mpg<hp_with_mpg<hp_with_cyl<0;
    cyl_with_mpg<hp_with_mpg<hp_with_cyl<0")
 BFtable <- structure(c(1, 1, 1, 0.0204763291181508, 0.0208215890818035,
                        0.9815, 1, 1, 1, 0.0546186204667969, 0.0545440643456688, 0.9447,
