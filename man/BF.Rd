@@ -5,7 +5,7 @@
 \title{Bayes factors for Bayesian exploratory and confirmatory hypothesis
 testing}
 \usage{
-BF(x, hypothesis, prior, parameter, ...)
+BF(x, hypothesis, prior, ...)
 }
 \arguments{
 \item{x}{An R object containing the outcome of a statistical analysis.}
@@ -15,10 +15,6 @@ evaluate. The default is NULL, which will result in an exploratory analysis.}
 
 \item{prior}{A vector specifying the prior probabilities of the hypotheses.
 The default is NULL which will specify equal prior probabilities.}
-
-\item{parameter}{A characted string specifying which type of parameter is of
-interest. For a fitted model of class \code{mlm}, this can be either
-"regression" or "correlation", where the first is the default setting.}
 
 \item{...}{Parameters passed to and from other functions.}
 }

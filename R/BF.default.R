@@ -7,7 +7,6 @@
 BF.default <- function(x,
                        hypothesis = NULL,
                        prior = NULL,
-                       parameter = NULL,
                        ...,
                        Sigma,
                        n){
@@ -86,14 +85,10 @@ BF.default <- function(x,
     } else {
       numindep <- 1
     }
-    # default prior location
+    #default prior location
     mean0 <- ginv(RStack)%*%rStack
-
-
-# Uncomment this and fix tests --------------------------------------------
-
     #default prior covariance
-    #covm0 <- covmN * n / numindep
+    covm0 <- covmN * n / numindep
 
     #get relative fit and complexity of hypotheses
     numhyp <- length(RrE)

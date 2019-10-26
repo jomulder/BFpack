@@ -6,5 +6,5 @@ BF1 <- BF(house.plr,hypothesis="Low|Medium<0<Medium|High & TypeApartment=TypeAtr
 
 test_that("BF.polr exploratory hypotheses correctly evaluated", {
   expect_equivalent(
-    BF1$PHP_confirmatory,c(0.977,0.023)
+    BF1$PHP_confirmatory,c(0.961,0.039)
   )})

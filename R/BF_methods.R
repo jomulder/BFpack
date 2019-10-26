@@ -13,9 +13,6 @@
 #' evaluate. The default is NULL, which will result in an exploratory analysis.
 #' @param prior A vector specifying the prior probabilities of the hypotheses.
 #' The default is NULL which will specify equal prior probabilities.
-#' @param parameter A characted string specifying which type of parameter is of
-#' interest. For a fitted model of class \code{mlm}, this can be either
-#' "regression" or "correlation", where the first is the default setting.
 #' @param ... Parameters passed to and from other functions.
 #' @return The output is an object of class \code{BF}. The object has elements:
 #' BFtu_exploratory, PHP_exploratory, BFtu_confirmatory, PHP_confirmatory,
@@ -126,6 +123,6 @@
 #' @export
 #' @useDynLib BFpack, .registration = TRUE
 #'
-BF <- function(x, hypothesis, prior, parameter, ...) {
+BF <- function(x, hypothesis, prior, ...) {
   UseMethod("BF", x)
 }

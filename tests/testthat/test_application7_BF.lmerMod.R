@@ -12,7 +12,7 @@ BFicc <- BF(outlme1,hypothesis=
 #check results confirmatory test
 test_that("lmerMod two hypotheses correctly evaluated", {
   expect_equivalent(
-    round(BFicc$PHP_confirmatory,7),c(0.5928385,0.2342143,0.1729472)
+    round(BFicc$PHP_confirmatory,7),c(0.593,0.234,0.173), tolerance = .01
 )})
 #check results exploratory test
 matrixPHP <- matrix(c(0.845, 0.052, 0.103,

@@ -1,10 +1,12 @@
 
 subroutine draw_ju(P,drawscorr,samsize,numcorrgroup,Fisher,seed)
-    ! Fortran implementation of algorithm from on Joe (2006)
+    ! Fortran implementation of algorithm from Joe (2006)
+
     implicit none
+
+    integer, intent(in)                 :: P, samsize, numcorrgroup, Fisher
     integer                             :: s1,r1, r2, i1, i2, k1, corrIndex(P,P), teldummy,&
                                            t1, t2, seed, nn
-    integer, intent(in)                 :: P, samsize, numcorrgroup, Fisher
     real (8)                            :: corrMat(P,P),draw1(1),&
                                            R2inv(P,P), vec1(P,1), vec2(P,1),&
                                            dummy11(1,1), dummy12(1,1), dummy22(1,1),&
@@ -19,8 +21,9 @@ subroutine draw_ju(P,drawscorr,samsize,numcorrgroup,Fisher,seed)
     !set seed
     call RANDOM_SEED(size=nn)
     allocate(iseed(nn))
-    iseed(:)=seed
+    iseed(:) = seed
     call RANDOM_SEED(put=iseed)
+
     
     ! create corrIndex matrix
     teldummy = 1
