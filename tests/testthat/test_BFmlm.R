@@ -18,7 +18,7 @@ PHPexplo <- matrix(
   0.504,  0.230,  0.266),nrow=12,byrow=T)
 test_that("BF.mlm exploratory correctly evaluated for given data sets", {
   expect_equivalent(
-    round(BF1$PHP_exploratory,3),PHPexplo, tolerance = .01
+    round(BF1$PHP_exploratory,3),PHPexplo, tolerance = .015
   )})
 
 # tests on same predictor on different DVs
@@ -26,7 +26,7 @@ set.seed(123)
 BF2 <- BF(x=lm1,hypothesis="disp_on_mpg>disp_on_cyl>disp_on_hp>0; disp_on_mpg=disp_on_cyl=disp_on_hp=0")
 test_that("BF.mlm two hypotheses for same IVs correctly evaluated", {
   expect_equivalent(
-    round(BF2$PHP_confirmatory,3),c(0.016,0.000,0.984), tolerance = .01
+    round(BF2$PHP_confirmatory,3),c(0.016,0.000,0.984), tolerance = .015
 )})
 # tests on different predictors on same DVs
 set.seed(574)
