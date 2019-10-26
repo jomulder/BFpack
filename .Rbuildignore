@@ -3,3 +3,4 @@
 dev/
 ^\.travis\.yml$
 ^.*.RData$
+cran-comments.md
