@@ -14,3 +14,6 @@ matrix:
       r: devel
     - os: osx
       r: release
+    - os: osx
+      osx_image: xcode8
+      r: experimental
