@@ -16,8 +16,8 @@
 #' @usage data(tvprices)
 #' @references Janiszewski, C., & Uy, D. (2008). Precision of the anchor influences the amount of adjustment. Psychological Science, 19(2), 121–127. https://doi.org/10.1111/j.1467-9280.2008.02057.x
 #' \href{https://doi.org/10.1111/j.1467-9280.2008.02057.x}{
-#' doi:10.1111/j.1467-9280.2008.02057.x}
+#' DOI:10.1111/j.1467-9280.2008.02057.x}
 #' @source \href{https://doi.org/10.1111/j.1467-9280.2008.02057.x}{
-#' doi:10.1111/j.1467-9280.2008.02057.x}
+#' DOI:10.1111/j.1467-9280.2008.02057.x}
 #' @format A data.frame with 59 rows and 3 columns.
 NULL

@@ -132,7 +132,7 @@ summary(BF1)
 }
 }
 \references{
-Mulder, J., Gu, X., A. Tomarken, F. Boing-Messing,
+Mulder, J., Gu, X., A. Tomarken, F. Böing-Messing,
 J.A.O.C. Olsson-Collentine, Marlyne Meyerink, D.R. Williams, J. Menke,
 J.-P. Fox, Y. Rosseel, E.J. Wagenmakers, H. Hoijtink., and van Lissa, C.
 (submitted). BFpack: Flexible Bayes Factor Testing of Scientific Theories

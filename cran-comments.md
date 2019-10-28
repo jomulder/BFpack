@@ -11,7 +11,9 @@ This is a new submission.
 * rhub check: Windows Server 2008 R2 SP1, R-devel, 32/64 bit
 * rhub check: Ubuntu Linux 16.04 LTS, R-release
 * rhub check: Fedora Linux, R-devel
-* check with devtools::check_win
+* winbuilder: R 3.5.3 (2019-03-11)
+* winbuilder: R 3.6.1 (2019-07-05)
+* winbuilder: R Under development (unstable) (2019-10-24 r77329)
 
 ## R CMD check results
 There were no ERRORs or WARNINGs, one NOTE:

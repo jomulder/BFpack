@@ -18,7 +18,7 @@
 #' sampled per school.
 #' Changes in the mathematics achievement can be investigated by examining the
 #' grouping of
-#' students in schools across countries. Changes in country-specic intraclass
+#' students in schools across countries. Changes in country-specific intraclass
 #' correlation coefficient
 #' from 2011 to 2015, representing heterogeneity in mathematic achievements
 #' within and between schools across years,

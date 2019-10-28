@@ -80,5 +80,5 @@ bartlett_test(InsectSprays$count, InsectSprays$spray)
 \references{
 Bartlett, M. S. (1937). Properties of sufficiency
 and statistical tests. Proceedings of the Royal Society of
-London Series A 160, 268–282. doi: 10.1098/rspa.1937.0109.
+London Series A 160, 268–282. DOI: 10.1098/rspa.1937.0109.
 }

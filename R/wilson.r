@@ -31,8 +31,8 @@
 #'   Predicts Extreme Criminal-Sentencing Outcomes. Psychological Science,
 #'   26(8), 1325–1331.https://doi.org/10.1177/0956797615590992
 #'   \href{https://doi.org/10.1177/0956797615590992}{
-#'   doi:10.1177/0956797615590992}
+#'   DOI:10.1177/0956797615590992}
 #' @source \href{https://doi.org/10.1177/0956797615590992}{
-#'   doi:10.1177/0956797615590992}
+#'   DOI:10.1177/0956797615590992}
 #' @format A data.frame with 742 rows and 13 columns.
 NULL
