@@ -108,7 +108,6 @@ Depends:
     bain
 Imports:
     stats,
-    methods,
     MASS,
     MCMCpack,
     Matrix,

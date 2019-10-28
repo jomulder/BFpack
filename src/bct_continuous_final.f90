@@ -51,7 +51,7 @@ subroutine estimate_postmeancov_fisherz(postZmean, postZcov, P, numcorr, K, numG
             call kronecker(K,P,XtXi(g1,:,:),SigmaMat,covBeta)
 
             call setgmn(meanO,covBeta,P*K,para)
-            call GENMN(para,betaDrawj,P*K)
+            call GENMN(para,betaDrawj(1,1:(P*K)),P*K)
             do p1 = 1,P
                 BDraws(g1,:,p1) = betaDrawj(1,((p1-1)*K+1):(p1*K)) + BHat(g1,:,p1)
             end do
@@ -233,7 +233,7 @@ function stvaln ( p )
   stvaln = sgn * stvaln
 
   return
-end
+end function
 
 
 function eval_pol ( a, n, x )
@@ -280,6 +280,8 @@ function eval_pol ( a, n, x )
 
   return
 end function eval_pol
+
+
 
 function cumnor ( arg )
 
@@ -476,7 +478,8 @@ function cumnor ( arg )
   end if
 
   return
- end
+ end function
+
 
 
  function dinvnr ( p )
@@ -560,6 +563,7 @@ function cumnor ( arg )
 end function dinvnr
 
 
+
 subroutine kronecker(dimA,dimB,A,B,AB)
 !
     implicit none
@@ -576,6 +580,7 @@ subroutine kronecker(dimA,dimB,A,B,AB)
     end do
 !
 end subroutine kronecker
+
 
 
 REAL(8) FUNCTION sdot(N,SX,INCX,SY,INCY)
@@ -955,7 +960,7 @@ subroutine robust_covest(m, betas1, betas2, mn1, mn2, varb1, varb2, varb1b2Plus,
     end do
     varb1b2Min = ((dummy1(int(mmin+(m-mmin)*.5)) + dummy1(int(mmin+(m-mmin)*.5+1)))*.5/Phi075)**2.0
 !
-end 
+end subroutine
 
 
 
@@ -974,7 +979,7 @@ SUBROUTINE piksrt(n,arr)
 10  arr(i+1)=a
   end do
   return
-END
+END SUBROUTINE
 
 
 
@@ -988,7 +993,7 @@ SUBROUTINE setgmn(meanv,covm,p,parm)
 !                              Function
 !
 !
-!      Places P, MEANV, and the !holesky factoriztion of !OVM
+!      Places P, MEANV, and the Cholesky factoriztion of COVM
 !      in GENMN.
 !
 !
@@ -1069,7 +1074,7 @@ SUBROUTINE setgmn(meanv,covm,p,parm)
    50 CONTINUE
       RETURN
 !
-END
+END SUBROUTINE
 
 
 
@@ -1084,8 +1089,8 @@ SUBROUTINE genmn(parm,x,p)
    !
   !
   !     PARM --> Parameters needed to generate multivariate normal
-  !               deviates (MEANV and !holesky de!omposition of
-  !               !OVM). Set by a previous !all to SETGMN.
+  !               deviates (MEANV and Cholesky decomposition of
+  !               COVM). Set by a previous call to SETGMN.
   !               1 : 1                - size of deviate, P
   !               2 : P + 1            - mean vector
   !               P+2 : P*(P+3)/2 + 1  - upper half of cholesky
@@ -1151,7 +1156,7 @@ SUBROUTINE genmn(parm,x,p)
      30 CONTINUE
         RETURN
   !
-END
+END SUBROUTINE
 
 
 
@@ -1159,7 +1164,7 @@ END
 subroutine spofa(a,lda,n,info)
 
       integer lda,n,info
-      real(8) a(lda,1)
+      real(8) a(lda,n)
 
 !     spofa factors a real symmetric positive definite matrix.
 !
