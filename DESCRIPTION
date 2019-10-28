@@ -89,14 +89,14 @@ Description: Implementation of various default Bayes factors
     described in 
     Mulder, Hoijtink, and Xin (2019) <arXiv:1904.00679>,
     Mulder and Gelissen (2019) <arXiv:1807.05819>,
-    Mulder (2016) <doi:10.1016/j.jmp.2014.09.004>,
-    Mulder and Fox (2019) <doi:10.1214/18-BA1115>,
-    Mulder and Fox (2013) <doi:10.1007/s11222-011-9295-3>,
-    Boeing-Messing, van Assen, Hofman, Hoijtink, and Mulder <doi:10.1037/met0000116>,
-    Hoijtink, Mulder, van Lissa, and Gu, (2018) <doi:10.31234/osf.io/v3shc>,
-    Gu, Mulder, and Hoijtink, (2018) <doi:10.1111/bmsp.12110>,
-    Hoijtink, Gu, and Mulder, (2018) <doi:10.1111/bmsp.12145>, and
-    Hoijtink, Gu, Mulder, and Rosseel, (2018) <doi:10.1037/met0000187>.
+    Mulder (2016) <DOI:10.1016/j.jmp.2014.09.004>,
+    Mulder and Fox (2019) <DOI:10.1214/18-BA1115>,
+    Mulder and Fox (2013) <DOI:10.1007/s11222-011-9295-3>,
+    Boeing-Messing, van Assen, Hofman, Hoijtink, and Mulder <DOI:10.1037/met0000116>,
+    Hoijtink, Mulder, van Lissa, and Gu, (2018) <DOI:10.31234/osf.io/v3shc>,
+    Gu, Mulder, and Hoijtink, (2018) <DOI:10.1111/bmsp.12110>,
+    Hoijtink, Gu, and Mulder, (2018) <DOI:10.1111/bmsp.12145>, and
+    Hoijtink, Gu, Mulder, and Rosseel, (2018) <DOI:10.1037/met0000187>.
 License: GPL (>= 3)
 BugReports: https://github.com/jomulder/BFpack/issues
 Encoding: UTF-8
@@ -108,7 +108,6 @@ Depends:
     bain
 Imports:
     stats,
-    methods,
     MASS,
     MCMCpack,
     Matrix,

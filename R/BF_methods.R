@@ -43,7 +43,7 @@
 #' Gaussian
 #' approximation of the posterior, similar as a classical Wald test.
 #'
-#' @references Mulder, J., Gu, X., A. Tomarken, F. Boing-Messing,
+#' @references Mulder, J., Gu, X., A. Tomarken, F. Böing-Messing,
 #' J.A.O.C. Olsson-Collentine, Marlyne Meyerink, D.R. Williams, J. Menke,
 #' J.-P. Fox, Y. Rosseel, E.J. Wagenmakers, H. Hoijtink., and van Lissa, C.
 #' (submitted). BFpack: Flexible Bayes Factor Testing of Scientific Theories

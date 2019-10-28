@@ -10,7 +10,7 @@ Licensed under the GNU General Public License version 2 (June, 1991)
 Installation
 ------------
 
-You can install BFpack from github with:
+You can install BFpack from GitHub with:
 
 ``` r
 # install.packages("devtools")

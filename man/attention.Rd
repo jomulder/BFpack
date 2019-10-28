@@ -7,7 +7,7 @@
 \format{A data.frame with 51 rows and 2 columns.}
 \source{
 \href{https://doi.org/10.1037/0894-4105.9.2.157}{
-doi:10.1037/0894-4105.9.2.157}
+DOI:10.1037/0894-4105.9.2.157}
 }
 \usage{
 data(attention)
@@ -27,6 +27,6 @@ Como, Palumbo, West, and Osborn (1995).
 \references{
 Silverstein, S. M., Como, P. G., Palumbo, D. R., West, L. L., & Osborn, L. M. (1995). Multiple sources of attentional dysfunction in adults with Tourette's syndrome: Comparison with attention deficit-hyperactivity disorder. Neuropsychology, 9(2), 157-164. https://doi.org/10.1037/0894-4105.9.2.157
 \href{https://doi.org/10.1037/0894-4105.9.2.157}{
-doi:10.1037/0894-4105.9.2.157}
+DOI:10.1037/0894-4105.9.2.157}
 }
 \keyword{datasets}

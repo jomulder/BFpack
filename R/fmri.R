@@ -1,16 +1,16 @@
 #' fMRI data
-#' 
+#'
 #' fMRI data assessing relation between individual differences in the ability to recognize
-#' faces and cars and thickness of the superficial, middle, and deep layers of the 
+#' faces and cars and thickness of the superficial, middle, and deep layers of the
 #' fusiform face area, as assessed by high-resolution fMRI recognition (Williams et al, 2019, under review)
-#' 
+#'
 #'   \tabular{lll}{
 #'   \strong{Subject}\tab\code{numeric}\tab Particicpant ID number\cr
 #'    \strong{Face} \tab \code{numeric} \tab Standardized score on face recognition battery\cr
 #'    \strong{Vehicle} \tab \code{numeric} \tab Standardized score on vehicle recognition battery\cr
-#'    \strong{Superfical} \tab \code{numeric} \tab Depth in mm of superficial layer of FFA\cr
+#'    \strong{Superficial} \tab \code{numeric} \tab Depth in mm of superficial layer of FFA\cr
 #'    \strong{Middle} \tab \code{numeric} \tab Depth in mm of middle layer of FFA\cr
-#'    \strong{Bform} \tab \code{numeric} \tab Depth in mm of deep layer of FFA\cr 
+#'    \strong{Bform} \tab \code{numeric} \tab Depth in mm of deep layer of FFA\cr
 #' }
 #' @docType data
 #' @keywords datasets

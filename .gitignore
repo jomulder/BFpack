@@ -3,7 +3,7 @@
 *.RData
 .Ruserdata
 dev/
-*.c
+*.so
 *.o
 *.dll
 src-i386/

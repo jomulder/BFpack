@@ -9,7 +9,7 @@
 #' (first plausible value) of overall mathematics were considered. Performances
 #' of fourth
 #' and eight graders from more than 50 participating countries around the world
-#' can be found at (http://www.iea.nl/timss)
+#' can be found at (https://www.iea.nl/timss)
 #' The TIMSS achievement scale is centered at 500 and the standard deviation is
 #' equal to 100 scale score points.
 #' The TIMSS data set has a three-level structure, where students are nested
@@ -18,7 +18,7 @@
 #' sampled per school.
 #' Changes in the mathematics achievement can be investigated by examining the
 #' grouping of
-#' students in schools across countries. Changes in country-specic intraclass
+#' students in schools across countries. Changes in country-specific intraclass
 #' correlation coefficient
 #' from 2011 to 2015, representing heterogeneity in mathematic achievements
 #' within and between schools across years,
