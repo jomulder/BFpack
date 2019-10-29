@@ -19,21 +19,6 @@ test_that("BF.fmri with missing data runs", {
 })
 
 
-
-fmri_missing <- rbind(fmri, fmri)
-set.seed(123)
-for(i in 1:10){
-  fmri_missing[sample(1:nrow(fmri), 1), sample(1:ncol(fmri), 1)] <- NA
-}
-
-fmri_listdel <- fmri_missing[!is.na(apply(fmri_missing, 1, sum)),]
-fmri.lm2_listdel <- lm(cbind(Superficial, Middle, Deep) ~ Face + Vehicle, data = fmri_listdel)
-
-test_that("BF.fmri with missing data throws an error", {
-  expect_error(BF(fmri.lm2_listdel, hypothesis = constraints.fmri2))
-})
-
-
 # Without missing data ----------------------------------------------------
 
 fmri_missing <- fmri
