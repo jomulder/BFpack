@@ -15,7 +15,7 @@ fmri.lm2_listdel <- lm(cbind(Superficial, Middle, Deep) ~ Face + Vehicle, data =
 
 res <- BF(fmri.lm2_listdel, hypothesis = constraints.fmri2)
 test_that("BF.fmri with missing data runs", {
-  expect_equivalent(res$PHP_confirmatory, c(0.12, .80, .08), tolerance = .01)
+  expect_true(res$PHP_confirmatory[1]>res$PHP_confirmatory[3]& res$PHP_confirmatory[1]<res$PHP_confirmatory[2]&res$PHP_confirmatory[3]<res$PHP_confirmatory[2])
 })
 
 
@@ -27,6 +27,6 @@ fmri.lm2_listdel <- lm(cbind(Superficial, Middle, Deep) ~ Face + Vehicle, data =
 
 res <- BF(fmri.lm2_listdel, hypothesis = constraints.fmri2)
 test_that("BF.fmri without missing data works", {
-  expect_equivalent(res$PHP_confirmatory, c(0.05, .93, .02), tolerance = .01)
+  expect_true(res$PHP_confirmatory[1]>res$PHP_confirmatory[3]& res$PHP_confirmatory[1]<res$PHP_confirmatory[2]&res$PHP_confirmatory[3]<res$PHP_confirmatory[1])
 })
 
