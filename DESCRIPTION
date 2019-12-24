@@ -102,6 +102,7 @@ Description: Implementation of various default Bayes factors
     Hoijtink, Gu, and Mulder, (2018) <DOI:10.1111/bmsp.12145>, and
     Hoijtink, Gu, Mulder, and Rosseel, (2018) <DOI:10.1037/met0000187>.
 License: GPL (>= 3)
+URL: https://github.com/jomulder/BFpack
 BugReports: https://github.com/jomulder/BFpack/issues
 Encoding: UTF-8
 LazyData: true
