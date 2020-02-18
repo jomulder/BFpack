@@ -1,4 +1,5 @@
 # Version 0.1.1
+Fixes problems with Debian Linux and Solaris
 
 ## Test environments
 * Local OS X 10.14.6, R 3.5.2
@@ -12,7 +13,7 @@
 * rhub check: Fedora Linux, R-devel
 * winbuilder: R 3.5.3 (2019-03-11)
 * winbuilder: R 3.6.1 (2019-07-05)
-* winbuilder: R Under development (unstable) (2019-10-24 r77329)
+ 
 
 ## R CMD check results
 There were no ERRORs or WARNINGs, one NOTE:

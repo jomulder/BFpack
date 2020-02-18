@@ -17,17 +17,17 @@ subroutine draw_ju(P,drawscorr,samsize,numcorrgroup,Fisher,seed)
     real(4)                             :: alpha
 
 !========================================================================================!
-    
+
     !set seed
     call RANDOM_SEED(size=nn)
     allocate(iseed(nn))
     iseed(:) = seed
     call RANDOM_SEED(put=iseed)
 
-    
+
     ! create corrIndex matrix
     teldummy = 1
-    
+
     do r1=2,P
         do r2=1,r1-1
             corrIndex(r1,r2) = teldummy
@@ -35,19 +35,19 @@ subroutine draw_ju(P,drawscorr,samsize,numcorrgroup,Fisher,seed)
             teldummy = teldummy + 1
         end do
     end do
-    
+
 
     do s1=1,samsize
-        
+
         ! create identity matrix
         do t1=1,P
             do t2=1,P
-                if (t1==t2) then 
+                if (t1==t2) then
                     corrMat(t1,t2)=1.0
-                else 
+                else
                     corrMat(t1,t2)=0.0
                 ENDIF
-            end do 
+            end do
         end do
         do r1 = 1,P-1
             alpha=P/2.0
@@ -77,10 +77,10 @@ subroutine draw_ju(P,drawscorr,samsize,numcorrgroup,Fisher,seed)
                 dummy22 = matmul(matmul(transpose(vec2(1:(k1-1),:)),R2inv(1:(i2-i1-1),1:(i2-i1-1))),vec2(1:(k1-1),:))
                 dummy12 = matmul(matmul(transpose(vec1(1:(k1-1),:)),R2inv(1:(i2-i1-1),1:(i2-i1-1))),vec2(1:(k1-1),:))
                 Di1i2 = sqrt((1-dummy11(1,1))*(1-dummy22(1,1)))
-                
+
                 corrMat(i1,i2) = dummy12(1,1) + Di1i2*draw1(1)
                 corrMat(i2,i1) = corrMat(i1,i2)
-                
+
                 drawsCorr(s1,corrIndex(i1,i2)) = corrMat(i1,i2)
                 end do
             end do
@@ -105,7 +105,7 @@ function inverse(a,n)
 ! output ...
 ! c(n,n) - inverse matrix of A
 ! comments ...
-! the original matrix a(n,n) will be destroyed 
+! the original matrix a(n,n) will be destroyed
 ! during the calculation
 !===========================================================
 
@@ -132,7 +132,7 @@ do k=1, n-1
    end do
 end do
 
-! Step 2: prepare L and U matrices 
+! Step 2: prepare L and U matrices
 ! L matrix is a matrix of the elimination coefficient
 ! + the diagonal elements are 1.0
 do i=1,n
@@ -171,7 +171,7 @@ do k=1,n
   end do
   b(k)=0.0
 end do
-end 
+end function inverse
 
 
 
@@ -262,7 +262,7 @@ end subroutine draw_ju
 
 subroutine compute_rcet(numE,drawsIn,wIn,delta,rcEt,samsize)
 !estimates the density at 0 via a histogram estimate, e.g., mean(abs(draws)<delta)/(2*delta), with default delta=.1
-    
+
     implicit none
     ! numE number of eqully constraint for numEQ(h1)
     ! modified drawscorr matrix
@@ -291,9 +291,9 @@ end subroutine compute_rcet
 
 subroutine compute_rcet2(numE,drawsIn,wIn,delta,rcEt,meanOut,covmOut,samsize,numcorr)
 !estimates the density at 0 via a histogram estimate, e.g., mean(abs(draws)<delta)/(2*delta), with default delta=.1.
-!and compute conditional mean and covariance matrix of unconstrained parameters.    
+!and compute conditional mean and covariance matrix of unconstrained parameters.
     implicit none
-    
+
     integer, intent(in)                 :: numE, samsize, numcorr
     real(8), intent(in)                 :: drawsIn(samsize,numcorr), wIn(numE), delta
     real(8), intent(out)                :: rcEt, meanOut(numcorr-numE), covmOut(numcorr-numE,numcorr-numE)
@@ -301,7 +301,7 @@ subroutine compute_rcet2(numE,drawsIn,wIn,delta,rcEt,meanOut,covmOut,samsize,num
     real(8)                             :: dummyvec1(samsize), drawsIE(samsize,numcorr), &
                                            meanDummy(numcorr,1), covmDummy(numcorr,numcorr)
     real(8), allocatable                :: diffs(:,:), ones(:,:)
-    
+
     tel1 = 0
     dummyvec1 = 1
     check1 = 0
@@ -322,14 +322,14 @@ subroutine compute_rcet2(numE,drawsIn,wIn,delta,rcEt,meanOut,covmOut,samsize,num
     rcEt = 1.0/(2*delta)**real(numE)*real(tel1)/real(samsize)
     do m1=1, numcorr
         meanDummy(m1,1)=sum(drawsIE(1:tel1,m1))/tel1
-    end do 
+    end do
     meanOut(:) = meanDummy((numE+1):numcorr,1)
     ones = 1
     diffs = drawsIE(1:tel1,1:numcorr) - matmul(ones,transpose(meanDummy))
     covmDummy(1:numcorr,1:numcorr) = matmul(transpose (diffs), diffs)/real(tel1)
     !covmDummy = covmDummy/real(tel1)
     covmOut(1:(numcorr-numE),1:(numcorr-numE)) = covmDummy((numE+1):numcorr,(numE+1):numcorr)
-!    
+!
 end subroutine compute_rcet2
 
 
