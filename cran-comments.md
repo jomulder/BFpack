@@ -1,5 +1,4 @@
-# Version 0.1.0
-This is a new submission.
+# Version 0.1.1
 
 ## Test environments
 * Local OS X 10.14.6, R 3.5.2
@@ -18,4 +17,3 @@ This is a new submission.
 ## R CMD check results
 There were no ERRORs or WARNINGs, one NOTE:
 
-New submission
