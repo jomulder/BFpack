@@ -89,7 +89,7 @@ bartlett_test.default <- function(x, g, ...){
 # exists("bartlett.test.default") # false
 # getS3method("bartlett.test", "default")
 
-#' @importFrom MCMCpack rinvgamma
+#' @importFrom stats rgamma
 #' @importFrom stats rchisq
 #' @method BF bartlett_htest
 #' @export
@@ -312,7 +312,8 @@ inversegamma_prob_Hc <- function(shape1,scale1,relmeas,RrE1,RrO1,samsize1=1e5){
           names(relmeas)[numhyp+1] <- "complement"
         }else{ #the order constrained subspaces at least partly overlap
           randomDraws <- matrix(unlist(lapply(1:numpara,function(par){
-            rinvgamma(1e5,shape=shape1[par]/2,scale=scale1[par])
+            1/rgamma(1e5,shape=shape1[par]/2,rate=scale1[par])
+            #rinvgamma(1e5,shape=shape1[par]/2,scale=scale1[par])
           })),ncol=numpara)
           checksOCpost <- lapply(which(whichO),function(h){
             Rorder <- as.matrix(RrO1[[h]][,-(1+numpara)])

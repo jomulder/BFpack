@@ -111,10 +111,9 @@ RoxygenNote: 6.1.1
 Depends: 
     R (>= 3.0.0),
     bain
-Imports:
+Imports: 
     stats,
     MASS,
-    MCMCpack,
     Matrix,
     mvtnorm,
     pracma,

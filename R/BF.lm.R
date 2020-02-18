@@ -2,7 +2,6 @@
 #' @importFrom mvtnorm dmvnorm pmvnorm rmvnorm dmvt pmvt rmvt
 #' @importFrom Matrix rankMatrix
 #' @importFrom stats rWishart qt
-#' @importFrom MCMCpack rinvgamma
 #' @importFrom MASS ginv
 #' @method BF lm
 #' @export
@@ -523,10 +522,10 @@ BF.lm <- function(x,
       # check if a common boundary exists for prior location under all constrained hypotheses
       if(nrow(RrStack) > 1){
         rref_ei <- rref(RrStack)
-        nonzero <- rref_ei[,K+1]!=0
+        nonzero <- rref_ei[,P*K+1]!=0
         if(max(nonzero)>0){
           row1 <- max(which(nonzero))
-          if(sum(abs(rref_ei[row1,1:K]))==0){
+          if(sum(abs(rref_ei[row1,1:(P*K)]))==0){
             stop("No common boundary point for prior location. Conflicting constraints.")
           }
         }

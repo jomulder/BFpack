@@ -2,7 +2,7 @@
 ### via multiple lmer-objects based on Mulder & Fox (2013, 2019).
 
 
-#' @importFrom MCMCpack rinvgamma
+#' @importFrom stats rgamma
 #' @importFrom lme4 getME
 # #' @importFrom utils getME
 # #' @importFrom lme4 fixef getME
@@ -367,7 +367,7 @@ Gibbs2 <- function(zW,ngroups,p,shape1,shape2,bB,bW,unique,T0,V1,inequalities=0,
     scale.sigma2 <- sum((diffs[-select1])**2)*bW/2 +
       sum(sumsquares.tau[1:T0]*bB[1:T0])/2*T0check
     shape.sigma2 <- bW*N*(p-1)/2 + sum(bB[1:T0]*ngroups[1:T0])/2*T0check
-    sigma2 <- rinvgamma(1,shape=shape.sigma2,scale=scale.sigma2)
+    sigma2 <- 1/rgamma(1,shape=shape.sigma2,rate=scale.sigma2)
 
     #2b. draw psi | sigma2, beta, y
     # if psi.check==F then psi is set to zero
@@ -378,15 +378,9 @@ Gibbs2 <- function(zW,ngroups,p,shape1,shape2,bB,bW,unique,T0,V1,inequalities=0,
     #2c. draw tau | sigma2, psi, beta, y
     scale.tau <- c(t(sumsquares.tau*bB)%*%transMatrix)/(2*p) + psi
     shape.tau = c(t(bB*ngroups)%*%transMatrix)/2 + shape2
-    tauV <- rinvgamma(V1,shape=shape.tau,scale=scale.tau) - sigma2/p #+ .00001
-
+    tauV <- 1/rgamma(V1, shape=shape.tau, rate=scale.tau) - sigma2/p #+ .00001
     #    setTxtProgressBar(pb,ss)
   }
-
-  #  cat("\n")
-  #  print("finding good proposal density")
-
-  #  pb = txtProgressBar(min = 0, max = samsize, initial = 0)
 
   for(ss in 1:samsize){
     #1. draw beta | sigma2, tau, psi, y
@@ -408,7 +402,7 @@ Gibbs2 <- function(zW,ngroups,p,shape1,shape2,bB,bW,unique,T0,V1,inequalities=0,
     scale.sigma2 <- sum((diffs[-select1])**2)*bW/2 +
       sum(sumsquares.tau[1:T0]*bB[1:T0])/2*T0check
     shape.sigma2 <- bW*N*(p-1)/2 + sum(bB[1:T0]*ngroups[1:T0])/2*T0check
-    sigma2 <- rinvgamma(1,shape=shape.sigma2,scale=scale.sigma2)
+    sigma2 <- 1/rgamma(1, shape=shape.sigma2, rate=scale.sigma2)
 
     #2b. draw psi | sigma2, beta, y
     # if psi.check==F then psi is set to zero
@@ -419,7 +413,7 @@ Gibbs2 <- function(zW,ngroups,p,shape1,shape2,bB,bW,unique,T0,V1,inequalities=0,
     #2c. draw tau | sigma2, psi, beta, y
     scale.tau <- c(t(sumsquares.tau*bB)%*%transMatrix)/(2*p) + psi
     shape.tau <- c(t(bB*ngroups)%*%transMatrix)/2 + shape2
-    tauV <- rinvgamma(V1,shape=shape.tau,scale=scale.tau) - sigma2/p #+ .00001
+    tauV <- 1/rgamma(V1,shape=shape.tau,rate=scale.tau) - sigma2/p #+ .00001
 
     #2d. compute rho
     rho <- tauV/(tauV+sigma2)

@@ -12,14 +12,14 @@ BFicc <- BF(outlme1,hypothesis=
 #check results confirmatory test
 test_that("lmerMod two hypotheses correctly evaluated", {
   expect_equivalent(
-    round(BFicc$PHP_confirmatory,7),c(0.593,0.234,0.173), tolerance = .01
+    round(BFicc$PHP_confirmatory,7),c(0.593,0.234,0.173), tolerance = .05
 )})
 #check results exploratory test
 matrixPHP <- matrix(c(0.845, 0.052, 0.103,
                       0.000, 0.000, 1.000),nrow=2,byrow=T)
 test_that("lmerMod explortatory hypotheses correctly evaluated", {
   expect_equivalent(
-    BFicc$PHP_exploratory,matrixPHP
+    BFicc$PHP_exploratory,matrixPHP,tolerance = .05
 )})
 
 

@@ -1,7 +1,5 @@
 
 
-
-#' @importFrom MCMCpack rinvgamma
 #' @method BF hetcor
 #' @export
 BF.hetcor <- function(x,

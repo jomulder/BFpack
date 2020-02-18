@@ -18,7 +18,7 @@ PHPexplo <- matrix(
   0.504,  0.230,  0.266),nrow=12,byrow=T)
 test_that("BF.mlm exploratory correctly evaluated for given data sets", {
   expect_equivalent(
-    round(BF1$PHP_exploratory,3),PHPexplo, tolerance = .015
+    round(BF1$PHP_exploratory,3),PHPexplo, tolerance = .03
   )})
 
 # tests on same predictor on different DVs
