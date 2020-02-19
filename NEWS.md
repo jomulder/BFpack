@@ -1,3 +1,5 @@
-# BFpack 0.1.0
+# BFpack 0.1.1
 
-* New submission
+* Date: 2020-01-19
+* Fixes bugs from CRAN checks (patched-linux, patched-solaris, debian)
+
