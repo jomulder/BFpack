@@ -1,5 +1,5 @@
 # Version 0.1.1
-Fixes bugs from CRAN checks (Debian, Solaris, patched-linux)
+Fixes bugs from CRAN checks of 0.1.0 (Debian, Solaris, patched-linux)
 
 ## Test environments
 * Local OS X 10.14.6, R 3.5.2
