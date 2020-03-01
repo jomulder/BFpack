@@ -619,9 +619,9 @@ marglike_H0 <- function(yX,ngroups,p,bB=1,bW=1){
   for(ii in 1:N){
     zW[((ii-1)*p+1):(ii*p),] = Hp%*%yX[((ii-1)*p+1):(ii*p),]
   }
-  Xmat <- yX[,-1]
+  Xmat <- matrix(yX[,-1],ncol=ncol(yX)-1)
   yvec <- yX[,1]
-  Wmat <- zW[,-1]
+  Wmat <- matrix(zW[,-1],ncol=ncol(zW)-1)
   zvec <- zW[,1]
 
   term1 <- -.5*(sum(ngroups*bB)+N*(p-1)*bW-K)*log(pi)
