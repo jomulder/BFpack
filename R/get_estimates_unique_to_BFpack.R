@@ -184,3 +184,39 @@ get_estimates.mlm <- function(x, ...){
   out
 }
 
+
+#' @method get_estimates cor_test
+#' @export
+get_estimates.cor_test <- function(x, ...){
+  out <- list()
+  out$estimate <- x$meanF
+  out$Sigma <- list(x$covmF)
+  class(out) <- "model_estimates"
+  attr(out, "analysisType") <- "corr_htest"
+  out
+}
+
+
+#' @method get_estimates t_test
+#' @export
+get_estimates.t_test <- function(x, ...){
+  out <- list()
+  if(length(x$estimate)==1){
+    populationmean <- x$estimate
+    names(populationmean) <- "mu"
+    out$estimate <- populationmean
+    out$Sigma <- list((x$stderr)**2)
+  }else{
+    difference <- x$estimate[1] - x$estimate[2]
+    names(difference) <- "difference"
+    out$estimate <- difference
+    out$Sigma <- list((x$stderr)**2)
+  }
+  class(out) <- "model_estimates"
+  attr(out, "analysisType") <- "t_test"
+  out
+}
+
+
+
+

@@ -1,26 +1,28 @@
 set.seed(123)
-#set.seed(123, kind = "Mersenne-Twister", normal.kind = "Inversion")
-lm6 <- lm(cbind(Im,Del,Wmn,Cat,Fas,Rat) ~ -1 + Group, data=memory)
-BF6_cor <- BF(lm6,parameter="correlation", hypothesis=
-    "Del_with_Im_in_GroupHC > Del_with_Im_in_GroupSZ &
-    Del_with_Wmn_in_GroupHC > Del_with_Wmn_in_GroupSZ &
-    Del_with_Cat_in_GroupHC > Del_with_Cat_in_GroupSZ &
-    Del_with_Fas_in_GroupHC > Del_with_Fas_in_GroupSZ &
-    Del_with_Rat_in_GroupHC > Del_with_Rat_in_GroupSZ &
-    Im_with_Wmn_in_GroupHC > Im_with_Wmn_in_GroupSZ &
-    Im_with_Cat_in_GroupHC > Im_with_Cat_in_GroupSZ &
-    Im_with_Fas_in_GroupHC > Im_with_Fas_in_GroupSZ &
-    Im_with_Rat_in_GroupHC > Im_with_Rat_in_GroupSZ &
-    Wmn_with_Cat_in_GroupHC > Wmn_with_Cat_in_GroupSZ &
-    Wmn_with_Fas_in_GroupHC > Wmn_with_Fas_in_GroupSZ &
-    Wmn_with_Rat_in_GroupHC > Wmn_with_Rat_in_GroupSZ &
-    Cat_with_Fas_in_GroupHC > Cat_with_Fas_in_GroupSZ &
-    Cat_with_Rat_in_GroupHC > Cat_with_Rat_in_GroupSZ &
-    Fas_with_Rat_in_GroupHC > Fas_with_Rat_in_GroupSZ")
+#split data frame in two data frame for each group
+memoryHC <- subset(memory,Group=="HC")[,-7]
+memorySZ <- subset(memory,Group=="SZ")[,-7]
+cor1 <- cor_test(memoryHC,memorySZ)
+BF6_cor <- BF(cor1, hypothesis=
+    "Del_with_Im_in_1 > Del_with_Im_in_2 &
+    Del_with_Wmn_in_1 > Del_with_Wmn_in_2 &
+    Del_with_Cat_in_1 > Del_with_Cat_in_2 &
+    Del_with_Fas_in_1 > Del_with_Fas_in_2 &
+    Del_with_Rat_in_1 > Del_with_Rat_in_2 &
+    Im_with_Wmn_in_1 > Im_with_Wmn_in_2 &
+    Im_with_Cat_in_1 > Im_with_Cat_in_2 &
+    Im_with_Fas_in_1 > Im_with_Fas_in_2 &
+    Im_with_Rat_in_1 > Im_with_Rat_in_2 &
+    Wmn_with_Cat_in_1 > Wmn_with_Cat_in_2 &
+    Wmn_with_Fas_in_1 > Wmn_with_Fas_in_2 &
+    Wmn_with_Rat_in_1 > Wmn_with_Rat_in_2 &
+    Cat_with_Fas_in_1 > Cat_with_Fas_in_2 &
+    Cat_with_Rat_in_1 > Cat_with_Rat_in_2 &
+    Fas_with_Rat_in_1 > Fas_with_Rat_in_2")
 #check results
-test_that("correlation test on mlm object with multiple groups correctly evaluates", {
+test_that("correlation test on cor_test object with two groups correctly evaluated", {
   expect_equivalent(
-    BF6_cor$BFmatrix_confirmatory[1,2], 2894.586, tolerance = 1
+    log(BF6_cor$BFmatrix_confirmatory[1,2]), 8.7, tolerance = 1
 )})
 
 
