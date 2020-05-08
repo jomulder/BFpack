@@ -215,7 +215,7 @@ BF.lm <- function(x,
       row.names(BFtu_main) <- names_main
       colnames(BFtu_main) <- c("BFtu","BFuu")
       PHP_main <- BFtu_main / apply(BFtu_main,1,sum)
-      colnames(PHP_main) <- c("Pr(null)","Pr(alt)")
+      colnames(PHP_main) <- c("Pr(H0)","Pr(H1)")
     }else{ PHP_main <- BFtu_main <- NULL}
     #check whether interaction effects are present
     prednames <- names(attr(x$term,"dataClasses"))
@@ -271,7 +271,7 @@ BF.lm <- function(x,
       row.names(BFtu_interaction) <- names_interaction
       colnames(BFtu_interaction) <- c("BFtu","BFuu")
       PHP_interaction <- BFtu_interaction / apply(BFtu_interaction,1,sum)
-      colnames(PHP_interaction) <- c("Pr(null)","Pr(alt)")
+      colnames(PHP_interaction) <- c("Pr(H0)","Pr(H1)")
     }else{ PHP_interaction <- BFtu_interaction <- NULL}
   }else{ PHP_interaction <- BFtu_interaction <- PHP_main <- BFtu_main <- NULL}
 
@@ -500,7 +500,7 @@ BF.lm <- function(x,
       BFtable <- cbind(relcomp,relfit,relfit[,1]/relcomp[,1],relfit[,2]/relcomp[,2],
                        BFtu_confirmatory,PHP_confirmatory)
       row.names(BFtable) <- names(BFtu_confirmatory)
-      colnames(BFtable) <- c("comp_E","comp_O","fit_E","fit_O","BF_E","BF_O","BF","PHP")
+      colnames(BFtable) <- c("complex=","complex>","fit=","fit>","BF=","BF>","BF","PHP")
       BFmatrix_confirmatory <- matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory))/
         t(matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory)))
       row.names(BFmatrix_confirmatory) <- colnames(BFmatrix_confirmatory) <- names(BFtu_confirmatory)

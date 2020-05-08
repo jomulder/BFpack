@@ -254,7 +254,7 @@ BF.bartlett_htest <- function(x,
     BFtable <- cbind(rep(NA,length(relfit)),relcomp,rep(NA,length(relfit)),relfit,BF_E,
                      relfit/relcomp,BF_E*relfit/relcomp,PHP_confirmatory)
     row.names(BFtable) <- names(PHP_confirmatory)
-    colnames(BFtable) <- c("comp_E","comp_O","fit_E","fit_O","BF_E","BF_O","BF","PHP")
+    colnames(BFtable) <- c("complex=","complex>","fit=","fit>","BF=","BF>","BF","PHP")
   }
 
   BFlm_out <- list(

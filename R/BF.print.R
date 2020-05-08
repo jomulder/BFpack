@@ -15,18 +15,12 @@ print.BF <- function(x,
   digits <- 3
 
   if(is.null(x$BFtu_confirmatory)){
-#    cat("BFpack: Exploratory Bayes factor tests for an object of class ", class(x$model)[1], ":\n\n", sep = "")
 
     cat("Bayesian hypothesis test","\n", sep = "")
     cat("Type: Exploratory","\n", sep = "")
     cat("Object: ",class(x$model)[1],"\n", sep = "")
     cat("Parameter: ",x$parameter,"\n", sep = "")
     cat("Method: ",x$bayesfactor,"\n\n", sep = "")
-    # cat("\n")
-    cat("Posterior probabilities:","\n", sep = "")
-    print(round(x$PHP_exploratory,digits))
-
-    cat("\n")
 
     if(class(x$model)[1]=="aov"){
       if(!is.null(x$BFtu_main)){
@@ -41,8 +35,13 @@ print.BF <- function(x,
         cat("\n")
         print(round(x$PHP_interaction,digits))
       }
-      cat("\n")
+    }else{
+      cat("Posterior probabilities:","\n", sep = "")
+      print(round(x$PHP_exploratory,digits))
     }
+
+    cat("\n")
+
   }else{
 
     cat("Bayesian hypothesis test","\n", sep = "")
@@ -62,13 +61,13 @@ print.BF <- function(x,
     row.names(PHPmatrix) <- hypnumbers
     print(PHPmatrix)
 
-    # cat("\n")
-    # cat("Evidence matrix:")
-    # cat("\n")
-    #
-    # BFmat <- round(x$BFmatrix_confirmatory,digits)
-    # row.names(BFmat) <- colnames(BFmat) <- hypnumbers
-    # print(BFmat)
+    cat("\n")
+    cat("Evidence matrix:")
+    cat("\n")
+
+    BFmat <- round(x$BFmatrix_confirmatory,digits)
+    row.names(BFmat) <- colnames(BFmat) <- hypnumbers
+    print(BFmat)
 
     cat("\n")
     cat("Hypotheses:")

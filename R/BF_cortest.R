@@ -135,7 +135,7 @@ cor_test <- function(..., formula = NULL, iter = 5e3){
         if(numG==1){
           paste0(varnames[[g]][p1],"_with_",varnames[[g]][p2])
         }else{
-          paste0(varnames[[g]][p1],"_with_",varnames[[g]][p2],"_in_",as.character(g))
+          paste0(varnames[[g]][p1],"_with_",varnames[[g]][p2],"_in_g",as.character(g))
         }
       }))
     })),nrow=P)
@@ -335,7 +335,7 @@ BF.cor_test <- function(x,
     BFtable <- cbind(relcomp,relfit,relfit[,1]/relcomp[,1],relfit[,2]/relcomp[,2],
                      apply(relfit,1,prod)/apply(relcomp,1,prod),PHP_confirmatory)
     row.names(BFtable) <- names(BFtu_confirmatory)
-    colnames(BFtable) <- c("comp_E","comp_O","fit_E","fit_O","BF_E","BF_O","BF","PHP")
+    colnames(BFtable) <- c("complex=","complex>","fit=","fit>","BF=","BF>","BF","PHP")
     BFmatrix_confirmatory <- matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory))/
       t(matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory)))
     row.names(BFmatrix_confirmatory) <- colnames(BFmatrix_confirmatory) <- names(BFtu_confirmatory)

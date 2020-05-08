@@ -205,7 +205,7 @@ BF.t_test <- function(x,
                          relative_fit[,2]/relative_complexity[,2],apply(relative_fit,1,prod)/
                            apply(relative_complexity,1,prod),PHP_confirmatory)
         row.names(BFtable) <- names(BFtu_confirmatory)
-        colnames(BFtable) <- c("comp_E","comp_O","fit_E","fit_O","BF_E","BF_O","BF","PHP")
+        colnames(BFtable) <- c("complex=","complex>","fit=","fit>","BF=","BF>","BF","PHP")
         hypotheses <- row.names(relative_complexity)
       }
     }
