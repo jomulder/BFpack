@@ -8,6 +8,7 @@
 BF.lm <- function(x,
                   hypothesis = NULL,
                   prior = NULL,
+                  complement = TRUE,
                   ...){
 
   # default BF on location parameters in a univarite normal linear model
@@ -418,10 +419,12 @@ BF.lm <- function(x,
       colnames(relcomp) <- c("c_E","c_O")
 
       # Compute relative fit/complexity for the complement hypothesis
-      relfit <- MatrixStudent_prob_Hc(BetaHat,S,tXXi,N-K-P+1,as.matrix(relfit),RrO)
-      relcomp <- MatrixStudent_prob_Hc(Mean0,S_b,tXXi_b,1,as.matrix(relcomp),RrO)
-      hypothesisshort <- unlist(lapply(1:nrow(relfit),function(h) paste0("H",as.character(h))))
-      row.names(relfit) <- row.names(relfit) <- hypothesisshort
+      if(complement==TRUE){
+        relfit <- MatrixStudent_prob_Hc(BetaHat,S,tXXi,N-K-P+1,as.matrix(relfit),RrO)
+        relcomp <- MatrixStudent_prob_Hc(Mean0,S_b,tXXi_b,1,as.matrix(relcomp),RrO)
+        hypothesisshort <- unlist(lapply(1:nrow(relfit),function(h) paste0("H",as.character(h))))
+        row.names(relfit) <- row.names(relfit) <- hypothesisshort
+      }
 
       # the BF for the complement hypothesis vs Hu needs to be computed.
       BFtu_confirmatory <- c(apply(relfit / relcomp, 1, prod))
@@ -473,14 +476,18 @@ BF.lm <- function(x,
         Student_measures(meanN,ScaleN,dfN,RrE[[h]],RrO[[h]],
                          names1=names_coef,constraints1=parse_hyp$original_hypothesis[h])
       })),nrow=2))
-
-      # Compute relative fit/complexity for the complement hypothesis
-      relfit <- Student_prob_Hc(meanN,ScaleN,dfN,relfit,hypothesis,RrO)
-      relcomp <- Student_prob_Hc(mean0,Scale0,df0,relcomp,hypothesis,RrO)
-      row.names(relcomp)[1:numhyp] <- parse_hyp$original_hypothesis
-      row.names(relfit)[1:numhyp] <- parse_hyp$original_hypothesis
       colnames(relcomp) <- c("c_E","c_O")
       colnames(relfit) <- c("f_E","f_O")
+      row.names(relcomp)[1:numhyp] <- parse_hyp$original_hypothesis
+      row.names(relfit)[1:numhyp] <- parse_hyp$original_hypothesis
+
+      if(complement == TRUE){
+        # Compute relative fit/complexity for the complement hypothesis
+        relfit <- Student_prob_Hc(meanN,ScaleN,dfN,relfit,hypothesis,RrO)
+        relcomp <- Student_prob_Hc(mean0,Scale0,df0,relcomp,hypothesis,RrO)
+        row.names(relcomp)[1:numhyp] <- parse_hyp$original_hypothesis
+        row.names(relfit)[1:numhyp] <- parse_hyp$original_hypothesis
+      }
 
       # the BF for the complement hypothesis vs Hu needs to be computed.
       BFtu_confirmatory <- c(apply(relfit / relcomp, 1, prod))

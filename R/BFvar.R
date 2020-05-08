@@ -96,6 +96,7 @@ bartlett_test.default <- function(x, g, ...){
 BF.bartlett_htest <- function(x,
                            hypothesis = NULL,
                            prior = NULL,
+                           complement = TRUE,
                            ...) {
   get_est <- get_estimates(x)
   nsim <- 1e5
@@ -220,16 +221,17 @@ BF.bartlett_htest <- function(x,
         logmx[h] <- log(relfit[h] / relcomp[h]) + logmxE[h]
       }
     }
-    #compute marginal likelihood for complement hypothesis
-    relfit <- inversegamma_prob_Hc(shape1=(n-1)/2,scale1=s2*(n-1)/(2*n),relmeas=relfit,RrE1=RrE,RrO1=RrO)
-    relcomp <- inversegamma_prob_Hc(shape1=rep(.5,length(n)),scale1=rep(.5,length(n)),relmeas=relcomp,RrE1=RrE,RrO1=RrO)
-    if(length(relfit)>Th){
-      logmxE <- c(logmxE,logmxu)
-      logmx <- c(logmx,logmxu + log(relfit[Th+1]/relcomp[Th+1]))
-      names(logmx)[Th+1] <- "complement"
-      hypotheses <- names(logmx)
+    if(complement==TRUE){
+      #compute marginal likelihood for complement hypothesis
+      relfit <- inversegamma_prob_Hc(shape1=(n-1)/2,scale1=s2*(n-1)/(2*n),relmeas=relfit,RrE1=RrE,RrO1=RrO)
+      relcomp <- inversegamma_prob_Hc(shape1=rep(.5,length(n)),scale1=rep(.5,length(n)),relmeas=relcomp,RrE1=RrE,RrO1=RrO)
+      if(length(relfit)>Th){
+        logmxE <- c(logmxE,logmxu)
+        logmx <- c(logmx,logmxu + log(relfit[Th+1]/relcomp[Th+1]))
+        names(logmx)[Th+1] <- "complement"
+      }
     }
-
+    hypotheses <- names(logmx)
     BFtu_confirmatory <- exp(logmx - logmxu)
     BFmatrix_confirmatory <- BFtu_confirmatory %*% t(1 / BFtu_confirmatory)
     names(BFtu_confirmatory) <- row.names(BFmatrix_confirmatory) <-

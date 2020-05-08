@@ -13,6 +13,8 @@
 #' evaluate. The default is NULL, which will result in an exploratory analysis.
 #' @param prior A vector specifying the prior probabilities of the hypotheses.
 #' The default is NULL which will specify equal prior probabilities.
+#' @param complement a logical specifying whether the complement should be added
+#' to the tested hypothesis under \code{hypothesis}.
 #' @param ... Parameters passed to and from other functions.
 #' @return The output is an object of class \code{BF}. The object has elements:
 #' BFtu_exploratory, PHP_exploratory, BFtu_confirmatory, PHP_confirmatory,
@@ -74,12 +76,13 @@
 #' summary(BF1)
 #'
 #' # EXAMPLE 4. Correlation analysis
-#' res <- polycor::hetcor(fmri[,3:4])
-#' BF1 <- BF(res)
+#' set.seed(123)
+#' cor1 <- cor_test(memory[1:20,1:3])
+#' BF1 <- BF(cor1)
 #' summary(BF1)
-#' BF1 <- BF(res,hypothesis="Middle_with_Superficial > 0;
-#'                           Middle_with_Superficial=0")
-#' summary(BF1)
+#' BF2 <- BF(res,hypothesis="Wmn_with_Im > Wmn_with_Del > 0;
+#'                           Wmn_with_Im = Wmn_with_Del = 0")
+#' summary(BF2)
 #' }
 #' \donttest{
 #' # EXAMPLE 1. One-sample t test
@@ -110,19 +113,18 @@
 #' summary(BF1)
 #'
 #' # EXAMPLE 4. Correlation analysis
-#' res <- polycor::hetcor(fmri[,3:5])
-#' BF1 <- BF(res)
+#' set.seed(123)
+#' cor1 <- cor_test(memory[1:20,1:3])
+#' BF1 <- BF(cor1)
 #' summary(BF1)
-#' BF1 <- BF(res,hypothesis="(Middle_with_Superficial,Deep_with_Superficial,
-#'                           Deep_with_Middle) > 0;
-#'                           Middle_with_Superficial=Deep_with_Superficial=
-#'                           Deep_with_Middle=0")
-#' summary(BF1)
+#' BF2 <- BF(res,hypothesis="Wmn_with_Im > Wmn_with_Del > 0;
+#'                           Wmn_with_Im = Wmn_with_Del = 0")
+#' summary(BF2)
 #' }
 #' @rdname BF
 #' @export
 #' @useDynLib BFpack, .registration = TRUE
 #'
-BF <- function(x, hypothesis, prior, ...) {
+BF <- function(x, hypothesis, prior, complement, ...) {
   UseMethod("BF", x)
 }

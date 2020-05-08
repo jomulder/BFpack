@@ -73,27 +73,13 @@ print.BF <- function(x,
     cat("Hypotheses:")
     cat("\n")
 
-    # hyps <- as.matrix(x$hypotheses)
-    # row.names(hyps) <- hypnumbers
-    # colnames(hyps) <- NULL
-    # print(hyps)
     for(h in 1:length(x$hypotheses)){
-      # hyp <- x$hypotheses[h]
-      # names(hyp) <- hypnumbers[h]
-      # print(hyp)
       cat(paste0(hypnumbers[h],": ",x$hypotheses[h]))
       cat("\n")
     }
-    # hypfull <- unlist(lapply(1:length(x$hypotheses),function(r){
-    #   paste0("H",as.character(r),": ",x$hypotheses[r])
-    # }))
 
   }
-  # cat("\nHypotheses:\n ", paste(rownames(dat)[-nrow(dat)], ": ", x$hypotheses, sep = "", collapse = "\n  "))
-  #
-  # if(!is.null(x[["warnings"]])){
-  #   warning("Bain analysis returned the following warnings:\n  ", paste(1:length(x$warnings), ". ", x$warnings, sep = "", collapse = "\n  "))
-  # }
+
 }
 
 

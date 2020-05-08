@@ -234,6 +234,7 @@ FisherZ <- function(r){.5*log((1+r)/(1-r))}
 BF.cor_test <- function(x,
                         hypothesis = NULL,
                         prior = NULL,
+                        complement = TRUE,
                         ...){
 
   bayesfactor <- "Bayes factor based on joint uniform priors for correlations"
@@ -312,8 +313,10 @@ BF.cor_test <- function(x,
       jointuniform_measures(P,numcorrgroup,numG,RrE1=RrE[[h]],RrO1=RrO[[h]],Fisher=1)
     })),nrow=2))
     row.names(relfit) <- row.names(relcomp) <- parse_hyp$original_hypothesis
-    relfit <- Gaussian_prob_Hc(corrmeanN,corrcovmN,relfit,RrO)
-    relcomp <- jointuniform_prob_Hc(P,numcorrgroup,numG,relcomp,RrO)
+    if(complement == TRUE){
+      relfit <- Gaussian_prob_Hc(corrmeanN,corrcovmN,relfit,RrO)
+      relcomp <- jointuniform_prob_Hc(P,numcorrgroup,numG,relcomp,RrO)
+    }
     hypothesisshort <- unlist(lapply(1:nrow(relfit),function(h) paste0("H",as.character(h))))
     row.names(relfit) <- row.names(relfit) <- hypothesisshort
 

@@ -9,6 +9,7 @@
 BF.lmerMod <- function(x,
                            hypothesis = NULL,
                            prior = NULL,
+                           complement = TRUE,
                            ...){
 
   numcat <- length(x@cnms)
@@ -243,31 +244,39 @@ BF.lmerMod <- function(x,
       }
       return(c(unlist(marglike2_h),ifelse(is.null(RrE[[h]]),1,0)))
     })),nrow=4))
-    #compute BF for complement hypothesis
-    if(sum(output_marglike_icc[,4])==0){ #the complement is equivalent to the unconstrained model
-      output_marglike_icc <- rbind(output_marglike_icc,c(unlist(marglike_Hu)[1:3],1))
-    } else { #the complement is the complement of the joint of the order hypotheses
-      which_order <- which(output_marglike_icc[,4]==1)
-      if(length(which_order)==1){
-        probs <- output_marglike_icc[which_order,2:3]
-        marglike_Hc <- marglike_Hu[[1]] + log(1-probs[1]) - log(1-probs[2])
-        output_marglike_icc <- rbind(output_marglike_icc,c(marglike_Hc,1-probs[1],1-probs[2],1))
-      }else {
-        probs <- apply(output_marglike_icc[which_order,2:3],2,sum)
-        marglike_Hc <- marglike_Hu[[1]] + log(1-probs[1]) - log(1-probs[2])
-        output_marglike_icc <- rbind(output_marglike_icc,c(marglike_Hc,1-probs[1],1-probs[2],1))
+    if(complement == TRUE){
+      #compute BF for complement hypothesis
+      if(sum(output_marglike_icc[,4])==0){ #the complement is equivalent to the unconstrained model
+        output_marglike_icc <- rbind(output_marglike_icc,c(unlist(marglike_Hu)[1:3],1))
+      } else { #the complement is the complement of the joint of the order hypotheses
+        which_order <- which(output_marglike_icc[,4]==1)
+        if(length(which_order)==1){
+          probs <- output_marglike_icc[which_order,2:3]
+          marglike_Hc <- marglike_Hu[[1]] + log(1-probs[1]) - log(1-probs[2])
+          output_marglike_icc <- rbind(output_marglike_icc,c(marglike_Hc,1-probs[1],1-probs[2],1))
+        }else {
+          probs <- apply(output_marglike_icc[which_order,2:3],2,sum)
+          marglike_Hc <- marglike_Hu[[1]] + log(1-probs[1]) - log(1-probs[2])
+          output_marglike_icc <- rbind(output_marglike_icc,c(marglike_Hc,1-probs[1],1-probs[2],1))
+        }
       }
+      row.names(output_marglike_icc) <- c(parse_hyp$original_hypothesis,"complement")
+    }else{
+      row.names(output_marglike_icc) <- c(parse_hyp$original_hypothesis)
     }
-    row.names(output_marglike_icc) <- c(parse_hyp$original_hypothesis,"complement")
     relcomp <- matrix(c(rep(NA,nrow(output_marglike_icc)),output_marglike_icc[,3]),ncol=2)
     relfit <- matrix(c(rep(NA,nrow(output_marglike_icc)),output_marglike_icc[,2]),ncol=2)
     #compute log marginal likelihood for H* without order constraints
     BF_E <- exp(output_marglike_icc[,1] - log(output_marglike_icc[,2]) + log(output_marglike_icc[,3]) - marglike_Hu[[1]])
     BFtu_confirmatory_icc <- exp(output_marglike_icc[,1] - marglike_Hu[[1]])
     #compute BFmatrix and PHPs
-    logBFmatrix <- matrix(rep(output_marglike_icc[,1],numhyp+1),nrow=numhyp+1) -
-      matrix(rep(output_marglike_icc[,1],each=numhyp+1),nrow=numhyp+1)
-    row.names(logBFmatrix) <- colnames(logBFmatrix) <- c(parse_hyp$original_hypothesis,"complement")
+    logBFmatrix <- matrix(rep(output_marglike_icc[,1],numhyp+complement),nrow=numhyp+complement) -
+      matrix(rep(output_marglike_icc[,1],each=numhyp+complement),nrow=numhyp+complement)
+    if(complement == TRUE){
+      row.names(logBFmatrix) <- colnames(logBFmatrix) <- c(parse_hyp$original_hypothesis,"complement")
+    }else{
+      row.names(logBFmatrix) <- colnames(logBFmatrix) <- c(parse_hyp$original_hypothesis)
+    }
     BFmatrix_confirmatory_icc <- round(exp(logBFmatrix),3)
     BFta_confirmatory_icc <- exp(output_marglike_icc[,1] - max(output_marglike_icc[,1]))
     # Change prior probs in case of default setting
