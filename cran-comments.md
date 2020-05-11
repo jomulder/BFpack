@@ -14,8 +14,7 @@
 * rhub check: Ubuntu Linux 16.04 LTS, R-release
 * rhub check: Fedora Linux, R-devel
 * rhub check: Debian Linux, R-devel, GCC ASAN/UBSAN
-  PREPERROR: Dependency 'openssl' is not available. Bug reported on R-hub GitHub page
-  https://github.com/r-hub/sysreqsdb/issues/77
+  + PREPERROR: Dependency 'openssl' is not available. Bug reported on R-hub GitHub page https://github.com/r-hub/sysreqsdb/issues/77
 * winbuilder: R 3.5.3 (2019-03-11)
 * winbuilder: R 3.6.1 (2019-07-05)
  
