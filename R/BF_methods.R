@@ -80,7 +80,7 @@
 #' cor1 <- cor_test(memory[1:20,1:3])
 #' BF1 <- BF(cor1)
 #' summary(BF1)
-#' BF2 <- BF(res,hypothesis="Wmn_with_Im > Wmn_with_Del > 0;
+#' BF2 <- BF(cor1,hypothesis="Wmn_with_Im > Wmn_with_Del > 0;
 #'                           Wmn_with_Im = Wmn_with_Del = 0")
 #' summary(BF2)
 #' }
@@ -117,7 +117,7 @@
 #' cor1 <- cor_test(memory[1:20,1:3])
 #' BF1 <- BF(cor1)
 #' summary(BF1)
-#' BF2 <- BF(res,hypothesis="Wmn_with_Im > Wmn_with_Del > 0;
+#' BF2 <- BF(cor1,hypothesis="Wmn_with_Im > Wmn_with_Del > 0;
 #'                           Wmn_with_Im = Wmn_with_Del = 0")
 #' summary(BF2)
 #' }
