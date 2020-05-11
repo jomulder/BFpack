@@ -1,5 +1,7 @@
-# Version 0.1.1
-Fixes bugs from CRAN checks of 0.1.0 (Debian, Solaris, patched-linux)
+# Version 0.2.1
+* Fixes bugs
+* New function cor_test included for Bayesian correlation analysis
+* BF for lmerMod object now also works on unbalanced data
 
 ## Test environments
 * Local OS X 10.14.6, R 3.5.2
@@ -11,7 +13,9 @@ Fixes bugs from CRAN checks of 0.1.0 (Debian, Solaris, patched-linux)
 * rhub check: Windows Server 2008 R2 SP1, R-devel, 32/64 bit
 * rhub check: Ubuntu Linux 16.04 LTS, R-release
 * rhub check: Fedora Linux, R-devel
-* rhub check: Debian Linux, R-devel
+* rhub check: Debian Linux, R-devel, GCC ASAN/UBSAN
+  PREPERROR: Dependency 'openssl' is not available. Bug reported on R-hub GitHub page
+  https://github.com/r-hub/sysreqsdb/issues/77
 * winbuilder: R 3.5.3 (2019-03-11)
 * winbuilder: R 3.6.1 (2019-07-05)
  
