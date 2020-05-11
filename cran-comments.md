@@ -1,23 +1,19 @@
 # Version 0.2.1
-* Fixes bugs
 * New function cor_test included for Bayesian correlation analysis
 * BF for lmerMod object now also works on unbalanced data
+* Bugs fixes
+* Minor changes to output format
 
 ## Test environments
-* Local OS X 10.14.6, R 3.5.2
-* Local Windows 10 (x64 and x32, build 15063), R 3.6.1
-* Travis CI OS X 10.13.3, R 3.6.1
-* Travis CI Ubuntu 16.04.6 LTS, R 3.6.1
-* Travis CI Ubuntu 16.04.6 LTS, R 3.5.3
-* Travis CI Ubuntu 16.04.6 LTS, R Under development (unstable) (2019-10-25 r77332)
-* rhub check: Windows Server 2008 R2 SP1, R-devel, 32/64 bit
+* Local OS X 10.14.6, R 3.6.1
 * rhub check: Ubuntu Linux 16.04 LTS, R-release
 * rhub check: Fedora Linux, R-devel
 * rhub check: Debian Linux, R-devel, GCC ASAN/UBSAN
   + PREPERROR: Dependency 'openssl' is not available. Bug reported on R-hub GitHub page https://github.com/r-hub/sysreqsdb/issues/77
-* winbuilder: R 3.5.3 (2019-03-11)
-* winbuilder: R 3.6.1 (2019-07-05)
- 
+* rhub check: Windows Server 2008 R2 SP1, R-devel, 32/64 bit
+  + PREPERROR
+* winbuilder: R 3.6.3 (2020-02-29)
+* winbuilder: R Under development (unstable) (2020-05-08)
 
 ## R CMD check results
 There were no ERRORs or WARNINGs, one NOTE
