@@ -178,7 +178,7 @@ BF.lm <- function(x,
 
   # Additional exploratory tests of main effects and interaction effects
   # in the case of an aov type object
-  if(sum(class(x)=="aov")==1){
+  if(sum(class(x)=="aov")==1 & J > 1){
     testedparameter <- "group means"
 
     # check main effects
