@@ -48,7 +48,7 @@ BF.lm <- function(x,
     # dummyX indicate which columns contain dummy group covariates
     dummyX1 <- apply(matrix(unlist(lapply(1:length(mains),function(faclev){
       unlist(lapply(1:length(names_coef),function(cf){
-        grepl(mains[faclev],names_coef[cf])
+        grepl(mains[faclev],names_coef[cf],fixed=TRUE)
       }))
     })),nrow=length(names_coef)),1,max)==1
     if(is.matrix(apply(Xmat,2,table))){
