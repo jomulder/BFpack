@@ -107,8 +107,8 @@ get_estimates.lm <- function(x, ...){
     attr(out, "analysisType") <- "lm"
     out
   }else{
-    names_coef1 <- names(x$coefficients[,1])
-    names_coef2 <- names(x$coefficients[1,])
+    names_coef1 <- row.names(x$coefficients)
+    names_coef2 <- colnames(x$coefficients)
     names_coef <- unlist(lapply(1:P,function(p){
       lapply(1:K,function(k){
         paste0(names_coef1[k],"_on_",names_coef2[p])
