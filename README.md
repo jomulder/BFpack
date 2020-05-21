@@ -1,5 +1,5 @@
 
-<img src="man/figures/logo_BFpack.png" width = 400 />
+<img src="man/figures/logo_BFpack.png" width = 550 />
 
 # 
 
