@@ -16,14 +16,14 @@ library(bain)
 library(BFpack)
 ```
 
-<img src="man/figures/logo_BFpack.png" width = 550 />
+<img src="man/figures/logo_BFpack.png" width = 850 />
 
 # 
 
 [![CRAN Version](http://www.r-pkg.org/badges/version/BFpack)](https://cran.r-project.org/package=BFpack)
 [![Downloads](https://cranlogs.r-pkg.org/badges/BGGM)](https://cran.r-project.org/package=BFpack)
 
-The `R` package **BFpack** contains a set of functions for Bayesian exploratory (e.g., equal vs negative vs postive) and confirmatory (equality and/or order constraints) hypothesis testing under commonly used statistical models, including Bayesian t testing, Bayesian (M)AN(C)OVA, multivariate/univariate linear regression, Bayesian correlation analysis, Bayesian multilevel analysis, or Bayesian generalized linear models (e.g., logistic regression). The main function `BF` needs a fitted model (e.g., an object of class `lm` for a linear regression model) and (optionally) the argument `hypothesis`, a string which specifies a set of equality/order constraints on the parameters. By applying the function `get_estimates`on a fitted model, the names of the parameters are returned on which constrained hypotheses can be formulated. Bayes factors and posterior probabilities are computed for the hypotheses of interest.
+The `R` package **BFpack** contains a set of functions for exploratory hypothesis testing (e.g., equal vs negative vs postive) and confirmatory hypothesis testing (with equality and/or order constraints)  using Bayes factors and posterior probabilities under commonly used statistical models, including (but not limited to) Bayesian t testing, (M)AN(C)OVA, multivariate/univariate linear regression, correlation analysis, multilevel analysis, or generalized linear models (e.g., logistic regression). The main function `BF` needs a fitted model (e.g., an object of class `lm` for a linear regression model) and (optionally) the argument `hypothesis`, a string which specifies a set of equality/order constraints on the parameters. By applying the function `get_estimates`on a fitted model, the names of the parameters are returned on which constrained hypotheses can be formulated. Bayes factors and posterior probabilities are computed for the hypotheses of interest.
 
 
 ## Installation
@@ -106,4 +106,23 @@ BF_glm <- BF(fit_glm, hypothesis = "ztrust > (zfWHR, zAfro) > 0;
 summary(BF_glm)
 ```
 By calling the `summary` function on the output object of class `BF`, the results of the exploratory tests are presented of whether each separate parameter is zero, negative, or positive, and the results of the confirmatory test of the hypotheses under the `hypothesis` argument are presented. When the hypotheses do not cover the complete parameter space, by default the complement hypothesis is added which covers the remaining parameter space that is not covered by the constraints under the hypotheses of interest. In the above example, the complement hypothesis covers the parameter space where neither `"ztrust > (zfWHR, zAfro) > 0"` holds, nor where `"ztrust > zfWHR = zAfro = 0"` holds. 
+
+
+
+## Citing BFpack
+
+You can cite the R-package with the following references:
+
+> Mulder, J., Gu, X., Olsson-Collentine, A., Tomarken, A., Böing-Messing, F., Hoijtink, H., . . . van Lissa, C. (2019). BFpack: Flexible Bayes factor testing of scientific theories in R. Retrieved from https://arxiv.org/abs/1911.07728
+
+> 	Mulder, J., van Lissa, C., Gu, X., Olsson-Collentine, A., Boeing-Messing, F., Williams, D. R., Fox, J.-P., Menke, J., et al. (2019). BFpack: Flexible Bayes Factor Testing of Scientific Expectations. (Version 0.2.1) [R package]. https://CRAN.R-project.org/package=BFpack
+
+## Contributing and Contact Information
+
+If you have ideas, please get involved. You can contribute by opening an issue on GitHub, or sending a pull request with proposed features. Contributions in code must adhere to the [tidyverse style guide](https://style.tidyverse.org/).
+
+* File a GitHub issue [here](https://github.com/jomulder/BFpack)
+* Make a pull request [here](https://github.com/jomulder/BFpack/pulls)
+
+By participating in this project, you agree to abide by the [Contributor Code of Conduct v2.0](code_of_conduct.md).
 
