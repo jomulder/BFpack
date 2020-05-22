@@ -157,7 +157,7 @@ summary(BF3)
 ```
 
 
-### Using `BF` on a named vector
+### Running `BF` on a named vector
 
 The input for the `BF` function can also be a named vector containing the estimates of the parameters of interest. In this case the error covariance matrix of the estimates is also needed via the `Sigma` argument, as well as the sample size that was used for obtaining the estimates via the `n` argument. Bayes factors are then computed using Gaussian approximations of the likelihood (and posterior), similar as in classical Wald test.
 

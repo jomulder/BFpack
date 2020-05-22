@@ -206,7 +206,7 @@ BF3 <- BF(lm2, hypothesis = constraint2)
 summary(BF3)
 ```
 
-### Using `BF` on a named vector
+### Running `BF` on a named vector
 
 The input for the `BF` function can also be a named vector containing
 the estimates of the parameters of interest. In this case the error
@@ -248,9 +248,9 @@ BF2 <- BF(poisson1, hypothesis = "woolB > tensionM > tensionH;
           woolB = tensionM = tensionH")
 ```
 
-because the same Bayes factor is used (see `Method: Bayes factor using
-Gaussian approximations` when calling `print(BF2)`) when running `BF` on
-an object of class `glm`.
+because the same Bayes factor is used when running `BF` on an object of
+class `glm` (see `Method: Bayes factor using Gaussian approximations`
+when calling `print(BF11)` and `print(BF2)`).
 
 ## Citing BFpack
 
