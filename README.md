@@ -83,7 +83,7 @@ When testing hypotheses via the `hypothesis` argument, the output also
 presents an `Evidence matrix` containing the Bayes factors between the
 hypotheses.
 
-### Bayesian analysis of variance
+### Analysis of variance
 
 First an analysis of variance (ANOVA) model is fitted using the `aov`
 fuction in `R`.
@@ -99,11 +99,13 @@ BF(aov1)
 ```
 
 By default posterior probabilities are computed of whether main effects
-and interaction effects are present.
+and interaction effects are present. Alternative constrained hypotheses
+can be tested on the model parameters `get_estimates(aov1)`.
 
-### Bayesian logistic regression
+### Logistic regression
 
-First a logistic regression model is fitted using the `glm`
+An example hypothesis test is consdered under a logistic regression
+model. First a logistic regression model is fitted using the `glm`
 function
 
 ``` r
@@ -139,9 +141,74 @@ the hypotheses of interest. In the above example, the complement
 hypothesis covers the parameter space where neither `"ztrust > (zfWHR,
 zAfro) > 0"` holds, nor where `"ztrust > zfWHR = zAfro = 0"` holds.
 
+### Correlation analysis
+
+By default `BF` performs exhaustice tests of whether the separate
+correlations are zero, negative, or positive. The name of the
+correlations is constructed using the names of the variables separated
+by `_with_`.
+
+``` r
+set.seed(123)
+cor1 <- cor_test(memory[,1:3])
+BF1 <- BF(cor1)
+print(BF1)
+```
+
+Constraints can also be tested between correlations, e.g., whether all
+correlations are equal and positive versus an unconstrained
+complement.
+
+``` r
+BF2 <- BF(cor1, hypothesis = "Del_with_Im = Wmn_with_Im = Wmn_with_Del > 0")
+print(BF2)
+```
+
+### Univariate/Multivariate multiple regression
+
+For a univariate regression model, by default an exhaustive test is
+executed of whether an effect is zero, negative, or postive.
+
+``` r
+lm1 <- lm(Superficial ~ Face + Vehicle, data = fmri)
+BF1 <- BF(lm1)
+print(BF1)
+```
+
+Hypotheses can be tested with equality and/or order constraints on the
+effects of interest. If prefered the complement hypothesis can be
+omitted using the `complement`
+argument
+
+``` r
+BF2 <- BF(lm1, hypothesis = "Vehicle > 0 & Face < 0; Vehicle = Face = 0",
+          complement = FALSE)
+print(BF2)
+```
+
+In a multivariate regression model hypotheses can be tested on the
+effects on the same dependent variable, and on effects across different
+dependent variables. The name of an effect is constructed as the name of
+the predictor variable and the dependent variable separated by `_on_`.
+Testing hypotheses with both constraints within a dependent variable and
+across dependent variables makes use of a Monte Carlo estimate which may
+take a few seconds.
+
+``` r
+lm2 <- lm(cbind(Superficial, Middle, Deep) ~ Face + Vehicle,
+              data = fmri)
+constraint2 <- "Face_on_Deep = Face_on_Superficial = Face_on_Middle < 0 <
+     Vehicle_on_Deep = Vehicle_on_Superficial = Vehicle_on_Middle;
+     Face_on_Deep < Face_on_Superficial = Face_on_Middle < 0 < Vehicle_on_Deep =
+     Vehicle_on_Superficial = Vehicle_on_Middle"
+set.seed(123)
+BF3 <- BF(lm2, hypothesis = constraint2)
+summary(BF3)
+```
+
 ## Citing BFpack
 
-You can cite the R-package with the following references:
+You can cite the package with the following references:
 
 > Mulder, J., Gu, X., Olsson-Collentine, A., Tomarken, A.,
 > Böing-Messing, F., Hoijtink, H., . . . van Lissa, C. (2019). BFpack:
@@ -158,8 +225,6 @@ You can cite the R-package with the following references:
 
 If you have ideas, please get involved. You can contribute by opening an
 issue on GitHub, or sending a pull request with proposed features.
-Contributions in code must adhere to the [tidyverse style
-guide](https://style.tidyverse.org/).
 
   - File a GitHub issue [here](https://github.com/jomulder/BFpack)
   - Make a pull request [here](https://github.com/jomulder/BFpack/pulls)
