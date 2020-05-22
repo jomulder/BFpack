@@ -252,7 +252,7 @@ because the same Bayes factor is used when running `BF` on an object of
 class `glm` (see `Method: Bayes factor using Gaussian approximations`
 when calling `print(BF11)` and `print(BF2)`).
 
-## Citing BFpack
+## Citing **BFpack**
 
 You can cite the package and the paper using the following reference
 
@@ -262,10 +262,10 @@ You can cite the package and the paper using the following reference
 > Expectations. (Version 0.2.1) \[R package\].
 > <https://CRAN.R-project.org/package=BFpack>
 
-> Mulder, J., Gu, X., Olsson-Collentine, A., Tomarken, A.,
-> Böing-Messing, F., Hoijtink, H., . . . van Lissa, C. (2019). BFpack:
-> Flexible Bayes factor testing of scientific theories in R. Retrieved
-> from <https://arxiv.org/abs/1911.07728>
+> Mulder, J., Williams, D. R., Gu, X., Olsson-Collentine, A., Tomarken,
+> A., Böing-Messing, F., Hoijtink, H., . . . van Lissa, C. (2019).
+> BFpack: Flexible Bayes factor testing of scientific theories in R.
+> Retrieved from <https://arxiv.org/abs/1911.07728>
 
 ## Contributing and Contact Information
 
