@@ -212,7 +212,8 @@ BF.lm <- function(x,
     #compute Bayes factors for testing main effects if present
     if(length(BFmain)>0){ # then there are main effects
       names_main <- names(BFmain[(0:(length(BFmain)/3-1))*3+1])
-      BFtu_main <- matrix(c(BFmain[(0:(length(BFmain)/3-1))*3+1],rep(1,length(BFmain)/3)),nrow=length(BFmain)/3)
+      BFtu_main <- matrix(c(BFmain[(0:(length(BFmain)/3-1))*3+1],rep(1,length(BFmain)/3)),
+                          nrow=length(BFmain)/3)
       row.names(BFtu_main) <- names_main
       colnames(BFtu_main) <- c("BFtu","BFuu")
       PHP_main <- BFtu_main / apply(BFtu_main,1,sum)
@@ -274,12 +275,12 @@ BF.lm <- function(x,
       PHP_interaction <- BFtu_interaction / apply(BFtu_interaction,1,sum)
       colnames(PHP_interaction) <- c("Pr(H0)","Pr(H1)")
     }else{ PHP_interaction <- BFtu_interaction <- NULL}
-  }else{ PHP_interaction <- BFtu_interaction <- PHP_main <- BFtu_main <- NULL}
+    BFtu_exploratory <- rbind(BFtu_main,BFtu_interaction)
+    PHP_exploratory <- rbind(PHP_main,PHP_interaction)
+  }
 
   # confirmatory BF test
   if(!is.null(hypothesis)){
-
-    # hypotheses are either formulated on regression coefficients
 
     #then constraints on regression coefficients
     matrixnames <- matrix(names_coef,nrow=K)
@@ -527,10 +528,6 @@ BF.lm <- function(x,
     PHP_confirmatory=PHP_confirmatory,
     BFmatrix_confirmatory=BFmatrix_confirmatory,
     BFtable_confirmatory=BFtable,
-    BFtu_main=BFtu_main,
-    PHP_main=PHP_main,
-    BFtu_interaction=PHP_interaction,
-    PHP_interaction=PHP_interaction,
     prior=priorprobs,
     hypotheses=hypotheses,
     estimates=postestimates,

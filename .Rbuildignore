@@ -4,4 +4,5 @@
 dev/
 ^\.travis\.yml$
 ^.*.RData$
+^README\.Rmd$
 cran-comments.md

@@ -24,8 +24,8 @@ to the tested hypothesis under \code{hypothesis}.}
 \value{
 The output is an object of class \code{BF}. The object has elements:
 BFtu_exploratory, PHP_exploratory, BFtu_confirmatory, PHP_confirmatory,
-BFmatrix_confirmatory, BFtable_confirmatory, BFtu_main, PHP_main,
-BFtu_interaction, PHP_interaction, prior, hypotheses, estimates, model, call.
+BFmatrix_confirmatory, BFtable_confirmatory, PHP_interaction, prior,
+hypotheses, estimates, model, call.
 }
 \description{
 The \code{BF} function can be used for hypothesis testing and
@@ -135,8 +135,8 @@ summary(BF2)
 }
 }
 \references{
-Mulder, J., Gu, X., A. Tomarken, F. Böing-Messing,
-J.A.O.C. Olsson-Collentine, Marlyne Meyerink, D.R. Williams, J. Menke,
+Mulder, J., D.R. Williams, Gu, X., A. Tomarken,
+F. Böing-Messing, J.A.O.C. Olsson-Collentine, Marlyne Meyerink, J. Menke,
 J.-P. Fox, Y. Rosseel, E.J. Wagenmakers, H. Hoijtink., and van Lissa, C.
 (submitted). BFpack: Flexible Bayes Factor Testing of Scientific Theories
 in R.

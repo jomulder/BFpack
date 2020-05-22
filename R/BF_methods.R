@@ -18,8 +18,8 @@
 #' @param ... Parameters passed to and from other functions.
 #' @return The output is an object of class \code{BF}. The object has elements:
 #' BFtu_exploratory, PHP_exploratory, BFtu_confirmatory, PHP_confirmatory,
-#' BFmatrix_confirmatory, BFtable_confirmatory, BFtu_main, PHP_main,
-#' BFtu_interaction, PHP_interaction, prior, hypotheses, estimates, model, call.
+#' BFmatrix_confirmatory, BFtable_confirmatory, PHP_interaction, prior,
+#' hypotheses, estimates, model, call.
 #' @details The function requires a fitted modeling object. Current analyses
 #' that are supported: \code{\link[bain]{t_test}},
 #' \code{\link[BFpack]{bartlett_test}},
@@ -45,8 +45,8 @@
 #' Gaussian
 #' approximation of the posterior, similar as a classical Wald test.
 #'
-#' @references Mulder, J., Gu, X., A. Tomarken, F. Böing-Messing,
-#' J.A.O.C. Olsson-Collentine, Marlyne Meyerink, D.R. Williams, J. Menke,
+#' @references Mulder, J., D.R. Williams, Gu, X., A. Tomarken,
+#' F. Böing-Messing, J.A.O.C. Olsson-Collentine, Marlyne Meyerink, J. Menke,
 #' J.-P. Fox, Y. Rosseel, E.J. Wagenmakers, H. Hoijtink., and van Lissa, C.
 #' (submitted). BFpack: Flexible Bayes Factor Testing of Scientific Theories
 #' in R.

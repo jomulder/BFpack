@@ -22,23 +22,8 @@ print.BF <- function(x,
     cat("Parameter: ",x$parameter,"\n", sep = "")
     cat("Method: ",x$bayesfactor,"\n\n", sep = "")
 
-    if(class(x$model)[1]=="aov"){
-      if(!is.null(x$BFtu_main)){
-        cat("Main effects:")
-        cat("\n")
-        print(round(x$PHP_main,digits))
-      }
-      cat("\n")
-
-      if(!is.null(x$BFtu_interaction)){
-        cat("Interaction effects:")
-        cat("\n")
-        print(round(x$PHP_interaction,digits))
-      }
-    }else{
-      cat("Posterior probabilities:","\n", sep = "")
-      print(round(x$PHP_exploratory,digits))
-    }
+    cat("Posterior probabilities:","\n", sep = "")
+    print(round(x$PHP_exploratory,digits))
 
     cat("\n")
 

@@ -21,22 +21,6 @@ summary.BF <- function(object, ...){
 
   cat("\n")
 
-  if(class(object$model)[1]=="aov"){
-    if(!is.null(object$BFtu_main)){
-      cat("Main effects:")
-      cat("\n")
-      print(round(object$PHP_main,digits))
-    }
-    cat("\n")
-
-    if(!is.null(object$BFtu_interaction)){
-      cat("Interaction effects:")
-      cat("\n")
-      print(round(object$PHP_interaction,digits))
-    }
-    cat("\n")
-  }
-
   if(!is.null(object$BFtu_confirmatory)){
 
     cat("Bayesian hypothesis test","\n", sep = "")
