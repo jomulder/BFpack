@@ -107,7 +107,7 @@ BF_glm <- BF(fit_glm, hypothesis = "ztrust > (zfWHR, zAfro) > 0;
              ztrust > zfWHR = zAfro = 0")
 summary(BF_glm)
 ```
-By calling the `summary` function on the output object of class `BF`, the results of the exploratory tests are presented of whether each separate parameter is zero, negative, or positive, and the results of the confirmatory test of the hypotheses under the `hypothesis` argument are presented. When the hypotheses do not cover the complete parameter space, by default the complement hypothesis is added which covers the remaining parameter space that is not covered by the constraints under the hypotheses of interest. In the above example, the complement hypothesis covers the parameter space where neither `"ztrust > (zfWHR, zAfro) > 0"` holds, nor where `"ztrust > zfWHR = zAfro = 0"` holds. 
+By calling the `summary` function on the output object of class `BF`, the results of the exploratory tests are presented of whether each separate parameter is zero, negative, or positive, and the results of the confirmatory test of the hypotheses under the `hypothesis` argument are presented. When the hypotheses do not cover the complete parameter space, by default the complement hypothesis is added which covers the remaining parameter space that is not covered by the constraints under the hypotheses of interest. In the above example, the complement hypothesis covers the parameter space where neither `"ztrust > (zfWHR, zAfro) > 0"` holds, nor where `"ztrust > zfWHR = zAfro = 0"` holds.
 
 
 ### Correlation analysis
@@ -155,6 +155,35 @@ set.seed(123)
 BF3 <- BF(lm2, hypothesis = constraint2)
 summary(BF3)
 ```
+
+
+### Using `BF` on a named vector
+
+The input for the `BF` function can also be a named vector containing the estimates of the parameters of interest. In this case the error covariance matrix of the estimates is also needed via the `Sigma` argument, as well as the sample size that was used for obtaining the estimates via the `n` argument. Bayes factors are then computed using Gaussian approximations of the likelihood (and posterior), similar as in classical Wald test.
+
+We illustrate this for a Poisson regression model
+```{r, eval = FALSE}
+poisson1 <- glm(formula = breaks ~ wool + tension, data = datasets::warpbreaks,
+             family = poisson)
+```
+The estimates, the error covariance matrix, and the sample size are extracted from the fitted model
+```{r, eval = FALSE}
+estimates <- poisson1$coefficients
+covmatrix <- vcov(poisson1)
+samplesize <- nobs(poisson1)
+```
+Constrained hypotheses on the parameters `names(estimates)` can then be tested as follows
+```{r, eval = FALSE}
+BF1 <- BF(estimates, Sigma = covmatrix, n = samplesize, hypothesis = 
+  "woolB > tensionM > tensionH; woolB = tensionM = tensionH")
+```
+
+Note that the same hypothesis test would be executed when calling
+```{r, eval = FALSE}
+BF2 <- BF(poisson1, hypothesis = "woolB > tensionM > tensionH;
+          woolB = tensionM = tensionH")
+```
+because the same Bayes factor is used when running `BF` on an object of class `glm` (see `Method: Bayes factor using Gaussian approximations` when calling `print(BF11)` and `print(BF2)`).
 
 
 ## Citing BFpack

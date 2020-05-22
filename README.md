@@ -206,6 +206,52 @@ BF3 <- BF(lm2, hypothesis = constraint2)
 summary(BF3)
 ```
 
+### Using `BF` on a named vector
+
+The input for the `BF` function can also be a named vector containing
+the estimates of the parameters of interest. In this case the error
+covariance matrix of the estimates is also needed via the `Sigma`
+argument, as well as the sample size that was used for obtaining the
+estimates via the `n` argument. Bayes factors are then computed using
+Gaussian approximations of the likelihood (and posterior), similar as in
+classical Wald test.
+
+We illustrate this for a Poisson regression
+model
+
+``` r
+poisson1 <- glm(formula = breaks ~ wool + tension, data = datasets::warpbreaks,
+             family = poisson)
+```
+
+The estimates, the error covariance matrix, and the sample size are
+extracted from the fitted model
+
+``` r
+estimates <- poisson1$coefficients
+covmatrix <- vcov(poisson1)
+samplesize <- nobs(poisson1)
+```
+
+Constrained hypotheses on the parameters `names(estimates)` can then be
+tested as follows
+
+``` r
+BF1 <- BF(estimates, Sigma = covmatrix, n = samplesize, hypothesis = 
+  "woolB > tensionM > tensionH; woolB = tensionM = tensionH")
+```
+
+Note that the same hypothesis test would be executed when calling
+
+``` r
+BF2 <- BF(poisson1, hypothesis = "woolB > tensionM > tensionH;
+          woolB = tensionM = tensionH")
+```
+
+because the same Bayes factor is used (see `Method: Bayes factor using
+Gaussian approximations` when calling `print(BF2)`) when running `BF` on
+an object of class `glm`.
+
 ## Citing BFpack
 
 You can cite the package and the paper using the following reference

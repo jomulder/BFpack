@@ -9,8 +9,14 @@
 #' equality and/or order constraints on the parameters of interest.
 #'
 #' @param x An R object containing the outcome of a statistical analysis.
+#' An R object containing the outcome of a statistical analysis. Currently, the
+#' following objects can be processed: t_test(), bartlett_test(), lm(), aov(),
+#' manova(), cor_test(), lmer() (only for testing random intercep variances),
+#' glm(), coxph(), survreg(), polr(), zeroinfl(), and named vector objects.
+#' See README for elaborations.
 #' @param hypothesis A character string containing the informative hypotheses to
-#' evaluate. The default is NULL, which will result in an exploratory analysis.
+#' evaluate. The default is NULL, which will result in standard exploratory testing
+#' under the model \code{x}.
 #' @param prior A vector specifying the prior probabilities of the hypotheses.
 #' The default is NULL which will specify equal prior probabilities.
 #' @param complement a logical specifying whether the complement should be added
@@ -30,20 +36,15 @@
 #' \code{\link[survival]{survreg}},
 #' \code{\link[pscl]{zeroinfl}}, and \code{\link[MASS]{polr}}.
 #'
-#' For testing means and regression coefficients of model classes \code{t_test},
-#' \code{aov}, \code{manova}, \code{lm}, \code{mlm}, adjusted fractional Bayes
-#' factors
-#' are computed. For testing group variances using
-#' \code{\link[BFpack]{bartlett_test}},
+#' For testing parameters from the results of t_test(), lm(), aov(),
+#' manova(), and bartlett_test(), hypothesis testing is done using
 #' adjusted fractional Bayes factors are computed.
-#' For testing measures of association (e.g., correlations) under
-#' model class \code{mlm} and for testing intraclass correlations under model
-#' class
-#' \code{lmerMod}, default Bayes factors based on uniform priors are computed.
-#' For
-#' all other model classes an approximate Bayes factor is computed using a
-#' Gaussian
-#' approximation of the posterior, similar as a classical Wald test.
+#' For testing measures of association (e.g., correlations) via \code{cor_test()},
+#' Bayes factors are computed using joint uniform priors under the correlation
+#' matrices. For testing intraclass correlations (random intercept variances) via
+#' \code{lmer()}, Bayes factors are computed using uniform priors for the intraclass
+#' correlations. For all other tests, an approximate Bayes factors are computed using
+#' Gaussian approximations, similar as a classical Wald test.
 #'
 #' @references Mulder, J., D.R. Williams, Gu, X., A. Tomarken,
 #' F. Böing-Messing, J.A.O.C. Olsson-Collentine, Marlyne Meyerink, J. Menke,
@@ -53,20 +54,19 @@
 #' @examples
 #' \dontshow{
 #' # EXAMPLE 1. One-sample t test
-#' ttest1 <- t_test(therapeutic,mu=5)
+#' ttest1 <- t_test(therapeutic, mu = 5)
 #' print(ttest1)
 #' # confirmatory Bayesian one sample t test
-#' BF1 <- BF(ttest1,"mu=5")
+#' BF1 <- BF(ttest1, hypothesis = "mu = 5")
 #' summary(BF1)
 #' # exploratory Bayesian one sample t test
 #' BF(ttest1)
 #'
 #' # EXAMPLE 2. ANOVA
-#' aov1 <- aov(price ~ anchor*motivation,data=tvprices)
-#' BF1 <- BF(aov1,hypothesis="anchorrounded=motivationlow;
-#'    anchorrounded<motivationlow")
+#' aov1 <- aov(price ~ anchor * motivation,data = tvprices)
+#' BF1 <- BF(aov1, hypothesis = "anchorrounded = motivationlow;
+#'                               anchorrounded < motivationlow")
 #' summary(BF1)
-#'
 #'
 #' # EXAMPLE 3. Logistic regression
 #' fit <- glm(sent ~ ztrust + zfWHR + zAfro + glasses + attract + maturity +
@@ -80,30 +80,28 @@
 #' cor1 <- cor_test(memory[1:20,1:3])
 #' BF1 <- BF(cor1)
 #' summary(BF1)
-#' BF2 <- BF(cor1,hypothesis="Wmn_with_Im > Wmn_with_Del > 0;
-#'                           Wmn_with_Im = Wmn_with_Del = 0")
+#' BF2 <- BF(cor1, hypothesis = "Wmn_with_Im > Wmn_with_Del > 0;
+#'                               Wmn_with_Im = Wmn_with_Del = 0")
 #' summary(BF2)
 #' }
 #' \donttest{
 #' # EXAMPLE 1. One-sample t test
-#' ttest1 <- bain::t_test(therapeutic,mu=5)
+#' ttest1 <- bain::t_test(therapeutic, mu = 5)
 #' print(ttest1)
 #' # confirmatory Bayesian one sample t test
-#' BF1 <- BF(ttest1,"mu=5")
+#' BF1 <- BF(ttest1, hypothesis = "mu = 5")
 #' summary(BF1)
 #' # exploratory Bayesian one sample t test
 #' BF(ttest1)
 #'
-#'
 #' # EXAMPLE 2. ANOVA
-#' aov1 <- aov(price ~ anchor*motivation,data=tvprices)
+#' aov1 <- aov(price ~ anchor * motivation, data = tvprices)
 #' # check the names of the model parameters
 #' names(aov1$coefficients)
-#' BF1 <- BF(aov1,hypothesis="anchorrounded=motivationlow;
-#'                            anchorrounded<motivationlow;
-#'                            anchorrounded>motivationlow")
+#' BF1 <- BF(aov1, hypothesis = "anchorrounded = motivationlow;
+#'                               anchorrounded < motivationlow;
+#'                               anchorrounded > motivationlow")
 #' summary(BF1)
-#'
 #'
 #' # EXAMPLE 3. Logistic regression
 #' fit <- glm(sent ~ ztrust + zfWHR + zAfro + glasses + attract + maturity +
@@ -117,8 +115,8 @@
 #' cor1 <- cor_test(memory[1:20,1:3])
 #' BF1 <- BF(cor1)
 #' summary(BF1)
-#' BF2 <- BF(cor1,hypothesis="Wmn_with_Im > Wmn_with_Del > 0;
-#'                           Wmn_with_Im = Wmn_with_Del = 0")
+#' BF2 <- BF(cor1, hypothesis = "Wmn_with_Im > Wmn_with_Del > 0;
+#'                               Wmn_with_Im = Wmn_with_Del = 0")
 #' summary(BF2)
 #' }
 #' @rdname BF
