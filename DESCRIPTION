@@ -125,4 +125,8 @@ Suggests:
     polycor,
     survival,
     pscl,
-    metafor
+    metafor,
+    knitr,
+    rmarkdown
+VignetteBuilder: 
+    knitr
