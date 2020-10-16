@@ -118,9 +118,11 @@ Imports:
     Matrix,
     mvtnorm,
     pracma,
-    lme4
+    lme4,
+    extraDistr
 Suggests: 
     testthat,
     polycor,
     survival,
-    pscl
+    pscl,
+    metafor
