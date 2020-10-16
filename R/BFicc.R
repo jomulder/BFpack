@@ -223,15 +223,20 @@ BF.lmerMod <- function(x,
       }
       if(!is.null(RrO[[h]])){
         unicum <- unique(unique_h[unique_h!=0])
-        inequalities_h <- matrix(0,nrow(RrO[[h]]),ncol=sum(unique_h!=0)+1)
+        inequalities_h <- matrix(0,nrow=nrow(RrO[[h]]),ncol=max(unicum)+1)
         for(u in sort(unicum)){
-          inequalities_h[,u] <- apply(as.matrix(RrO[[h]][,which(unique_h == u)]),1,sum)
-        }
 
-        # inequalities_h <- matrix(0,nrow(RrO[[h]]),ncol=length(unique(unique_h))+1)
-        # for(u in sort(unique(unique_h[unique_h>0]))){
-        #   inequalities_h[,u] <- apply(as.matrix(RrO[[h]][,which(unique_h == u)]),1,sum)
-        # }
+          welk <- which(unique_h == u)
+          if(length(welk) > 1){
+            if(nrow(RrO[[h]]) > 1){
+              inequalities_h[,u] <- apply(RrO[[h]][,which(unique_h == u)],1,sum)
+            }else{
+              inequalities_h[,u] <- apply(t(RrO[[h]][,which(unique_h == u)]),1,sum)
+            }
+          }else{ #length is 1
+            inequalities_h[,u] <- RrO[[h]][,which(unique_h == u)]
+          }
+        }
       } else inequalities_h = 0
       if(is.null(RrE[[h]])){ #only order constraints; use output from unconstrained analysis
         priorprob_h <- mean(apply(cbind(priordraws,rep(-1,length(numuncdraws)))%*%t(inequalities_h)>0,1,prod))
