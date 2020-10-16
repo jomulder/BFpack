@@ -12,7 +12,7 @@
 #' An R object containing the outcome of a statistical analysis. Currently, the
 #' following objects can be processed: t_test(), bartlett_test(), lm(), aov(),
 #' manova(), cor_test(), lmer() (only for testing random intercep variances),
-#' glm(), coxph(), survreg(), polr(), zeroinfl(), and named vector objects.
+#' glm(), coxph(), survreg(), polr(), zeroinfl(), rma(), and named vector objects.
 #' See README for elaborations.
 #' @param hypothesis A character string containing the informative hypotheses to
 #' evaluate. The default is NULL, which will result in standard exploratory testing
@@ -34,7 +34,7 @@
 #' \code{\link[stats]{glm}}, \code{\link[polycor]{hetcor}},
 #' \code{\link[lme4]{lmer}}, \code{\link[survival]{coxph}},
 #' \code{\link[survival]{survreg}},
-#' \code{\link[pscl]{zeroinfl}}, and \code{\link[MASS]{polr}}.
+#' \code{\link[pscl]{zeroinfl}}, \code{\link[metafor]{rma}} and \code{\link[MASS]{polr}}.
 #'
 #' For testing parameters from the results of t_test(), lm(), aov(),
 #' manova(), and bartlett_test(), hypothesis testing is done using
