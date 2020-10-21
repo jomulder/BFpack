@@ -5,5 +5,4 @@
 * BF for lmerMod object now also works on unbalanced data
 * vignette was added
 * Bugs fixes
-* Minor changes to output format
 

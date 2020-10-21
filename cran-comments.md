@@ -3,7 +3,6 @@
 * BF for lmerMod object now also works on unbalanced data
 * vignette was added
 * Bugs fixes
-* Minor changes to output format
 
 ## Test environments
 * Local OS X 10.14.6, R 3.6.1
