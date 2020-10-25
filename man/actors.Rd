@@ -4,7 +4,8 @@
 \name{actors}
 \alias{actors}
 \title{Actors from a consultancy firm}
-\format{dataframe (25 rows, 4 columns)
+\format{
+dataframe (25 rows, 4 columns)
 
 \tabular{lll}{
    \strong{actors$id} \tab \code{integer} \tab ID of the employee, corresponding to
@@ -15,7 +16,8 @@
    division of the employee \cr
    \strong{actors$location} \tab \code{integer} \tab Categorical variable, indicating the location
    of the building the employee works in \cr
-}}
+}
+}
 \source{
 \href{https://doi.org/10.1016/j.chaos.2018.11.027}{
 doi:10.1016/j.chaos.2018.11.027}

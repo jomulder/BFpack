@@ -4,7 +4,8 @@
 \name{relevents}
 \alias{relevents}
 \title{A sequence of innovation-related e-mail messages}
-\format{dataframe (227 rows, 3 columns)
+\format{
+dataframe (227 rows, 3 columns)
 
 \tabular{lll}{
    \strong{relevents$time} \tab \code{numeric} \tab Time of the e-mail message, 
@@ -12,7 +13,8 @@
    \strong{relevents$sender} \tab \code{integer} \tab ID of the sender, corresponding to
    the employee IDs in the actors dataframe \cr
    \strong{relevents$receiver} \tab \code{integer} \tab ID of the receiver \cr
-}}
+}
+}
 \source{
 \href{https://doi.org/10.1016/j.chaos.2018.11.027}{
 doi:10.1016/j.chaos.2018.11.027}

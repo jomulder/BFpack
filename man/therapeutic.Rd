@@ -10,7 +10,9 @@ who were blindfolded can effectively identify which of their hands is below the 
 Twenty-eight practitioners were involved and tested 10 times in the experiment. 
 Researchers expected an average of 5 correct answers from each practitioner 
 as it is the number by chance if they do not outperform others.}
-\format{A data.frame with 22 rows and 1 column.}
+\format{
+A data.frame with 22 rows and 1 column.
+}
 \usage{
 data(therapeutic)
 }

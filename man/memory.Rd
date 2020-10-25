@@ -4,7 +4,9 @@
 \name{memory}
 \alias{memory}
 \title{Memory data on health and schizophrenic patients}
-\format{A data.frame with 40 rows and 8 columns.}
+\format{
+A data.frame with 40 rows and 8 columns.
+}
 \usage{
 data(memory)
 }

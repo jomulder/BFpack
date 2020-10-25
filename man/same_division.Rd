@@ -4,13 +4,15 @@
 \name{same_division}
 \alias{same_division}
 \title{Same division event statistic}
-\format{dataframe (25 rows, 4 columns)
+\format{
+dataframe (25 rows, 4 columns)
 
 \tabular{lll}{
    \strong{same_division} \tab \code{integer} \tab Event statistic. Matrix with senders in the
    rows and receivers in the columns. The event statistic is 1 if sender and receiver work 
    in the same division and 0 otherwise. \cr
-}}
+}
+}
 \source{
 \href{https://doi.org/10.1016/j.chaos.2018.11.027}{
 doi:10.1016/j.chaos.2018.11.027}

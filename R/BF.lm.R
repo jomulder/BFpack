@@ -581,12 +581,13 @@ MatrixStudent_measures <- function(Mean1,Scale1,tXXi1,df1,RrE1,RrO1,Names1=NULL,
       if(rankMatrix(RO1)[[1]]==nrow(RO1)){ #RO1 is of full row rank. So use transformation.
 
         Scale1inv <- solve(Scale1)
-        relO <- mean(unlist(lapply(1:1e3,function(s){
+        relO <- unlist(lapply(1:1e3,function(s){
           Sigma1 <- solve(rWishart(1,df=df1+P-1,Sigma=Scale1inv)[,,1])
           meanO <- c(RO1%*%mean1)
           covmO <- RO1%*%kronecker(Sigma1,tXXi1)%*%t(RO1)
-          pmvnorm(lower=rO1,upper=Inf,mean=meanO,sigma=covmO)
-        })))
+          pmvnorm(lower=rO1,upper=Inf,mean=meanO,sigma=covmO)[1]
+        }))
+        relO <- mean(relO[relO!="NaN"])
 
       }else{ #no linear transformation can be used; pmvt cannot be used. Use bain with a multivariate normal approximation
         #compute covariance matrix for multivariate normal distribution
@@ -649,12 +650,12 @@ MatrixStudent_measures <- function(Mean1,Scale1,tXXi1,df1,RrE1,RrO1,Names1=NULL,
                              matrix(temp[1:qE1,(qE1+1):qC1],nrow=qE1))
         #check covariance because some can be nonsymmetric due to a generation error
         welk1 <- which(unlist(lapply(covm1_OE,function(temp) isSymmetric(temp,
-                                                                         tol = sqrt(.Machine$double.eps),check.attributes = FALSE) &&
+                                       tol = sqrt(.Machine$double.eps),check.attributes = FALSE) &&
                                        min(eigen(temp)$values)>sqrt(.Machine$double.eps) )))
         covm1_OE <- covm1_OE[welk1]
         mean1_OE <- mean1_OE[welk1]
         relO <- mean(mapply(function(mu_temp,Sigma_temp) pmvnorm(lower=rO1,
-                                                                 upper=rep(Inf,qO1),mean=mu_temp,sigma=Sigma_temp)[1],mean1_OE,covm1_OE))
+                 upper=rep(Inf,qO1),mean=mu_temp,sigma=Sigma_temp)[1],mean1_OE,covm1_OE))
       }else{ #use bain for the computation of the probability
 
         mean1 <- c(Mean1)
