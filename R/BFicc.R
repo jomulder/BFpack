@@ -341,7 +341,7 @@ int_lhood <- function(rhoS,ngroups,pvec,N,K,Wmat1,zvec1,tWW2,tWz2,tzz2){
 }
 
 #' @importFrom stats rnorm rbeta dbeta
-MargLikeICC_Hq <- function(rhoML,zW,ngroups,pvec,samsize1=4e4,samsize2=4e4,
+MargLikeICC_Hq <- function(rhoML,zW,ngroups,pvec,samsize1=5e4,samsize2=5e4,
                            unique1,inequalities=0,complement=FALSE){
 
   #E.g., for categories=5, unique1=c(0,2,0,1,1),inequalities=[1 -1 0],
