@@ -78,6 +78,9 @@ BF.lmerMod <- function(x,
         welk_ca <- which(catassign==ca)
       }))]
       Xstack <- Xstack[reorder2,]
+      if(is.null(dim(Xstack))){ #then create column matrix from vector
+        Xstack <- t(t(Xstack))
+      }
       ystack <- ystack[reorder2]
       Zstack <- Zstack[reorder2,]
     }else{ #only include groups that belong to a category
@@ -257,11 +260,11 @@ BF.lmerMod <- function(x,
         which_order <- which(output_marglike_icc[,4]==1)
         if(length(which_order)==1){
           probs <- output_marglike_icc[which_order,2:3]
-          marglike_Hc <- marglike_Hu[[1]] + log(1-probs[1]) - log(1-probs[2])
+          marglike_Hc <- marglike_Hu[[1]] #+ log(1-probs[1]) - log(1-probs[2])
           output_marglike_icc <- rbind(output_marglike_icc,c(marglike_Hc,1-probs[1],1-probs[2],1))
         }else {
           probs <- apply(output_marglike_icc[which_order,2:3],2,sum)
-          marglike_Hc <- marglike_Hu[[1]] + log(1-probs[1]) - log(1-probs[2])
+          marglike_Hc <- marglike_Hu[[1]] #+ log(1-probs[1]) - log(1-probs[2])
           output_marglike_icc <- rbind(output_marglike_icc,c(marglike_Hc,1-probs[1],1-probs[2],1))
         }
       }
@@ -272,18 +275,21 @@ BF.lmerMod <- function(x,
     relcomp <- matrix(c(rep(NA,nrow(output_marglike_icc)),output_marglike_icc[,3]),ncol=2)
     relfit <- matrix(c(rep(NA,nrow(output_marglike_icc)),output_marglike_icc[,2]),ncol=2)
     #compute log marginal likelihood for H* without order constraints
-    BF_E <- exp(output_marglike_icc[,1] - log(output_marglike_icc[,2]) + log(output_marglike_icc[,3]) - marglike_Hu[[1]])
-    BFtu_confirmatory_icc <- exp(output_marglike_icc[,1] - marglike_Hu[[1]])
+    BF_E <- exp(output_marglike_icc[,1] - marglike_Hu[[1]])
+    output_marglike_icc <- cbind(output_marglike_icc,output_marglike_icc[,1] + log(output_marglike_icc[,2]) -
+                                   log(output_marglike_icc[,3]))
+    BFtu_confirmatory_icc <- exp(output_marglike_icc[,5]  - marglike_Hu[[1]])
     #compute BFmatrix and PHPs
-    logBFmatrix <- matrix(rep(output_marglike_icc[,1],numhyp+complement),nrow=numhyp+complement) -
-      matrix(rep(output_marglike_icc[,1],each=numhyp+complement),nrow=numhyp+complement)
+    logBFmatrix <- matrix(rep(output_marglike_icc[,5],numhyp+complement),nrow=numhyp+complement) -
+      matrix(rep(output_marglike_icc[,5],each=numhyp+complement),nrow=numhyp+complement)
+    diag(logBFmatrix) <- 0
     if(complement == TRUE){
       row.names(logBFmatrix) <- colnames(logBFmatrix) <- c(parse_hyp$original_hypothesis,"complement")
     }else{
       row.names(logBFmatrix) <- colnames(logBFmatrix) <- c(parse_hyp$original_hypothesis)
     }
     BFmatrix_confirmatory_icc <- round(exp(logBFmatrix),3)
-    BFta_confirmatory_icc <- exp(output_marglike_icc[,1] - max(output_marglike_icc[,1]))
+    BFta_confirmatory_icc <- exp(output_marglike_icc[,5] - max(output_marglike_icc[,5]))
     # Change prior probs in case of default setting
     if(is.null(prior)){
       priorprobs <- rep(1/length(BFtu_confirmatory_icc),length(BFtu_confirmatory_icc))
@@ -334,10 +340,17 @@ int_lhood <- function(rhoS,ngroups,pvec,N,K,Wmat1,zvec1,tWW2,tWz2,tzz2){
   tWDiW1 <- t(Wmat1)%*%(diagDi*Wmat1)
   tWDiz1 <- t(Wmat1)%*%(diagDi*zvec1)
   tzDiz1 <- sum(zvec1**2*diagDi)
-  s2 <- tzDiz1+tzz2 - c(t(tWDiz1+tWz2)%*%solve(tWDiW1+tWW2)%*%(tWDiz1+tWz2) )
-  return(
-    .5*sum(log(diagDi)) - .5*log(det(tWDiW1+tWW2)) - (N-K)/2*log(s2)
-  )
+  if(K > 0){
+    s2 <- tzDiz1 + tzz2 - c(t(tWDiz1+tWz2)%*%solve(tWDiW1+tWW2)%*%(tWDiz1+tWz2) )
+    return(
+      .5*sum(log(diagDi)) - .5*log(det(tWDiW1+tWW2)) - (N-K)/2*log(s2)
+    )
+  }else{
+    s2 <- tzDiz1 + tzz2
+    return(
+      .5*sum(log(diagDi)) - (N-K)/2*log(s2)
+    )
+  }
 }
 
 #' @importFrom stats rnorm rbeta dbeta
@@ -484,11 +497,11 @@ MargLikeICC_Hq <- function(rhoML,zW,ngroups,pvec,samsize1=5e4,samsize2=5e4,
         sum(dbeta((ISdraws[s,]-LB)/(1-LB),shape1=shape1IM,shape2=shape2IM,log=TRUE) +
               log(1/(1-LB)) )
     }))
-    #Sys.time() - wer
-    marglike <- log(mean(exp(logintegrands-max(logintegrands)))) +
-      max(logintegrands) + log(postprob) - log(priorprob) + lgamma((N-K)/2) - (N-K)/2*log(pi)
+    #marginal likelihood for H*, which excludes the order constraints probabilities
+    marglikeHstar <- log(mean(exp(logintegrands - max(logintegrands)))) +
+      max(logintegrands) + lgamma((N-K)/2) - (N-K)/2*log(pi)
   }
-  return(list(marglike=marglike,postprob=postprob,priorprob=priorprob,
+  return(list(marglike=marglikeHstar,postprob=postprob,priorprob=priorprob,
               postestimates=postestimates,postprobpositive=postprobpositive,
               priorprobpositive=priorprobpositive,postdraws=drawsMat))
 }
