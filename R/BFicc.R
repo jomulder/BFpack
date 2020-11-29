@@ -383,7 +383,7 @@ MargLikeICC_Hq <- function(rhoML,zW,ngroups,pvec,samsize1=5e4,samsize2=5e4,
   tzz2 <- sum(zvec2**2)
 
   if(sum(unique1)==0){ #null model with no random effects
-    marglike <- int_lhood(rhoS=rep(0,length=numcat),ngroups,pvec,N,K,Wmat1,zvec1,tWW2,tWz2,tzz2) +
+    marglikeHstar <- int_lhood(rhoS=rep(0,length=numcat),ngroups,pvec,N,K,Wmat1,zvec1,tWW2,tWz2,tzz2) +
       lgamma((N-K)/2) - (N-K)/2*log(pi)
     postprobpositive <- priorprobpositive <- postestimates <- postdraws <- drawsMat <- NULL
     priorprob <- postprob <- 1
