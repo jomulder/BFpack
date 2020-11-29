@@ -20,6 +20,12 @@ test_that("BF.lm multiple confirmatory hypotheses correctly evaluated", {
     round(BF2$PHP_confirmatory,5),c(0.00000,0.53382,0.40265,0.06353)
 )})
 
+BF2 <- BF(lm1,hypothesis="disp=drat=0;disp>drat>0;disp>drat=0",complement=FALSE)
+test_that("BF.lm multiple confirmatory hypotheses correctly evaluated", {
+  expect_equivalent(
+    round(BF2$PHP_confirmatory,5),c(0.00000,0.57003,0.42997)
+  )})
+
 BF3 <- BF(lm1,hypothesis="disp=hp=0")
 test_that("BF.lm one equality hypothesis correctly evaluated", {
   expect_equivalent(

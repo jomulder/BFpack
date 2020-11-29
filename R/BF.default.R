@@ -7,6 +7,7 @@
 BF.default <- function(x,
                        hypothesis = NULL,
                        prior = NULL,
+                       complement = TRUE,
                        ...,
                        Sigma,
                        n){
@@ -73,7 +74,7 @@ BF.default <- function(x,
     # check if a common boundary exists for prior location under all constrained hypotheses
     if(nrow(RrStack) > 1){
       rref_ei <- rref(RrStack)
-      nonzero <- RrStack[,K+1]!=0
+      nonzero <- rref_ei[,K+1]!=0
       if(max(nonzero)>0){
         row1 <- max(which(nonzero))
         if(sum(abs(rref_ei[row1,1:K]))==0){
@@ -81,7 +82,11 @@ BF.default <- function(x,
         }
       }
       #determine fraction via number of independent rows (constraints)
-      numindep <- sum(apply(abs(rref_ei[,-(K+1)]),1,sum)!=0)
+      if(is.matrix(rref_ei[,-(K+1)])){
+        numindep <- sum(apply(abs(rref_ei[,-(K+1)]),1,sum)!=0)
+      }else{
+        numindep <- sum(apply(abs(as.matrix(rref_ei[,-(K+1)])),1,sum)!=0)
+      }
     } else {
       numindep <- 1
     }
@@ -103,9 +108,11 @@ BF.default <- function(x,
     })),nrow=2))
     row.names(relfit) <- row.names(relcomp) <- parse_hyp$original_hypothesis
 
-    # get relative fit and complexity of complement hypothesis
-    relcomp <- Gaussian_prob_Hc(mean1 = mean0, Sigma1 = covm0, relmeas = relcomp, RrO = RrO) #Note that input is a bit strange here, Gaussian_prob_Hc needs fixing
-    relfit <- Gaussian_prob_Hc(mean1 = meanN, Sigma1 = covmN, relmeas = relfit, RrO = RrO)
+    if(complement == TRUE){
+      # get relative fit and complexity of complement hypothesis
+      relcomp <- Gaussian_prob_Hc(mean1 = mean0, Sigma1 = covm0, relmeas = relcomp, RrO = RrO) #Note that input is a bit strange here, Gaussian_prob_Hc needs fixing
+      relfit <- Gaussian_prob_Hc(mean1 = meanN, Sigma1 = covmN, relmeas = relfit, RrO = RrO)
+    }
     hypothesisshort <- unlist(lapply(1:nrow(relfit),function(h) paste0("H",as.character(h))))
     row.names(relfit) <- row.names(relfit) <- hypothesisshort
     colnames(relcomp) <- c("c_E", "c_0")
@@ -130,7 +137,7 @@ BF.default <- function(x,
     BFtable <- cbind(relcomp,relfit,relfit[,1]/relcomp[,1],relfit[,2]/relcomp[,2],
                      apply(relfit,1,prod)/apply(relcomp,1,prod),PHP_confirmatory)
     row.names(BFtable) <- names(PHP_confirmatory)
-    colnames(BFtable) <- c("comp_E","comp_O","fit_E","fit_O","BF_E","BF_O","BF","PHP")
+    colnames(BFtable) <- c("complex=","complex>","fit=","fit>","BF=","BF>","BF","PHP")
     BFmatrix_confirmatory <- matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory))/
       t(matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory)))
     # row.names(BFmatrix_confirmatory) <- Hnames

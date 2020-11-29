@@ -1,7 +1,8 @@
 Package: BFpack
 Type: Package
 Title: Flexible Bayes Factor Testing of Scientific Expectations
-Version: 0.1.0
+Version: 0.3.1
+Date: 2020-10-16
 Authors@R: 
     c(person(given = c("Joris"),
              family = "Mulder",
@@ -23,6 +24,10 @@ Authors@R:
              family = "Boeing-Messing",
              role = c("aut", "ctb"),
              email = "F.Boeing-Messing@uvt.nl"),
+      person(given = "Donald R.",
+             family = "Williams",
+             role = c("aut", "ctb"),
+             email = "drwwilliams@ucdavis.edu"),
       person(given = "Jean-Paul",
              family = "Fox",
              role = c("aut", "ctb"),
@@ -98,24 +103,30 @@ Description: Implementation of various default Bayes factors
     Hoijtink, Gu, and Mulder, (2018) <DOI:10.1111/bmsp.12145>, and
     Hoijtink, Gu, Mulder, and Rosseel, (2018) <DOI:10.1037/met0000187>.
 License: GPL (>= 3)
+URL: https://github.com/jomulder/BFpack
 BugReports: https://github.com/jomulder/BFpack/issues
 Encoding: UTF-8
 LazyData: true
 NeedsCompilation: yes
-RoxygenNote: 6.1.1
+RoxygenNote: 7.1.1
 Depends: 
     R (>= 3.0.0),
     bain
-Imports:
+Imports: 
     stats,
     MASS,
-    MCMCpack,
     Matrix,
     mvtnorm,
     pracma,
-    lme4
+    lme4,
+    extraDistr
 Suggests: 
     testthat,
     polycor,
     survival,
-    pscl
+    pscl,
+    metafor,
+    knitr,
+    rmarkdown
+VignetteBuilder: 
+    knitr

@@ -1,128 +1,279 @@
-# BFpack
 
-R-functions for Bayesian exploratory (equal vs negative vs postive) and confirmatory (equality and/or order constraints) hypothesis testing for commonly used statistical models, including (but not limited to) univariate/multivariate t testing, (M)AN(C)OVA, multivariate/univariate regression, random intercept models. The functions need fitted models (e.g., lm) as input as well as a string that specifies a set of order constraints on the regression coefficients.
+<img src="man/figures/logo_BFpack.png" width = 850 />
 
-Developers and collaborators: Joris Mulder, Caspar van Lissa, Xin Gu, Anton Olsson-Collentine, Florian Böing-Messing, Donald R. Williams, Andrew Tomarken, Marlyne Bosman-Meijerink, Eric-Jan Wagenmakers, Yves Rosseel, Jean-Paul Fox, Janosch Menke, and Herbert Hoijtink.
+# 
 
-Licensed under the GNU General Public License version 2 (June, 1991)
+[![CRAN
+Version](http://www.r-pkg.org/badges/version/BFpack)](https://cran.r-project.org/package=BFpack)
+[![Downloads](https://cranlogs.r-pkg.org/badges/BGGM)](https://cran.r-project.org/package=BFpack)
 
+The `R` package **BFpack** contains a set of functions for exploratory
+hypothesis testing (e.g., equal vs negative vs postive) and confirmatory
+hypothesis testing (with equality and/or order constraints) using Bayes
+factors and posterior probabilities under commonly used statistical
+models, including (but not limited to) Bayesian t testing, (M)AN(C)OVA,
+multivariate/univariate linear regression, correlation analysis,
+multilevel analysis, or generalized linear models (e.g., logistic
+regression). The main function `BF` needs a fitted model (e.g., an
+object of class `lm` for a linear regression model) and (optionally) the
+argument `hypothesis`, a string which specifies a set of equality/order
+constraints on the parameters. By applying the function
+`get_estimates`on a fitted model, the names of the parameters are
+returned on which constrained hypotheses can be formulated. Bayes
+factors and posterior probabilities are computed for the hypotheses of
+interest.
 
-Installation
-------------
+## Installation
 
-You can install BFpack from GitHub with:
+Install the latest release version of `BFpack` from CRAN:
 
 ``` r
-# install.packages("devtools")
-devtools::install_github("jomulder/BFpack")
+install.packages("BFpack")
+```
 
+The current developmental version can be installed with
 
-Example analyses
-------------
+``` r
+if (!requireNamespace("remotes")) { 
+  install.packages("remotes")   
+}   
+remotes::install_github("jomulder/BFpack")
+```
 
-# Aapplication 1
+## Example analyses
 
-# load R package BFpack and bain
+Below several example analyses are provided using **BFpack**.
+
+### Bayesian t testing
+
+First a classical one sample t test is executed for the test value
+\(\mu = 5\) on the therapeutic data
+
+``` r
+ttest1 <- bain::t_test(therapeutic, alternative = "greater", mu = 5)
+```
+
+The `t_test` function is part of the ***bain*** package. The function is
+equivalent to the standard `t.test` function with the addition that the
+returned object contains additional output than the standard `t.test`
+function.
+
+To perform a Bayesian t test plug the fitted object into the `BF`
+function.
+
+``` r
 library(BFpack)
-library(bain)
-# Frequentist one sample t test at the null point mu=5 on the therapeutic data
-ttest1 <- t_test(therapeutic,mu=5)
-print(ttest1)
-# confirmatory Bayesian one sample t test
-BF1 <- BF(ttest1,"mu=5")
-summary(BF1)
+BF1 <- BF(ttest1)
+```
 
+This executes an exhaustive test around the null value: `H1: mu = 5`
+versus `H2: mu < 5` versus `H3: mu > 5` assuming equal prior
+probabilities for `H1`, `H2`, and `H3` of 1/3. The output presents the
+posterior probabilities for the three hypotheses.
 
-# Application 2
+The same test would be executed when the same hypotheses are explicitly
+specified using the `hypothesis` argument.
 
-# Fit an anova model on the tvprices data
-aov1 <- aov(price ~ anchor*motivation,data=tvprices)
-# Perform exploratory Bayes factor tests for ANOVA design
+``` r
+hypothesis <- "mu = 5; mu < 5; mu > 5"
+BF(ttest1, hypothesis = hypothesis)
+```
+
+When testing hypotheses via the `hypothesis` argument, the output also
+presents an `Evidence matrix` containing the Bayes factors between the
+hypotheses.
+
+### Analysis of variance
+
+First an analysis of variance (ANOVA) model is fitted using the `aov`
+fuction in `R`.
+
+``` r
+aov1 <- aov(price ~ anchor * motivation, data = tvprices)
+```
+
+Next a Bayesian test can be performed on the fitted object.
+
+``` r
 BF(aov1)
+```
 
+By default posterior probabilities are computed of whether main effects
+and interaction effects are present. Alternative constrained hypotheses
+can be tested on the model parameters `get_estimates(aov1)`.
 
-# Application 3
-# Perform classical Bartlett test for homogeneity of group varianceson the accuracy data
-bartlett <- bartlett_test(x = attention$accuracy, g = attention$group)
-# Specify informative hypotheses on the group variances based on substantive expectations
-hypothesis <- c("Controls=TS<ADHD;
-    Controls<TS=ADHD;
-    Controls=TS=ADHD")
-set.seed(358)
-# Perform the Bayesian hypothesis tests
-BF_var <- BF(bartlett, hypothesis)
-summary(BF_var)
+### Logistic regression
 
-# Application 4
-# Fit the multivariate regression model on the fmri data
-fmri.lm <- lm(cbind(Superficial,Middle,Deep) ~ Face + Vehicle, data=fmri)
-# Specify informative hypotheses on the coefficients across predictor and dependent variables
-# based on substantive expectations
-constraints.fmri <- "Face_on_Deep = Face_on_Superficial = Face_on_Middle < 0 <
+An example hypothesis test is consdered under a logistic regression
+model. First a logistic regression model is fitted using the `glm`
+function
+
+``` r
+fit_glm <- glm(sent ~ ztrust + zfWHR + zAfro + glasses + attract + maturity +
+               tattoos, family = binomial(), data = wilson)
+```
+
+The names of the regression coefficients on which constrained hypotheses
+can be formualted can be extracted using the `get_estimates` function.
+
+``` r
+get_estimates(fit_glm)
+```
+
+Two different hypotheses are formulated with competing equality and/or
+order constraints on the parameters of interest. These hypotheses are
+motivated in Mulder et al. (2019)
+
+``` r
+BF_glm <- BF(fit_glm, hypothesis = "ztrust > (zfWHR, zAfro) > 0;
+             ztrust > zfWHR = zAfro = 0")
+summary(BF_glm)
+```
+
+By calling the `summary` function on the output object of class `BF`,
+the results of the exploratory tests are presented of whether each
+separate parameter is zero, negative, or positive, and the results of
+the confirmatory test of the hypotheses under the `hypothesis` argument
+are presented. When the hypotheses do not cover the complete parameter
+space, by default the complement hypothesis is added which covers the
+remaining parameter space that is not covered by the constraints under
+the hypotheses of interest. In the above example, the complement
+hypothesis covers the parameter space where neither `"ztrust > (zfWHR,
+zAfro) > 0"` holds, nor where `"ztrust > zfWHR = zAfro = 0"` holds.
+
+### Correlation analysis
+
+By default `BF` performs exhaustice tests of whether the separate
+correlations are zero, negative, or positive. The name of the
+correlations is constructed using the names of the variables separated
+by `_with_`.
+
+``` r
+set.seed(123)
+cor1 <- cor_test(memory[,1:3])
+BF1 <- BF(cor1)
+print(BF1)
+```
+
+Constraints can also be tested between correlations, e.g., whether all
+correlations are equal and positive versus an unconstrained
+complement.
+
+``` r
+BF2 <- BF(cor1, hypothesis = "Del_with_Im = Wmn_with_Im = Wmn_with_Del > 0")
+print(BF2)
+```
+
+### Univariate/Multivariate multiple regression
+
+For a univariate regression model, by default an exhaustive test is
+executed of whether an effect is zero, negative, or postive.
+
+``` r
+lm1 <- lm(Superficial ~ Face + Vehicle, data = fmri)
+BF1 <- BF(lm1)
+print(BF1)
+```
+
+Hypotheses can be tested with equality and/or order constraints on the
+effects of interest. If prefered the complement hypothesis can be
+omitted using the `complement`
+argument
+
+``` r
+BF2 <- BF(lm1, hypothesis = "Vehicle > 0 & Face < 0; Vehicle = Face = 0",
+          complement = FALSE)
+print(BF2)
+```
+
+In a multivariate regression model hypotheses can be tested on the
+effects on the same dependent variable, and on effects across different
+dependent variables. The name of an effect is constructed as the name of
+the predictor variable and the dependent variable separated by `_on_`.
+Testing hypotheses with both constraints within a dependent variable and
+across dependent variables makes use of a Monte Carlo estimate which may
+take a few seconds.
+
+``` r
+lm2 <- lm(cbind(Superficial, Middle, Deep) ~ Face + Vehicle,
+              data = fmri)
+constraint2 <- "Face_on_Deep = Face_on_Superficial = Face_on_Middle < 0 <
      Vehicle_on_Deep = Vehicle_on_Superficial = Vehicle_on_Middle;
      Face_on_Deep < Face_on_Superficial = Face_on_Middle < 0 < Vehicle_on_Deep =
      Vehicle_on_Superficial = Vehicle_on_Middle"
-# Perform the Bayesian hypothesis tests
 set.seed(123)
-BF_fmri <- BF(fmri.lm, hypothesis = constraints.fmri)
-summary(BF_fmri)
+BF3 <- BF(lm2, hypothesis = constraint2)
+summary(BF3)
+```
 
-# Application 4b
-constraints.fmri2 <- "Face_on_Deep = Face_on_Superficial = Face_on_Middle < 0;
-     Face_on_Deep < Face_on_Superficial = Face_on_Middle < 0"
-fmri.lm2 <- lm(cbind(Superficial,Middle,Deep) ~ Face + Vehicle, data=fmri)
-BF.fmri2 <- BF(fmri.lm2, hypothesis=constraints.fmri2)
+### Running `BF` on a named vector
 
+The input for the `BF` function can also be a named vector containing
+the estimates of the parameters of interest. In this case the error
+covariance matrix of the estimates is also needed via the `Sigma`
+argument, as well as the sample size that was used for obtaining the
+estimates via the `n` argument. Bayes factors are then computed using
+Gaussian approximations of the likelihood (and posterior), similar as in
+classical Wald test.
 
-#Application 5
-# Fit logistic regression model
-fit <- glm(sent ~ ztrust + zfWHR + zAfro + glasses + attract + maturity +
-             tattoos, family = binomial(), data = wilson)
-# Perform the Bayesian hypothesis tests
-set.seed(123)
-BF_glm <- BF(fit, hypothesis="ztrust > (zfWHR, zAfro) > 0; ztrust > (zfWHR, zAfro) = 0")
-summary(BF_glm)
+We illustrate this for a Poisson regression
+model
 
+``` r
+poisson1 <- glm(formula = breaks ~ wool + tension, data = datasets::warpbreaks,
+             family = poisson)
+```
 
-# Application 6: Correlation analysis
-#Fit multivariate normal model
-lm6 <- lm(cbind(Im,Del,Wmn,Cat,Fas,Rat) ~ -1 + Group, data=memory)
-set.seed(123)
-#Perform Bayes factor test of the order hypothesis against its compleplement
-BF6_cor <- BF(lm6,parameter="correlation", hypothesis=
-     "Del_with_Im_in_GroupHC > Del_with_Im_in_GroupSZ &
-     Del_with_Wmn_in_GroupHC > Del_with_Wmn_in_GroupSZ &
-     Del_with_Cat_in_GroupHC > Del_with_Cat_in_GroupSZ &
-     Del_with_Fas_in_GroupHC > Del_with_Fas_in_GroupSZ &
-     Del_with_Rat_in_GroupHC > Del_with_Rat_in_GroupSZ &
-     Im_with_Wmn_in_GroupHC > Im_with_Wmn_in_GroupSZ &
-     Im_with_Cat_in_GroupHC > Im_with_Cat_in_GroupSZ &
-     Im_with_Fas_in_GroupHC > Im_with_Fas_in_GroupSZ &
-     Im_with_Rat_in_GroupHC > Im_with_Rat_in_GroupSZ &
-     Wmn_with_Cat_in_GroupHC > Wmn_with_Cat_in_GroupSZ &
-     Wmn_with_Fas_in_GroupHC > Wmn_with_Fas_in_GroupSZ &
-     Wmn_with_Rat_in_GroupHC > Wmn_with_Rat_in_GroupSZ &
-     Cat_with_Fas_in_GroupHC > Cat_with_Fas_in_GroupSZ &
-     Cat_with_Rat_in_GroupHC > Cat_with_Rat_in_GroupSZ &
-     Fas_with_Rat_in_GroupHC > Fas_with_Rat_in_GroupSZ")
-summary(BF6_cor)
+The estimates, the error covariance matrix, and the sample size are
+extracted from the fitted model
 
+``` r
+estimates <- poisson1$coefficients
+covmatrix <- vcov(poisson1)
+samplesize <- nobs(poisson1)
+```
 
-# Application 7. Testing intraclas correlations
-library(lme4)
-#Only consider the timssICC data for the measurements of the four counteries in 2011
-timssICC_subset <- timssICC[(timssICC$groupNL11==1)+(timssICC$groupHR11==1)+
-                              (timssICC$groupDE11==1)+(timssICC$groupDK11==1)>0,]
-#Fit a random intercept model with country specific random effect variances across schools
-outlme1 <- lmer(math ~ -1 + gender + weight + lln +
-                  groupNL11 + (0+groupNL11 | schoolID) +
-                  groupHR11 + (0+groupHR11 | schoolID) +
-                  groupDE11 + (0+groupDE11 | schoolID) +
-                  groupDK11 + (0+groupDK11 | schoolID),
-                data=timssICC_subset)
-#Perform Bayes factor test on intraclass correlations across countries in 2011
-set.seed(123)
-BFout <- BF(outlme1,hypothesis=
-     "groupNL11<groupHR11<groupDE11<groupDK11;
-     groupNL11=groupHR11=groupDE11=groupDK11")
-summary(BFout)
+Constrained hypotheses on the parameters `names(estimates)` can then be
+tested as follows
+
+``` r
+BF1 <- BF(estimates, Sigma = covmatrix, n = samplesize, hypothesis = 
+  "woolB > tensionM > tensionH; woolB = tensionM = tensionH")
+```
+
+Note that the same hypothesis test would be executed when calling
+
+``` r
+BF2 <- BF(poisson1, hypothesis = "woolB > tensionM > tensionH;
+          woolB = tensionM = tensionH")
+```
+
+because the same Bayes factor is used when running `BF` on an object of
+class `glm` (see `Method: Bayes factor using Gaussian approximations`
+when calling `print(BF11)` and `print(BF2)`).
+
+## Citing **BFpack**
+
+You can cite the package and the paper using the following reference
+
+> Mulder, J., van Lissa, C., Gu, X., Olsson-Collentine, A.,
+> Boeing-Messing, F., Williams, D. R., Fox, J.-P., Menke, J., et al.
+> (2019). BFpack: Flexible Bayes Factor Testing of Scientific
+> Expectations. (Version 0.2.1) \[R package\].
+> <https://CRAN.R-project.org/package=BFpack>
+
+> Mulder, J., Williams, D. R., Gu, X., Olsson-Collentine, A., Tomarken,
+> A., Böing-Messing, F., Hoijtink, H., . . . van Lissa, C. (2019).
+> BFpack: Flexible Bayes factor testing of scientific theories in R.
+> Retrieved from <https://arxiv.org/abs/1911.07728>
+
+## Contributing and Contact Information
+
+If you have ideas, please get involved. You can contribute by opening an
+issue on GitHub, or sending a pull request with proposed features.
+
+  - File a GitHub issue [here](https://github.com/jomulder/BFpack)
+  - Make a pull request [here](https://github.com/jomulder/BFpack/pulls)
+
+By participating in this project, you agree to abide by the [Contributor
+Code of Conduct v2.0](code_of_conduct.md).

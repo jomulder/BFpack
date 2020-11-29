@@ -4,7 +4,9 @@
 \name{sivan}
 \alias{sivan}
 \title{Wason task performance and morality}
-\format{A data.frame with 887 rows and 12 columns.}
+\format{
+A data.frame with 887 rows and 12 columns.
+}
 \source{
 \href{https://doi.org/10.1007/s40806-018-0154-8}{
 DOI:10.1007/s40806-018-0154-8}

@@ -4,7 +4,9 @@
 \name{timssICC}
 \alias{timssICC}
 \title{Trends in International Mathematics and Science Study (TIMSS) 2011-2015}
-\format{A data.frame with 16770 rows and 15 columns.}
+\format{
+A data.frame with 16770 rows and 15 columns.
+}
 \usage{
 data(timssICC)
 }
