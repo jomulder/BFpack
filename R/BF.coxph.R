@@ -6,6 +6,7 @@
 BF.coxph <- function(x,
                       hypothesis = NULL,
                       prior = NULL,
+                      complement = TRUE,
                       ...){
 
   #Extract summary statistics
@@ -14,6 +15,9 @@ BF.coxph <- function(x,
   Args$x <- get_est$estimate
   Args$Sigma <- get_est$Sigma[[1]]
   Args$n <- x$nevent
+  Args$hypothesis <- hypothesis
+  Args$prior <- prior
+  Args$complement <- complement
   out <- do.call(BF, Args)
   out$model <- x
   out$call <- match.call()

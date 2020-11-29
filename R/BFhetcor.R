@@ -1,7 +1,5 @@
 
 
-
-#' @importFrom MCMCpack rinvgamma
 #' @method BF hetcor
 #' @export
 BF.hetcor <- function(x,
@@ -75,7 +73,7 @@ BF.hetcor <- function(x,
     BFtable <- cbind(relcomp,relfit,relfit[,1]/relcomp[,1],relfit[,2]/relcomp[,2],
                      apply(relfit,1,prod)/apply(relcomp,1,prod),PHP_confirmatory)
     row.names(BFtable) <- names(BFtu_confirmatory)
-    colnames(BFtable) <- c("comp_E","comp_O","fit_E","fit_O","BF_E","BF_O","BF","PHP")
+    colnames(BFtable) <- c("complex=","complex>","fit=","fit>","BF=","BF>","BF","PHP")
     BFmatrix_confirmatory <- matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory))/
       t(matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory)))
     row.names(BFmatrix_confirmatory) <- colnames(BFmatrix_confirmatory) <- names(BFtu_confirmatory)

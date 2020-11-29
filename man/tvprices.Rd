@@ -4,7 +4,9 @@
 \name{tvprices}
 \alias{tvprices}
 \title{Precision of the Anchor Influences the Amount of Adjustment}
-\format{A data.frame with 59 rows and 3 columns.}
+\format{
+A data.frame with 59 rows and 3 columns.
+}
 \source{
 \href{https://doi.org/10.1111/j.1467-9280.2008.02057.x}{
 DOI:10.1111/j.1467-9280.2008.02057.x}

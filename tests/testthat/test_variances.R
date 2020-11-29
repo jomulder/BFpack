@@ -16,5 +16,7 @@ expect_equivalent(
   round(BF1$PHP_confirmatory,7),c(0.9911905,0.0088095)
 )})
 
-
+hypothesis <- "A=B=F>C=D=E; A=B=F>C>D>E"
+set.seed(123)
+BF1 <- BF(x=vtest1,hypothesis,complement = F)
 

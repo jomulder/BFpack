@@ -4,7 +4,9 @@
 \name{wilson}
 \alias{wilson}
 \title{Facial trustworthiness and criminal sentencing}
-\format{A data.frame with 742 rows and 13 columns.}
+\format{
+A data.frame with 742 rows and 13 columns.
+}
 \source{
 \href{https://doi.org/10.1177/0956797615590992}{
   DOI:10.1177/0956797615590992}

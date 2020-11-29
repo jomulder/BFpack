@@ -1,0 +1,344 @@
+---
+title: "Introduction to ***BFpack***"
+author: "Mulder, J., Williams, D. R., Gu, X., Tomarken, A., Boeing-Messing, F., Olsson-Collentine, A., Meijerink, M., Menke, J., van Aert, R., Fox, J.-P., Hoijtink, H., Rosseel, Y., Wagenmakers, E.-J., and van Lissa, C."
+date: "`r Sys.Date()`"
+output:
+  rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{bain_introduction}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Introduction
+
+`BFpack` contains a collection of functions for Bayesian hypothesis testing using Bayes factors and posterior probabilities in R. The main function `BF` needs a fitted model `x` as input argument. Depending on the class of the fitted model, a standard hypothesis test is executed by default. For example, if `x` is a fitted regression model of class `lm` then posterior probabilities are computed of whether each separate coefficient is zero, negative, or positive (assuming equal prior probabilities). If one has specific hypotheses with equality and/or order constraints on the parameters under the fitted model `x` then these can be formulated using the `hypothesis` argument (a character string), possibly together prior probabilities for the hypotheses via the `prior` argument (default all hypotheses are equally likely a priori), and the `complement` argument which is a logical stating whether the complement hypotheses should be included in the case (`TRUE` by default).
+
+Alternatively, when the model of interest is not of a class that is currently supported, `x` can also be a named numeric vector containing the estimates of the model parameters of interest, together with the error covariance matrix in the argument `Sigma`, and the sample size used to obtain the estimates, to perform an approximate Bayes factor test using large sample theory.
+
+## Reference
+
+The key references for the package are
+
+Mulder, J., Williams, D. R., Gu, X., Tomarken, A., Boeing-Messing, F., Olsson-Collentine, A., Meijerink, M., Menke, J., van Aert, R., Fox, J.-P., Hoijtink, H., Rosseel, Y., Wagenmakers, E.-J., and van Lissa, C. (to appear). BFpack: Flexible Bayes Factor Testing of Scientific Theories in R.
+Journal of Statistical Software.
+
+Mulder, J., van Lissa, C., Gu, X., Olsson-Collentine, A., Boeing-Messing, F., Williams, D. R., Fox, J.-P., Menke, J., et al. (2019). BFpack: Flexible Bayes Factor Testing of Scientific Expectations. (Version 0.2.1) <https://CRAN.R-project.org/package=BFpack>
+
+## Usage
+
+`BF(x, hypothesis, prior = NULL, complement = TRUE, ...)`
+
+
+## Arguments
+
+* `x`, a fitted model object that is obtained using a R-function. The object can be obtained via the following R functions:
+  + `t_test` for t testing,
+  + `bartlett_test` for testing independent group variances,
+  + `aov` for AN(C)OVA testing,
+  + `manova` for MAN(C)OVA testing,
+  + `lm` for linear regresssion analysis, 
+  + `cor_test` for correlation analysis,
+  + `lmer` currently for testing intraclass correlations in random intercept models,
+  + `glm` for generalized linear models,
+  + `coxph` for survival analysis,
+  + `survreg` for survival analysis,
+  + `polr` for ordinal regression,
+  + `zeroinfl` for zero-inflated regression
+  + `rma` for meta-analysis.
+
+* `hypothesis`, a character string specifying the hypotheses with equality and/or order constraints on the key parameters of interest.
+  + By default set to hypothesis = NULL (for only exploratory testing).
+  + The parameter names are based on the names of the estimated key parameters. An overview of the key parameters is given using the function `get_estimates`, e.g., `get_estimates(model1),` where `model1` is a fitted model object.
+  + Separate constraints within a hypothesis are separated with an ampersand `&`. Hypotheses are separated using a semi-colon `;`. For example `hypothesis = "weight > height & height > 0; weight = height = 0"` implies that the first hypothesis assumes that the parameter `weight` is larger than the parameter `height` and that the parameter `height` is positive, and the second hypothesis assumes that the two parameters are equal to zero. Note that the first hypothesis could equivalently have been written as `weight > height > 0`.
+* `prior`, a numeric vector specifying the prior probabilities of the hypotheses. The default setting is `prior = NULL` which sets equal prior probabilities.
+* `complement`, a logical value which specified if a complement hypothesis is included in the tested hypotheses specified under `hypothesis`. The default setting is `TRUE`. The complement hypothesis covers the remaining parameters space that is not covered by the constrained hypotheses. For example, if an equality hypothesis and an order hypothesis are formulated, say, `hypothesis = "weight = height = length; weight > height > length"`, the complement hypothesis covers the remaining subspace where neither `"weight = height = length"` holds, nor `"weight > height > length"` holds.
+
+
+Alternatively if one is interesting in testing hypotheses on a model object which has a class that is currently not supported, an approximate Bayesian test can be executed with the following (additional) arguments
+
+* `x`, a named numeric vector of the estimates (e.g., MLE) of the parameters of interest where the labels are equal to the names of the parameters which are used for the `hypothesis` argument.
+* `Sigma`, the approximate posterior covariance matrix (e.g,. error covariance matrix) of the parameters of interest.
+* `n`, the sample size that was used to acquire the estimates and covariance matrix.
+
+
+## Output
+
+The output is of class `BF`. By running the `print` function on the `BF` object, a short overview of the results are presented. By running the `summary` function on the `BF` object, a comprehensive overview of the results are presented. 
+
+
+## Example analyses
+
+### Bayesian t testing
+
+First a classical one sample t test is executed for the test value
+\(\mu = 5\) on the therapeutic data
+
+``` r
+ttest1 <- bain::t_test(therapeutic, alternative = "greater", mu = 5)
+```
+
+The `t_test` function is part of the ***bain*** package. The function is
+equivalent to the standard `t.test` function with the addition that the
+returned object contains additional output than the standard `t.test`
+function.
+
+To see which parameters can be tested on this object run
+``` r
+get_estimates(ttest1)
+```
+which shows that the only parameter that can be tested is the population mean which has name `mu`.
+
+To perform an exploratory Bayesian t test of whether the population mean is equal to, smaller than, or larger than the null value (which is `5` here, as specified when defining the `ttest1` object), one needs to run `BF` function on the object.
+
+``` r
+library(BFpack)
+BF1 <- BF(ttest1)
+```
+
+This executes an exhaustive test around the null value: `H1: mu = 5`
+versus `H2: mu < 5` versus `H3: mu > 5` assuming equal prior
+probabilities for `H1`, `H2`, and `H3` of 1/3. The output presents the
+posterior probabilities for the three hypotheses.
+
+The same test would be executed when the same hypotheses are explicitly
+specified using the `hypothesis` argument.
+
+``` r
+hypothesis <- "mu = 5; mu < 5; mu > 5"
+BF(ttest1, hypothesis = hypothesis)
+```
+
+When testing hypotheses via the `hypothesis` argument, the output also
+presents an `Evidence matrix` containing the Bayes factors between the
+hypotheses.
+
+
+### Analysis of variance
+
+First an analysis of variance (ANOVA) model is fitted using the `aov`
+fuction in `R`.
+
+``` r
+aov1 <- aov(price ~ anchor * motivation, data = tvprices)
+```
+
+Next a Bayesian test can be performed on the fitted object.
+
+``` r
+BF(aov1)
+```
+
+By default posterior probabilities are computed of whether main effects
+and interaction effects are present.
+
+
+### Testing independent group variances
+
+First a classical significance test is executed using the `bartlett_test` function, which is part of the ***BFpack*** package. The function is equivalent to the standard `bartlett.test` function with the addition that the returned object contains additional output needed for the test using the `BF` function.
+
+``` r
+bartlett1 <- bartlett_test(x = attention$accuracy, g = attention$group)
+```
+
+The group variances have names `ADHD`, `Controls`, and `TS` (retrieved by running `get_estimates(bartlett1)`). Let's say we want to test whether a hypothesis (H1) which assumes that  group variances of groups `Controls` and `TS` are equal and smaller than the group variance of the `ADHD` group, a hypothesis (H2) which assumes that the group variances of `ADHD` and `TS` are equal and larger than the `Controls` group, a hypothesis (H3) which assumes all group variances are equal, and a complement hypothesis (H4). To do this we run the following:
+
+``` r
+hypothesis <- "Controls = TS < ADHD; Controls < TS = ADHD; Controls = TS = ADHD"
+set.seed(358)
+BF_var <- BF(bartlett1, hypothesis)
+```
+
+A comprehensive output of this analysis can be obtained by running:
+
+``` r
+summary(BF_var)
+```
+
+which presents the results of an exploratory analysis and the results of a confirmatory analysis (based on the hypotheses formulated under the `hypothesis` argument). The exploratory analysis tests a hypothesis which assumes that the variances are equal across groups (homogeneity of variances) versus an alternative unrestricted hypothesis. The output shows that the posterior probabilities of these two hypotheses are approximately 0.803 and 0.197 (assuming equal priori probabilities). Note that the p value in the classical Bartlett test for these data equals 0.1638 which implies that the hypothesis of homogeneity of variances cannot be rejected using common significance levels, such as 0.05 or 0.01. Note however that this p value cannot be used as a measure for the evidence in the data in favor of homogeneity of group variances. This can be done using the proposed Bayes factor test which shows that the probability that the variances are equal is approximately 0.803. Also note that the exploratory test could equivalently tested via the `hypothesis` argument by running `BF(bartlett1, "Controls = TS = ADHD")`.
+
+The confirmatory test shows that H1 receives strongest support from the data, but H2 and H3 are viable competitors. It appears that even the complement H3 cannot be ruled out entirely given a posterior prob- ability of 0.058. To conclude, the results indicate that TS population are as heterogeneous in their attentional performances as the healthy control population in this specific task, but further research would be required to obtain more conclusive evidence.
+
+
+### Logistic regression
+
+An example hypothesis test is consdered under a logistic regression
+model. First a logistic regression model is fitted using the `glm`
+function
+
+``` r
+fit_glm <- glm(sent ~ ztrust + zfWHR + zAfro + glasses + attract + maturity +
+               tattoos, family = binomial(), data = wilson)
+```
+
+The names of the regression coefficients on which constrained hypotheses
+can be formualted can be extracted using the `get_estimates` function.
+
+``` r
+get_estimates(fit_glm)
+```
+
+Two different hypotheses are formulated with competing equality and/or
+order constraints on the parameters of interest. These hypotheses are
+motivated in Mulder et al. (2019)
+
+``` r
+BF_glm <- BF(fit_glm, hypothesis = "ztrust > (zfWHR, zAfro) > 0;
+             ztrust > zfWHR = zAfro = 0")
+summary(BF_glm)
+```
+
+By calling the `summary` function on the output object of class `BF`,
+the results of the exploratory tests are presented of whether each
+separate parameter is zero, negative, or positive, and the results of
+the confirmatory test of the hypotheses under the `hypothesis` argument
+are presented. When the hypotheses do not cover the complete parameter
+space, by default the complement hypothesis is added which covers the
+remaining parameter space that is not covered by the constraints under
+the hypotheses of interest. In the above example, the complement
+hypothesis covers the parameter space where neither `"ztrust > (zfWHR,
+zAfro) > 0"` holds, nor where `"ztrust > zfWHR = zAfro = 0"` holds.
+
+
+### Correlation analysis
+
+By default `BF` performs exhaustice tests of whether the separate
+correlations are zero, negative, or positive. The name of the
+correlations is constructed using the names of the variables separated
+by `_with_`.
+
+``` r
+set.seed(123)
+cor1 <- cor_test(memory[,1:3])
+BF1 <- BF(cor1)
+print(BF1)
+```
+
+Constraints can also be tested between correlations, e.g., whether all
+correlations are equal and positive versus an unconstrained
+complement.
+
+``` r
+BF2 <- BF(cor1, hypothesis = "Del_with_Im = Wmn_with_Im = Wmn_with_Del > 0")
+print(BF2)
+```
+
+We can also test equality and order constraints on correlations across different groups. As the seventh column of the `memory` object is a group indicator, let us first create different objects for the two different groups, and perform Bayesian estimation on the correlation matrices of the two different groups 
+
+``` r
+memoryHC <- subset(memory,Group=="HC")[,-(4:7)]
+memorySZ <- subset(memory,Group=="SZ")[,-(4:7)]
+set.seed(123)
+cor1 <- cor_test(memoryHC,memorySZ)
+```
+
+Next we test the one-sided hypothesis that the correlations in the first group (`g1`) are larger than the correlations in the second group (`g2`) via
+
+``` r
+set.seed(123)
+BF6_cor <- BF(cor1, hypothesis =
+  "Del_with_Im_in_g1 > Del_with_Im_in_g2 &
+  Del_with_Wmn_in_g1 > Del_with_Wmn_in_g2 &
+  Im_with_Wmn_in_g1 > Im_with_Wmn_in_g2")
+```
+
+By running `print(BF6_cor)`, the output shows that the one-sided hypothesis received a posterior probability of 0.991 and the alternative received a posterior probability of .009 (assuming equal prior probabilities).
+
+
+### Univariate/Multivariate multiple regression
+
+For a univariate regression model, by default an exhaustive test is
+executed of whether an effect is zero, negative, or postive.
+
+``` r
+lm1 <- lm(Superficial ~ Face + Vehicle, data = fmri)
+BF1 <- BF(lm1)
+print(BF1)
+```
+
+Hypotheses can be tested with equality and/or order constraints on the
+effects of interest. If prefered the complement hypothesis can be
+omitted using the `complement`
+argument
+
+``` r
+BF2 <- BF(lm1, hypothesis = "Vehicle > 0 & Face < 0; Vehicle = Face = 0",
+          complement = FALSE)
+print(BF2)
+```
+
+In a multivariate regression model hypotheses can be tested on the
+effects on the same dependent variable, and on effects across different
+dependent variables. The name of an effect is constructed as the name of
+the predictor variable and the dependent variable separated by `_on_`.
+Testing hypotheses with both constraints within a dependent variable and
+across dependent variables makes use of a Monte Carlo estimate which may
+take a few seconds.
+
+``` r
+lm2 <- lm(cbind(Superficial, Middle, Deep) ~ Face + Vehicle,
+              data = fmri)
+constraint2 <- "Face_on_Deep = Face_on_Superficial = Face_on_Middle < 0 <
+     Vehicle_on_Deep = Vehicle_on_Superficial = Vehicle_on_Middle;
+     Face_on_Deep < Face_on_Superficial = Face_on_Middle < 0 < Vehicle_on_Deep =
+     Vehicle_on_Superficial = Vehicle_on_Middle"
+set.seed(123)
+BF3 <- BF(lm2, hypothesis = constraint2)
+summary(BF3)
+```
+
+### Running `BF` on a named vector
+
+The input for the `BF` function can also be a named vector containing
+the estimates of the parameters of interest. In this case the error
+covariance matrix of the estimates is also needed via the `Sigma`
+argument, as well as the sample size that was used for obtaining the
+estimates via the `n` argument. Bayes factors are then computed using
+Gaussian approximations of the likelihood (and posterior), similar as in
+classical Wald test.
+
+We illustrate this for a Poisson regression
+model
+
+``` r
+poisson1 <- glm(formula = breaks ~ wool + tension, data = datasets::warpbreaks,
+             family = poisson)
+```
+
+The estimates, the error covariance matrix, and the sample size are
+extracted from the fitted model
+
+``` r
+estimates <- poisson1$coefficients
+covmatrix <- vcov(poisson1)
+samplesize <- nobs(poisson1)
+```
+
+Constrained hypotheses on the parameters `names(estimates)` can then be
+tested as follows
+
+``` r
+BF1 <- BF(estimates, Sigma = covmatrix, n = samplesize, hypothesis = 
+  "woolB > tensionM > tensionH; woolB = tensionM = tensionH")
+```
+
+Note that the same hypothesis test would be executed when calling
+
+``` r
+BF2 <- BF(poisson1, hypothesis = "woolB > tensionM > tensionH;
+          woolB = tensionM = tensionH")
+```
+
+because the same Bayes factor is used when running `BF` on an object of
+class `glm` (see `Method: Bayes factor using Gaussian approximations`
+when calling `print(BF1)` and `print(BF2)`).
+
+
+
+
+

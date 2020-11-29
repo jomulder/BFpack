@@ -4,7 +4,9 @@
 \name{fmri}
 \alias{fmri}
 \title{fMRI data}
-\format{A data.frame with 13 rows and 6 columns.}
+\format{
+A data.frame with 13 rows and 6 columns.
+}
 \usage{
 data(fmri)
 }

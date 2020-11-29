@@ -4,7 +4,9 @@
 \name{attention}
 \alias{attention}
 \title{Multiple Sources of Attentional Dysfunction in Adults With Tourette's Syndrome}
-\format{A data.frame with 51 rows and 2 columns.}
+\format{
+A data.frame with 51 rows and 2 columns.
+}
 \source{
 \href{https://doi.org/10.1037/0894-4105.9.2.157}{
 DOI:10.1037/0894-4105.9.2.157}

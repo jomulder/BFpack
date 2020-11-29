@@ -19,6 +19,7 @@ BF.htest <-
 BF.t_test <- function(x,
                       hypothesis = NULL,
                       prior = NULL,
+                      complement = TRUE,
                       ...){
 
   numpop <- length(x$estimate)
@@ -61,7 +62,7 @@ BF.t_test <- function(x,
       y1 <- sd1*y1/sd(y1) + xbar
       lm1 <- lm(y1 ~ 1)
       names(lm1$coefficients) <- "mu"
-      BFlm1 <- BF(lm1,hypothesis,prior=prior)
+      BFlm1 <- BF(lm1,hypothesis,prior=prior,complement=complement)
       BFtu_confirmatory <- BFlm1$BFtu_confirmatory
       PHP_confirmatory <- BFlm1$PHP_confirmatory
       BFmatrix_confirmatory <- BFlm1$BFmatrix_confirmatory
@@ -87,7 +88,7 @@ BF.t_test <- function(x,
       transx1y1 <- matx1y1%*%solve(T1)
       df1 <- data.frame(out=out,difference=transx1y1[,1],dummy=transx1y1[,2])
       lm1 <- lm(out ~ -1 + difference + dummy,df1)
-      BFlm1 <- BF(lm1,hypothesis=hypothesis,prior=prior)
+      BFlm1 <- BF(lm1,hypothesis=hypothesis,prior=prior,complement=complement)
 
       BFtu_exploratory <- t(as.matrix(BFlm1$BFtu_exploratory[1,]))
       PHP_exploratory <- t(as.matrix(BFlm1$PHP_exploratory[1,]))
@@ -164,20 +165,22 @@ BF.t_test <- function(x,
         row.names(relfit) <- row.names(relcomp) <- parse_hyp$original_hypothesis
         colnames(relfit) <- c("f=","f>")
         colnames(relcomp) <- c("c=","c>")
-        #add complement to analysis
-        welk <- (relcomp==1)[,2]==F
-        if(sum((relcomp==1)[,2])>0){ #then there are only order hypotheses
-          relcomp_c <- 1-sum(exp(relcomp[welk,2]))
-          if(relcomp_c!=0){ # then add complement
-            relcomp <- rbind(relcomp,c(0,log(relcomp_c)))
-            relfit_c <- 1-sum(exp(relfit[welk,2]))
-            relfit <- rbind(relfit,c(0,log(relfit_c)))
-            row.names(relfit) <- row.names(relcomp) <- c(parse_hyp$original_hypothesis,"complement")
+        if(complement == TRUE){
+          #add complement to analysis
+          welk <- (relcomp==1)[,2]==F
+          if(sum((relcomp==1)[,2])>0){ #then there are only order hypotheses
+            relcomp_c <- 1-sum(exp(relcomp[welk,2]))
+            if(relcomp_c!=0){ # then add complement
+              relcomp <- rbind(relcomp,c(0,log(relcomp_c)))
+              relfit_c <- 1-sum(exp(relfit[welk,2]))
+              relfit <- rbind(relfit,c(0,log(relfit_c)))
+              row.names(relfit) <- row.names(relcomp) <- c(parse_hyp$original_hypothesis,"complement")
+            }
+          }else{ #no order constraints
+            relcomp <- rbind(relcomp,c(0,0))
+            relfit <- rbind(relfit,c(0,0))
+            row.names(relcomp) <- row.names(relfit) <- c(parse_hyp$original_hypothesis,"complement")
           }
-        }else{ #no order constraints
-          relcomp <- rbind(relcomp,c(0,0))
-          relfit <- rbind(relfit,c(0,0))
-          row.names(relcomp) <- row.names(relfit) <- c(parse_hyp$original_hypothesis,"complement")
         }
         relfit <- exp(relfit)
         relcomp <- exp(relcomp)
@@ -205,7 +208,7 @@ BF.t_test <- function(x,
                          relative_fit[,2]/relative_complexity[,2],apply(relative_fit,1,prod)/
                            apply(relative_complexity,1,prod),PHP_confirmatory)
         row.names(BFtable) <- names(BFtu_confirmatory)
-        colnames(BFtable) <- c("comp_E","comp_O","fit_E","fit_O","BF_E","BF_O","BF","PHP")
+        colnames(BFtable) <- c("complex=","complex>","fit=","fit>","BF=","BF>","BF","PHP")
         hypotheses <- row.names(relative_complexity)
       }
     }
@@ -234,7 +237,6 @@ BF.t_test <- function(x,
   class(BFlm_out) <- "BF"
   return(BFlm_out)
 }
-
 
 
 
