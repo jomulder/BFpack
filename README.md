@@ -275,5 +275,5 @@ issue on GitHub, or sending a pull request with proposed features.
   - File a GitHub issue [here](https://github.com/jomulder/BFpack)
   - Make a pull request [here](https://github.com/jomulder/BFpack/pulls)
 
-By participating in this project, you agree to abide by the [Contributor
-Code of Conduct v2.0](https://github.com/jomulder/BFpack/blob/master/code_of_conduct.md).
+By participating in this project, you agree to abide by the Contributor
+Code of Conduct v2.0.
