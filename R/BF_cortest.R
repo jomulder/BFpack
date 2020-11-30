@@ -231,7 +231,7 @@ FisherZ <- function(r){.5*log((1+r)/(1-r))}
 #' @export
 BF.cor_test <- function(x,
                         hypothesis = NULL,
-                        prior = NULL,
+                        prior.hyp = NULL,
                         complement = TRUE,
                         ...){
 
@@ -321,14 +321,14 @@ BF.cor_test <- function(x,
     # the BF for the complement hypothesis vs Hu needs to be computed.
     BFtu_confirmatory <- c(apply(relfit / relcomp, 1, prod))
     # Check input of prior probabilies
-    if(is.null(prior)){
+    if(is.null(prior.hyp)){
       priorprobs <- rep(1/length(BFtu_confirmatory),length(BFtu_confirmatory))
     }else{
-      if(!is.numeric(prior) || length(prior)!=length(BFtu_confirmatory)){
-        warning(paste0("Argument 'prior' should be numeric and of length ",as.character(length(BFtu_confirmatory)),". Equal prior probabilities are used."))
+      if(!is.numeric(prior.hyp) || length(prior.hyp)!=length(BFtu_confirmatory)){
+        warning(paste0("Argument 'prior.hyp' should be numeric and of length ",as.character(length(BFtu_confirmatory)),". Equal prior probabilities are used."))
         priorprobs <- rep(1/length(BFtu_confirmatory),length(BFtu_confirmatory))
       }else{
-        priorprobs <- prior
+        priorprobs <- prior.hyp
       }
     }
     names(priorprobs) <- names(BFtu_confirmatory)
@@ -358,7 +358,7 @@ BF.cor_test <- function(x,
     PHP_confirmatory=PHP_confirmatory,
     BFmatrix_confirmatory=BFmatrix_confirmatory,
     BFtable_confirmatory=BFtable,
-    prior=priorprobs,
+    prior.hyp=priorprobs,
     hypotheses=hypotheses,
     estimates=postestimates,
     model=x,

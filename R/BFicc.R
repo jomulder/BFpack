@@ -8,7 +8,7 @@
 #' @export
 BF.lmerMod <- function(x,
                            hypothesis = NULL,
-                           prior = NULL,
+                           prior.hyp = NULL,
                            complement = TRUE,
                            ...){
 
@@ -291,14 +291,14 @@ BF.lmerMod <- function(x,
     BFmatrix_confirmatory_icc <- round(exp(logBFmatrix),3)
     BFta_confirmatory_icc <- exp(output_marglike_icc[,5] - max(output_marglike_icc[,5]))
     # Change prior probs in case of default setting
-    if(is.null(prior)){
+    if(is.null(prior.hyp)){
       priorprobs <- rep(1/length(BFtu_confirmatory_icc),length(BFtu_confirmatory_icc))
     }else{
-      if(!is.numeric(prior) || length(prior)!=length(BFtu_confirmatory_icc)){
-        warning(paste0("Argument 'prior' should be numeric and of length ",as.character(length(BFtu_confirmatory_icc)),". Equal prior probabilities are used."))
+      if(!is.numeric(prior.hyp) || length(prior.hyp)!=length(BFtu_confirmatory_icc)){
+        warning(paste0("Argument 'prior.hyp' should be numeric and of length ",as.character(length(BFtu_confirmatory_icc)),". Equal prior probabilities are used."))
         priorprobs <- rep(1/length(BFtu_confirmatory_icc),length(BFtu_confirmatory_icc))
       }else{
-        priorprobs <- prior
+        priorprobs <- prior.hyp
       }
     }
     PHP_confirmatory_icc <- priorprobs*BFta_confirmatory_icc / sum(priorprobs*BFta_confirmatory_icc)
@@ -319,7 +319,7 @@ BF.lmerMod <- function(x,
     PHP_confirmatory=PHP_confirmatory_icc,
     BFmatrix_confirmatory=BFmatrix_confirmatory_icc,
     BFtable_confirmatory=BFtable,
-    prior=priorprobs,
+    prior.hyp=priorprobs,
     hypotheses=hypotheses,
     estimates=postestimates,
     model=x,

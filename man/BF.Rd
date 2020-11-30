@@ -5,7 +5,7 @@
 \title{Bayes factors for Bayesian exploratory and confirmatory hypothesis
 testing}
 \usage{
-BF(x, hypothesis, prior, complement, ...)
+BF(x, hypothesis, prior.hyp, complement, ...)
 }
 \arguments{
 \item{x}{An R object containing the outcome of a statistical analysis.
@@ -19,7 +19,7 @@ See README for elaborations.}
 evaluate. The default is NULL, which will result in standard exploratory testing
 under the model \code{x}.}
 
-\item{prior}{A vector specifying the prior probabilities of the hypotheses.
+\item{prior.hyp}{A vector specifying the prior probabilities of the hypotheses.
 The default is NULL which will specify equal prior probabilities.}
 
 \item{complement}{a logical specifying whether the complement should be added

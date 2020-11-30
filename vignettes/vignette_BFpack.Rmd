@@ -17,7 +17,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Introduction
 
-`BFpack` contains a collection of functions for Bayesian hypothesis testing using Bayes factors and posterior probabilities in R. The main function `BF` needs a fitted model `x` as input argument. Depending on the class of the fitted model, a standard hypothesis test is executed by default. For example, if `x` is a fitted regression model of class `lm` then posterior probabilities are computed of whether each separate coefficient is zero, negative, or positive (assuming equal prior probabilities). If one has specific hypotheses with equality and/or order constraints on the parameters under the fitted model `x` then these can be formulated using the `hypothesis` argument (a character string), possibly together prior probabilities for the hypotheses via the `prior` argument (default all hypotheses are equally likely a priori), and the `complement` argument which is a logical stating whether the complement hypotheses should be included in the case (`TRUE` by default).
+`BFpack` contains a collection of functions for Bayesian hypothesis testing using Bayes factors and posterior probabilities in R. The main function `BF` needs a fitted model `x` as input argument. Depending on the class of the fitted model, a standard hypothesis test is executed by default. For example, if `x` is a fitted regression model of class `lm` then posterior probabilities are computed of whether each separate coefficient is zero, negative, or positive (assuming equal prior probabilities). If one has specific hypotheses with equality and/or order constraints on the parameters under the fitted model `x` then these can be formulated using the `hypothesis` argument (a character string), possibly together prior probabilities for the hypotheses via the `prior.hyp` argument (default all hypotheses are equally likely a priori), and the `complement` argument which is a logical stating whether the complement hypotheses should be included in the case (`TRUE` by default).
 
 Alternatively, when the model of interest is not of a class that is currently supported, `x` can also be a named numeric vector containing the estimates of the model parameters of interest, together with the error covariance matrix in the argument `Sigma`, and the sample size used to obtain the estimates, to perform an approximate Bayes factor test using large sample theory.
 
@@ -32,7 +32,7 @@ Mulder, J., van Lissa, C., Gu, X., Olsson-Collentine, A., Boeing-Messing, F., Wi
 
 ## Usage
 
-`BF(x, hypothesis, prior = NULL, complement = TRUE, ...)`
+`BF(x, hypothesis, prior.hyp = NULL, complement = TRUE, ...)`
 
 
 ## Arguments
@@ -56,7 +56,7 @@ Mulder, J., van Lissa, C., Gu, X., Olsson-Collentine, A., Boeing-Messing, F., Wi
   + By default set to hypothesis = NULL (for only exploratory testing).
   + The parameter names are based on the names of the estimated key parameters. An overview of the key parameters is given using the function `get_estimates`, e.g., `get_estimates(model1),` where `model1` is a fitted model object.
   + Separate constraints within a hypothesis are separated with an ampersand `&`. Hypotheses are separated using a semi-colon `;`. For example `hypothesis = "weight > height & height > 0; weight = height = 0"` implies that the first hypothesis assumes that the parameter `weight` is larger than the parameter `height` and that the parameter `height` is positive, and the second hypothesis assumes that the two parameters are equal to zero. Note that the first hypothesis could equivalently have been written as `weight > height > 0`.
-* `prior`, a numeric vector specifying the prior probabilities of the hypotheses. The default setting is `prior = NULL` which sets equal prior probabilities.
+* `prior.hyp`, a numeric vector specifying the prior probabilities of the hypotheses of the `hypothesis` argument. The default setting is `prior.hyp = NULL` which sets equal prior probabilities.
 * `complement`, a logical value which specified if a complement hypothesis is included in the tested hypotheses specified under `hypothesis`. The default setting is `TRUE`. The complement hypothesis covers the remaining parameters space that is not covered by the constrained hypotheses. For example, if an equality hypothesis and an order hypothesis are formulated, say, `hypothesis = "weight = height = length; weight > height > length"`, the complement hypothesis covers the remaining subspace where neither `"weight = height = length"` holds, nor `"weight > height > length"` holds.
 
 

@@ -6,7 +6,7 @@
 BF.htest <-
   function(x,
            hypothesis = NULL,
-           prior = NULL,
+           prior.hyp = NULL,
            ...) {
     stop("Please use the function t_test() from the 'bain' package for a t-test or bartlett_test() from the 'BFpack' package for a test on group variances.")
   }
@@ -18,7 +18,7 @@ BF.htest <-
 #' @export
 BF.t_test <- function(x,
                       hypothesis = NULL,
-                      prior = NULL,
+                      prior.hyp = NULL,
                       complement = TRUE,
                       ...){
 
@@ -62,7 +62,7 @@ BF.t_test <- function(x,
       y1 <- sd1*y1/sd(y1) + xbar
       lm1 <- lm(y1 ~ 1)
       names(lm1$coefficients) <- "mu"
-      BFlm1 <- BF(lm1,hypothesis,prior=prior,complement=complement)
+      BFlm1 <- BF(lm1,hypothesis,prior.hyp=prior.hyp,complement=complement)
       BFtu_confirmatory <- BFlm1$BFtu_confirmatory
       PHP_confirmatory <- BFlm1$PHP_confirmatory
       BFmatrix_confirmatory <- BFlm1$BFmatrix_confirmatory
@@ -88,7 +88,7 @@ BF.t_test <- function(x,
       transx1y1 <- matx1y1%*%solve(T1)
       df1 <- data.frame(out=out,difference=transx1y1[,1],dummy=transx1y1[,2])
       lm1 <- lm(out ~ -1 + difference + dummy,df1)
-      BFlm1 <- BF(lm1,hypothesis=hypothesis,prior=prior,complement=complement)
+      BFlm1 <- BF(lm1,hypothesis=hypothesis,prior.hyp=prior.hyp,complement=complement)
 
       BFtu_exploratory <- t(as.matrix(BFlm1$BFtu_exploratory[1,]))
       PHP_exploratory <- t(as.matrix(BFlm1$PHP_exploratory[1,]))
@@ -185,14 +185,14 @@ BF.t_test <- function(x,
         relfit <- exp(relfit)
         relcomp <- exp(relcomp)
         # Check input of prior probabilies
-        if(is.null(prior)){
+        if(is.null(prior.hyp)){
           priorprobs <- rep(1/nrow(relcomp),nrow(relcomp))
         }else{
-          if(!is.numeric(prior) || length(prior)!=nrow(relcomp)){
-            warning(paste0("Argument 'prior' should be numeric and of length ",as.character(nrow(relcomp)),". Equal prior probabilities are used."))
+          if(!is.numeric(prior.hyp) || length(prior.hyp)!=nrow(relcomp)){
+            warning(paste0("Argument 'prior.hyp' should be numeric and of length ",as.character(nrow(relcomp)),". Equal prior probabilities are used."))
             priorprobs <- rep(1/nrow(relcomp),nrow(relcomp))
           }else{
-            priorprobs <- prior
+            priorprobs <- prior.hyp
           }
         }
         #compute Bayes factors and posterior probabilities for confirmatory test
@@ -226,7 +226,7 @@ BF.t_test <- function(x,
     PHP_confirmatory=PHP_confirmatory,
     BFmatrix_confirmatory=BFmatrix_confirmatory,
     BFtable_confirmatory=BFtable,
-    prior=priorprobs,
+    prior.hyp=priorprobs,
     hypotheses=hypotheses,
     estimates=x$coefficients,
     model=x,

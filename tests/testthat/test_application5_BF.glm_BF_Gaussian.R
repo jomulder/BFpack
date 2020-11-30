@@ -16,7 +16,7 @@ test_that("glm two hypotheses correctly evaluated via confirmatory test", {
 #check equal prior probabilities
 test_that("glm use correct prior probabilities", {
 expect_true(
-  all.equal(unname(BF_glm$prior),rep(1,3)/3)
+  all.equal(unname(BF_glm$prior.hyp),rep(1,3)/3)
 )})
 
 #check that complement is not added the complete parameter space is covered by hypotheses

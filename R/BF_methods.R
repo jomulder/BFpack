@@ -17,7 +17,7 @@
 #' @param hypothesis A character string containing the informative hypotheses to
 #' evaluate. The default is NULL, which will result in standard exploratory testing
 #' under the model \code{x}.
-#' @param prior A vector specifying the prior probabilities of the hypotheses.
+#' @param prior.hyp A vector specifying the prior probabilities of the hypotheses.
 #' The default is NULL which will specify equal prior probabilities.
 #' @param complement a logical specifying whether the complement should be added
 #' to the tested hypothesis under \code{hypothesis}.
@@ -123,6 +123,6 @@
 #' @export
 #' @useDynLib BFpack, .registration = TRUE
 #'
-BF <- function(x, hypothesis, prior, complement, ...) {
+BF <- function(x, hypothesis, prior.hyp, complement, ...) {
   UseMethod("BF", x)
 }

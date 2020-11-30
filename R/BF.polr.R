@@ -5,7 +5,8 @@
 #' @export
 BF.polr <- function(x,
                        hypothesis = NULL,
-                       prior = NULL,
+                       prior.hyp = NULL,
+                       complement = TRUE,
                        ...){
 
   #Extract summary statistics
@@ -14,6 +15,9 @@ BF.polr <- function(x,
   Args$x <- get_est$estimate
   Args$Sigma <- get_est$Sigma[[1]]
   Args$n <- nrow(x$fitted.values)
+  Args$hypothesis <- hypothesis
+  Args$prior.hyp <- prior.hyp
+  Args$complement <- complement
   out <- do.call(BF, Args)
   out$model <- x
   out$call <- match.call()

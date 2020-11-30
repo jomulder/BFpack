@@ -5,7 +5,7 @@
 #' @export
 BF.coxph <- function(x,
                       hypothesis = NULL,
-                      prior = NULL,
+                      prior.hyp = NULL,
                       complement = TRUE,
                       ...){
 
@@ -16,7 +16,7 @@ BF.coxph <- function(x,
   Args$Sigma <- get_est$Sigma[[1]]
   Args$n <- x$nevent
   Args$hypothesis <- hypothesis
-  Args$prior <- prior
+  Args$prior.hyp <- prior.hyp
   Args$complement <- complement
   out <- do.call(BF, Args)
   out$model <- x

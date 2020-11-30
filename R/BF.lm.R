@@ -7,7 +7,7 @@
 #' @export
 BF.lm <- function(x,
                   hypothesis = NULL,
-                  prior = NULL,
+                  prior.hyp = NULL,
                   complement = TRUE,
                   ...){
 
@@ -430,14 +430,14 @@ BF.lm <- function(x,
       # the BF for the complement hypothesis vs Hu needs to be computed.
       BFtu_confirmatory <- c(apply(relfit / relcomp, 1, prod))
       # Check input of prior probabilies
-      if(is.null(prior)){
+      if(is.null(prior.hyp)){
         priorprobs <- rep(1/length(BFtu_confirmatory),length(BFtu_confirmatory))
       }else{
-        if(!is.numeric(prior) || length(prior)!=length(BFtu_confirmatory)){
-          warning(paste0("Argument 'prior' should be numeric and of length ",as.character(length(BFtu_confirmatory)),". Equal prior probabilities are used."))
+        if(!is.numeric(prior.hyp) || length(prior.hyp)!=length(BFtu_confirmatory)){
+          warning(paste0("Argument 'prior.hyp' should be numeric and of length ",as.character(length(BFtu_confirmatory)),". Equal prior probabilities are used."))
           priorprobs <- rep(1/length(BFtu_confirmatory),length(BFtu_confirmatory))
         }else{
-          priorprobs <- prior
+          priorprobs <- prior.hyp
         }
       }
 
@@ -493,14 +493,14 @@ BF.lm <- function(x,
       # the BF for the complement hypothesis vs Hu needs to be computed.
       BFtu_confirmatory <- c(apply(relfit / relcomp, 1, prod))
       # Check input of prior probabilies
-      if(is.null(prior)){
+      if(is.null(prior.hyp)){
         priorprobs <- rep(1/length(BFtu_confirmatory),length(BFtu_confirmatory))
       }else{
-        if(!is.numeric(prior) || length(prior)!=length(BFtu_confirmatory)){
-          warning(paste0("Argument 'prior' should be numeric and of length ",as.character(length(BFtu_confirmatory)),". Equal prior probabilities are used."))
+        if(!is.numeric(prior.hyp) || length(prior.hyp)!=length(BFtu_confirmatory)){
+          warning(paste0("Argument 'prior.hyp' should be numeric and of length ",as.character(length(BFtu_confirmatory)),". Equal prior probabilities are used."))
           priorprobs <- rep(1/length(BFtu_confirmatory),length(BFtu_confirmatory))
         }else{
-          priorprobs <- prior
+          priorprobs <- prior.hyp
         }
       }
       names(priorprobs) <- names(BFtu_confirmatory)

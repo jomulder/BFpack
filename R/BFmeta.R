@@ -9,7 +9,7 @@
 #' @export
 BF.rma.uni <- function(x,
                        hypothesis = NULL,
-                       prior = NULL,
+                       prior.hyp = NULL,
                        complement = TRUE,
                        ...){
   # x should be of class rma.uni
@@ -121,7 +121,7 @@ BF.rma.uni <- function(x,
     PHP_confirmatory=PHP_confirmatory,
     BFmatrix_confirmatory=BFmatrix_confirmatory,
     BFtable_confirmatory=BFtable,
-    prior=priorprobs,
+    prior.hyp=priorprobs,
     hypotheses=hypotheses,
     estimates=uncestimates,
     model=x,
