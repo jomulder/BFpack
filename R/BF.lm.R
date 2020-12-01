@@ -78,6 +78,12 @@ BF.lm <- function(x,
     Nj <- c(table(dvec))
     #set minimal fractions for each group
     bj <- ((P+K)/J)/Nj
+    if(max(bj)>1){#then too few observations in certain groups, then use one single minimal fraction
+      bj <- rep((P+K)/sum(Nj),length=J)
+      if(bj[1]>1){
+        stop("Not enough observations to compute a fractional Bayes factor.")
+      }
+    }
   }
 
   #Compute sufficient statistics for all groups
@@ -91,14 +97,17 @@ BF.lm <- function(x,
   })
   tXYj <- lapply(1:J,function(j){
     if(Nj[j]==1){
-      as.matrix(Xmat[dvec==j,]*Ymat[dvec==j,])
+      as.matrix(Xmat[dvec==j,])%*%t(Ymat[dvec==j,])
     } else {t(Xmat[dvec==j,])%*%Ymat[dvec==j,]}
   })
   tXYj_b <- lapply(1:J,function(j){
     tXYj[[j]]*bj[j]
   })
   tYYj <- lapply(1:J,function(j){
-    t(Ymat[dvec==j,])%*%Ymat[dvec==j,]
+    if(Nj[j]==1){
+      Ymat[dvec==j,]%*%t(Ymat[dvec==j,])
+    }else t(Ymat[dvec==j,])%*%Ymat[dvec==j,]
+
   })
   tYYj_b <- lapply(1:J,function(j){
     tYYj[[j]]*bj[j]
