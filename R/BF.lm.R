@@ -22,7 +22,7 @@ BF.lm <- function(x,
   dummyX <- rep(F,K)
   names(dummyX) <- row.names(x$coefficients)
 
-  bayesfactor <- "generalized adjusted fractional Bayes factor for coefficients"
+  bayesfactor <- "generalized adjusted fractional Bayes factors"
   testedparameter <- "regression coefficients"
 
   Xmat <- model.matrix(x)
@@ -45,21 +45,17 @@ BF.lm <- function(x,
     }))
     intercept <- attr(x$terms,"intercept")==1
     names_coef <- row.names(x$coefficients)
-    # dummyX indicate which columns contain dummy group covariates
+    # dummyX1 checks which columns of the design matrix X are dummy's for a
+    # main effect or interaction effect
     dummyX1 <- apply(matrix(unlist(lapply(1:length(mains),function(faclev){
       unlist(lapply(1:length(names_coef),function(cf){
         grepl(mains[faclev],names_coef[cf],fixed=TRUE)
       }))
     })),nrow=length(names_coef)),1,max)==1
-    if(is.matrix(apply(Xmat,2,table))){
-      if(nrow(apply(Xmat,2,table))){
-        dummyX2 <- rep(T,ncol(Xmat))
-      }else{
-        dummyX2 <- rep(F,ncol(Xmat))
-      }
-    }else{
-      dummyX2 <- unlist(lapply(apply(Xmat,2,table),length))==2
-    }
+    # dummyX2 checks which columns of the design matrix have two possible outcomes,
+    # which indicates a dummy variable
+    dummyX2 <- unlist(lapply(apply(Xmat,2,table),length))==2
+    # dummyX indicate which columns contain dummy group covariates
     dummyX <- dummyX1 * dummyX2 == 1
     #number of groups on variations of dummy combinations
     groupcode <- as.matrix(unique(Xmat[,dummyX]))
@@ -226,7 +222,7 @@ BF.lm <- function(x,
       row.names(BFtu_main) <- names_main
       colnames(BFtu_main) <- c("BFtu","BFuu")
       PHP_main <- BFtu_main / apply(BFtu_main,1,sum)
-      colnames(PHP_main) <- c("Pr(H0)","Pr(H1)")
+      colnames(PHP_main) <- c("Pr(no effect)","Pr(an effect)")
     }else{ PHP_main <- BFtu_main <- NULL}
     #check whether interaction effects are present
     prednames <- names(attr(x$term,"dataClasses"))
@@ -282,7 +278,7 @@ BF.lm <- function(x,
       row.names(BFtu_interaction) <- names_interaction
       colnames(BFtu_interaction) <- c("BFtu","BFuu")
       PHP_interaction <- BFtu_interaction / apply(BFtu_interaction,1,sum)
-      colnames(PHP_interaction) <- c("Pr(H0)","Pr(H1)")
+      colnames(PHP_interaction) <- c("Pr(no effect)","Pr(an effect)")
     }else{ PHP_interaction <- BFtu_interaction <- NULL}
     BFtu_exploratory <- rbind(BFtu_main,BFtu_interaction)
     PHP_exploratory <- rbind(PHP_main,PHP_interaction)
