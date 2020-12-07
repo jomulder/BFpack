@@ -305,7 +305,7 @@ BF.lmerMod <- function(x,
     BFtable <- cbind(relcomp,relfit,BF_E,relfit[,2]/relcomp[,2],
                      BF_E*relfit[,2]/relcomp[,2],PHP_confirmatory_icc)
     row.names(BFtable) <- names(PHP_confirmatory_icc)
-    colnames(BFtable) <- c("comp_E","comp_O","fit_E","fit_O","BF_E","BF_O","BF","PHP")
+    colnames(BFtable) <- c("complex=","complex>","fit=","fit>","BF=","BF>","BF","PHP")
     hypotheses <- names(BFta_confirmatory_icc)
 
   }else{
