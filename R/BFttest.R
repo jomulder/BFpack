@@ -230,7 +230,7 @@ BF.t_test <- function(x,
     hypotheses=hypotheses,
     estimates=x$coefficients,
     model=x,
-    bayesfactor="generalized adjusted fractional Bayes factor",
+    bayesfactor="generalized adjusted fractional Bayes factors",
     parameter="means",
     call=match.call())
 

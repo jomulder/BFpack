@@ -5,44 +5,24 @@
 \alias{relevents}
 \title{A sequence of innovation-related e-mail messages}
 \format{
-dataframe (227 rows, 3 columns)
+dataframe (247 rows, 3 columns)
 
 \tabular{lll}{
-   \strong{relevents$time} \tab \code{numeric} \tab Time of the e-mail message, 
+   \strong{relevents$time} \tab \code{numeric} \tab Time of the e-mail message,
    in seconds since onset of the observation \cr
    \strong{relevents$sender} \tab \code{integer} \tab ID of the sender, corresponding to
    the employee IDs in the actors dataframe \cr
    \strong{relevents$receiver} \tab \code{integer} \tab ID of the receiver \cr
 }
 }
-\source{
-\href{https://doi.org/10.1016/j.chaos.2018.11.027}{
-doi:10.1016/j.chaos.2018.11.027}
-}
 \usage{
 data(relevents)
 }
 \description{
-A time-ordered sequence of e-mail messages between employees of a 
-consultancy firm and information on the actors in the relational event 
-sequence. The data is orignally analyzed by Mulder & Leenders (2019), to 
-find drivers of innovation-related e-mail messages exchanged between  
-employees of a large consultancy firm. Originally, the data consist of 2081
-e-mail messages exchanged between 70 employees over the course o fa year. 
-The current data is a sample of a simulated data set, based on estimates of 
-the model parameters in Mulder & Leenders (2019).
+A time-ordered sequence of 247 communication messages between 25 actors.
 }
 \details{
-The related data files actors', 'same_building', 'same_division' and 
-'same_hierarchy' contain information on the actors and three event statistics 
-respectively.
-}
-\references{
-Mulder, J., & Leenders, R. T. (2019). Modeling the evolution of 
-interaction behavior in social networks: A dynamic relational event approach 
-for real-time analysis. Chaos, Solitons and Fractal Nonlinear, 119, 73-85,
-https://doi.org/10.1016/j.chaos.2018.11.027
-\href{https://doi.org/10.1016/j.chaos.2018.11.027}{
-doi:10.1016/j.chaos.2018.11.027}
+The related data files 'actors', 'same_location', 'same_culture' contain information
+on the actors and three event statistics respectively.
 }
 \keyword{datasets}

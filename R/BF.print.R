@@ -17,7 +17,7 @@ print.BF <- function(x,
   if(is.null(x$BFtu_confirmatory)){
 
     cat("Bayesian hypothesis test","\n", sep = "")
-    cat("Type: Exploratory","\n", sep = "")
+    cat("Type: exploratory","\n", sep = "")
     cat("Object: ",class(x$model)[1],"\n", sep = "")
     cat("Parameter: ",x$parameter,"\n", sep = "")
     cat("Method: ",x$bayesfactor,"\n\n", sep = "")
@@ -30,7 +30,7 @@ print.BF <- function(x,
   }else{
 
     cat("Bayesian hypothesis test","\n", sep = "")
-    cat("Type: Confirmatory","\n", sep = "")
+    cat("Type: confirmatory","\n", sep = "")
     cat("Object: ",class(x$model)[1],"\n", sep = "")
     cat("Parameter: ",x$parameter,"\n", sep = "")
     cat("Method: ",x$bayesfactor,"\n\n", sep = "")

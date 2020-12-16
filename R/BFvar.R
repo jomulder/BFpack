@@ -270,7 +270,7 @@ BF.bartlett_htest <- function(x,
     hypotheses=hypotheses,
     estimates=s2,
     model=x,
-    bayesfactor="generalized adjusted fractional Bayes factor",
+    bayesfactor="generalized adjusted fractional Bayes factors",
     parameter="group variances",
     call=match.call())
 

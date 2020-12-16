@@ -187,7 +187,7 @@ cor_test <- function(..., formula = NULL, iter = 5e3){
   colnames(postestimates_correlations) <- c("mean","median","2.5%","97.5%")
 
   cor_out <- list(meanF=meanN,covmF=covmN,correstimates=postestimates_correlations,
-                  corrdraws=corrdraws,corrnames=corrnames)
+                  corrdraws=corrdraws,corrnames=corrnames,variables=varnames)
   class(cor_out) <- "cor_test"
 
   return(cor_out)
@@ -235,7 +235,7 @@ BF.cor_test <- function(x,
                         complement = TRUE,
                         ...){
 
-  bayesfactor <- "Bayes factor based on joint uniform priors for correlations"
+  bayesfactor <- "Bayes factors based on joint uniform priors"
   testedparameter <- "correlation coefficients"
 
   P <- dim(x$corrdraws[[1]])[2]
