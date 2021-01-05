@@ -47,7 +47,7 @@ print.BF <- function(x,
     print(PHPmatrix)
 
     cat("\n")
-    cat("Evidence matrix:")
+    cat("Evidence matrix (Bayes factors):")
     cat("\n")
 
     BFmat <- round(x$BFmatrix_confirmatory,digits)

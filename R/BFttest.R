@@ -82,16 +82,20 @@ BF.t_test <- function(x,
       out1 <- (draw1 - mean(draw1))/sd(draw1)*sqrt(x$v[1])+x$estimate[1]
       draw2 <- rnorm(x$n[2])
       out2 <- (draw2 - mean(draw2))/sd(draw2)*sqrt(x$v[2])+x$estimate[2]
-      out <- c(out1,out2)
-      # lm1 <- lm(out ~ -1 + x1 + y1)
-      T1 <- matrix(c(1,1,-1,0),ncol=2)
-      transx1y1 <- matx1y1%*%solve(T1)
-      df1 <- data.frame(out=out,difference=transx1y1[,1],dummy=transx1y1[,2])
-      lm1 <- lm(out ~ -1 + difference + dummy,df1)
+      out <- c(out2,out1)
+      # perform the test via a lm object using a factor for the group indicator
+      # such that the name of the key variable (the difference between the means)
+      # is called 'difference'
+      df1 <- data.frame(out=out,differenc=factor(c(rep("a",x$n[2]),rep("e",x$n[1]))))
+      lm1 <- lm(out ~ differenc,df1)
       BFlm1 <- BF(lm1,hypothesis=hypothesis,prior.hyp=prior.hyp,complement=complement)
 
-      BFtu_exploratory <- t(as.matrix(BFlm1$BFtu_exploratory[1,]))
-      PHP_exploratory <- t(as.matrix(BFlm1$PHP_exploratory[1,]))
+      #
+      # CHECK IF IF IT x - y OR y - x. error in 2-sample test.
+      #
+
+      BFtu_exploratory <- t(as.matrix(BFlm1$BFtu_exploratory[2,]))
+      PHP_exploratory <- t(as.matrix(BFlm1$PHP_exploratory[2,]))
       row.names(BFtu_exploratory) <- row.names(PHP_exploratory) <- "difference"
 #
       if(!is.null(hypothesis)){
