@@ -91,9 +91,9 @@ Description: Implementation of various default Bayes factors
     generalized linear models, special cases of 
     linear mixed models, survival models, relational
     event models. Parameters that can be tested are
-    location parameters (e.g., regression coefficients),
+    location parameters (e.g., group means, regression coefficients),
     variances (e.g., group variances), and measures of 
-    association (e.g,. bivariate correlations).
+    association (e.g,. bivariate correlations), among others.
     The statistical underpinnings are
     described in 
     Mulder, Hoijtink, and Xin (2019) <arXiv:1904.00679>,
