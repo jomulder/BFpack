@@ -1,7 +1,6 @@
-# Version 0.3.1
-* New extension for BF for rma.uni object (metafor package) for Bayesian meta-analysis
-* BF for lmerMod object extended to unbalanced data
-* vignettes were added
+# Version 0.3.2
+* Important changes in the presentation of the output.
+* Version accepted for publication in Journal of Statistical Software.
 * Bugs fixes
 
 ## Test environments

@@ -25,10 +25,6 @@
 #' @keywords datasets
 #' @name sivan
 #' @usage data(sivan)
-#' @references Sivan, J., Curry, O. S., & Van Lissa, C. J. (2018). Excavating the Foundations: Cognitive Adaptations for Multiple Moral Domains. Evolutionary Psychological Science, 4(4), 408–419. https://doi.org/10.1007/s40806-018-0154-8
-#' \href{https://doi.org/10.1007/s40806-018-0154-8}{
-#' DOI:10.1007/s40806-018-0154-8}
-#' @source \href{https://doi.org/10.1007/s40806-018-0154-8}{
-#' DOI:10.1007/s40806-018-0154-8}
+#' @references Sivan, J., Curry, O. S., & Van Lissa, C. J. (2018). Excavating the Foundations: Cognitive Adaptations for Multiple Moral Domains. Evolutionary Psychological Science, 4(4), 408–419. doi:10.1007/s40806-018-0154-8
 #' @format A data.frame with 887 rows and 12 columns.
 NULL
