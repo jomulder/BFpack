@@ -161,7 +161,7 @@ BF.default <- function(x,
     estimates=postestimates,
     model=x,
     bayesfactor="adjusted fractional Bayes factors using Gaussian approximations",
-    parameter="general",
+    parameter="general parameters",
     call=match.call())
 
   class(BF_out) <- "BF"
