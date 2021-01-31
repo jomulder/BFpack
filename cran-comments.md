@@ -1,6 +1,7 @@
 # Version 0.3.2
 * Important changes in the presentation of the output.
 * Version accepted for publication in Journal of Statistical Software.
+* Updated vignettes
 * Bugs fixes
 
 ## Test environments

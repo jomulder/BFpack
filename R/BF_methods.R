@@ -13,7 +13,7 @@
 #' following objects can be processed: t_test(), bartlett_test(), lm(), aov(),
 #' manova(), cor_test(), lmer() (only for testing random intercep variances),
 #' glm(), coxph(), survreg(), polr(), zeroinfl(), rma(), and named vector objects.
-#' See README for elaborations.
+#' See vignettes for elaborations.
 #' @param hypothesis A character string containing the constrained (informative) hypotheses to
 #' evaluate in a confirmatory test. The default is NULL, which will result in standard exploratory testing
 #' under the model \code{x}.
@@ -21,6 +21,12 @@
 #' The default is NULL which will specify equal prior probabilities.
 #' @param complement a logical specifying whether the complement should be added
 #' to the tested hypothesis under \code{hypothesis}.
+#' @param Sigma An approximate posterior covariance matrix (e.g,. error covariance
+#' matrix) of the parameters of interest. This argument is only required when \code{x}
+#' is a named vector.
+#' @param n The (effective) sample size that was used to acquire the estimated in \code{x} and
+#' covariance matrix \code{Sigma}. This argument is only required when \code{x}
+#' is a named vector.
 #' @param ... Parameters passed to and from other functions.
 #' @return The output is an object of class \code{BF}. The object has elements:
 #' \itemize{
@@ -78,13 +84,14 @@
 #'
 #' For testing parameters from the results of t_test(), lm(), aov(),
 #' manova(), and bartlett_test(), hypothesis testing is done using
-#' adjusted fractional Bayes factors are computed.
+#' adjusted fractional Bayes factors are computed (using minimal fractions).
 #' For testing measures of association (e.g., correlations) via \code{cor_test()},
 #' Bayes factors are computed using joint uniform priors under the correlation
 #' matrices. For testing intraclass correlations (random intercept variances) via
 #' \code{lmer()}, Bayes factors are computed using uniform priors for the intraclass
-#' correlations. For all other tests, an approximate adjusted fractional Bayes factors
-#' are computed using Gaussian approximations, similar as a classical Wald test.
+#' correlations. For all other tests,  approximate adjusted fractional Bayes factors
+#' (with minimal fractions) are computed using Gaussian approximations, similar as
+#' a classical Wald test.
 #'
 #' @references Mulder, J., D.R. Williams, Gu, X., A. Tomarken,
 #' F. Böing-Messing, J.A.O.C. Olsson-Collentine, Marlyne Meyerink, J. Menke,
@@ -123,6 +130,20 @@
 #' BF2 <- BF(cor1, hypothesis = "Wmn_with_Im > Wmn_with_Del > 0;
 #'                               Wmn_with_Im = Wmn_with_Del = 0")
 #' summary(BF2)
+#'
+#' # EXAMPLE 5. Bayes factor testing on a named vector
+#' # A Poisson regression model is used to illustrate the computation
+#' # of Bayes factors with a named vector as input
+#' poisson1 <- glm(formula = breaks ~ wool + tension,
+#'   data = datasets::warpbreaks, family = poisson)
+#' # extract estimates, error covariance matrix, and sample size:
+#' estimates <- poisson1$coefficients
+#' covmatrix <- vcov(poisson1)
+#' samplesize <- nobs(poisson1)
+#' # compute Bayes factors on equal/order constrained hypotheses on coefficients
+#' BF1 <- BF(estimates, Sigma = covmatrix, n = samplesize, hypothesis =
+#' "woolB > tensionM > tensionH; woolB = tensionM = tensionH")
+#' summary(BF1)
 #' }
 #' \donttest{
 #' # EXAMPLE 1. One-sample t test
@@ -158,6 +179,21 @@
 #' BF2 <- BF(cor1, hypothesis = "Wmn_with_Im > Wmn_with_Del > 0;
 #'                               Wmn_with_Im = Wmn_with_Del = 0")
 #' summary(BF2)
+#'
+#' # EXAMPLE 5. Bayes factor testing on a named vector
+#' # We illustrate the computation of Bayes factors using a named vector
+#' # as input on a Poisson regression model
+#' poisson1 <- glm(formula = breaks ~ wool + tension,
+#'   data = datasets::warpbreaks, family = poisson)
+#' # extract estimates, error covariance matrix, and sample size,
+#' # from fitted object
+#' estimates <- poisson1$coefficients
+#' covmatrix <- vcov(poisson1)
+#' samplesize <- nobs(poisson1)
+#' # compute Bayes factors on equal/order constrained hypotheses on coefficients
+#' BF1 <- BF(estimates, Sigma = covmatrix, n = samplesize, hypothesis =
+#' "woolB > tensionM > tensionH; woolB = tensionM = tensionH")
+#' summary(BF1)
 #' }
 #' @rdname BF
 #' @export

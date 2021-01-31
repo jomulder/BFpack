@@ -49,8 +49,9 @@ Mulder, J., van Lissa, C., Gu, X., Olsson-Collentine, A., Boeing-Messing, F., Wi
   + `coxph` for survival analysis,
   + `survreg` for survival analysis,
   + `polr` for ordinal regression,
-  + `zeroinfl` for zero-inflated regression
-  + `rma` for meta-analysis.
+  + `zeroinfl` for zero-inflated regression,
+  + `rma` for meta-analysis,
+  + `x` can also be a named vector with estimates of the key parameters.
 
 * `hypothesis`, a character string specifying the hypotheses with equality and/or order constraints on the key parameters of interest.
   + By default set to hypothesis = NULL (for only exploratory testing).
