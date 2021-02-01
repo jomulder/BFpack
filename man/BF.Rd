@@ -13,8 +13,8 @@ An R object containing the outcome of a statistical analysis. Currently, the
 following objects can be processed: t_test(), bartlett_test(), lm(), aov(),
 manova(), cor_test(), lmer() (only for testing random intercep variances),
 glm(), coxph(), survreg(), polr(), zeroinfl(), rma(), or named vector objects.
-In the case \code{x} is a named vector, the arguments \code{Sigma}, and \code{n}
-are alse needed. See vignettes for elaborations.}
+In the case \code{x} is a named vector, the arguments \code{Sigma} and \code{n}
+are also needed. See vignettes for elaborations.}
 
 \item{hypothesis}{A character string containing the constrained (informative) hypotheses to
 evaluate in a confirmatory test. The default is NULL, which will result in standard exploratory testing
