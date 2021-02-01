@@ -5,15 +5,16 @@
 \title{Bayes factors for Bayesian exploratory and confirmatory hypothesis
 testing}
 \usage{
-BF(x, hypothesis, prior.hyp, complement, ...)
+BF(x, hypothesis, prior.hyp, complement, Sigma, n, ...)
 }
 \arguments{
 \item{x}{An R object containing the outcome of a statistical analysis.
 An R object containing the outcome of a statistical analysis. Currently, the
 following objects can be processed: t_test(), bartlett_test(), lm(), aov(),
 manova(), cor_test(), lmer() (only for testing random intercep variances),
-glm(), coxph(), survreg(), polr(), zeroinfl(), rma(), and named vector objects.
-See vignettes for elaborations.}
+glm(), coxph(), survreg(), polr(), zeroinfl(), rma(), or named vector objects.
+In the case \code{x} is a named vector, the arguments \code{Sigma}, and \code{n}
+are alse needed. See vignettes for elaborations.}
 
 \item{hypothesis}{A character string containing the constrained (informative) hypotheses to
 evaluate in a confirmatory test. The default is NULL, which will result in standard exploratory testing
@@ -25,15 +26,15 @@ The default is NULL which will specify equal prior probabilities.}
 \item{complement}{a logical specifying whether the complement should be added
 to the tested hypothesis under \code{hypothesis}.}
 
-\item{...}{Parameters passed to and from other functions.}
-
 \item{Sigma}{An approximate posterior covariance matrix (e.g,. error covariance
 matrix) of the parameters of interest. This argument is only required when \code{x}
 is a named vector.}
 
-\item{n}{The (effective) sample size that was used to acquire the estimated in \code{x} and
-covariance matrix \code{Sigma}. This argument is only required when \code{x}
+\item{n}{The (effective) sample size that was used to acquire the estimates in the named vector
+\code{x} and the error covariance matrix \code{Sigma}. This argument is only required when \code{x}
 is a named vector.}
+
+\item{...}{Parameters passed to and from other functions.}
 }
 \value{
 The output is an object of class \code{BF}. The object has elements:

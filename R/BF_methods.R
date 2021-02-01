@@ -12,8 +12,9 @@
 #' An R object containing the outcome of a statistical analysis. Currently, the
 #' following objects can be processed: t_test(), bartlett_test(), lm(), aov(),
 #' manova(), cor_test(), lmer() (only for testing random intercep variances),
-#' glm(), coxph(), survreg(), polr(), zeroinfl(), rma(), and named vector objects.
-#' See vignettes for elaborations.
+#' glm(), coxph(), survreg(), polr(), zeroinfl(), rma(), or named vector objects.
+#' In the case \code{x} is a named vector, the arguments \code{Sigma} and \code{n}
+#' are also needed. See vignettes for elaborations.
 #' @param hypothesis A character string containing the constrained (informative) hypotheses to
 #' evaluate in a confirmatory test. The default is NULL, which will result in standard exploratory testing
 #' under the model \code{x}.
@@ -24,8 +25,8 @@
 #' @param Sigma An approximate posterior covariance matrix (e.g,. error covariance
 #' matrix) of the parameters of interest. This argument is only required when \code{x}
 #' is a named vector.
-#' @param n The (effective) sample size that was used to acquire the estimated in \code{x} and
-#' covariance matrix \code{Sigma}. This argument is only required when \code{x}
+#' @param n The (effective) sample size that was used to acquire the estimates in the named vector
+#' \code{x} and the error covariance matrix \code{Sigma}. This argument is only required when \code{x}
 #' is a named vector.
 #' @param ... Parameters passed to and from other functions.
 #' @return The output is an object of class \code{BF}. The object has elements:
@@ -199,6 +200,6 @@
 #' @export
 #' @useDynLib BFpack, .registration = TRUE
 #'
-BF <- function(x, hypothesis, prior.hyp, complement, ...) {
+BF <- function(x, hypothesis, prior.hyp, complement, Sigma, n, ...) {
   UseMethod("BF", x)
 }
