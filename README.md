@@ -6,6 +6,11 @@
 [![CRAN
 Version](http://www.r-pkg.org/badges/version/BFpack)](https://cran.r-project.org/package=BFpack)
 [![Downloads](https://cranlogs.r-pkg.org/badges/BGGM)](https://cran.r-project.org/package=BFpack)
+[![R-CMD-check](https://github.com/jomulder/BFpack/workflows/R-CMD-check/badge.svg)](https://github.com/jomulder/BFpack/actions)
+<!-- Insert codecov badge here -->
+
+[![Contributor
+Covenant](https://img.shields.io/badge/Contributor%20Covenant-v2.0%20adopted-ff69b4.svg)](code_of_conduct.md)
 
 The `R` package **BFpack** contains a set of functions for exploratory
 hypothesis testing (e.g., equal vs negative vs postive) and confirmatory
@@ -122,7 +127,7 @@ get_estimates(fit_glm)
 
 Two different hypotheses are formulated with competing equality and/or
 order constraints on the parameters of interest. These hypotheses are
-motivated in Mulder et al. (2019)
+motivated in Mulder et al. (2019)
 
 ``` r
 BF_glm <- BF(fit_glm, hypothesis = "ztrust > (zfWHR, zAfro) > 0;
@@ -156,8 +161,7 @@ print(BF1)
 ```
 
 Constraints can also be tested between correlations, e.g., whether all
-correlations are equal and positive versus an unconstrained
-complement.
+correlations are equal and positive versus an unconstrained complement.
 
 ``` r
 BF2 <- BF(cor1, hypothesis = "Del_with_Im = Wmn_with_Im = Wmn_with_Del > 0")
@@ -177,8 +181,7 @@ print(BF1)
 
 Hypotheses can be tested with equality and/or order constraints on the
 effects of interest. If prefered the complement hypothesis can be
-omitted using the `complement`
-argument
+omitted using the `complement` argument
 
 ``` r
 BF2 <- BF(lm1, hypothesis = "Vehicle > 0 & Face < 0; Vehicle = Face = 0",
@@ -216,8 +219,7 @@ estimates via the `n` argument. Bayes factors are then computed using
 Gaussian approximations of the likelihood (and posterior), similar as in
 classical Wald test.
 
-We illustrate this for a Poisson regression
-model
+We illustrate this for a Poisson regression model
 
 ``` r
 poisson1 <- glm(formula = breaks ~ wool + tension, data = datasets::warpbreaks,
@@ -257,9 +259,9 @@ when calling `print(BF11)` and `print(BF2)`).
 You can cite the package and the paper using the following reference
 
 > Mulder, J., van Lissa, C., Gu, X., Olsson-Collentine, A.,
-> Boeing-Messing, F., Williams, D. R., Fox, J.-P., Menke, J., et al.
-> (2019). BFpack: Flexible Bayes Factor Testing of Scientific
-> Expectations. (Version 0.2.1) \[R package\].
+> Boeing-Messing, F., Williams, D. R., Fox, J.-P., Menke, J., et
+> al. (2020). BFpack: Flexible Bayes Factor Testing of Scientific
+> Expectations. (Version 0.3.1) \[R package\].
 > <https://CRAN.R-project.org/package=BFpack>
 
 > Mulder, J., Williams, D. R., Gu, X., Olsson-Collentine, A., Tomarken,

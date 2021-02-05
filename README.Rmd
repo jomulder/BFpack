@@ -22,6 +22,10 @@ library(BFpack)
 
 [![CRAN Version](http://www.r-pkg.org/badges/version/BFpack)](https://cran.r-project.org/package=BFpack)
 [![Downloads](https://cranlogs.r-pkg.org/badges/BGGM)](https://cran.r-project.org/package=BFpack)
+[![R-CMD-check](https://github.com/jomulder/BFpack/workflows/R-CMD-check/badge.svg)](https://github.com/jomulder/BFpack/actions)
+<!-- Insert codecov badge here -->
+
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-v2.0%20adopted-ff69b4.svg)](code_of_conduct.md)
 
 The `R` package **BFpack** contains a set of functions for exploratory hypothesis testing (e.g., equal vs negative vs postive) and confirmatory hypothesis testing (with equality and/or order constraints)  using Bayes factors and posterior probabilities under commonly used statistical models, including (but not limited to) Bayesian t testing, (M)AN(C)OVA, multivariate/univariate linear regression, correlation analysis, multilevel analysis, or generalized linear models (e.g., logistic regression). The main function `BF` needs a fitted model (e.g., an object of class `lm` for a linear regression model) and (optionally) the argument `hypothesis`, a string which specifies a set of equality/order constraints on the parameters. By applying the function `get_estimates`on a fitted model, the names of the parameters are returned on which constrained hypotheses can be formulated. Bayes factors and posterior probabilities are computed for the hypotheses of interest.
 
