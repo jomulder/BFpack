@@ -12,7 +12,7 @@ Version](http://www.r-pkg.org/badges/version/BFpack)](https://cran.r-project.org
 [![Contributor
 Covenant](https://img.shields.io/badge/Contributor%20Covenant-v2.0%20adopted-ff69b4.svg)](code_of_conduct.md)
 
-The `R` package **BFpack** contains a set of functions for exploratory
+The `R` wewe package **BFpack** contains a set of functions for exploratory
 hypothesis testing (e.g., equal vs negative vs postive) and confirmatory
 hypothesis testing (with equality and/or order constraints) using Bayes
 factors and posterior probabilities under commonly used statistical
