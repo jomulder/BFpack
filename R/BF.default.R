@@ -78,8 +78,6 @@ BF.default <- function(x,
       rStack <- RrStack[,(K+1)]
     }
 
-
-
     # check if a common boundary exists for prior location under all constrained hypotheses
     if(nrow(RrStack) > 1){
       rref_ei <- rref(RrStack)
