@@ -69,13 +69,16 @@ BF.default <- function(x,
       })
       RrStack <- do.call(rbind,RrStack_list)
     }
+    K <- length(meanN)
     if(nrow(RrStack)>1){
-      RStack <- RrStack[,-(K*P+1)]
-      rStack <- RrStack[,(K*P+1)]
+      RStack <- RrStack[,-(K+1)]
+      rStack <- RrStack[,(K+1)]
     }else{
-      RStack <- matrix(RrStack[,-(K*P+1)],nrow=1)
-      rStack <- RrStack[,(K*P+1)]
+      RStack <- matrix(RrStack[,-(K+1)],nrow=1)
+      rStack <- RrStack[,(K+1)]
     }
+
+
 
     # check if a common boundary exists for prior location under all constrained hypotheses
     if(nrow(RrStack) > 1){
