@@ -148,15 +148,20 @@ get_estimates.cor_test <- function(x, ...){
 #' @export
 get_estimates.t_test <- function(x, ...){
   out <- list()
-  if(length(x$estimate)==1){
-    populationmean <- x$estimate
-    names(populationmean) <- "mu"
-    out$estimate <- populationmean
-    out$Sigma <- list((x$stderr)**2)
-  }else{
+  if(length(x$estimate)>1){
     difference <- x$estimate[1] - x$estimate[2]
     names(difference) <- "difference"
     out$estimate <- difference
+    out$Sigma <- list((x$stderr)**2)
+  }else if(names(x$estimate) == "mean of the differences"){
+    difference <- x$estimate
+    names(difference) <- "difference"
+    out$estimate <- difference
+    out$Sigma <- list((x$stderr)**2)
+  }else{
+    populationmean <- x$estimate
+    names(populationmean) <- "mu"
+    out$estimate <- populationmean
     out$Sigma <- list((x$stderr)**2)
   }
   class(out) <- "model_estimates"
