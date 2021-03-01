@@ -234,6 +234,7 @@ BF.bartlett_htest <- function(x,
     hypotheses <- names(logmx)
     BFtu_confirmatory <- exp(logmx - logmxu)
     BFmatrix_confirmatory <- BFtu_confirmatory %*% t(1 / BFtu_confirmatory)
+    diag(BFmatrix_confirmatory) <- 1
     names(BFtu_confirmatory) <- row.names(BFmatrix_confirmatory) <-
       colnames(BFmatrix_confirmatory) <- hypotheses
     diag(BFmatrix_confirmatory) <- 1

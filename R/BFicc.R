@@ -289,6 +289,7 @@ BF.lmerMod <- function(x,
       row.names(logBFmatrix) <- colnames(logBFmatrix) <- c(parse_hyp$original_hypothesis)
     }
     BFmatrix_confirmatory_icc <- round(exp(logBFmatrix),3)
+    diag(BFmatrix_confirmatory_icc) <- 1
     BFta_confirmatory_icc <- exp(output_marglike_icc[,5] - max(output_marglike_icc[,5]))
     # Change prior probs in case of default setting
     if(is.null(prior.hyp)){

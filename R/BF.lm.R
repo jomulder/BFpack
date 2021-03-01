@@ -466,6 +466,7 @@ BF.lm <- function(x,
       colnames(BFtable) <- c("comp_E","comp_O","fit_E","fit_O","BF_E","BF_O","BF","PHP")
       BFmatrix_confirmatory <- matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory))/
         t(matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory)))
+      diag(BFmatrix_confirmatory) <- 1
       row.names(BFmatrix_confirmatory) <- colnames(BFmatrix_confirmatory) <- names(BFtu_confirmatory)
       if(nrow(relfit)==length(parse_hyp$original_hypothesis)){
         hypotheses <- parse_hyp$original_hypothesis

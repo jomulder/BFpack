@@ -140,6 +140,7 @@ BF.default <- function(x,
     colnames(BFtable) <- c("complex=","complex>","fit=","fit>","BF=","BF>","BF","PHP")
     BFmatrix_confirmatory <- matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory))/
       t(matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory)))
+    diag(BFmatrix_confirmatory) <- 1
     # row.names(BFmatrix_confirmatory) <- Hnames
     # colnames(BFmatrix_confirmatory) <- Hnames
     if(nrow(relfit)==length(parse_hyp$original_hypothesis)){

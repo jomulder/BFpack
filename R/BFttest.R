@@ -170,7 +170,7 @@ BF.t_test <- function(x,
             nullvalue <- RrE[[h]][1,2]/RrE[[h]][1,1]
             relfit_h <- c(log(densN(nullvalue)),0)
           }else if(is.null(RrE[[h]]) & !is.null(RrO[[h]])){
-            relfit_h <- log(c(1,mean(apply(as.matrix(RrO[[h]][,1])%*%t(drawsN) - as.matrix(RrO[[h]][,2])%*%t(rep(1,1e6)) > 0,2,prod)==1)))
+            relfit_h <- log(c(1,mean(apply(as.matrix(RrO[[h]][,1])%*%t(drawsN) - as.matrix(RrO[[h]][,2])%*%t(rep(1,samsize)) > 0,2,prod)==1)))
           }else stop("hypothesis should either contain one equality constraint or inequality constraints on 'difference'.")
           return(relfit_h)
         })),nrow=2))
@@ -178,9 +178,9 @@ BF.t_test <- function(x,
         relcomp <- t(matrix(unlist(lapply(1:length(RrE),function(h){
           if(!is.null(RrE[[h]]) & is.null(RrO[[h]])){ #only an equality constraint
             nullvalue <- RrE[[h]][1,2]/RrE[[h]][1,1]
-            relcomp_h <- log(c((sum((draws0<1+nullvalue)*(draws0> -1+nullvalue))/1e6)/2,1))
+            relcomp_h <- log(c((sum((draws0<1+nullvalue)*(draws0> -1+nullvalue))/samsize)/2,1))
           }else if(is.null(RrE[[h]]) & !is.null(RrO[[h]])){ #order constraint(s)
-            relcomp_h <- log(c(1,mean(apply(as.matrix(RrO[[h]][,1])%*%t(draws0) - as.matrix(RrO[[h]][,2])%*%t(rep(1,1e6)) > 0,2,prod)==1)))
+            relcomp_h <- log(c(1,mean(apply(as.matrix(RrO[[h]][,1])%*%t(draws0) - as.matrix(RrO[[h]][,2])%*%t(rep(1,samsize)) > 0,2,prod)==1)))
           }else stop("hypothesis should either contain one equality constraint or inequality constraints on 'difference'.")
           return(relcomp_h)
         })),nrow=2))
@@ -223,6 +223,7 @@ BF.t_test <- function(x,
         PHP_confirmatory <- BFtu_confirmatory*priorprobs / sum(BFtu_confirmatory*priorprobs)
         BFmatrix_confirmatory <- matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory))/
           t(matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory)))
+        diag(BFmatrix_confirmatory) <- 1
         row.names(BFmatrix_confirmatory) <- colnames(BFmatrix_confirmatory) <- names(BFtu_confirmatory)
         relative_fit <- relfit
         relative_complexity <- relcomp
