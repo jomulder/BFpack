@@ -60,15 +60,21 @@ BF.default <- function(x,
     RrO <- RrList[[2]]
 
     # RrStack is used to check conflicting constraints, and for the default prior location
-    RrStack <- rbind(do.call(rbind,RrE),do.call(rbind,RrO))
-    RrStack <- interval_RrStack(RrStack)
-    K <- length(meanN)
-    if(nrow(RrStack)>1){
-      RStack <- RrStack[,-(K+1)]
-      rStack <- RrStack[,(K+1)]
+    if(length(RrE)==1){
+      RrStack <- rbind(do.call(rbind,RrE),do.call(rbind,RrO))
+      RrStack <- interval_RrStack(RrStack)
     }else{
-      RStack <- matrix(RrStack[,-(K+1)],nrow=1)
-      rStack <- RrStack[,(K+1)]
+      RrStack_list <- lapply(1:length(RrE),function(h){
+        interval_RrStack(rbind(RrE[[h]],RrO[[h]]))
+      })
+      RrStack <- do.call(rbind,RrStack_list)
+    }
+    if(nrow(RrStack)>1){
+      RStack <- RrStack[,-(K*P+1)]
+      rStack <- RrStack[,(K*P+1)]
+    }else{
+      RStack <- matrix(RrStack[,-(K*P+1)],nrow=1)
+      rStack <- RrStack[,(K*P+1)]
     }
 
     # check if a common boundary exists for prior location under all constrained hypotheses

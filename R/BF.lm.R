@@ -309,8 +309,15 @@ BF.lm <- function(x,
     RrE <- RrList[[1]]
     RrO <- RrList[[2]]
 
-    RrStack <- rbind(do.call(rbind,RrE),do.call(rbind,RrO))
-    RrStack <- interval_RrStack(RrStack)
+    if(length(RrE)==1){
+      RrStack <- rbind(do.call(rbind,RrE),do.call(rbind,RrO))
+      RrStack <- interval_RrStack(RrStack)
+    }else{
+      RrStack_list <- lapply(1:length(RrE),function(h){
+        interval_RrStack(rbind(RrE[[h]],RrO[[h]]))
+      })
+      RrStack <- do.call(rbind,RrStack_list)
+    }
     if(nrow(RrStack)>1){
       RStack <- RrStack[,-(K*P+1)]
       rStack <- RrStack[,(K*P+1)]
@@ -529,6 +536,7 @@ BF.lm <- function(x,
       colnames(BFtable) <- c("complex=","complex>","fit=","fit>","BF=","BF>","BF","PHP")
       BFmatrix_confirmatory <- matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory))/
         t(matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory)))
+      diag(BFmatrix_confirmatory) <- 1
       row.names(BFmatrix_confirmatory) <- colnames(BFmatrix_confirmatory) <- names(BFtu_confirmatory)
       #tested hypotheses
       hypotheses <- row.names(relfit)
@@ -1044,7 +1052,7 @@ interval_RrStack <- function(RrStack){
     while(row1 < q1){
       for(row2 in (row1+1):q1){
         #        print(row2)
-        if(sum(abs(RrStack_out[row1,-q2] + RrStack_out[row2,-q2]))==0 && RrStack_out[row1,q2]!=RrStack_out[row2,q2] ){
+        if(sum(abs(RrStack_out[row1,-q2] + RrStack_out[row2,-q2]))==0){ # && RrStack_out[row1,q2]!=RrStack_out[row2,q2] ){
           #together row1 and row2 imply an interval constraint
           whichcol <- abs(RrStack_out[row1,-q2])!=0
           whichcol1 <- which(whichcol)
