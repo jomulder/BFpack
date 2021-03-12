@@ -118,6 +118,8 @@ When testing hypotheses via the `hypothesis` argument, the output also
 presents an `Evidence matrix` containing the Bayes factors between the
 hypotheses.
 
+For more information about the methodology, we refer the interested reader to [Mulder et al. (2021)](https://arxiv.org/abs/1911.07728) and [Mulder and Gu (2021)](https://arxiv.org/abs/1904.00679).
+
 
 ### Analysis of variance
 
@@ -136,6 +138,8 @@ BF(aov1)
 
 By default posterior probabilities are computed of whether main effects
 and interaction effects are present.
+
+For more information about the methodology, we refer the interested reader to [Mulder et al. (2021) ](https://arxiv.org/abs/1911.07728) and [Mulder and Gu (2021)](https://arxiv.org/abs/1904.00679).
 
 
 ### Testing independent group variances
@@ -164,10 +168,12 @@ which presents the results of an exploratory analysis and the results of a confi
 
 The confirmatory test shows that H1 receives strongest support from the data, but H2 and H3 are viable competitors. It appears that even the complement H3 cannot be ruled out entirely given a posterior prob- ability of 0.058. To conclude, the results indicate that TS population are as heterogeneous in their attentional performances as the healthy control population in this specific task, but further research would be required to obtain more conclusive evidence.
 
+For more information about the methodology, we refer the interested reader to [Boing-Messing et al. (2017)](https://www.researchgate.net/publication/317418250_Bayesian_evaluation_of_constrained_hypotheses_on_variances_of_multiple_independent_groups)
+
 
 ### Logistic regression
 
-An example hypothesis test is consdered under a logistic regression
+An example hypothesis test is considered under a logistic regression
 model. First a logistic regression model is fitted using the `glm`
 function
 
@@ -203,6 +209,8 @@ remaining parameter space that is not covered by the constraints under
 the hypotheses of interest. In the above example, the complement
 hypothesis covers the parameter space where neither `"ztrust > (zfWHR,
 zAfro) > 0"` holds, nor where `"ztrust > zfWHR = zAfro = 0"` holds.
+
+For more information about the methodology, we refer the interested reader to [Gu et al. (2018)](https://bpspsychub.onlinelibrary.wiley.com/doi/full/10.1111/bmsp.12110?casa_token=tjWwoVqLI7QAAAAA%3Ac84DWKNw8pf23ybOgZTs1pzgyZMuCc-BeTaPFj8vnfnTytzHd0gr-D9ymVxYbKj_MTO1ITGFW8tGBZ1J) and [Mulder et al. (2021)](https://arxiv.org/abs/1911.07728)
 
 
 ### Correlation analysis
@@ -249,6 +257,9 @@ BF6_cor <- BF(cor1, hypothesis =
 
 By running `print(BF6_cor)`, the output shows that the one-sided hypothesis received a posterior probability of 0.991 and the alternative received a posterior probability of .009 (assuming equal prior probabilities).
 
+For more information about the methodology, we refer the interested reader to [Mulder (2016)](https://www.researchgate.net/publication/280256902_Bayes_factors_for_testing_order-constrained_hypotheses_on_correlations) and [Mulder and Gelissen (2019)](https://arxiv.org/abs/1807.05819)
+
+
 
 ### Univariate/Multivariate multiple regression
 
@@ -291,6 +302,44 @@ set.seed(123)
 BF3 <- BF(lm2, hypothesis = constraint2)
 summary(BF3)
 ```
+
+For more information about the methodology, we refer the interested reader to [Mulder and Olsson-Collentine (2019)](https://link.springer.com/article/10.3758/s13428-018-01196-9) and [Mulder and Gu (2021)](https://arxiv.org/abs/1904.00679)
+
+
+### Testing the effect size and beteen-study heterogeneity in a meta-analysis
+
+For illustrative purposes we generate a hypothetical simulated dataset
+
+``` r
+set.seed(123)
+tau2 <- 0.05
+vi <- runif(50, min = 0.01, max = 0.2)
+yi <- rnorm(50, mean = 0, sd = sqrt(vi+tau2))
+```
+
+where `tau2` denotes the true between-study heterogeneity, `vi` is a vector containing the squared standard errors of 50 studies, and `yi` is a vector containing the estimated effects sizes in the 50 studies. To test the overall effect size and the between-study heterogeneity using `BFpack`, an initial meta-analysis needs to be executed using the `metafor` package. Subsequently the output is plugged into the `BF` function:
+
+``` r
+res <- metafor::rma(yi = yi, vi = vi)
+BFmeta <- BF(res)
+```
+
+The `summary` output gives the posterior probabilities for a zero, negative, and positive between-study heterogeneity `I^2` and overall effect size `mu` assuming equal prior probabilities:
+
+``` r
+summary(BFmeta)
+```
+
+The results indicate evidence for positive between-study heterogeneity (suggesting that a random effects meta-analysis model is appropriate) and for a zero overall effect size.
+
+The unconstrained estimates (posterior mean and median) and the lower and upper bound of the 95% Bayesian credible intervals can be obtained by calling:
+
+``` r
+BFmeta$estimates
+```
+
+For more information about the methodology, we refer the interested reader to [Van Aert and Mulder (2021)](https://psyarxiv.com/ktcq4/)
+
 
 ### Running `BF` on a named vector
 
@@ -338,7 +387,7 @@ because the same Bayes factor is used when running `BF` on an object of
 class `glm` (see `Method: Bayes factor using Gaussian approximations`
 when calling `print(BF1)` and `print(BF2)`).
 
-
+For more information about the methodology, we refer the interested reader to [Gu et al. (2018)](https://bpspsychub.onlinelibrary.wiley.com/doi/full/10.1111/bmsp.12110?casa_token=tjWwoVqLI7QAAAAA%3Ac84DWKNw8pf23ybOgZTs1pzgyZMuCc-BeTaPFj8vnfnTytzHd0gr-D9ymVxYbKj_MTO1ITGFW8tGBZ1J)
 
 
 
