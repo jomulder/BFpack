@@ -53,7 +53,7 @@ Mulder, J., van Lissa, C., Gu, X., Olsson-Collentine, A., Boeing-Messing, F., Wi
   + `x` can also be a named vector with estimates of the key parameters.
 
 * `hypothesis`, a character string specifying the hypotheses with equality and/or order constraints on the key parameters of interest.
-  + By default set to hypothesis = NULL (for only exploratory testing).
+  + By default `hypothesis = NULL` which executes exploratory hypothesis tests (examples below).
   + The parameter names are based on the names of the estimated key parameters. An overview of the key parameters is given using the function `get_estimates`, e.g., `get_estimates(model1),` where `model1` is a fitted model object.
   + Separate constraints within a hypothesis are separated with an ampersand `&`. Hypotheses are separated using a semi-colon `;`. For example `hypothesis = "weight > height & height > 0; weight = height = 0"` implies that the first hypothesis assumes that the parameter `weight` is larger than the parameter `height` and that the parameter `height` is positive, and the second hypothesis assumes that the two parameters are equal to zero. Note that the first hypothesis could equivalently have been written as `weight > height > 0`.
 * `prior.hyp`, a numeric vector specifying the prior probabilities of the hypotheses of the `hypothesis` argument. The default setting is `prior.hyp = NULL` which sets equal prior probabilities.
@@ -101,7 +101,7 @@ library(BFpack)
 BF1 <- BF(ttest1)
 ```
 
-This executes an exhaustive test around the null value: `H1: mu = 5`
+This executes an exploratory exhaustive test around the null value: `H1: mu = 5`
 versus `H2: mu < 5` versus `H3: mu > 5` assuming equal prior
 probabilities for `H1`, `H2`, and `H3` of 1/3. The output presents the
 posterior probabilities for the three hypotheses.
@@ -114,9 +114,14 @@ hypothesis <- "mu = 5; mu < 5; mu > 5"
 BF(ttest1, hypothesis = hypothesis)
 ```
 
-When testing hypotheses via the `hypothesis` argument, the output also
-presents an `Evidence matrix` containing the Bayes factors between the
-hypotheses.
+In the above test the complement hypothesis is excluded automatically as the formualted hypothesis under the `hypothesis` argument cover the complete parameter space. Furthermore, when testing hypotheses via the `hypothesis` argument, the output also presents an `Evidence matrix` containing the Bayes factors between the hypotheses formulated in the `hypothesis` argument.
+
+A standard two-sided test around the null value `mu` is executed by setting the hypothesis argument equal to the precise null hypothesis so that the complement hypothesis (which is included by default) corresponds to the hypothesis that assumes that the population mean is anything but the null value
+
+``` r
+hypothesis <- "mu = 5"
+BF(ttest1, hypothesis = hypothesis)
+```
 
 For more information about the methodology, we refer the interested reader to [Mulder et al. (2021)](https://arxiv.org/abs/1911.07728) and [Mulder and Gu (2021)](https://arxiv.org/abs/1904.00679).
 
