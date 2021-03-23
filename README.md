@@ -51,14 +51,14 @@ Below several example analyses are provided using **BFpack**.
 
 ### Bayesian t testing
 
-First a classical one sample t test is executed for the test value
-\(\mu = 5\) on the therapeutic data
+First a classical one sample t test is executed on the test value
+\(&mu = 5\) on the `therapeutic` data (part of `BFpack`). Here a right one-tailed classical test is executed:
 
 ``` r
 ttest1 <- bain::t_test(therapeutic, alternative = "greater", mu = 5)
 ```
 
-The `t_test` function is part of the ***bain*** package. The function is
+The `t_test` function is part of the **bain** package. The function is
 equivalent to the standard `t.test` function with the addition that the
 returned object contains additional output than the standard `t.test`
 function.
@@ -71,7 +71,7 @@ library(BFpack)
 BF1 <- BF(ttest1)
 ```
 
-This executes an exhaustive test around the null value: `H1: mu = 5`
+This executes an exploratoory ('exhaustive') test around the null value: `H1: mu = 5`
 versus `H2: mu < 5` versus `H3: mu > 5` assuming equal prior
 probabilities for `H1`, `H2`, and `H3` of 1/3. The output presents the
 posterior probabilities for the three hypotheses.
@@ -87,6 +87,16 @@ BF(ttest1, hypothesis = hypothesis)
 When testing hypotheses via the `hypothesis` argument, the output also
 presents an `Evidence matrix` containing the Bayes factors between the
 hypotheses.
+
+The argument `prior.hyp` can be used to specify different prior probabilities
+for the hypotheses. For example, when the left one-tailed hypothesis is not possible
+based on prior considerations (e.g., see [preprint](https://arxiv.org/abs/1911.07728)) while the precise (null) hypothesis and the right
+one-tailed hypothesis are equally likely, the argument `prior.hyp` should be a vector
+specifying the prior probabilities of the respective hypotheses
+``` r
+BF(ttest1, hypothesis = "mu = 5; mu < 5; mu > 5", prior.hyp = c(.5,0,.5))
+```
+
 
 ### Analysis of variance
 
@@ -127,7 +137,7 @@ get_estimates(fit_glm)
 
 Two different hypotheses are formulated with competing equality and/or
 order constraints on the parameters of interest. These hypotheses are
-motivated in Mulder et al. (2019)
+motivated in Mulder et al. (2019)
 
 ``` r
 BF_glm <- BF(fit_glm, hypothesis = "ztrust > (zfWHR, zAfro) > 0;
