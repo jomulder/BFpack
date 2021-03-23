@@ -101,7 +101,7 @@ library(BFpack)
 BF1 <- BF(ttest1)
 ```
 
-This executes an exploratory exhaustive test around the null value: `H1: mu = 5`
+This executes an exploratory ('exhaustive') test around the null value: `H1: mu = 5`
 versus `H2: mu < 5` versus `H3: mu > 5` assuming equal prior
 probabilities for `H1`, `H2`, and `H3` of 1/3. The output presents the
 posterior probabilities for the three hypotheses.
@@ -123,6 +123,15 @@ hypothesis <- "mu = 5"
 BF(ttest1, hypothesis = hypothesis)
 ```
 
+The argument `prior.hyp` can be used to specify different prior probabilities
+for the hypotheses. For example, when the left one-tailed hypothesis is not possible
+based on prior considerations (e.g., see [Mulder et al. (2021, Section 4.1, preprint)](https://arxiv.org/abs/1911.07728)) while the precise (null) hypothesis and the right
+one-tailed hypothesis are equally likely, the argument `prior.hyp` should be a vector
+specifying the prior probabilities of the respective hypotheses
+``` r
+BF(ttest1, hypothesis = "mu = 5; mu < 5; mu > 5", prior.hyp = c(.5,0,.5))
+```
+
 For more information about the methodology, we refer the interested reader to [Mulder et al. (2021)](https://arxiv.org/abs/1911.07728) and [Mulder and Gu (2021)](https://arxiv.org/abs/1904.00679).
 
 
@@ -135,14 +144,26 @@ fuction in `R`.
 aov1 <- aov(price ~ anchor * motivation, data = tvprices)
 ```
 
-Next a Bayesian test can be performed on the fitted object.
+Next a Bayesian test can be performed on the fitted object. By default
+exploratory tests are executed of whether the individual main and interaction effects
+are zero or not (corresponding to the full model) (see [Mulder et al. (2021, Section 4.2)](https://arxiv.org/abs/1911.07728))
 
 ``` r
 BF(aov1)
 ```
 
-By default posterior probabilities are computed of whether main effects
-and interaction effects are present.
+One can also test for specific equal/order hypotheses based on scientific expectations
+such as whether `anchorrounded` is positive, `motivationlow` is negative, and the interaction
+effect `anchorrounded:motivationlow` is negative (see [Mulder et al. (2021, Section 4.2)](https://arxiv.org/abs/1911.07728)) versus null hypothesis versus the complement hypothesis
+(which assumes that the constraints of neither two hypotheses hold). This test can be executed
+as follows:
+``` r
+constraints2 <- "anchorrounded > 0 & motivationlow < 0 &
+  anchorrounded:motivationlow < 0; anchorrounded = 0 &
+  motivationlow = 0 & anchorrounded:motivationlow = 0"
+set.seed(1234)
+BF(aov1, hypothesis = constraints2)
+```
 
 For more information about the methodology, we refer the interested reader to [Mulder et al. (2021) ](https://arxiv.org/abs/1911.07728) and [Mulder and Gu (2021)](https://arxiv.org/abs/1904.00679).
 
@@ -155,7 +176,17 @@ First a classical significance test is executed using the `bartlett_test` functi
 bartlett1 <- bartlett_test(x = attention$accuracy, g = attention$group)
 ```
 
-The group variances have names `ADHD`, `Controls`, and `TS` (retrieved by running `get_estimates(bartlett1)`). Let's say we want to test whether a hypothesis (H1) which assumes that  group variances of groups `Controls` and `TS` are equal and smaller than the group variance of the `ADHD` group, a hypothesis (H2) which assumes that the group variances of `ADHD` and `TS` are equal and larger than the `Controls` group, a hypothesis (H3) which assumes all group variances are equal, and a complement hypothesis (H4). To do this we run the following:
+On an object of this class, by default `BF` executes an exploratory test of homogeneity (equality) of variances against an unconstrained (full) model
+
+``` r
+BF(bartlett1)
+```
+
+The group variances have names `ADHD`, `Controls`, and `TS`. This can be retrieved by running 
+``` r
+get_estimates(bartlett1)
+```
+Let's say we want to test whether a hypothesis (H1) which assumes that  group variances of groups `Controls` and `TS` are equal and smaller than the group variance of the `ADHD` group, a hypothesis (H2) which assumes that the group variances of `ADHD` and `TS` are equal and larger than the `Controls` group, a hypothesis (H3) which assumes all group variances are equal, and a complement hypothesis (H4). To do this we run the following:
 
 ``` r
 hypothesis <- "Controls = TS < ADHD; Controls < TS = ADHD; Controls = TS = ADHD"
@@ -187,16 +218,20 @@ fit_glm <- glm(sent ~ ztrust + zfWHR + zAfro + glasses + attract + maturity +
                tattoos, family = binomial(), data = wilson)
 ```
 
+By default exploratory exhaustive tests are executed of whether the separate
+regression coefficients are zero, negative, or positive:
+``` r
+BF(fit_glm)
+```
+
 The names of the regression coefficients on which constrained hypotheses
 can be formualted can be extracted using the `get_estimates` function.
 
 ``` r
 get_estimates(fit_glm)
 ```
-
 Two different hypotheses are formulated with competing equality and/or
-order constraints on the parameters of interest. These hypotheses are
-motivated in Mulder et al. (2019)
+order constraints on the regression coefficients of interest [Mulder et al. (2021, Section 4.4) ](https://arxiv.org/abs/1911.07728)
 
 ``` r
 BF_glm <- BF(fit_glm, hypothesis = "ztrust > (zfWHR, zAfro) > 0;
@@ -221,9 +256,7 @@ For more information about the methodology, we refer the interested reader to [G
 ### Correlation analysis
 
 By default `BF` performs exhaustice tests of whether the separate
-correlations are zero, negative, or positive. The name of the
-correlations is constructed using the names of the variables separated
-by `_with_`.
+correlations are zero, negative, or positive.
 
 ``` r
 set.seed(123)
@@ -232,17 +265,22 @@ BF1 <- BF(cor1)
 print(BF1)
 ```
 
-Constraints can also be tested between correlations, e.g., whether all
-correlations are equal and positive versus an unconstrained
-complement.
+The names of the
+correlations is constructed using the names of the variables separated
+by `_with_`:
+``` r
+get_estimates(cor1)
+```
 
+Specific hypotheses based on prior/theoretical considerations can be tested using the 
+`hypothesis` argument. As an example we show here how to test whether all
+correlations are equal and positive versus its complement. 
 ``` r
 BF2 <- BF(cor1, hypothesis = "Del_with_Im = Wmn_with_Im = Wmn_with_Del > 0")
 print(BF2)
 ```
 
 We can also test equality and order constraints on correlations across different groups. As the seventh column of the `memory` object is a group indicator, let us first create different objects for the two different groups, and perform Bayesian estimation on the correlation matrices of the two different groups 
-
 ``` r
 memoryHC <- subset(memory,Group=="HC")[,-(4:7)]
 memorySZ <- subset(memory,Group=="SZ")[,-(4:7)]
@@ -250,7 +288,14 @@ set.seed(123)
 cor1 <- cor_test(memoryHC,memorySZ)
 ```
 
-Next we test the one-sided hypothesis that the correlations in the first group (`g1`) are larger than the correlations in the second group (`g2`) via
+In this case with multiple groups by default exploratory tests are executed of whether the correlations
+are zero, negative, or positive for each separate group (e.g., correlations in group `gr1`
+are denoted by `_in_gr1` at the end of the name)
+``` r
+get_estimates(cor1)
+```
+
+Next we test the one-sided hypothesis that the respective correlations in the first group (`g1`) are larger than the correlations in the second group (`g2`) via
 
 ``` r
 set.seed(123)
