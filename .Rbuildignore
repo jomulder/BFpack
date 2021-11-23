@@ -7,3 +7,6 @@ dev/
 ^README\.Rmd$
 cran-comments.md
 ^\.github$
+src/*.o
+src/*.so
+src/*.dll
