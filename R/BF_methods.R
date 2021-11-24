@@ -97,8 +97,8 @@
 #' @references Mulder, J., D.R. Williams, Gu, X., A. Tomarken,
 #' F. Böing-Messing, J.A.O.C. Olsson-Collentine, Marlyne Meyerink, J. Menke,
 #' J.-P. Fox, Y. Rosseel, E.J. Wagenmakers, H. Hoijtink., and van Lissa, C.
-#' (submitted). BFpack: Flexible Bayes Factor Testing of Scientific Theories
-#' in R.
+#' (2021). BFpack: Flexible Bayes Factor Testing of Scientific Theories
+#' in R. Journal of Statistical Software. <DOI:10.18637/jss.v100.i18>
 #' @examples
 #' \dontshow{
 #' # EXAMPLE 1. One-sample t test
