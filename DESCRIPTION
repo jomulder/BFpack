@@ -96,8 +96,8 @@ Description: Implementation of various default Bayes factors
     association (e.g,. bivariate correlations), among others.
     The statistical underpinnings are
     described in 
-    Mulder, Hoijtink, and Xin (2019) <arXiv:1904.00679>,
-    Mulder and Gelissen (2019) <arXiv:1807.05819>,
+    Mulder and Xin (2019) <DOI:10.1080/00273171.2021.1904809>,
+    Mulder and Gelissen (2019) <DOI:10.1080/02664763.2021.1992360>,
     Mulder (2016) <DOI:10.1016/j.jmp.2014.09.004>,
     Mulder and Fox (2019) <DOI:10.1214/18-BA1115>,
     Mulder and Fox (2013) <DOI:10.1007/s11222-011-9295-3>,
