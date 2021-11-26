@@ -1,8 +1,7 @@
-# BFpack 0.3.1
+# BFpack 1.0.0
 
-* Date: 2020-10-16
-* New extension for BF for rma.uni object (metafor package) for Bayesian meta-analysis
-* BF for lmerMod object now also works on unbalanced data
-* vignette was added
+* Date: 2021-11-26
+* New extension for BF for coeftest object (lmtest package).
+* Publication version in Journal of Statistical Software.
 * Bugs fixes
 
