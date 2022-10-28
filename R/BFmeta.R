@@ -30,87 +30,139 @@ BF.rma.uni <- function(x,
   wi <- 1/vi # Weights equal-effects model
   typ_vi <- sum(wi*(length(wi)-1))/(sum(wi)^2 - sum(wi^2)) # Typical within-study sampling variance
 
-  ### Minimal rho (add 0.001 to make sure that marginal likelihood and likelihood
-  # can be evaluated)
-  rho_min <- (-min(vi)+0.001)/(-min(vi)+0.001+typ_vi)
+  ### Robbie: If statement for methods that are not "EE" or "FE"
+  if (x$method != "EE" & x$method != "FE")
+  {
 
-  ### Compute likelihood of model with unconstrained delta and rho = 0
-  logmu0 <- marg_lik(yi = yi, vi = vi, rho = 0, rho_min = rho_min,
-                     typ_vi = typ_vi)
+    ### Minimal rho (add 0.001 to make sure that marginal likelihood and likelihood
+    # can be evaluated)
+    rho_min <- (-min(vi)+0.001)/(-min(vi)+0.001+typ_vi)
 
-  ### Compute likelihood of model with delta = 0 and rho unconstrained
-  logm0u <- get_condpost_rho(yi = yi, vi = vi, rho_min = rho_min,
-                             typ_vi = typ_vi, start_rho = x$I2/100)$logm0u
+    ### Compute likelihood of model with unconstrained delta and rho = 0
+    logmu0 <- marg_lik(yi = yi, vi = vi, rho = 0, rho_min = rho_min,
+                       typ_vi = typ_vi)
 
-  ### Compute marginal likelihood of model with unconstrained delta and unconstrained rho
-  ### Compute posterior probability of rho > 0 and rho < 0, delta unconstrained
-  post_rho <- get_post_rho(yi = yi, vi = vi, rho_min = rho_min, typ_vi = typ_vi,
-                           start_rho = x$I2/100)
-  logmuu <- post_rho$logmuu
-  prior_rho <- 1/(abs(rho_min) + 1)
+    ### Compute likelihood of model with delta = 0 and rho unconstrained
+    logm0u <- get_condpost_rho(yi = yi, vi = vi, rho_min = rho_min,
+                               typ_vi = typ_vi, start_rho = x$I2/100)$logm0u
 
-  logmul <- logmuu + log(post_rho$post_rho_l/prior_rho) # Likelihood of model delta unconstrained and rho > 0
-  logmus <- logmuu + log(post_rho$post_rho_s/(1-prior_rho)) # Likelihood of model delta unconstrained and rho < 0
+    ### Compute marginal likelihood of model with unconstrained delta and unconstrained rho
+    ### Compute posterior probability of rho > 0 and rho < 0, delta unconstrained
+    post_rho <- get_post_rho(yi = yi, vi = vi, rho_min = rho_min, typ_vi = typ_vi,
+                             start_rho = x$I2/100)
+    logmuu <- post_rho$logmuu
+    prior_rho <- 1/(abs(rho_min) + 1)
 
-  #get unconstrained estimates
-  rhodraws <- post_rho$rhodraws
-  rhostats <- c(mean(rhodraws),median(rhodraws),quantile(rhodraws,.025),quantile(rhodraws,.975))
-  tau2draws <- rhodraws/(1-rhodraws)*typ_vi # Compute tau2 based on generated I^2-statistic
-  mean_prior_delta <- 0
-  sd_prior_delta <- length(yi)/sum(1/(vi+mean(tau2draws)))
+    logmul <- logmuu + log(post_rho$post_rho_l/prior_rho) # Likelihood of model delta unconstrained and rho > 0
+    logmus <- logmuu + log(post_rho$post_rho_s/(1-prior_rho)) # Likelihood of model delta unconstrained and rho < 0
 
-  mean_delta <- unlist(lapply(1:length(tau2draws), function(i){
-    (mean_prior_delta/sd_prior_delta^2+sum(yi/(vi+tau2draws[i])))/
-      (1/sd_prior_delta^2+sum(1/(vi+tau2draws[i])))
-  }))
+    #get unconstrained estimates
+    rhodraws <- post_rho$rhodraws
+    rhostats <- c(mean(rhodraws),median(rhodraws),quantile(rhodraws,.025),quantile(rhodraws,.975))
+    tau2draws <- rhodraws/(1-rhodraws)*typ_vi # Compute tau2 based on generated I^2-statistic
+    mean_prior_delta <- 0
+    sd_prior_delta <- length(yi)/sum(1/(vi+mean(tau2draws)))
 
-  sd_delta <- unlist(lapply(1:length(tau2draws), function(i){
-    1/sqrt(1/sd_prior_delta^2+sum(1/(vi+tau2draws[i])))
-  }))
+    mean_delta <- unlist(lapply(1:length(tau2draws), function(i){
+      (mean_prior_delta/sd_prior_delta^2+sum(yi/(vi+tau2draws[i])))/
+        (1/sd_prior_delta^2+sum(1/(vi+tau2draws[i])))
+    }))
 
-  deltadraws <- rnorm(length(rhodraws),mean=mean_delta,sd=sd_delta)
-  deltastats <- c(mean(deltadraws),median(deltadraws),quantile(deltadraws,.025),quantile(deltadraws,.975))
-  uncestimates <- t(matrix(c(rhostats,deltastats),ncol=2))
-  row.names(uncestimates) <- c("I^2","mu")
-  colnames(uncestimates) <- c("mean","median","2.5%","97.5%")
+    sd_delta <- unlist(lapply(1:length(tau2draws), function(i){
+      1/sqrt(1/sd_prior_delta^2+sum(1/(vi+tau2draws[i])))
+    }))
 
-  ### Compute posterior probability of mu > 0 and mu < 0
-  postdeltapositive <- mean(deltadraws>0)
-  logmlu <- logmuu + log(postdeltapositive/.5)
-  logmsu <- logmuu + log((1-postdeltapositive)/.5)
+    deltadraws <- rnorm(length(rhodraws),mean=mean_delta,sd=sd_delta)
+    deltastats <- c(mean(deltadraws),median(deltadraws),quantile(deltadraws,.025),quantile(deltadraws,.975))
+    uncestimates <- t(matrix(c(rhostats,deltastats),ncol=2))
+    row.names(uncestimates) <- c("I^2","mu")
+    colnames(uncestimates) <- c("mean","median","2.5%","97.5%")
 
-  ### Compute Bayes factors model vs. unconstrained mu and I^2
-  BF0rhoUnc <- exp(logmu0 - logmuu)
-  BF1rhoUnc <- exp(logmus - logmuu)
-  BF2rhoUnc <- exp(logmul - logmuu)
-  BF0deltaUnc <- exp(logm0u - logmuu)
-  BF1deltaUnc <- exp(logmsu - logmuu)
-  BF2deltaUnc <- exp(logmlu - logmuu)
+    ### Compute posterior probability of mu > 0 and mu < 0
+    postdeltapositive <- mean(deltadraws>0)
+    logmlu <- logmuu + log(postdeltapositive/.5)
+    logmsu <- logmuu + log((1-postdeltapositive)/.5)
 
-  BFtu_exploratory <- matrix(c(BF0rhoUnc,BF0deltaUnc,BF1rhoUnc,BF1deltaUnc,BF2rhoUnc,BF2deltaUnc),nrow=2)
-  PHP_exploratory <- BFtu_exploratory / apply(BFtu_exploratory,1,sum)
-  colnames(BFtu_exploratory) <- colnames(PHP_exploratory) <- c("Pr(=0)","Pr(<0)","Pr(>0)")
-  row.names(BFtu_exploratory) <- row.names(PHP_exploratory) <- c("I^2","mu")
-  BFtu_confirmatory <- PHP_confirmatory <- BFmatrix_confirmatory <- BFtable <-
-    priorprobs <- hypotheses <- estimates <- NULL
+    ### Compute Bayes factors model vs. unconstrained mu and I^2
+    BF0rhoUnc <- exp(logmu0 - logmuu)
+    BF1rhoUnc <- exp(logmus - logmuu)
+    BF2rhoUnc <- exp(logmul - logmuu)
+    BF0deltaUnc <- exp(logm0u - logmuu)
+    BF1deltaUnc <- exp(logmsu - logmuu)
+    BF2deltaUnc <- exp(logmlu - logmuu)
 
-  # BF_delta <- diag(rep(1, 3))
-  # colnames(BF_delta) <- rownames(BF_delta) <- c("H1", "H2", "H3")
-  # BF_delta[1,2] <- exp(logm0u - logmsu)
-  # BF_delta[2,1] <- exp(logmsu - logm0u)
-  # BF_delta[1,3] <- exp(logm0u - logmlu)
-  # BF_delta[3,1] <- exp(logmlu - logm0u)
-  # BF_delta[2,3] <- exp(logmsu - logmlu)
-  # BF_delta[3,2] <- exp(logmlu - logmsu)
+    BFtu_exploratory <- matrix(c(BF0rhoUnc,BF0deltaUnc,BF1rhoUnc,BF1deltaUnc,BF2rhoUnc,BF2deltaUnc),nrow=2)
+    PHP_exploratory <- BFtu_exploratory / apply(BFtu_exploratory,1,sum)
+    colnames(BFtu_exploratory) <- colnames(PHP_exploratory) <- c("Pr(=0)","Pr(<0)","Pr(>0)")
+    row.names(BFtu_exploratory) <- row.names(PHP_exploratory) <- c("I^2","mu")
+    BFtu_confirmatory <- PHP_confirmatory <- BFmatrix_confirmatory <- BFtable <-
+      priorprobs <- hypotheses <- estimates <- NULL
 
-  # BF_rho <- diag(rep(1, 2))
-  # colnames(BF_rho) <- rownames(BF_rho) <- c("H1", "H2")
-  # BF_rho[1,2] <- exp(logmus - logmul)
-  # BF_rho[2,1] <- exp(logmul - logmus)
+    # BF_delta <- diag(rep(1, 3))
+    # colnames(BF_delta) <- rownames(BF_delta) <- c("H1", "H2", "H3")
+    # BF_delta[1,2] <- exp(logm0u - logmsu)
+    # BF_delta[2,1] <- exp(logmsu - logm0u)
+    # BF_delta[1,3] <- exp(logm0u - logmlu)
+    # BF_delta[3,1] <- exp(logmlu - logm0u)
+    # BF_delta[2,3] <- exp(logmsu - logmlu)
+    # BF_delta[3,2] <- exp(logmlu - logmsu)
 
-  # sum_BF_rho <- BF1rhoUnc+BF2rhoUnc
-  # PP_rho <- matrix(c(BF1rhoUnc/sum_BF_rho, BF2rhoUnc/sum_BF_rho), nrow = 1)
-  # colnames(PP_rho) <- c("Pr(<0)", "Pr(>0)")
+    # BF_rho <- diag(rep(1, 2))
+    # colnames(BF_rho) <- rownames(BF_rho) <- c("H1", "H2")
+    # BF_rho[1,2] <- exp(logmus - logmul)
+    # BF_rho[2,1] <- exp(logmul - logmus)
+
+    # sum_BF_rho <- BF1rhoUnc+BF2rhoUnc
+    # PP_rho <- matrix(c(BF1rhoUnc/sum_BF_rho, BF2rhoUnc/sum_BF_rho), nrow = 1)
+    # colnames(PP_rho) <- c("Pr(<0)", "Pr(>0)")
+
+    ##############################################################################
+
+    ### Robbie: equal-effect and fixed-effect model
+
+  } else if (x$method == "EE" | x$method == "FE")
+  {
+
+    ### Compute likelihood of model with delta = 0 and rho = 0
+    logmu <- lik(yi = yi, vi = vi, delta = 0, rho = 0, rho_min = 0, typ_vi = typ_vi)
+
+    ### Compute likelihood of model with unconstrained delta and rho = 0
+    logmu0 <- marg_lik(yi = yi, vi = vi, rho = 0, rho_min = 0,
+                       typ_vi = typ_vi)
+
+    mean_prior_delta <- 0
+    sd_prior_delta <- length(yi)/sum(1/vi)
+
+    mean_delta <- (mean_prior_delta/sd_prior_delta^2+sum(yi/vi))/
+      (1/sd_prior_delta^2+sum(1/vi))
+
+    sd_delta <- 1/sqrt(1/sd_prior_delta^2+sum(1/vi))
+
+    deltadraws <- rnorm(100000,mean=mean_delta,sd=sd_delta)
+    deltastats <- c(mean(deltadraws),median(deltadraws),quantile(deltadraws,.025),
+                    quantile(deltadraws,.975))
+    uncestimates <- t(matrix(deltastats,ncol=1))
+    row.names(uncestimates) <- "mu"
+    colnames(uncestimates) <- c("mean","median","2.5%","97.5%")
+
+    ### Compute posterior probability of mu > 0 and mu < 0
+    postdeltapositive <- mean(deltadraws>0)
+    logml <- logmu0 + log(postdeltapositive/.5)
+    logms <- logmu0 + log((1-postdeltapositive)/.5)
+
+    ### Compute Bayes factors model vs. unconstrained mu
+    BF0delta <- exp(logmu - logmu0)
+    BF1delta <- exp(logms - logmu0)
+    BF2delta <- exp(logml - logmu0)
+
+    BFtu_exploratory <- matrix(c(BF0delta,BF1delta,BF2delta),nrow=1)
+    PHP_exploratory <- BFtu_exploratory / apply(BFtu_exploratory,1,sum)
+    colnames(BFtu_exploratory) <- colnames(PHP_exploratory) <- c("Pr(=0)","Pr(<0)","Pr(>0)")
+    row.names(BFtu_exploratory) <- row.names(PHP_exploratory) <- "mu"
+    BFtu_confirmatory <- PHP_confirmatory <- BFmatrix_confirmatory <- BFtable <-
+      priorprobs <- hypotheses <- estimates <- NULL
+
+  }
 
   ############################
 
@@ -388,5 +440,3 @@ get_condpost_rho <- function(yi, vi, rho_min, typ_vi, start_rho, iters = 100000)
 
   return(list(rhodraws = rho_s, logm0u = logm0u))
 }
-
-
