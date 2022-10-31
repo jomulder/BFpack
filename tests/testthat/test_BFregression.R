@@ -1,7 +1,7 @@
 # test BF on lm object
 
 lm1 <-  lm(wt ~ disp + drat + hp, mtcars)
-BF1 <- BF(lm1)
+BF1a <- BF(lm1,BF.type = 2)
 #check exploratory test
 PHPexplo <- matrix(
   c(0.065,  0.003,  0.931,
@@ -10,8 +10,19 @@ PHPexplo <- matrix(
   0.742,  0.178,  0.080),nrow=4,byrow=T)
 test_that("BF.lm exploratory hypotheses correctly evaluated", {
   expect_equivalent(
-    PHPexplo,round(BF1$PHP_exploratory,3)
+    PHPexplo,round(BF1a$PHP_exploratory,3)
 )})
+
+BF1b <- BF(lm1,BF.type = 1)
+PHPexplo <- matrix(
+  c(0.107,  0.006,  0.887,
+    0.002,  0.000,  0.998,
+    0.646,  0.300,  0.054,
+    0.748,  0.168,  0.085),nrow=4,byrow=T)
+test_that("BF.lm exploratory hypotheses correctly evaluated", {
+  expect_equivalent(
+    PHPexplo,round(BF1b$PHP_exploratory,3)
+  )})
 
 
 BF2 <- BF(lm1,hypothesis="disp=drat=0;disp>drat>0;disp>drat=0")
@@ -42,6 +53,12 @@ BF5 <- BF(lm1,hypothesis="drat<hp=disp")
 test_that("BF.lm one equal/order hypothesis correctly evaluated", {
   expect_equivalent(
     round(BF5$PHP_confirmatory,5),c(0.47961,0.52039)
+  )})
+
+BF5b <- BF(lm1,hypothesis="drat<hp=disp",BF.type = 1)
+test_that("BF.lm one equal/order hypothesis correctly evaluated", {
+  expect_equivalent(
+    round(BF5b$PHP_confirmatory,5),c(0.44049,0.55951)
   )})
 
 

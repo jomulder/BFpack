@@ -20,9 +20,23 @@ BF.t_test <- function(x,
                       hypothesis = NULL,
                       prior.hyp = NULL,
                       complement = TRUE,
+                      BF.type = 2,
                       ...){
 
   numpop <- length(x$estimate)
+
+  if(is.null(BF.type)){
+    stop("The argument 'BF.type' must be the integer 1 (for the fractional BF) or 2 (for the adjusted fractional BF).")
+  }
+  if(!is.null(BF.type)){
+    if(is.na(BF.type) | (BF.type!=1 & BF.type!=2))
+      stop("The argument 'BF.type' must be the integer 1 (for the fractional BF) or 2 (for the adjusted fractional BF).")
+  }
+  if(BF.type==2){
+    bayesfactor <- "generalized adjusted fractional Bayes factors"
+  }else{
+    bayesfactor <- "generalized fractional Bayes factors"
+  }
 
   if(numpop==1){ #one sample t test
     tvalue <- x$statistic
@@ -32,11 +46,19 @@ BF.t_test <- function(x,
     n <- df + 1
     stderr <- (xbar - mu0) / tvalue #standard error
     sigmaML <- stderr*sqrt(n-1)
+    #evaluation of posterior
     relfit0 <- dt((xbar-mu0)/stderr,df=df,log=TRUE) - log(stderr)
     relfit1 <- log(1-pt((xbar-mu0)/stderr,df=df))
     relfit2 <- log(pt((xbar-mu0)/stderr,df=df))
-    relcomp0 <- dt(0,df=1,log=T) - log(sigmaML)
-    relcomp1 <- relcomp2 <- log(.5)
+    #evaluation of prior
+    if(BF.type==2){
+      relcomp0 <- dt(0,df=1,log=T) - log(sigmaML)
+      relcomp1 <- relcomp2 <- log(.5)
+    }else{
+      relcomp0 <- dt((xbar-mu0)/sigmaML,df=1,log=TRUE) - log(sigmaML)
+      relcomp1 <- log(1-pt((xbar-mu0)/sigmaML,df=1))
+      relcomp2 <- log(pt((xbar-mu0)/sigmaML,df=1))
+    }
 
     #exploratory BFs
     if(x$method=="Paired t-test"){
@@ -77,7 +99,7 @@ BF.t_test <- function(x,
       }else{
         names(lm1$coefficients) <- "mu"
       }
-      BFlm1 <- BF(lm1,hypothesis,prior.hyp=prior.hyp,complement=complement)
+      BFlm1 <- BF(lm1,hypothesis,prior.hyp=prior.hyp,complement=complement,BF.type=BF.type)
       BFtu_confirmatory <- BFlm1$BFtu_confirmatory
       PHP_confirmatory <- BFlm1$PHP_confirmatory
       BFmatrix_confirmatory <- BFlm1$BFmatrix_confirmatory
@@ -107,7 +129,7 @@ BF.t_test <- function(x,
       # is called 'difference'
       df1 <- data.frame(out=out,differenc=factor(c(rep("a",x$n[2]),rep("e",x$n[1]))))
       lm1 <- lm(out ~ differenc,df1)
-      BFlm1 <- BF(lm1,hypothesis=hypothesis,prior.hyp=prior.hyp,complement=complement)
+      BFlm1 <- BF(lm1,hypothesis=hypothesis,prior.hyp=prior.hyp,complement=complement,BF.type=BF.type)
 
       #
       # CHECK IF IF IT x - y OR y - x. error in 2-sample test.
@@ -130,16 +152,25 @@ BF.t_test <- function(x,
       scaleN <- (x$v)/(x$n)
       dfN <- x$n-1
       scale0 <- (x$v)*(x$n-1)/(x$n)
+      nulldiff <- x$null.value
       df0 <- rep(1,2)
-      samsize <- 5e6
-      drawsN <- rt(samsize,df=dfN[1])*sqrt(scaleN[1]) + meanN[1] - rt(1e5,df=dfN[2])*sqrt(scaleN[2]) - meanN[2]
+      samsize <- 1e7
+      drawsN <- rt(samsize,df=dfN[1])*sqrt(scaleN[1]) + meanN[1] - rt(samsize,df=dfN[2])*sqrt(scaleN[2]) - meanN[2]
       densN <- approxfun(density(drawsN),yleft=0,yright=0)
-      relfit0 <- log(densN(0))
-      relfit1 <- log(mean(drawsN<0))
-      relfit2 <- log(mean(drawsN>0))
-      draws0 <- rt(samsize,df=df0[1])*sqrt(scale0[1]) - rt(1e5,df=df0[2])*sqrt(scale0[2])
-      relcomp0 <- log(mean((draws0<1)*(draws0> -1))/2)
-      relcomp1 <- relcomp2 <- log(.5)
+      relfit0 <- log(densN(nulldiff))
+      relfit1 <- log(mean(drawsN<nulldiff))
+      relfit2 <- log(mean(drawsN>nulldiff))
+      if(BF.type == 2){
+        draws0 <- rt(samsize,df=df0[1])*sqrt(scale0[1]) - rt(samsize,df=df0[2])*sqrt(scale0[2])
+        relcomp0 <- log(mean((draws0<1)*(draws0> -1))/2)
+        relcomp1 <- log(mean(draws0<0))
+        relcomp2 <- log(mean(draws0>0))
+      }else{
+        draws0 <- rt(samsize,df=df0[1])*sqrt(scale0[1]) + meanN[1] - rt(samsize,df=df0[2])*sqrt(scale0[2]) - meanN[2]
+        relcomp0 <- log(mean((draws0 < nulldiff + 1)*(draws0 > nulldiff - 1))/2)
+        relcomp1 <- log(mean(draws0<nulldiff))
+        relcomp2 <- log(mean(draws0>nulldiff))
+      }
 
       #exploratory Bayes factor test
       hypotheses_exploratory <- c("difference=0","difference<0","difference>0")
@@ -218,6 +249,8 @@ BF.t_test <- function(x,
             priorprobs <- prior.hyp
           }
         }
+        rm(drawsN)
+        rm(draws0)
         #compute Bayes factors and posterior probabilities for confirmatory test
         BFtu_confirmatory <- c(apply(relfit / relcomp, 1, prod))
         PHP_confirmatory <- BFtu_confirmatory*priorprobs / sum(BFtu_confirmatory*priorprobs)
