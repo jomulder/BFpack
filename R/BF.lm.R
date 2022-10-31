@@ -13,7 +13,7 @@ BF.lm <- function(x,
                   ...){
 
   if(is.null(BF.type)){
-    stop("The argument 'BF.type' must be the integer 1 (for the fractional BF) or 2 (for the adjusted fractional BF).")
+    stop("The argument 'BF.type' must be the integer    1 (for the fractional BF) or 2 (for the adjusted fractional BF).")
   }
   if(!is.null(BF.type)){
     if(is.na(BF.type) | (BF.type!=1 & BF.type!=2))
