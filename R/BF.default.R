@@ -8,10 +8,10 @@ BF.default <- function(x,
                        hypothesis = NULL,
                        prior.hyp = NULL,
                        complement = TRUE,
-                       ...,
+                       BF.type = 2,
                        Sigma,
                        n,
-                       BF.type = 2){
+                       ...){
 
   if(is.null(BF.type)){
     stop("The argument 'BF.type' must be the integer 1 (for the fractional BF) or 2 (for the adjusted fractional BF).")

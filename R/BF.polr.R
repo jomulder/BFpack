@@ -7,6 +7,7 @@ BF.polr <- function(x,
                        hypothesis = NULL,
                        prior.hyp = NULL,
                        complement = TRUE,
+                       BF.type = 2,
                        ...){
 
   #Extract summary statistics
@@ -18,6 +19,7 @@ BF.polr <- function(x,
   Args$hypothesis <- hypothesis
   Args$prior.hyp <- prior.hyp
   Args$complement <- complement
+  Args$BF.type <- BF.type
   out <- do.call(BF, Args)
   out$model <- x
   out$call <- match.call()

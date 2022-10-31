@@ -22,17 +22,16 @@
 #' The default is NULL which will specify equal prior probabilities.
 #' @param complement a logical specifying whether the complement should be added
 #' to the tested hypothesis under \code{hypothesis}.
+#' @param BF.type An integer that specified the type of Bayes factor (or prior) that is used for the test.
+#' Currently, this argument is only used for models of class 'lm' or 'mlm' or a named vector \code{x},
+#' where \code{BF.type=2} implies an adjusted fractional Bayes factor with a f'ractional prior mean' at the null value (Mulder, 2014),
+#' and \code{BF.type=1} implies a regular fractional Bayes factor (O'Hagan, 1995) with a 'fractional prior mean' at the MLE.
 #' @param Sigma An approximate posterior covariance matrix (e.g,. error covariance
 #' matrix) of the parameters of interest. This argument is only required when \code{x}
 #' is a named vector.
 #' @param n The (effective) sample size that was used to acquire the estimates in the named vector
 #' \code{x} and the error covariance matrix \code{Sigma}. This argument is only required when \code{x}
 #' is a named vector.
-#' @param BF.type An integer that specified the type of Bayes factor (or prior) that is used for the test.
-#' Currently, this argument is only used for model of class 'lm' or 'mlm' or a named vector \code{x},
-#' where \code{BF.type=2} implies a 'prior adjustment' (Mulder, 2014) with a fractional prior mean at the null value,
-#' and \code{BF.type=1} implies no prior adjustment with a fractional prior mean at the MLE (similar as the original
-#' fractional Bayes factor).
 #' @param ... Parameters passed to and from other functions.
 #' @return The output is an object of class \code{BF}. The object has elements:
 #' \itemize{

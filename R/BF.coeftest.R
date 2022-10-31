@@ -6,6 +6,7 @@ BF.coeftest <- function(x,
                      hypothesis = NULL,
                      prior.hyp = NULL,
                      complement = TRUE,
+                     BF.type = 2,
                      ...){
 
   Sigma <- diag(x[, 2L]^2)
@@ -16,7 +17,7 @@ BF.coeftest <- function(x,
   if(!is.null(prior.hyp)) warning("prior specification via 'prior.hyp' is not supported for objects of class 'coeftest'")
   #if(!exploratory) stop("only exploratory hypothesis testing is supported for objects of class 'coeftest'")
 
-  out <- BF.default(x[, 1L], Sigma = Sigma, n = n, ...)
+  out <- BF.default(x[, 1L], Sigma = Sigma, n = n, BF.type = BF.type, ...)
   out$model <- x
   out$call <- match.call()
   out
