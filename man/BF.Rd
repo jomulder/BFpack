@@ -5,7 +5,7 @@
 \title{Bayes factors for Bayesian exploratory and confirmatory hypothesis
 testing}
 \usage{
-BF(x, hypothesis, prior.hyp, complement, Sigma, n, ...)
+BF(x, hypothesis, prior.hyp, complement, Sigma, n, BF.type, ...)
 }
 \arguments{
 \item{x}{An R object containing the outcome of a statistical analysis.
@@ -33,6 +33,11 @@ is a named vector.}
 \item{n}{The (effective) sample size that was used to acquire the estimates in the named vector
 \code{x} and the error covariance matrix \code{Sigma}. This argument is only required when \code{x}
 is a named vector.}
+
+\item{BF.type}{An integer that specified the type of Bayes factor (or prior) that is used for the test.
+Currently, this argument is only used for models of class 'lm' or 'mlm' or a named vector \code{x},
+where \code{BF.type=2} implies an adjusted fractional Bayes factor with a f'ractional prior mean' at the null value (Mulder, 2014),
+and \code{BF.type=1} implies a regular fractional Bayes factor (O'Hagan, 1995) with a 'fractional prior mean' at the MLE.}
 
 \item{...}{Parameters passed to and from other functions.}
 }
@@ -70,9 +75,9 @@ Savage Dickey density ratio)
 against the unconstrained hypothesis.
 \item The sixth column `\code{BF>}' contains the Bayes factor of the order constraints
 against the unconstrained hypothesis.
-\item The seveth column `\code{BF}' contains the Bayes factor of the constrained hypothesis
+\item The seventh column `\code{BF}' contains the Bayes factor of the constrained hypothesis
 against the unconstrained hypothesis.
-\item The eigth column `\code{BF=}' contains the posterior probabilities of the
+\item The eighth column `\code{BF=}' contains the posterior probabilities of the
 constrained hypotheses.
 }
 \item prior: The prior probabilities of the constrained hypotheses in a confirmatory test.

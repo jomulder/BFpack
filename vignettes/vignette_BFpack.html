@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<meta name="author" content="Mulder, J., Williams, D. R., Gu, X., Tomarken, A., Boeing-Messing, F., Olsson-Collentine, A., Meijerink, M., Menke, J., van Aert, R., Fox, J.-P., Hoijtink, H., Rosseel, Y., Wagenmakers, E.-J., and van Lissa, C." />
+
+<meta name="date" content="2022-11-08" />
+
+<title>Introduction to BFpack</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+
+
+<style type="text/css">
+  code {
+    white-space: pre;
+  }
+  .sourceCode {
+    overflow: visible;
+  }
+</style>
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Introduction to
+<strong><em>BFpack</em></strong></h1>
+<h4 class="author">Mulder, J., Williams, D. R., Gu, X., Tomarken, A.,
+Boeing-Messing, F., Olsson-Collentine, A., Meijerink, M., Menke, J., van
+Aert, R., Fox, J.-P., Hoijtink, H., Rosseel, Y., Wagenmakers, E.-J., and
+van Lissa, C.</h4>
+<h4 class="date">2022-11-08</h4>
+
+
+
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
+<p><code>BFpack</code> contains a collection of functions for Bayesian
+hypothesis testing using Bayes factors and posterior probabilities in R.
+The main function <code>BF</code> needs a fitted model <code>x</code> as
+input argument. Depending on the class of the fitted model, a standard
+hypothesis test is executed by default. For example, if <code>x</code>
+is a fitted regression model of class <code>lm</code> then posterior
+probabilities are computed of whether each separate coefficient is zero,
+negative, or positive (assuming equal prior probabilities). If one has
+specific hypotheses with equality and/or order constraints on the
+parameters under the fitted model <code>x</code> then these can be
+formulated using the <code>hypothesis</code> argument (a character
+string), possibly together prior probabilities for the hypotheses via
+the <code>prior.hyp</code> argument (default all hypotheses are equally
+likely a priori), and the <code>complement</code> argument which is a
+logical stating whether the complement hypotheses should be included in
+the case (<code>TRUE</code> by default).</p>
+<p>Alternatively, when the model of interest is not of a class that is
+currently supported, <code>x</code> can also be a named numeric vector
+containing the estimates of the model parameters of interest, together
+with the error covariance matrix in the argument <code>Sigma</code>, and
+the sample size used to obtain the estimates, to perform an approximate
+Bayes factor test using large sample theory.</p>
+</div>
+<div id="reference" class="section level2">
+<h2>Reference</h2>
+<p>The key references for the package are</p>
+<p>Mulder, J., Williams, D. R., Gu, X., Tomarken, A., Boeing-Messing,
+F., Olsson-Collentine, A., Meijerink, M., Menke, J., van Aert, R., Fox,
+J.-P., Hoijtink, H., Rosseel, Y., Wagenmakers, E.-J., and van Lissa, C.
+(to appear). BFpack: Flexible Bayes Factor Testing of Scientific
+Theories in R. <em>Journal of Statistical Software</em>.</p>
+<p>Mulder, J., van Lissa, C., Gu, X., Olsson-Collentine, A.,
+Boeing-Messing, F., Williams, D. R., Fox, J.-P., Menke, J., et
+al. (2021). BFpack: Flexible Bayes Factor Testing of Scientific
+Expectations. (Version 0.3.2) <a href="https://CRAN.R-project.org/package=BFpack" class="uri">https://CRAN.R-project.org/package=BFpack</a></p>
+</div>
+<div id="usage" class="section level2">
+<h2>Usage</h2>
+<p><code>BF(x, hypothesis, prior.hyp = NULL, complement = TRUE, ...)</code></p>
+</div>
+<div id="arguments" class="section level2">
+<h2>Arguments</h2>
+<ul>
+<li><code>x</code>, a fitted model object that is obtained using a
+R-function. The object can be obtained via the following R functions:
+<ul>
+<li><code>t_test</code> for t testing,</li>
+<li><code>bartlett_test</code> for testing independent group
+variances,</li>
+<li><code>aov</code> for AN(C)OVA testing,</li>
+<li><code>manova</code> for MAN(C)OVA testing,</li>
+<li><code>lm</code> for linear regresssion analysis,</li>
+<li><code>cor_test</code> for correlation analysis,</li>
+<li><code>lmer</code> currently for testing intraclass correlations in
+random intercept models,</li>
+<li><code>glm</code> for generalized linear models,</li>
+<li><code>coxph</code> for survival analysis,</li>
+<li><code>survreg</code> for survival analysis,</li>
+<li><code>polr</code> for ordinal regression,</li>
+<li><code>zeroinfl</code> for zero-inflated regression,</li>
+<li><code>rma</code> for meta-analysis,</li>
+<li><code>x</code> can also be a named vector with estimates of the key
+parameters.</li>
+</ul></li>
+<li><code>hypothesis</code>, a character string specifying the
+hypotheses with equality and/or order constraints on the key parameters
+of interest.
+<ul>
+<li>By default <code>hypothesis = NULL</code> which executes exploratory
+hypothesis tests (examples below).</li>
+<li>The parameter names are based on the names of the estimated key
+parameters. An overview of the key parameters is given using the
+function <code>get_estimates</code>, e.g.,
+<code>get_estimates(model1),</code> where <code>model1</code> is a
+fitted model object.</li>
+<li>Separate constraints within a hypothesis are separated with an
+ampersand <code>&amp;</code>. Hypotheses are separated using a
+semi-colon <code>;</code>. For example
+<code>hypothesis = &quot;weight &gt; height &amp; height &gt; 0; weight = height = 0&quot;</code>
+implies that the first hypothesis assumes that the parameter
+<code>weight</code> is larger than the parameter <code>height</code> and
+that the parameter <code>height</code> is positive, and the second
+hypothesis assumes that the two parameters are equal to zero. Note that
+the first hypothesis could equivalently have been written as
+<code>weight &gt; height &gt; 0</code>.</li>
+</ul></li>
+<li><code>prior.hyp</code>, a numeric vector specifying the prior
+probabilities of the hypotheses of the <code>hypothesis</code> argument.
+The default setting is <code>prior.hyp = NULL</code> which sets equal
+prior probabilities.</li>
+<li><code>complement</code>, a logical value which specified if a
+complement hypothesis is included in the tested hypotheses specified
+under <code>hypothesis</code>. The default setting is <code>TRUE</code>.
+The complement hypothesis covers the remaining parameters space that is
+not covered by the constrained hypotheses. For example, if an equality
+hypothesis and an order hypothesis are formulated, say,
+<code>hypothesis = &quot;weight = height = length; weight &gt; height &gt; length&quot;</code>,
+the complement hypothesis covers the remaining subspace where neither
+<code>&quot;weight = height = length&quot;</code> holds, nor
+<code>&quot;weight &gt; height &gt; length&quot;</code> holds.</li>
+</ul>
+<p>Alternatively if one is interesting in testing hypotheses on a model
+object which has a class that is currently not supported, an approximate
+Bayesian test can be executed with the following (additional)
+arguments</p>
+<ul>
+<li><code>x</code>, a named numeric vector of the estimates (e.g., MLE)
+of the parameters of interest where the labels are equal to the names of
+the parameters which are used for the <code>hypothesis</code>
+argument.</li>
+<li><code>Sigma</code>, the approximate posterior covariance matrix
+(e.g,. error covariance matrix) of the parameters of interest.</li>
+<li><code>n</code>, the sample size that was used to acquire the
+estimates and covariance matrix.</li>
+</ul>
+</div>
+<div id="output" class="section level2">
+<h2>Output</h2>
+<p>The output is of class <code>BF</code>. By running the
+<code>print</code> function on the <code>BF</code> object, a short
+overview of the results are presented. By running the
+<code>summary</code> function on the <code>BF</code> object, a
+comprehensive overview of the results are presented.</p>
+</div>
+<div id="example-analyses" class="section level2">
+<h2>Example analyses</h2>
+<div id="bayesian-t-testing" class="section level3">
+<h3>Bayesian t testing</h3>
+<p>First a classical one sample t test is executed for the test value
+<span class="math inline">\(\mu = 5\)</span> on the therapeutic data</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>ttest1 <span class="ot">&lt;-</span> bain<span class="sc">::</span><span class="fu">t_test</span>(therapeutic, <span class="at">alternative =</span> <span class="st">&quot;greater&quot;</span>, <span class="at">mu =</span> <span class="dv">5</span>)</span></code></pre></div>
+<p>The <code>t_test</code> function is part of the
+<strong><em>bain</em></strong> package. The function is equivalent to
+the standard <code>t.test</code> function with the addition that the
+returned object contains additional output than the standard
+<code>t.test</code> function.</p>
+<p>To see which parameters can be tested on this object run</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">get_estimates</span>(ttest1)</span></code></pre></div>
+<p>which shows that the only parameter that can be tested is the
+population mean which has name <code>mu</code>.</p>
+<p>To perform an exploratory Bayesian t test of whether the population
+mean is equal to, smaller than, or larger than the null value (which is
+<code>5</code> here, as specified when defining the <code>ttest1</code>
+object), one needs to run <code>BF</code> function on the object.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(BFpack)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>BF1 <span class="ot">&lt;-</span> <span class="fu">BF</span>(ttest1)</span></code></pre></div>
+<p>This executes an exploratory (‘exhaustive’) test around the null
+value: <code>H1: mu = 5</code> versus <code>H2: mu &lt; 5</code> versus
+<code>H3: mu &gt; 5</code> assuming equal prior probabilities for
+<code>H1</code>, <code>H2</code>, and <code>H3</code> of 1/3. The output
+presents the posterior probabilities for the three hypotheses.</p>
+<p>The same test would be executed when the same hypotheses are
+explicitly specified using the <code>hypothesis</code> argument.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>hypothesis <span class="ot">&lt;-</span> <span class="st">&quot;mu = 5; mu &lt; 5; mu &gt; 5&quot;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">BF</span>(ttest1, <span class="at">hypothesis =</span> hypothesis)</span></code></pre></div>
+<p>In the above test the complement hypothesis is excluded automatically
+as the formualted hypothesis under the <code>hypothesis</code> argument
+cover the complete parameter space. Furthermore, when testing hypotheses
+via the <code>hypothesis</code> argument, the output also presents an
+<code>Evidence matrix</code> containing the Bayes factors between the
+hypotheses formulated in the <code>hypothesis</code> argument.</p>
+<p>A standard two-sided test around the null value <code>mu</code> is
+executed by setting the hypothesis argument equal to the precise null
+hypothesis so that the complement hypothesis (which is included by
+default) corresponds to the hypothesis that assumes that the population
+mean is anything but the null value</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>hypothesis <span class="ot">&lt;-</span> <span class="st">&quot;mu = 5&quot;</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">BF</span>(ttest1, <span class="at">hypothesis =</span> hypothesis)</span></code></pre></div>
+<p>The argument <code>prior.hyp</code> can be used to specify different
+prior probabilities for the hypotheses. For example, when the left
+one-tailed hypothesis is not possible based on prior considerations
+(e.g., see <a href="https://arxiv.org/abs/1911.07728">Mulder et
+al. (2021, Section 4.1, preprint)</a>) while the precise (null)
+hypothesis and the right one-tailed hypothesis are equally likely, the
+argument <code>prior.hyp</code> should be a vector specifying the prior
+probabilities of the respective hypotheses</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">BF</span>(ttest1, <span class="at">hypothesis =</span> <span class="st">&quot;mu = 5; mu &lt; 5; mu &gt; 5&quot;</span>, <span class="at">prior.hyp =</span> <span class="fu">c</span>(.<span class="dv">5</span>,<span class="dv">0</span>,.<span class="dv">5</span>))</span></code></pre></div>
+<p>For more information about the methodology, we refer the interested
+reader to <a href="https://arxiv.org/abs/1911.07728">Mulder et
+al. (2021)</a> and <a href="https://arxiv.org/abs/1904.00679">Mulder and
+Gu (2021)</a>.</p>
+</div>
+<div id="analysis-of-variance" class="section level3">
+<h3>Analysis of variance</h3>
+<p>First an analysis of variance (ANOVA) model is fitted using the
+<code>aov</code> fuction in <code>R</code>.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>aov1 <span class="ot">&lt;-</span> <span class="fu">aov</span>(price <span class="sc">~</span> anchor <span class="sc">*</span> motivation, <span class="at">data =</span> tvprices)</span></code></pre></div>
+<p>Next a Bayesian test can be performed on the fitted object. By
+default exploratory tests are executed of whether the individual main
+and interaction effects are zero or not (corresponding to the full
+model) (see <a href="https://arxiv.org/abs/1911.07728">Mulder et
+al. (2021, Section 4.2)</a>)</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">BF</span>(aov1)</span></code></pre></div>
+<p>One can also test for specific equal/order hypotheses based on
+scientific expectations such as whether <code>anchorrounded</code> is
+positive, <code>motivationlow</code> is negative, and the interaction
+effect <code>anchorrounded:motivationlow</code> is negative (see <a href="https://arxiv.org/abs/1911.07728">Mulder et al. (2021, Section
+4.2)</a>) versus null hypothesis versus the complement hypothesis (which
+assumes that the constraints of neither two hypotheses hold). This test
+can be executed as follows:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>constraints2 <span class="ot">&lt;-</span> <span class="st">&quot;anchorrounded &gt; 0 &amp; motivationlow &lt; 0 &amp;</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="st">  anchorrounded:motivationlow &lt; 0; anchorrounded = 0 &amp;</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="st">  motivationlow = 0 &amp; anchorrounded:motivationlow = 0&quot;</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1234</span>)</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="fu">BF</span>(aov1, <span class="at">hypothesis =</span> constraints2)</span></code></pre></div>
+<p>For more information about the methodology, we refer the interested
+reader to <a href="https://arxiv.org/abs/1911.07728">Mulder et
+al. (2021)</a> and <a href="https://arxiv.org/abs/1904.00679">Mulder and
+Gu (2021)</a>.</p>
+</div>
+<div id="testing-independent-group-variances" class="section level3">
+<h3>Testing independent group variances</h3>
+<p>First a classical significance test is executed using the
+<code>bartlett_test</code> function, which is part of the
+<strong><em>BFpack</em></strong> package. The function is equivalent to
+the standard <code>bartlett.test</code> function with the addition that
+the returned object contains additional output needed for the test using
+the <code>BF</code> function.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>bartlett1 <span class="ot">&lt;-</span> <span class="fu">bartlett_test</span>(<span class="at">x =</span> attention<span class="sc">$</span>accuracy, <span class="at">g =</span> attention<span class="sc">$</span>group)</span></code></pre></div>
+<p>On an object of this class, by default <code>BF</code> executes an
+exploratory test of homogeneity (equality) of variances against an
+unconstrained (full) model</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">BF</span>(bartlett1)</span></code></pre></div>
+<p>The group variances have names <code>ADHD</code>,
+<code>Controls</code>, and <code>TS</code>. This can be retrieved by
+running</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">get_estimates</span>(bartlett1)</span></code></pre></div>
+<p>Let’s say we want to test whether a hypothesis (H1) which assumes
+that group variances of groups <code>Controls</code> and <code>TS</code>
+are equal and smaller than the group variance of the <code>ADHD</code>
+group, a hypothesis (H2) which assumes that the group variances of
+<code>ADHD</code> and <code>TS</code> are equal and larger than the
+<code>Controls</code> group, a hypothesis (H3) which assumes all group
+variances are equal, and a complement hypothesis (H4). To do this we run
+the following:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>hypothesis <span class="ot">&lt;-</span> <span class="st">&quot;Controls = TS &lt; ADHD; Controls &lt; TS = ADHD; Controls = TS = ADHD&quot;</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">358</span>)</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>BF_var <span class="ot">&lt;-</span> <span class="fu">BF</span>(bartlett1, hypothesis)</span></code></pre></div>
+<p>A comprehensive output of this analysis can be obtained by
+running:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(BF_var)</span></code></pre></div>
+<p>which presents the results of an exploratory analysis and the results
+of a confirmatory analysis (based on the hypotheses formulated under the
+<code>hypothesis</code> argument). The exploratory analysis tests a
+hypothesis which assumes that the variances are equal across groups
+(homogeneity of variances) versus an alternative unrestricted
+hypothesis. The output shows that the posterior probabilities of these
+two hypotheses are approximately 0.803 and 0.197 (assuming equal priori
+probabilities). Note that the p value in the classical Bartlett test for
+these data equals 0.1638 which implies that the hypothesis of
+homogeneity of variances cannot be rejected using common significance
+levels, such as 0.05 or 0.01. Note however that this p value cannot be
+used as a measure for the evidence in the data in favor of homogeneity
+of group variances. This can be done using the proposed Bayes factor
+test which shows that the probability that the variances are equal is
+approximately 0.803. Also note that the exploratory test could
+equivalently tested via the <code>hypothesis</code> argument by running
+<code>BF(bartlett1, &quot;Controls = TS = ADHD&quot;)</code>.</p>
+<p>The confirmatory test shows that H1 receives strongest support from
+the data, but H2 and H3 are viable competitors. It appears that even the
+complement H3 cannot be ruled out entirely given a posterior prob-
+ability of 0.058. To conclude, the results indicate that TS population
+are as heterogeneous in their attentional performances as the healthy
+control population in this specific task, but further research would be
+required to obtain more conclusive evidence.</p>
+<p>For more information about the methodology, we refer the interested
+reader to <a href="https://www.researchgate.net/publication/317418250_Bayesian_evaluation_of_constrained_hypotheses_on_variances_of_multiple_independent_groups">Boing-Messing
+et al. (2017)</a></p>
+</div>
+<div id="logistic-regression" class="section level3">
+<h3>Logistic regression</h3>
+<p>An example hypothesis test is considered under a logistic regression
+model. First a logistic regression model is fitted using the
+<code>glm</code> function</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>fit_glm <span class="ot">&lt;-</span> <span class="fu">glm</span>(sent <span class="sc">~</span> ztrust <span class="sc">+</span> zfWHR <span class="sc">+</span> zAfro <span class="sc">+</span> glasses <span class="sc">+</span> attract <span class="sc">+</span> maturity <span class="sc">+</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>               tattoos, <span class="at">family =</span> <span class="fu">binomial</span>(), <span class="at">data =</span> wilson)</span></code></pre></div>
+<p>By default exploratory exhaustive tests are executed of whether the
+separate regression coefficients are zero, negative, or positive:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">BF</span>(fit_glm)</span></code></pre></div>
+<p>The names of the regression coefficients on which constrained
+hypotheses can be formualted can be extracted using the
+<code>get_estimates</code> function.</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">get_estimates</span>(fit_glm)</span></code></pre></div>
+<p>Two different hypotheses are formulated with competing equality
+and/or order constraints on the regression coefficients of interest <a href="https://arxiv.org/abs/1911.07728">Mulder et al. (2021, Section
+4.4)</a></p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>BF_glm <span class="ot">&lt;-</span> <span class="fu">BF</span>(fit_glm, <span class="at">hypothesis =</span> <span class="st">&quot;ztrust &gt; (zfWHR, zAfro) &gt; 0;</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="st">             ztrust &gt; zfWHR = zAfro = 0&quot;</span>)</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(BF_glm)</span></code></pre></div>
+<p>By calling the <code>summary</code> function on the output object of
+class <code>BF</code>, the results of the exploratory tests are
+presented of whether each separate parameter is zero, negative, or
+positive, and the results of the confirmatory test of the hypotheses
+under the <code>hypothesis</code> argument are presented. When the
+hypotheses do not cover the complete parameter space, by default the
+complement hypothesis is added which covers the remaining parameter
+space that is not covered by the constraints under the hypotheses of
+interest. In the above example, the complement hypothesis covers the
+parameter space where neither
+<code>&quot;ztrust &gt; (zfWHR, zAfro) &gt; 0&quot;</code> holds, nor where
+<code>&quot;ztrust &gt; zfWHR = zAfro = 0&quot;</code> holds.</p>
+<p>For more information about the methodology, we refer the interested
+reader to <a href="https://bpspsychub.onlinelibrary.wiley.com/doi/full/10.1111/bmsp.12110?casa_token=tjWwoVqLI7QAAAAA%3Ac84DWKNw8pf23ybOgZTs1pzgyZMuCc-BeTaPFj8vnfnTytzHd0gr-D9ymVxYbKj_MTO1ITGFW8tGBZ1J">Gu
+et al. (2018)</a> and <a href="https://arxiv.org/abs/1911.07728">Mulder
+et al. (2021)</a></p>
+</div>
+<div id="correlation-analysis" class="section level3">
+<h3>Correlation analysis</h3>
+<p>By default <code>BF</code> performs exhaustice tests of whether the
+separate correlations are zero, negative, or positive.</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">123</span>)</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>cor1 <span class="ot">&lt;-</span> <span class="fu">cor_test</span>(memory[,<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>])</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>BF1 <span class="ot">&lt;-</span> <span class="fu">BF</span>(cor1)</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(BF1)</span></code></pre></div>
+<p>The names of the correlations is constructed using the names of the
+variables separated by <code>_with_</code>:</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">get_estimates</span>(cor1)</span></code></pre></div>
+<p>Specific hypotheses based on prior/theoretical considerations can be
+tested using the <code>hypothesis</code> argument. As an example we show
+here how to test whether all correlations are equal and positive versus
+its complement.</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>BF2 <span class="ot">&lt;-</span> <span class="fu">BF</span>(cor1, <span class="at">hypothesis =</span> <span class="st">&quot;Del_with_Im = Wmn_with_Im = Wmn_with_Del &gt; 0&quot;</span>)</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(BF2)</span></code></pre></div>
+<p>We can also test equality and order constraints on correlations
+across different groups. As the seventh column of the
+<code>memory</code> object is a group indicator, let us first create
+different objects for the two different groups, and perform Bayesian
+estimation on the correlation matrices of the two different groups</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>memoryHC <span class="ot">&lt;-</span> <span class="fu">subset</span>(memory,Group<span class="sc">==</span><span class="st">&quot;HC&quot;</span>)[,<span class="sc">-</span>(<span class="dv">4</span><span class="sc">:</span><span class="dv">7</span>)]</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>memorySZ <span class="ot">&lt;-</span> <span class="fu">subset</span>(memory,Group<span class="sc">==</span><span class="st">&quot;SZ&quot;</span>)[,<span class="sc">-</span>(<span class="dv">4</span><span class="sc">:</span><span class="dv">7</span>)]</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">123</span>)</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>cor1 <span class="ot">&lt;-</span> <span class="fu">cor_test</span>(memoryHC,memorySZ)</span></code></pre></div>
+<p>In this case with multiple groups by default exploratory tests are
+executed of whether the correlations are zero, negative, or positive for
+each separate group (e.g., correlations in group <code>gr1</code> are
+denoted by <code>_in_gr1</code> at the end of the name)</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="fu">get_estimates</span>(cor1)</span></code></pre></div>
+<p>Next we test the one-sided hypothesis that the respective
+correlations in the first group (<code>g1</code>) are larger than the
+correlations in the second group (<code>g2</code>) via</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">123</span>)</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>BF6_cor <span class="ot">&lt;-</span> <span class="fu">BF</span>(cor1, <span class="at">hypothesis =</span></span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;Del_with_Im_in_g1 &gt; Del_with_Im_in_g2 &amp;</span></span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a><span class="st">  Del_with_Wmn_in_g1 &gt; Del_with_Wmn_in_g2 &amp;</span></span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a><span class="st">  Im_with_Wmn_in_g1 &gt; Im_with_Wmn_in_g2&quot;</span>)</span></code></pre></div>
+<p>By running <code>print(BF6_cor)</code>, the output shows that the
+one-sided hypothesis received a posterior probability of 0.991 and the
+alternative received a posterior probability of .009 (assuming equal
+prior probabilities).</p>
+<p>For more information about the methodology, we refer the interested
+reader to <a href="https://www.researchgate.net/publication/280256902_Bayes_factors_for_testing_order-constrained_hypotheses_on_correlations">Mulder
+(2016)</a> and <a href="https://arxiv.org/abs/1807.05819">Mulder and
+Gelissen (2019)</a></p>
+</div>
+<div id="univariatemultivariate-multiple-regression" class="section level3">
+<h3>Univariate/Multivariate multiple regression</h3>
+<p>For a univariate regression model, by default an exhaustive test is
+executed of whether an effect is zero, negative, or postive.</p>
+<div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>lm1 <span class="ot">&lt;-</span> <span class="fu">lm</span>(Superficial <span class="sc">~</span> Face <span class="sc">+</span> Vehicle, <span class="at">data =</span> fmri)</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>BF1 <span class="ot">&lt;-</span> <span class="fu">BF</span>(lm1)</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(BF1)</span></code></pre></div>
+<p>Hypotheses can be tested with equality and/or order constraints on
+the effects of interest. If prefered the complement hypothesis can be
+omitted using the <code>complement</code> argument</p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>BF2 <span class="ot">&lt;-</span> <span class="fu">BF</span>(lm1, <span class="at">hypothesis =</span> <span class="st">&quot;Vehicle &gt; 0 &amp; Face &lt; 0; Vehicle = Face = 0&quot;</span>,</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>          <span class="at">complement =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(BF2)</span></code></pre></div>
+<p>In a multivariate regression model hypotheses can be tested on the
+effects on the same dependent variable, and on effects across different
+dependent variables. The name of an effect is constructed as the name of
+the predictor variable and the dependent variable separated by
+<code>_on_</code>. Testing hypotheses with both constraints within a
+dependent variable and across dependent variables makes use of a Monte
+Carlo estimate which may take a few seconds.</p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>lm2 <span class="ot">&lt;-</span> <span class="fu">lm</span>(<span class="fu">cbind</span>(Superficial, Middle, Deep) <span class="sc">~</span> Face <span class="sc">+</span> Vehicle,</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>              <span class="at">data =</span> fmri)</span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>constraint2 <span class="ot">&lt;-</span> <span class="st">&quot;Face_on_Deep = Face_on_Superficial = Face_on_Middle &lt; 0 &lt;</span></span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a><span class="st">     Vehicle_on_Deep = Vehicle_on_Superficial = Vehicle_on_Middle;</span></span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a><span class="st">     Face_on_Deep &lt; Face_on_Superficial = Face_on_Middle &lt; 0 &lt; Vehicle_on_Deep =</span></span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a><span class="st">     Vehicle_on_Superficial = Vehicle_on_Middle&quot;</span></span>
+<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">123</span>)</span>
+<span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a>BF3 <span class="ot">&lt;-</span> <span class="fu">BF</span>(lm2, <span class="at">hypothesis =</span> constraint2)</span>
+<span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(BF3)</span></code></pre></div>
+<p>For more information about the methodology, we refer the interested
+reader to <a href="https://link.springer.com/article/10.3758/s13428-018-01196-9">Mulder
+and Olsson-Collentine (2019)</a> and <a href="https://arxiv.org/abs/1904.00679">Mulder and Gu (2021)</a></p>
+</div>
+<div id="testing-the-effect-size-and-beteen-study-heterogeneity-in-a-meta-analysis" class="section level3">
+<h3>Testing the effect size and beteen-study heterogeneity in a
+meta-analysis</h3>
+<p>For illustrative purposes we generate a hypothetical simulated
+dataset</p>
+<div class="sourceCode" id="cb28"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">123</span>)</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>tau2 <span class="ot">&lt;-</span> <span class="fl">0.05</span></span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>vi <span class="ot">&lt;-</span> <span class="fu">runif</span>(<span class="dv">50</span>, <span class="at">min =</span> <span class="fl">0.01</span>, <span class="at">max =</span> <span class="fl">0.2</span>)</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>yi <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(<span class="dv">50</span>, <span class="at">mean =</span> <span class="dv">0</span>, <span class="at">sd =</span> <span class="fu">sqrt</span>(vi<span class="sc">+</span>tau2))</span></code></pre></div>
+<p>where <code>tau2</code> denotes the true between-study heterogeneity,
+<code>vi</code> is a vector containing the squared standard errors of 50
+studies, and <code>yi</code> is a vector containing the estimated
+effects sizes in the 50 studies. To test the overall effect size and the
+between-study heterogeneity using <code>BFpack</code>, an initial
+meta-analysis needs to be executed using the <code>metafor</code>
+package. Subsequently the output is plugged into the <code>BF</code>
+function:</p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>res <span class="ot">&lt;-</span> metafor<span class="sc">::</span><span class="fu">rma</span>(<span class="at">yi =</span> yi, <span class="at">vi =</span> vi)</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>BFmeta <span class="ot">&lt;-</span> <span class="fu">BF</span>(res)</span></code></pre></div>
+<p>The <code>summary</code> output gives the posterior probabilities for
+a zero, negative, and positive between-study heterogeneity
+<code>I^2</code> and overall effect size <code>mu</code> assuming equal
+prior probabilities:</p>
+<div class="sourceCode" id="cb30"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(BFmeta)</span></code></pre></div>
+<p>The results indicate evidence for positive between-study
+heterogeneity (suggesting that a random effects meta-analysis model is
+appropriate) and for a zero overall effect size.</p>
+<p>The unconstrained estimates (posterior mean and median) and the lower
+and upper bound of the 95% Bayesian credible intervals can be obtained
+by calling:</p>
+<div class="sourceCode" id="cb31"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>BFmeta<span class="sc">$</span>estimates</span></code></pre></div>
+<p>For more information about the methodology, we refer the interested
+reader to <a href="https://psyarxiv.com/ktcq4/">Van Aert and Mulder
+(2021)</a></p>
+</div>
+<div id="running-bf-on-a-named-vector" class="section level3">
+<h3>Running <code>BF</code> on a named vector</h3>
+<p>The input for the <code>BF</code> function can also be a named vector
+containing the estimates of the parameters of interest. In this case the
+error covariance matrix of the estimates is also needed via the
+<code>Sigma</code> argument, as well as the sample size that was used
+for obtaining the estimates via the <code>n</code> argument. Bayes
+factors are then computed using Gaussian approximations of the
+likelihood (and posterior), similar as in classical Wald test.</p>
+<p>We illustrate this for a Poisson regression model</p>
+<div class="sourceCode" id="cb32"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>poisson1 <span class="ot">&lt;-</span> <span class="fu">glm</span>(<span class="at">formula =</span> breaks <span class="sc">~</span> wool <span class="sc">+</span> tension, <span class="at">data =</span> datasets<span class="sc">::</span>warpbreaks,</span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>             <span class="at">family =</span> poisson)</span></code></pre></div>
+<p>The estimates, the error covariance matrix, and the sample size are
+extracted from the fitted model</p>
+<div class="sourceCode" id="cb33"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>estimates <span class="ot">&lt;-</span> poisson1<span class="sc">$</span>coefficients</span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>covmatrix <span class="ot">&lt;-</span> <span class="fu">vcov</span>(poisson1)</span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>samplesize <span class="ot">&lt;-</span> <span class="fu">nobs</span>(poisson1)</span></code></pre></div>
+<p>Constrained hypotheses on the parameters
+<code>names(estimates)</code> can then be tested as follows</p>
+<div class="sourceCode" id="cb34"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>BF1 <span class="ot">&lt;-</span> <span class="fu">BF</span>(estimates, <span class="at">Sigma =</span> covmatrix, <span class="at">n =</span> samplesize, <span class="at">hypothesis =</span> </span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;woolB &gt; tensionM &gt; tensionH; woolB = tensionM = tensionH&quot;</span>)</span></code></pre></div>
+<p>Note that the same hypothesis test would be executed when calling</p>
+<div class="sourceCode" id="cb35"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>BF2 <span class="ot">&lt;-</span> <span class="fu">BF</span>(poisson1, <span class="at">hypothesis =</span> <span class="st">&quot;woolB &gt; tensionM &gt; tensionH;</span></span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a><span class="st">          woolB = tensionM = tensionH&quot;</span>)</span></code></pre></div>
+<p>because the same Bayes factor is used when running <code>BF</code> on
+an object of class <code>glm</code> (see
+<code>Method: Bayes factor using Gaussian approximations</code> when
+calling <code>print(BF1)</code> and <code>print(BF2)</code>).</p>
+<p>For more information about the methodology, we refer the interested
+reader to <a href="https://bpspsychub.onlinelibrary.wiley.com/doi/full/10.1111/bmsp.12110?casa_token=tjWwoVqLI7QAAAAA%3Ac84DWKNw8pf23ybOgZTs1pzgyZMuCc-BeTaPFj8vnfnTytzHd0gr-D9ymVxYbKj_MTO1ITGFW8tGBZ1J">Gu
+et al. (2018)</a></p>
+</div>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

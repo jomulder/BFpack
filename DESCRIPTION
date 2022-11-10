@@ -113,7 +113,7 @@ BugReports: https://github.com/jomulder/BFpack/issues
 Encoding: UTF-8
 LazyData: true
 NeedsCompilation: yes
-RoxygenNote: 7.1.2
+RoxygenNote: 7.2.1
 Depends: 
     R (>= 3.0.0),
     bain
@@ -124,7 +124,8 @@ Imports:
     mvtnorm,
     pracma,
     lme4,
-    extraDistr
+    extraDistr,
+    ergm
 Suggests: 
     testthat,
     polycor,

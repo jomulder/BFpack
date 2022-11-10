@@ -21,6 +21,6 @@ data(actors)
 }
 \description{
 The related data files 'events', 'same_location', 'same_culture' contain
-information on the event sequence and the two event statistics respectively.
+information on the  event sequence and the two event statistics respectively.
 }
 \keyword{datasets}

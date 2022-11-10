@@ -8,24 +8,13 @@ BF.default <- function(x,
                        hypothesis = NULL,
                        prior.hyp = NULL,
                        complement = TRUE,
-                       BF.type = 2,
                        Sigma,
                        n,
                        ...){
 
-  if(is.null(BF.type)){
-    stop("The argument 'BF.type' must be the integer 1 (for the fractional BF) or 2 (for the adjusted fractional BF).")
-  }
-  if(!is.null(BF.type)){
-    if(is.na(BF.type) | (BF.type!=1 & BF.type!=2))
-      stop("The argument 'BF.type' must be the integer 1 (for the fractional BF) or 2 (for the adjusted fractional BF).")
-  }
-  if(BF.type==2){
-    bayesfactor <- "adjusted fractional Bayes factors using Gaussian approximations"
-  }else{
-    bayesfactor <- "generalized fractional Bayes factors using Gaussian approximations"
-  }
+  bayesfactor <- "adjusted fractional Bayes factors using Gaussian approximations"
   testedparameter <- "general parameters"
+
   #Input is a named mean vector x, covariance matrix and number of observations
   #These are extracted by the relevant method functions from a model object and
   #passed together with the hypothesis and prior to the Gaussian_estimator
@@ -35,11 +24,7 @@ BF.default <- function(x,
 
   names_coef <- names(meanN)
   covm0 <- covmN * n
-  if(BF.type==2){
-    mean0 <- as.matrix(rep(0, length(names_coef)))
-  }else{
-    mean0 <- meanN
-  }
+  mean0 <- as.matrix(rep(0, length(names_coef)))
 
   # compute exploratory BFs for each parameter
   relfit <- matrix(c(dnorm(0,mean=meanN,sd=sqrt(diag(covmN))), #[Anton] Are these relfit/relcomp computations general or specific to correlations? [Joris] This is general. So it also works for these parameters.
@@ -116,11 +101,7 @@ BF.default <- function(x,
       numindep <- 1
     }
     #default prior location
-    if(BF.type==2){
-      mean0 <- ginv(RStack)%*%rStack
-    }else{
-      mean0 <- meanN
-    }
+    mean0 <- ginv(RStack)%*%rStack
     #default prior covariance
     covm0 <- covmN * n / numindep
 
@@ -199,8 +180,6 @@ BF.default <- function(x,
   BF_out
 
 }
-
-
 
 # compute relative meausures (fit or complexity) under a multivariate Gaussian distribution
 #' @importFrom mvtnorm dmvnorm pmvnorm

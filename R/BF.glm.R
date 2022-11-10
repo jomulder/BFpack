@@ -7,7 +7,6 @@ BF.glm <- function(x,
                    hypothesis = NULL,
                    prior.hyp = NULL,
                    complement = TRUE,
-                   BF.type = 2,
                    ...){
 
   Args <- as.list(match.call()[-1])
@@ -18,7 +17,6 @@ BF.glm <- function(x,
   Args$hypothesis <- hypothesis
   Args$prior.hyp <- prior.hyp
   Args$complement <- complement
-  Args$BF.type <- BF.type
   out <- do.call(BF, Args)
   out$model <- x
   out$call <- match.call()
