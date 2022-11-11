@@ -23,9 +23,9 @@
 #' @param complement a logical specifying whether the complement should be added
 #' to the tested hypothesis under \code{hypothesis}.
 #' @param BF.type An integer that specified the type of Bayes factor (or prior) that is used for the test.
-#' Currently, this argument is only used for models of class 'lm' or 'mlm' or a named vector \code{x},
-#' where \code{BF.type=2} implies an adjusted fractional Bayes factor with a f'ractional prior mean' at the null value (Mulder, 2014),
-#' and \code{BF.type=1} implies a regular fractional Bayes factor (O'Hagan, 1995) with a 'fractional prior mean' at the MLE.
+#' Currently, this argument is only used for models of class 'lm' and 't_test',
+#' where \code{BF.type=2} implies an adjusted fractional Bayes factor with a 'fractional prior mean' at the null value (Mulder, 2014),
+#' and \code{BF.type=1} implies a regular fractional Bayes factor (based on O'Hagan (1995)) with a 'fractional prior mean' at the MLE.
 #' @param Sigma An approximate posterior covariance matrix (e.g,. error covariance
 #' matrix) of the parameters of interest. This argument is only required when \code{x}
 #' is a named vector.
@@ -33,6 +33,7 @@
 #' \code{x} and the error covariance matrix \code{Sigma}. This argument is only required when \code{x}
 #' is a named vector.
 #' @param ... Parameters passed to and from other functions.
+#' @usage NULL
 #' @return The output is an object of class \code{BF}. The object has elements:
 #' \itemize{
 #' \item BFtu_exploratory: The Bayes factors of the constrained hypotheses against
@@ -204,6 +205,6 @@
 #' @export
 #' @useDynLib BFpack, .registration = TRUE
 #'
-BF <- function(x, hypothesis, prior.hyp, complement, Sigma, n, BF.type, ...) {
+BF <- function(x, hypothesis, prior.hyp, complement, ...) {
   UseMethod("BF", x)
 }

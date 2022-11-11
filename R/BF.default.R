@@ -2,6 +2,7 @@
 
 
 #' @importFrom stats qnorm dnorm pnorm
+#' @describeIn BF S3 method for a named vector 'x'
 #' @method BF default
 #' @export
 BF.default <- function(x,

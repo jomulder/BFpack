@@ -14,6 +14,7 @@ BF.htest <-
 
 
 #' @importFrom stats approxfun
+#' @describeIn BF BF S3 method for an object of class 't_test'
 #' @method BF t_test
 #' @export
 BF.t_test <- function(x,

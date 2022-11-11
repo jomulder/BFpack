@@ -3,6 +3,7 @@
 #' @importFrom Matrix rankMatrix
 #' @importFrom stats rWishart qt
 #' @importFrom MASS ginv
+#' @describeIn BF S3 method for an object of class 'lm'
 #' @method BF lm
 #' @export
 BF.lm <- function(x,
