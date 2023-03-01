@@ -20,7 +20,7 @@ testing}
 An R object containing the outcome of a statistical analysis. Currently, the
 following objects can be processed: t_test(), bartlett_test(), lm(), aov(),
 manova(), cor_test(), lmer() (only for testing random intercep variances),
-glm(), coxph(), survreg(), polr(), zeroinfl(), rma(), or named vector objects.
+glm(), coxph(), survreg(), polr(), zeroinfl(), rma(), ergm(), or named vector objects.
 In the case \code{x} is a named vector, the arguments \code{Sigma} and \code{n}
 are also needed. See vignettes for elaborations.}
 
