@@ -1,5 +1,5 @@
 
-# test for BF on rma.uni object
+# test for BF on an ergm object
 library(ergm)
 
 seed <- 123
@@ -15,13 +15,13 @@ BFergm.test <- BF(ergm_fit,hypothesis = "0 = absdiff.wealth > kstar2")
 #check if confirmatory test are the same
 test_that("BF.ergm one hypotheses correctly evaluated", {
   expect_true(
-    all.equal(c(0.086,0.914),
+    all.equal(c(0.194,0.806),
               unname(BFergm.test$PHP_confirmatory), tolerance = .005)
   )})
 #check if confirmatory test are the same
 test_that("BF.ergm exploratory is correctly evaluated", {
   expect_true(
-    all.equal(c(0.499,0.389,0.113),
+    all.equal(c(0.413,0.498,0.088),
               unname(BFergm.test$PHP_exploratory[2,]), tolerance = .005)
   )})
 

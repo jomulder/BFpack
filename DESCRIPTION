@@ -1,8 +1,8 @@
 Package: BFpack
 Type: Package
 Title: Flexible Bayes Factor Testing of Scientific Expectations
-Version: 1.0.0
-Date: 2021-11-24
+Version: 1.2.0
+Date: 2023-03-22
 Authors@R: 
     c(person(given = c("Joris"),
              family = "Mulder",
@@ -125,7 +125,9 @@ Imports:
     pracma,
     lme4,
     extraDistr,
-    ergm
+    ergm,
+    Bergm,
+    sandwich
 Suggests: 
     testthat,
     polycor,

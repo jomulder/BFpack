@@ -50,6 +50,7 @@ Mulder, J., van Lissa, C., Gu, X., Olsson-Collentine, A., Boeing-Messing, F., Wi
   + `polr` for ordinal regression,
   + `zeroinfl` for zero-inflated regression,
   + `rma` for meta-analysis,
+  + `ergm` or `bergm` for an exponential random graph,
   + `x` can also be a named vector with estimates of the key parameters.
 
 * `hypothesis`, a character string specifying the hypotheses with equality and/or order constraints on the key parameters of interest.
@@ -60,7 +61,7 @@ Mulder, J., van Lissa, C., Gu, X., Olsson-Collentine, A., Boeing-Messing, F., Wi
 * `complement`, a logical value which specified if a complement hypothesis is included in the tested hypotheses specified under `hypothesis`. The default setting is `TRUE`. The complement hypothesis covers the remaining parameters space that is not covered by the constrained hypotheses. For example, if an equality hypothesis and an order hypothesis are formulated, say, `hypothesis = "weight = height = length; weight > height > length"`, the complement hypothesis covers the remaining subspace where neither `"weight = height = length"` holds, nor `"weight > height > length"` holds.
 
 
-Alternatively if one is interesting in testing hypotheses on a model object which has a class that is currently not supported, an approximate Bayesian test can be executed with the following (additional) arguments
+Alternatively if one is interested in testing hypotheses under a model class which that is currently not supported, an approximate Bayesian test can be executed with the following (additional) arguments
 
 * `x`, a named numeric vector of the estimates (e.g., MLE) of the parameters of interest where the labels are equal to the names of the parameters which are used for the `hypothesis` argument.
 * `Sigma`, the approximate posterior covariance matrix (e.g,. error covariance matrix) of the parameters of interest.

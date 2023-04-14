@@ -13,170 +13,30 @@ BF.default <- function(x,
                        n,
                        ...){
 
-  bayesfactor <- "adjusted fractional Bayes factors using Gaussian approximations"
-  testedparameter <- "general parameters"
-
   #Input is a named mean vector x, covariance matrix and number of observations
   #These are extracted by the relevant method functions from a model object and
   #passed together with the hypothesis and prior to the Gaussian_estimator
 
-  meanN <- x #the posterior mean is approximated with the estimate
-  covmN <- Sigma    #the posterior covariance matrix is approximated with the error covariance matrix
+  # meanN <- x #the posterior mean is approximated with the estimate
+  # covmN <- Sigma    #the posterior covariance matrix is approximated with the error covariance matrix
+  #
+  # names_coef <- names(meanN)
+  # covm0 <- covmN * n
+  # mean0 <- as.matrix(rep(0, length(names_coef)))
 
-  names_coef <- names(meanN)
-  covm0 <- covmN * n
-  mean0 <- as.matrix(rep(0, length(names_coef)))
+  # use Savage-Dickey approximation of the BF
+  BF_out <- Savage.Dickey.Gaussian(prior.mean = rep(0, length(x)),
+                                         prior.sigma = Sigma * n,
+                                         post.mean = x,
+                                         post.sigma = Sigma,
+                                         hypothesis = hypothesis,
+                                         prior.hyp = prior.hyp,
+                                         complement = complement)
 
-  # compute exploratory BFs for each parameter
-  relfit <- matrix(c(dnorm(0,mean=meanN,sd=sqrt(diag(covmN))), #[Anton] Are these relfit/relcomp computations general or specific to correlations? [Joris] This is general. So it also works for these parameters.
-                     pnorm(0,mean=meanN,sd=sqrt(diag(covmN))),
-                     1-pnorm(0,mean=meanN,sd=sqrt(diag(covmN)))),ncol=3)
-
-  relcomp <- matrix(c(dnorm(0,mean=mean0,sd=sqrt(diag(covm0))),
-                      pnorm(0,mean=mean0,sd=sqrt(diag(covm0))),
-                      1-pnorm(0,mean=mean0,sd=sqrt(diag(covm0)))),ncol=3)
-  BFtu_exploratory <- relfit / relcomp
-  PHP_exploratory <- round(BFtu_exploratory / apply(BFtu_exploratory,1,sum),3)
-  colnames(PHP_exploratory) <- c("Pr(=0)","Pr(<0)","Pr(>0)")
-  row.names(PHP_exploratory) <- names_coef
-
-  # compute posterior estimates
-  postestimates <- cbind(meanN,meanN,
-                         t(matrix(unlist(lapply(1:length(meanN),function(coef){
-                           ub <- qnorm(p=.975)*sqrt(covmN[coef,coef])+meanN[coef]
-                           lb <- qnorm(p=.025)*sqrt(covmN[coef,coef])+meanN[coef]
-                           return(c(lb,ub))
-                         })),nrow=2))
-  )
-  row.names(postestimates) <- names_coef
-  colnames(postestimates) <- c("mean","median","2.5%","97.5%")
-
-  if(is.null(hypothesis)){
-    BFtu_confirmatory <- PHP_confirmatory <- BFmatrix_confirmatory <- relfit <-
-      relcomp <- BFtable <- hypotheses <- priorprobs <- NULL
-  }else{
-    # confirmatory tests based on input constraints
-    parse_hyp <- parse_hypothesis(names_coef,hypothesis)
-    parse_hyp$hyp_mat <- do.call(rbind, parse_hyp$hyp_mat)
-    #create coefficient with equality and order constraints
-    RrList <- make_RrList2(parse_hyp)
-    RrE <- RrList[[1]]
-    RrO <- RrList[[2]]
-
-    # RrStack is used to check conflicting constraints, and for the default prior location
-    if(length(RrE)==1){
-      RrStack <- rbind(do.call(rbind,RrE),do.call(rbind,RrO))
-      RrStack <- interval_RrStack(RrStack)
-    }else{
-      RrStack_list <- lapply(1:length(RrE),function(h){
-        interval_RrStack(rbind(RrE[[h]],RrO[[h]]))
-      })
-      RrStack <- do.call(rbind,RrStack_list)
-    }
-    K <- length(meanN)
-    if(nrow(RrStack)>1){
-      RStack <- RrStack[,-(K+1)]
-      rStack <- RrStack[,(K+1)]
-    }else{
-      RStack <- matrix(RrStack[,-(K+1)],nrow=1)
-      rStack <- RrStack[,(K+1)]
-    }
-
-    # check if a common boundary exists for prior location under all constrained hypotheses
-    if(nrow(RrStack) > 1){
-      rref_ei <- rref(RrStack)
-      nonzero <- rref_ei[,K+1]!=0
-      if(max(nonzero)>0){
-        row1 <- max(which(nonzero))
-        if(sum(abs(rref_ei[row1,1:K]))==0){
-          stop("No common boundary point for prior location. Conflicting constraints.")
-        }
-      }
-      #determine fraction via number of independent rows (constraints)
-      if(is.matrix(rref_ei[,-(K+1)])){
-        numindep <- sum(apply(abs(rref_ei[,-(K+1)]),1,sum)!=0)
-      }else{
-        numindep <- sum(apply(abs(as.matrix(rref_ei[,-(K+1)])),1,sum)!=0)
-      }
-    } else {
-      numindep <- 1
-    }
-    #default prior location
-    mean0 <- ginv(RStack)%*%rStack
-    #default prior covariance
-    covm0 <- covmN * n / numindep
-
-    #get relative fit and complexity of hypotheses
-    numhyp <- length(RrE)
-
-    relcomp <- t(matrix(unlist(lapply(1:numhyp,function(h){
-      Gaussian_measures(mean1 = mean0, Sigma1 = covm0, RrE1 = RrE[[h]], RrO1 = RrO[[h]],
-                        names1=names_coef,constraints1=parse_hyp$original_hypothesis[h])
-    })),nrow=2))
-    relfit <- t(matrix(unlist(lapply(1:numhyp,function(h){
-      Gaussian_measures(mean1 = meanN, Sigma1 = covmN, RrE1 = RrE[[h]], RrO1 = RrO[[h]],
-                        names1=names_coef,constraints1=parse_hyp$original_hypothesis[h])
-    })),nrow=2))
-    row.names(relfit) <- row.names(relcomp) <- parse_hyp$original_hypothesis
-
-    if(complement == TRUE){
-      # get relative fit and complexity of complement hypothesis
-      relcomp <- Gaussian_prob_Hc(mean1 = mean0, Sigma1 = covm0, relmeas = relcomp, RrO = RrO) #Note that input is a bit strange here, Gaussian_prob_Hc needs fixing
-      relfit <- Gaussian_prob_Hc(mean1 = meanN, Sigma1 = covmN, relmeas = relfit, RrO = RrO)
-    }
-    hypothesisshort <- unlist(lapply(1:nrow(relfit),function(h) paste0("H",as.character(h))))
-    row.names(relfit) <- row.names(relfit) <- hypothesisshort
-    colnames(relcomp) <- c("c_E", "c_0")
-    colnames(relfit) <- c("f_E", "f_0")
-
-    # the BF for the complement hypothesis vs Hu needs to be computed.
-    BFtu_confirmatory <- c(apply(relfit / relcomp, 1, prod))
-    # Check input of prior probabilies
-    if(is.null(prior.hyp)){
-      priorprobs <- rep(1/length(BFtu_confirmatory),length(BFtu_confirmatory))
-    }else{
-      if(!is.numeric(prior.hyp) || length(prior.hyp)!=length(BFtu_confirmatory)){
-        warning(paste0("Argument 'prior.hyp' should be numeric and of length ",as.character(length(BFtu_confirmatory)),". Equal prior probabilities are used."))
-        priorprobs <- rep(1/length(BFtu_confirmatory),length(BFtu_confirmatory))
-      }else{
-        priorprobs <- prior.hyp
-      }
-    }
-    names(priorprobs) <- hypothesisshort
-
-    PHP_confirmatory <- round(BFtu_confirmatory*priorprobs / sum(BFtu_confirmatory*priorprobs),3)
-    BFtable <- cbind(relcomp,relfit,relfit[,1]/relcomp[,1],relfit[,2]/relcomp[,2],
-                     apply(relfit,1,prod)/apply(relcomp,1,prod),PHP_confirmatory)
-    row.names(BFtable) <- names(PHP_confirmatory)
-    colnames(BFtable) <- c("complex=","complex>","fit=","fit>","BF=","BF>","BF","PHP")
-    BFmatrix_confirmatory <- matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory))/
-      t(matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory)))
-    diag(BFmatrix_confirmatory) <- 1
-    # row.names(BFmatrix_confirmatory) <- Hnames
-    # colnames(BFmatrix_confirmatory) <- Hnames
-    if(nrow(relfit)==length(parse_hyp$original_hypothesis)){
-      hypotheses <- parse_hyp$original_hypothesis
-    }else{
-      hypotheses <- c(parse_hyp$original_hypothesis,"complement")
-    }
-  }
-
-  BF_out <- list(
-    BFtu_exploratory=BFtu_exploratory,
-    PHP_exploratory=PHP_exploratory,
-    BFtu_confirmatory=BFtu_confirmatory,
-    PHP_confirmatory=PHP_confirmatory,
-    BFmatrix_confirmatory=BFmatrix_confirmatory,
-    BFtable_confirmatory=BFtable,
-    prior.hyp=priorprobs,
-    hypotheses=hypotheses,
-    estimates=postestimates,
-    model=x,
-    bayesfactor=bayesfactor,
-    parameter=testedparameter,
-    call=match.call())
-
-  class(BF_out) <- "BF"
+  BF_out$model <- x
+  BF_out$call <- match.call()
+  BF_out$bayesfactor <- "adjusted fractional Bayes factors using Gaussian approximations"
+  BF_out$parameter <- "general parameters"
 
   BF_out
 

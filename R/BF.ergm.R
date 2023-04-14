@@ -1,5 +1,6 @@
 #BF method for ergm class
 
+#' @importFrom sandwich sandwich
 #' @importFrom ergm ergmMPLE
 #' @method BF ergm
 #' @export
@@ -14,13 +15,21 @@ BF.ergm <- function(x,
   K1 <- length(estimate)
   # get design matrix of pseudo likelihood
   x_MPLE <- ergm::ergmMPLE(formula=x$formula,output="dyadlist")
-  Xdelta <- x_MPLE$predictor[,2+1:K1]
+  Xdelta <- as.matrix(x_MPLE$predictor[,2+1:K1])
   priorcov <- solve(t(Xdelta)%*%Xdelta) * nrow(Xdelta)
-  # call Gaussian
-  BFergm_out <- BFnormal.prior.posterior(prior.mean = rep(0,K1),
+  Bergm.out <- Bergm::bergm(x$formula,prior.mean=rep(0,K1),prior.sigma=priorcov)
+  #get robust estimates for the Gaussian mean and covariance matrix
+  post.mean <- apply(Bergm.out$Theta,2,median)
+  names(post.mean) <- names(estimate)
+  #get robust estimate of posterior covariance matrix
+  mlm1 <- lm(Bergm.out$Theta ~ 1)
+  post.Sigma <- sandwich(mlm1) * nrow(Bergm.out$Theta)
+
+  # use Savage-Dickey approximation of the BF
+  BFergm_out <- Savage.Dickey.Gaussian(prior.mean = rep(0,K1),
                      prior.sigma = priorcov,
-                     post.mean = estimate,
-                     post.sigma = vcov(x),
+                     post.mean = post.mean,
+                     post.sigma = post.Sigma,
                      hypothesis = hypothesis,
                      prior.hyp = prior.hyp,
                      complement = complement)
@@ -44,7 +53,64 @@ get_estimates.ergm <- function(x, ...){
   out
 }
 
-BFnormal.prior.posterior <- function(prior.mean,
+
+#' @importFrom ergm ergmMPLE
+#' @method BF ergm
+#' @export
+BF.bergm <- function(x,
+                    hypothesis = NULL,
+                    prior.hyp = NULL,
+                    complement = TRUE,
+                    ...){
+
+  # extract coefficients
+  estimate <- apply(x$Theta,2,median)
+  K1 <- length(estimate)
+  # get design matrix of pseudo likelihood
+  x_MPLE <- ergm::ergmMPLE(formula=x$formula,output="dyadlist")
+  Xdelta <- as.matrix(x_MPLE$predictor[,2+1:K1])
+  priorcov <- solve(t(Xdelta)%*%Xdelta) * nrow(Xdelta)
+  Bergm.out <- Bergm::bergm(x$formula,prior.mean=rep(0,K1),prior.sigma=priorcov)
+  #get robust estimates for the Gaussian mean and covariance matrix
+  post.mean <- estimate
+  names(post.mean) <- colnames(Xdelta)
+  #get robust estimate of posterior covariance matrix
+  mlm1 <- lm(Bergm.out$Theta ~ 1)
+  post.Sigma <- sandwich(mlm1) * nrow(Bergm.out$Theta)
+
+  # use Savage-Dickey approximation of the BF
+  BFergm_out <- Savage.Dickey.Gaussian(prior.mean = rep(0,K1),
+                                     prior.sigma = priorcov,
+                                     post.mean = post.mean,
+                                     post.sigma = post.Sigma,
+                                     hypothesis = hypothesis,
+                                     prior.hyp = prior.hyp,
+                                     complement = complement)
+
+  BFergm_out$model <- x
+  BFergm_out$call <- match.call()
+  BFergm_out$bayesfactor <- "Bayes factors based on unit-information priors and Gaussian approximations"
+  BFergm_out$parameter <- "ERGM coefficients"
+
+  return(BFergm_out)
+}
+
+#' @method get_estimates bergm
+#' @export
+get_estimates.bergm <- function(x, ...){
+  out <- list()
+  out$estimate <- apply(x$Theta,2,median)
+  K1 <- length(out$estimate)
+  names(out$estimate) <- colnames(ergm::ergmMPLE(formula=x$formula,output="dyadlist")$predictor[,2+1:K1])
+  mlm1 <- lm(x$Theta ~ 1)
+  out$Sigma <- list(sandwich(mlm1) * nrow(x$Theta))
+  class(out) <- "model_estimates"
+  attr(out, "analysisType") <- "ergm"
+  out
+}
+
+# extended Savage-Dickey density ratio for multivariate normal prior and posterior
+Savage.Dickey.Gaussian <- function(prior.mean,
                                      prior.sigma,
                                      post.mean,
                                      post.sigma,
@@ -66,7 +132,7 @@ BFnormal.prior.posterior <- function(prior.mean,
   mean0 <- prior.mean # for constrained testing prior mean is relocated to 'boundary of constrained space'
 
   # compute exploratory BFs for each parameter
-  relfit <- matrix(c(dnorm(0,mean=meanN,sd=sqrt(diag(covmN))), #[Anton] Are these relfit/relcomp computations general or specific to correlations? [Joris] This is general. So it also works for these parameters.
+  relfit <- matrix(c(dnorm(0,mean=meanN,sd=sqrt(diag(covmN))),
                      pnorm(0,mean=meanN,sd=sqrt(diag(covmN))),
                      1-pnorm(0,mean=meanN,sd=sqrt(diag(covmN)))),ncol=3)
 
@@ -215,8 +281,6 @@ BFnormal.prior.posterior <- function(prior.mean,
   BF_out
 
 }
-
-
 
 
 
