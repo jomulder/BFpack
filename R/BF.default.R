@@ -17,13 +17,6 @@ BF.default <- function(x,
   #These are extracted by the relevant method functions from a model object and
   #passed together with the hypothesis and prior to the Gaussian_estimator
 
-  # meanN <- x #the posterior mean is approximated with the estimate
-  # covmN <- Sigma    #the posterior covariance matrix is approximated with the error covariance matrix
-  #
-  # names_coef <- names(meanN)
-  # covm0 <- covmN * n
-  # mean0 <- as.matrix(rep(0, length(names_coef)))
-
   # use Savage-Dickey approximation of the BF
   BF_out <- Savage.Dickey.Gaussian(prior.mean = rep(0, length(x)),
                                          prior.sigma = Sigma * n,

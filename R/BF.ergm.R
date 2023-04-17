@@ -17,7 +17,7 @@ BF.ergm <- function(x,
   x_MPLE <- ergm::ergmMPLE(formula=x$formula,output="dyadlist")
   Xdelta <- as.matrix(x_MPLE$predictor[,2+1:K1])
   priorcov <- solve(t(Xdelta)%*%Xdelta) * nrow(Xdelta)
-  Bergm.out <- Bergm::bergm(x$formula,prior.mean=rep(0,K1),prior.sigma=priorcov)
+  Bergm.out <- Bergm::bergm(x$formula,prior.mean=rep(0,K1),prior.sigma=priorcov,...)
   #get robust estimates for the Gaussian mean and covariance matrix
   post.mean <- apply(Bergm.out$Theta,2,median)
   names(post.mean) <- names(estimate)
