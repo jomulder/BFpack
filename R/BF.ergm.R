@@ -10,6 +10,12 @@ BF.ergm <- function(x,
                     complement = TRUE,
                     ...){
 
+  # first check if effect names in hypothesis argument correspond with names in x
+  coef_names <- names(get_estimates(x)$estimate)
+  if(!is.null(hypothesis)){
+    test0 <- parse_hypothesis(coef_names,hypothesis)
+  }
+
   # extract coefficients
   estimate <- coef(x)
   K1 <- length(estimate)
@@ -33,11 +39,20 @@ BF.ergm <- function(x,
                      hypothesis = hypothesis,
                      prior.hyp = prior.hyp,
                      complement = complement)
-
+  approx_estimates <- BFergm_out$estimates
+  #update table of estimates with Bayesian estimates
+  BFergm_out$estimates <- cbind(apply(Bergm.out$Theta,2,mean),
+                                apply(Bergm.out$Theta,2,median),
+                                apply(Bergm.out$Theta,2,sd),
+                                apply(Bergm.out$Theta,2,quantile,.025),
+                                apply(Bergm.out$Theta,2,quantile,.975))
+  colnames(BFergm_out$estimates) <- colnames(approx_estimates)
+  row.names(BFergm_out$estimates) <- colnames(Xdelta)
   BFergm_out$model <- x
   BFergm_out$call <- match.call()
   BFergm_out$bayesfactor <- "Bayes factors based on unit-information priors and Gaussian approximations"
   BFergm_out$parameter <- "ERGM coefficients"
+  BFergm_out$model_update <- Bergm.out
 
   return(BFergm_out)
 }
@@ -55,7 +70,7 @@ get_estimates.ergm <- function(x, ...){
 
 
 #' @importFrom ergm ergmMPLE
-#' @method BF ergm
+#' @method BF bergm
 #' @export
 BF.bergm <- function(x,
                     hypothesis = NULL,
@@ -63,17 +78,21 @@ BF.bergm <- function(x,
                     complement = TRUE,
                     ...){
 
-  # extract coefficients
-  estimate <- apply(x$Theta,2,median)
-  K1 <- length(estimate)
+  # first check if effect names in hypothesis argument correspond with names in x
+  coef_names <- names(get_estimates(x)$estimate)
+  if(!is.null(hypothesis)){
+    test0 <- parse_hypothesis(coef_names,hypothesis)
+  }
+
+  K1 <- ncol(x$Theta)
   # get design matrix of pseudo likelihood
   x_MPLE <- ergm::ergmMPLE(formula=x$formula,output="dyadlist")
   Xdelta <- as.matrix(x_MPLE$predictor[,2+1:K1])
   priorcov <- solve(t(Xdelta)%*%Xdelta) * nrow(Xdelta)
-  Bergm.out <- Bergm::bergm(x$formula,prior.mean=rep(0,K1),prior.sigma=priorcov)
+  Bergm.out <- Bergm::bergm(x$formula,prior.mean=rep(0,K1),prior.sigma=priorcov,...)
   #get robust estimates for the Gaussian mean and covariance matrix
-  post.mean <- estimate
-  names(post.mean) <- colnames(Xdelta)
+  post.mean <- apply(Bergm.out$Theta,2,median)
+  names(post.mean) <- coef_names
   #get robust estimate of posterior covariance matrix
   mlm1 <- lm(Bergm.out$Theta ~ 1)
   post.Sigma <- sandwich(mlm1) * nrow(Bergm.out$Theta)
@@ -86,11 +105,20 @@ BF.bergm <- function(x,
                                      hypothesis = hypothesis,
                                      prior.hyp = prior.hyp,
                                      complement = complement)
-
+  approx_estimates <- BFergm_out$estimates
+  #update table of estimates with Bayesian estimates
+  BFergm_out$estimates <- cbind(apply(Bergm.out$Theta,2,mean),
+                                apply(Bergm.out$Theta,2,median),
+                                apply(Bergm.out$Theta,2,sd),
+                                apply(Bergm.out$Theta,2,quantile,.025),
+                                apply(Bergm.out$Theta,2,quantile,.975))
+  colnames(BFergm_out$estimates) <- colnames(approx_estimates)
+  row.names(BFergm_out$estimates) <- coef_names
   BFergm_out$model <- x
   BFergm_out$call <- match.call()
   BFergm_out$bayesfactor <- "Bayes factors based on unit-information priors and Gaussian approximations"
   BFergm_out$parameter <- "ERGM coefficients"
+  BFergm_out$model_update <- Bergm.out
 
   return(BFergm_out)
 }
@@ -101,7 +129,7 @@ get_estimates.bergm <- function(x, ...){
   out <- list()
   out$estimate <- apply(x$Theta,2,median)
   K1 <- length(out$estimate)
-  names(out$estimate) <- colnames(ergm::ergmMPLE(formula=x$formula,output="dyadlist")$predictor[,2+1:K1])
+  names(out$estimate) <- paste0("theta",1:K1)
   mlm1 <- lm(x$Theta ~ 1)
   out$Sigma <- list(sandwich(mlm1) * nrow(x$Theta))
   class(out) <- "model_estimates"
@@ -145,7 +173,7 @@ Savage.Dickey.Gaussian <- function(prior.mean,
   row.names(PHP_exploratory) <- names_coef
 
   # compute posterior estimates
-  postestimates <- cbind(meanN,meanN,
+  postestimates <- cbind(meanN,meanN,sqrt(diag(covmN)),
                          t(matrix(unlist(lapply(1:length(meanN),function(coef){
                            ub <- qnorm(p=.975)*sqrt(covmN[coef,coef])+meanN[coef]
                            lb <- qnorm(p=.025)*sqrt(covmN[coef,coef])+meanN[coef]
@@ -153,7 +181,7 @@ Savage.Dickey.Gaussian <- function(prior.mean,
                          })),nrow=2))
   )
   row.names(postestimates) <- names_coef
-  colnames(postestimates) <- c("mean","median","2.5%","97.5%")
+  colnames(postestimates) <- c("mean","median","sd","2.5%","97.5%")
 
   if(is.null(hypothesis)){
     BFtu_confirmatory <- PHP_confirmatory <- BFmatrix_confirmatory <- relfit <-
