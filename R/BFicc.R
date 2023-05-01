@@ -20,6 +20,11 @@ BF.lmerMod <- function(x,
     iccnames <- unlist(lapply(1:numcat,function(nc){namescat[nc]}))
   }else{ iccnames <- "icc" }
 
+  #check if names of effects in hypothesis argument match
+  if(!is.null(hypothesis)){ # confirmatory test with constrained hypotheses on icc's.
+    test1 <- parse_hypothesis(iccnames,hypothesis)
+  }
+
   # check if the lmer-model only has a random intercept or category specific random intercepts
   Zstack <- Reduce(cbind,getME(x,"mmList"))
   if(numcat>1){ #check if the random effects are category specific random intercepts
