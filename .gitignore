@@ -11,3 +11,4 @@ src-x64/
 .Rapp.history
 .DS_Store
 errordump.RData
+R/Savage_Dickey_correction.R
