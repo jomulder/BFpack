@@ -208,8 +208,8 @@ jointuniform_prob_Hc <- function(P,numcorrgroup,numG,relmeas,RrO,samsize1=1e4,se
 
 #get draws from joint uniform prior in Fisher transformed space
 #Call Fortran subroutine in from bct_prior.f90
-draw_ju_r <- function(P, samsize=50000,Fisher=1){
-  testm<- matrix(0,ncol=.5*P*(P-1),nrow=samsize)
+draw_ju_r <- function(P, samsize=50000, Fisher=1){
+  testm <- matrix(0,ncol=.5*P*(P-1),nrow=samsize)
 #  random1 <- rnorm(1)
 #  random1 <- (random1 - floor(random1))*1e6
   res <-.Fortran("draw_ju",P = as.integer(P),
@@ -241,6 +241,10 @@ get_relmeasE2 <- function(drawsIn,rE1,delta=.1){
                   delta=delta,rcEt=rcEt,meanOut=meanOE,covmOut=covOE,samsize=as.integer(nrow(drawsIn)),
                   numcorr=as.integer(ncol(drawsIn)))
 }
+
+
+
+
 
 
 

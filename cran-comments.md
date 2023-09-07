@@ -1,14 +1,10 @@
-# Version 1.0.0
-* This version was used in the JSS publication after final edits.
-* The DOI in BFpack/inst/CITATION is for a new JSS publication that will
-  be registered after publication on CRAN.
-* All other DOIs have been verified.
-* BF.coeftest added for object of class 'coeftest'.
-* Minor edits
+# Version 1.2.2
+* Extension of BF.ergm and BF.bergm for Bayesian hypothesis testing under exponential random graph models
+* Updates on the random number generation in Fortran subroutines .
+* Minor edits.
 
 ## Test environments
-* Local OS X 10.14.6, R 4.0.3
-* Local OS X 10.13.3, R 4.0.2
+* Local OS X Ventura 13.5, R 4.2.3
 * Local Windows 10, R version 4.1.1
 * rhub check: Fedora Linux, R-devel, clang, gfortran
 * rhub check: Debian Linux, R-devel, GCC ASAN/UBSAN

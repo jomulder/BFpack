@@ -14,7 +14,7 @@ BF.ergm <- function(x,
   estimate <- coef(x)
   K1 <- length(estimate)
   # get design matrix of pseudo likelihood to construct prior covariance matrix
-  x_MPLE <- ergm::ergmMPLE(formula=x$formula,output="dyadlist")
+  x_MPLE <- ergmMPLE(formula=x$formula,output="dyadlist")
   design.X <- x_MPLE$predictor[,2+1:K1]
   which.edges <- which(colnames(design.X)=="edges")
   if(length(which.edges)==0){ #no intercept 'edges'
@@ -86,7 +86,7 @@ BF.ergm <- function(x,
 get_estimates.ergm <- function(x, ...){
   estimate <- coef(x)
   K1 <- length(estimate)
-  x_MPLE <- ergm::ergmMPLE(formula=x$formula,output="dyadlist")
+  x_MPLE <- ergmMPLE(formula=x$formula,output="dyadlist")
   design.X <- x_MPLE$predictor[,2+1:K1]
   which.edges <- which(colnames(design.X)=="edges")
   out <- list()
@@ -122,7 +122,7 @@ BF.bergm <- function(x,
   K1 <- length(estimate)
   coef_names <- paste0("theta",1:K1)
   # get design matrix of pseudo likelihood to construct prior covariance matrix
-  x_MPLE <- ergm::ergmMPLE(formula=x$formula,output="dyadlist")
+  x_MPLE <- ergmMPLE(formula=x$formula,output="dyadlist")
   design.X <- x_MPLE$predictor[,2+1:K1]
   which.edges <- which(colnames(design.X)=="edges")
   if(length(which.edges)==0){ #no intercept 'edges'
@@ -195,7 +195,7 @@ get_estimates.bergm <- function(x, ...){
 
   K1 <- length(apply(x$Theta,2,median))
   names.bergm.coef <- paste0("theta",1:K1)
-  x_MPLE <- ergm::ergmMPLE(formula=x$formula,output="dyadlist")
+  x_MPLE <- ergmMPLE(formula=x$formula,output="dyadlist")
   design.X <- x_MPLE$predictor[,2+1:K1]
   which.edges <- which(colnames(design.X)=="edges")
   out <- list()

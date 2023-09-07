@@ -3,12 +3,13 @@
 
 
 subroutine estimate_postmeancov_fisherz(postZmean, postZcov, P, numcorr, K, numG, BHat, sdHat, CHat, XtXi, samsize0, Njs, &
-    Ygroups, Xgroups, Ntot, C_quantiles, sigma_quantiles, B_quantiles, BDrawsStore, sigmaDrawsStore, CDrawsStore, seed)
+    Ygroups, Xgroups, Ntot, C_quantiles, sigma_quantiles, B_quantiles, BDrawsStore, sigmaDrawsStore, CDrawsStore, &
+    seed)
 !
     implicit none
 
     integer, intent(in) :: P, numcorr, K, numG, samsize0, Njs(numG), Ntot, seed
-    real(8), intent(in) :: BHat(numG,K,P), sdHat(numG,P), CHat(numG,P,P), XtXi(numG,K,K)
+    real(8), intent(in) :: BHat(numG,K,P), sdHat(2*numG,P), CHat(numG,P,P), XtXi(numG,K,K)
     real(8), intent(out):: postZmean(numcorr,1), postZcov(numcorr,numcorr), Ygroups(numG,Ntot,P), Xgroups(numG,Ntot,K),&
                            B_quantiles(numG,K,P,3), C_quantiles(numG,P,P,3), sigma_quantiles(numG,P,3), &
                            BDrawsStore(samsize0,numG,K,P), sigmaDrawsStore(samsize0,numG,P), &
@@ -19,39 +20,41 @@ subroutine estimate_postmeancov_fisherz(postZmean, postZcov, P, numcorr, K, numG
                            varz1, varz2, varz1z2Plus, varz1z2Min, Cinv(P,P), Zcorr_sample(samsize0,numcorr), &
                            acceptSigma(numG,P), acceptC(numG), covBeta(P*K,P*K), betaDrawj(1,P*K), dummyPP(P,P), &
                            dummy3(samsize0), dummy2(samsize0), meanO(P*K), para(((P*K)*((P*K)+3)/2 + 1)), SS2(P,P)
-    integer             :: s1, g1, i1, corrteller, c1, c2, p1, p2, k1, errorflag, lower_int, median_int, upper_int, nn
-    integer, allocatable, dimension(:) :: iseed
+    integer             :: s1, g1, i1, corrteller, c1, c2, p1, p2, k1, errorflag, lower_int, median_int, upper_int, &
+                           iseed!, nn
+!    integer, allocatable, dimension(:) :: iseed
 !
     !set seed
-    call RANDOM_SEED(size=nn)
-    allocate(iseed(nn))
-    iseed(:)=seed
-    call RANDOM_SEED(put=iseed)
-!    
-    !initial posterior draws start at MLEs    
+    !call RANDOM_SEED(size=nn)
+    !allocate(iseed(nn))
+    !iseed(:)=seed
+    !call RANDOM_SEED(put=iseed)
+    iseed = seed
+!
+    !initial posterior draws start at MLEs
+    sdMH(:,:) = sdHat(numG+1:numG,:)
     BDraws = BHat
-    sigmaDraws = sdHat
+    sigmaDraws = sdHat(1:numG,:)
     CDraws = CHat
     meanO = 0
 !
     ! keep track of number of accepted draws in Metropolis-Hastings step
     acceptC = 0
     acceptSigma = 0
-    sdMH = .2
-!    
+!
     !start Gibbs sampler
     do s1 = 1,samsize0
 
         corrteller = 0
 
         do g1 = 1,numG
-            
+
             !draw B
             SigmaMat = matmul(matmul(diag(sigmaDraws(g1,:),P),CDraws(g1,:,:)),diag(sigmaDraws(g1,:),P))
             call kronecker(K,P,XtXi(g1,:,:),SigmaMat,covBeta)
 
             call setgmn(meanO,covBeta,P*K,para)
-            call GENMN(para,betaDrawj(1,1:(P*K)),P*K)
+            call GENMN(para,betaDrawj(1,1:(P*K)),P*K,iseed)
             do p1 = 1,P
                 BDraws(g1,:,p1) = betaDrawj(1,((p1-1)*K+1):(p1*K)) + BHat(g1,:,p1)
             end do
@@ -65,7 +68,7 @@ subroutine estimate_postmeancov_fisherz(postZmean, postZcov, P, numcorr, K, numG
             epsteps = matmul(transpose(diffmat(1:Njs(g1),1:P)),diffmat(1:Njs(g1),1:P))
             SS1 = matmul(matmul(diag(1/sigmaDraws(g1,:),P),epsteps),diag(1/sigmaDraws(g1,:),P))
             call FINDInv(SS1,SS2,P,errorflag)
-            call gen_wish(SS2,Njs(g1),dummyPP2,P)
+            call gen_wish(SS2,Njs(g1),dummyPP2,P,iseed)
             call FINDInv(dummyPP2,dummyPP,P,errorflag)
             Ccan = matmul(matmul(diag(1/sqrt(diagonals(dummyPP,P)),P),dummyPP),diag(1/sqrt(diagonals(dummyPP,P)),P))
             call FINDInv(Ccan,CcanInv,P,errorflag)
@@ -75,7 +78,8 @@ subroutine estimate_postmeancov_fisherz(postZmean, postZcov, P, numcorr, K, numG
             !Accept candidate correlation with probability R_MH (based on Liu & Daniels (2006))
             logR_MH = (-.5*real(P+1))*(log(det(Ccurr,P,-1))-log(det(Ccan,P,-1))) !proposal prior
             R_MH = exp(logR_MH)
-            call random_number(rnunif)
+            !call random_number(rnunif)
+            rnunif = runiform ( iseed )
             if(rnunif(1) < R_MH) then
                 CDraws(g1,:,:) = Ccan(:,:)
                 acceptC(g1) = acceptC(g1) + 1
@@ -92,22 +96,23 @@ subroutine estimate_postmeancov_fisherz(postZmean, postZcov, P, numcorr, K, numG
             do p1 = 1,P
                 bb = sum(errorMatj(p1,:)*Cinv(p1,:)/sigmaDraws(g1,:)) - errorMatj(p1,p1)*Cinv(p1,p1)/sigmaDraws(g1,p1)
                 aa = Cinv(p1,p1)*errorMatj(p1,p1)
-                sigma_can(p1) = rnormal()
+                sigma_can(p1) = rnormal(iseed)
                 sigma_can(p1) = sigma_can(p1)*sdMH(g1,p1) + sigmaDraws(g1,p1) !random walk
-                R_MH = exp((-real(Njs(g1))+1.0)*(log(sigma_can(p1))-log(sigmaDraws(g1,p1)) ) & 
+                R_MH = exp((-real(Njs(g1))+1.0)*(log(sigma_can(p1))-log(sigmaDraws(g1,p1)) ) &
                        -.5*aa*(1.0/sigma_can(p1)**2 - 1.0/sigmaDraws(g1,p1)**2) &
                        -bb*(1.0/sigma_can(p1) - 1.0/sigmaDraws(g1,p1)))
-                call random_number(rnunif)
+                !call random_number(rnunif)
+                rnunif = runiform ( iseed )
                 if(rnunif(1) < R_MH .and. sigma_can(p1)>0) then
                     sigmaDraws(g1,p1) = sigma_can(p1)
                     acceptSigma(g1,p1) = acceptSigma(g1,p1) + 1
                 end if
             end do
-        end do      
+        end do
 !
         !store posterior draws
         BDrawsStore(s1,1:numG,1:K,1:P) = BDraws(1:numG,1:K,1:P)
-        sigmaDrawsStore(s1,1:numG,1:P) = sigmaDraws(1:numG,1:P)        
+        sigmaDrawsStore(s1,1:numG,1:P) = sigmaDraws(1:numG,1:P)
         CDrawsStore(s1,1:numG,1:P,1:P) = CDraws(1:numG,1:P,1:P)
     end do
 !
@@ -118,7 +123,8 @@ subroutine estimate_postmeancov_fisherz(postZmean, postZcov, P, numcorr, K, numG
         call piksrt(samsize0,dummy3)
         postZmean(c1,1) = dummy3(int(samsize0*.5))
     end do
-!    ! compute posterior covariance matrix
+!
+    ! compute posterior covariance matrix
     do c1=1,numcorr
         do c2=c1,numcorr
             call robust_covest(samsize0, Zcorr_sample(1:samsize0,c1), Zcorr_sample(1:samsize0,c2), postZmean(c1,1), &
@@ -127,7 +133,8 @@ subroutine estimate_postmeancov_fisherz(postZmean, postZcov, P, numcorr, K, numG
             postZcov(c2,c1) = postZcov(c1,c2)
         end do
     end do
-!    ! compute posterior quantiles
+!
+    ! compute posterior quantiles
     lower_int = int(samsize0*.025)
     median_int = int(samsize0*.5)
     upper_int = int(samsize0*.975)
@@ -135,9 +142,9 @@ subroutine estimate_postmeancov_fisherz(postZmean, postZcov, P, numcorr, K, numG
     do g1=1,numG
         do p1=1,P
             !for the sigma's
-            dummy2(:) = sigmaDrawsStore(:,g1,p1)            
+            dummy2(:) = sigmaDrawsStore(:,g1,p1)
             dummy3=dummy2
-            call piksrt(samsize0,dummy3)            
+            call piksrt(samsize0,dummy3)
             sigma_quantiles(g1,p1,1) = dummy3(lower_int)
             sigma_quantiles(g1,p1,2) = dummy3(median_int)
             sigma_quantiles(g1,p1,3) = dummy3(upper_int)
@@ -162,9 +169,108 @@ subroutine estimate_postmeancov_fisherz(postZmean, postZcov, P, numcorr, K, numG
             end if
         end do
     end do
-  
+
 
 contains
+
+
+function runiform ( iseed )
+
+!*****************************************************************************80
+!
+!! RUNIFORM returns a unit pseudorandom R8.
+!
+!  Discussion:
+!
+!    An R8 is a real ( kind = 8 ) value.
+!
+!    For now, the input quantity iseed is an integer variable.
+!
+!    This routine implements the recursion
+!
+!      iseed = ( 16807 * iseed ) mod ( 2^31 - 1 )
+!      runiform = iseed / ( 2^31 - 1 )
+!
+!    The integer arithmetic never requires more than 32 bits,
+!    including a sign bit.
+!
+!    If the initial iseed is 12345, then the first three computations are
+!
+!      Input     Output      RUNIFORM
+!      iseed      iseed
+!
+!         12345   207482415  0.096616
+!     207482415  1790989824  0.833995
+!    1790989824  2035175616  0.947702
+!
+!  Licensing:
+!
+!    This code is distributed under the GNU LGPL license.
+!
+!  Modified:
+!
+!    31 May 2007
+!
+!  Author:
+!
+!    John Burkardt
+!
+!  Reference:
+!
+!    Paul Bratley, Bennett Fox, Linus Schrage,
+!    A Guide to Simulation,
+!    Second Edition,
+!    Springer, 1987,
+!    ISBN: 0387964673,
+!    LC: QA76.9.C65.B73.
+!
+!    Bennett Fox,
+!    Algorithm 647:
+!    Implementation and Relative Efficiency of Quasirandom
+!    Sequence Generators,
+!    ACM Transactions on Mathematical Software,
+!    Volume 12, Number 4, December 1986, pages 362-376.
+!
+!    Pierre L'Ecuyer,
+!    Random Number Generation,
+!    in Handbook of Simulation,
+!    edited by Jerry Banks,
+!    Wiley, 1998,
+!    ISBN: 0471134031,
+!    LC: T57.62.H37.
+!
+!    Peter Lewis, Allen Goodman, James Miller,
+!    A Pseudo-Random Number Generator for the System/360,
+!    IBM Systems Journal,
+!    Volume 8, Number 2, 1969, pages 136-143.
+!
+!  Parameters:
+!
+!    Input/output, integer ( kind = 8 ) iseed, the "iseed" value, which should
+!    NOT be 0. On output, iseed has been updated.
+!
+!    Output, real ( kind = 8 ) RUNIFORM, a new pseudorandom variate,
+!    strictly between 0 and 1.
+!
+  implicit none
+
+  integer ( kind = 4 ), parameter :: i4_huge = 2147483647
+  integer ( kind = 4 ) k
+  real ( kind = 8 ) runiform
+  integer ( kind = 4 ) iseed
+
+  k = iseed / 127773
+
+  iseed = 16807 * ( iseed - k * 127773 ) - k * 2836
+
+  if ( iseed < 0 ) then
+    iseed = iseed + i4_huge
+  end if
+
+  runiform = real ( iseed, kind = 8 ) * 4.656612875D-10
+
+return
+end function
 
 
 function stvaln ( p )
@@ -227,7 +333,7 @@ function stvaln ( p )
     z = 1.0D+00 - p
 
   end if
-  
+
   y = sqrt ( -2.0D+00 * log ( z ) )
   stvaln = y + eval_pol ( xnum, 4, y ) / eval_pol ( xden, 4, y )
   stvaln = sgn * stvaln
@@ -567,7 +673,7 @@ end function dinvnr
 subroutine kronecker(dimA,dimB,A,B,AB)
 !
     implicit none
-!    
+!
     integer, intent(in) :: dimA, dimB
     real(8), intent(in)    :: A(dimA,dimA), B(dimB,dimB) !dummy arguments
     real(8), intent(out)   :: AB(dimA*dimB,dimA*dimB) !output matrix of the kronecker product
@@ -652,15 +758,15 @@ END FUNCTION sdot
 
 function diag(A, n)
 
-    integer n,i    
+    integer n,i
     real(8) A(n), check(n,n)
     real(8) diag(n,n)
-    
+
 
     check = 0
     do i=1,n
         check(i,i)=A(i)
-    end do 
+    end do
     diag(:,:)=check(:,:)
     return
 end function diag
@@ -682,7 +788,7 @@ end function diagonals
 !Subroutine to find the inverse of a square matrix
 !Author : Louisda16th a.k.a Ashwith J. Rego
 !Reference : Algorithm has been well explained in:
-!http://math.uww.edu/~mcfarlat/inverse.htm           
+!http://math.uww.edu/~mcfarlat/inverse.htm
 !http://www.tutor.ms.unimelb.edu.au/matrix/matrix_inverse.html
 SUBROUTINE FINDInv(matrix, inverse, n, errorflag)
     IMPLICIT NONE
@@ -803,7 +909,7 @@ end function det
 
 
 
-function rnormal ()
+function rnormal (iseed)
 
 !*****************************************************************************80
 !
@@ -836,16 +942,23 @@ function rnormal ()
 
   real ( kind = 8 ) r1
   real ( kind = 8 ) r2
+  real ( kind = 8 ) r3
   real ( kind = 8 ) rnormal
   real ( kind = 8 ), parameter :: pi = 3.141592653589793D+00
-  real ( kind = 8 ) GG
+  !real ( kind = 8 ) GG
   real ( kind = 8 ) x
+  integer ( kind = 4 ) iseed
 
-  call random_number(GG)
-  r1 = GG
-  call random_number(GG)
-  r2 = GG
-  x = sqrt ( - 2.0D+00 * log ( r1 ) ) * cos ( 2.0D+00 * pi * r2 )
+  !nseed = 1344
+  r1 = runiform(iseed)
+  r2 = runiform(iseed)
+  r3 = runiform(iseed)
+  !PRINT*, iseed, r1, r2, r3
+  !call random_number(GG)
+  !r1 = GG
+  !call random_number(GG)
+  !r2 = GG
+  x = sqrt ( - 2.0D+00 * log ( r3 ) ) * cos ( 2.0D+00 * pi * r2 )
 
   rnormal = x
 
@@ -867,17 +980,18 @@ function eye(n)
 
     eye(:,:)=check(:,:)
     return
+
 end function eye
 
 
 
-subroutine gen_wish(A,nu,B,P)
-!   
+subroutine gen_wish(A,nu,B,P,iseed)
+!
     implicit none
 !
     !Declare local variables
 
-    integer, intent (in)    :: nu,P
+    integer, intent (in)    :: nu,P,iseed
     real(8), intent (in)    :: A(P,P)
     real(8), intent (out)   :: B(P,P)
     real(8)                 :: RNmat(nu,P),para((P*(P+3)/2) + 1),m0(P)
@@ -885,17 +999,17 @@ subroutine gen_wish(A,nu,B,P)
 !
     !sample from Wishart distribution as in Press (2005, p. 109)
     m0=0
-    
+
     call setgmn(m0,A,P,para)
-    
+
     do i=1,nu
-    
-        call GENMN(para,RNmat(i,:),P)
+
+        call GENMN(para,RNmat(i,:),P,iseed)
 
     end do
 
     B = matmul(transpose(RNmat),RNmat)
-!    
+!
 end subroutine gen_wish
 
 
@@ -907,7 +1021,7 @@ subroutine robust_covest(m, betas1, betas2, mn1, mn2, varb1, varb2, varb1b2Plus,
     integer, intent(in)    :: m
     real(8), intent(in)    :: betas1(m), betas2(m), mn1, mn2
     real(8), intent(out)   :: varb1, varb2, varb1b2Plus, varb1b2Min
-    
+
     real(8)                :: dummy1(m), dummy2(m), Phi075, xxx
     integer                :: mmin, i
 !
@@ -916,7 +1030,7 @@ subroutine robust_covest(m, betas1, betas2, mn1, mn2, varb1, varb2, varb1b2Plus,
     mmin = 0
 !
     !robust variance estimators of beta1 and beta2
-    
+
     dummy1=abs(betas1 - mn1)
     call piksrt(m,dummy1)
     do i=1,m
@@ -1030,7 +1144,7 @@ SUBROUTINE setgmn(meanv,covm,p,parm)
       INTEGER i,icount,info,j
 !     ..
 !     .. External Subroutines ..
-      
+
 !     ..
 !     .. Executable Statements ..
 !
@@ -1078,7 +1192,7 @@ END SUBROUTINE
 
 
 
-SUBROUTINE genmn(parm,x,p)
+SUBROUTINE genmn(parm,x,p,iseed)
   !**********************************************************************
   !
   !     SUBROUTINE GENMN(PARM,X,WORK)
@@ -1115,7 +1229,7 @@ SUBROUTINE genmn(parm,x,p)
   !
   !**********************************************************************
   !     .. Array Arguments ..
-        integer, intent(in) :: p
+        integer, intent(in) :: p, iseed
         real(8), intent(in) :: parm(p*(p+3)/2 + 1)
         real(8)             :: work(p)
         real(8), intent(out):: x(p)
@@ -1131,7 +1245,7 @@ SUBROUTINE genmn(parm,x,p)
   !     Generate P independent normal deviates - WORK ~ N(0,1)
   !
         DO 10,i = 1,p
-            work(i) = rnormal()
+            work(i) = rnormal(iseed)
      10 CONTINUE
         DO 30,i = 1,p
   !
@@ -1233,6 +1347,7 @@ subroutine spofa(a,lda,n,info)
    40 continue
       return
 end SUBROUTINE spofa
+
 
   end subroutine estimate_postmeancov_fisherz
 

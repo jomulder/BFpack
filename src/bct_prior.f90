@@ -1,29 +1,28 @@
 
 subroutine draw_ju(P,drawscorr,samsize,numcorrgroup,Fisher,seed)
-    ! Fortran implementation of algorithm from Joe (2006)
+    ! Fortran implementation of the algorithm proposed by Joe (2006)
 
     implicit none
 
-    integer, intent(in)                 :: P, samsize, numcorrgroup, Fisher
+    integer, intent(in)                 :: P, samsize, numcorrgroup, Fisher, seed
     integer                             :: s1,r1, r2, i1, i2, k1, corrIndex(P,P), teldummy,&
-                                           t1, t2, seed, nn
+                                           t1, t2, iseed
     real (8)                            :: corrMat(P,P),draw1(1),&
                                            R2inv(P,P), vec1(P,1), vec2(P,1),&
                                            dummy11(1,1), dummy12(1,1), dummy22(1,1),&
                                            Di1i2, &
                                            preinv(P,P)
-    integer, allocatable, dimension(:)  :: iseed
     real(8), intent (out)               :: drawsCorr(samsize,numcorrgroup)
     real(4)                             :: alpha
 
 !========================================================================================!
 
     !set seed
-    call RANDOM_SEED(size=nn)
-    allocate(iseed(nn))
-    iseed(:) = seed
-    call RANDOM_SEED(put=iseed)
-
+    !call RANDOM_SEED(size=nn)
+    !allocate(iseed(nn))
+    !iseed(:) = seed
+    !call RANDOM_SEED(put=iseed)
+    iseed = seed
 
     ! create corrIndex matrix
     teldummy = 1
@@ -35,7 +34,6 @@ subroutine draw_ju(P,drawscorr,samsize,numcorrgroup,Fisher,seed)
             teldummy = teldummy + 1
         end do
     end do
-
 
     do s1=1,samsize
 
@@ -51,8 +49,8 @@ subroutine draw_ju(P,drawscorr,samsize,numcorrgroup,Fisher,seed)
         end do
         do r1 = 1,P-1
             alpha=P/2.0
-            draw1 = random_beta(alpha, alpha, .true.)
-            draw1=draw1*2.0-1.0
+            draw1 = random_beta(alpha, alpha, .true., iseed)
+            draw1 = draw1*2.0-1.0
             corrMat(r1,r1+1) = draw1(1)
             corrMat(r1+1,r1) = corrMat(r1,r1+1)
             drawsCorr(s1,corrIndex(r1+1,r1)) = corrMat(r1,r1+1)
@@ -66,7 +64,7 @@ subroutine draw_ju(P,drawscorr,samsize,numcorrgroup,Fisher,seed)
                 k1 = i2 - i1
                 !draw partial correlations
                 alpha = .5*(P+1-k1)
-                draw1 = random_beta(alpha, alpha, .true.)
+                draw1 = random_beta(alpha, alpha, .true., iseed)
                 draw1=draw1*2-1.0
                 !rbeta(1,.5*(dim+1-k),.5*(dim+1-k))*2-1
                 vec1(1:(k1-1),1) = corrMat(i1,(i1+1):(i1+k1-1))
@@ -176,7 +174,7 @@ end function inverse
 
 
 
-FUNCTION random_beta(aa, bb, first) RESULT(fn_val)
+FUNCTION random_beta(aa, bb, first, iseed) RESULT(fn_val)
 
 ! Adapted from Fortran 77 code from the book:
 !     Dagpunar, J. 'Principles of random variate generation'
@@ -199,13 +197,14 @@ FUNCTION random_beta(aa, bb, first) RESULT(fn_val)
 
     REAL, INTENT(IN)    :: aa, bb
     LOGICAL, INTENT(IN) :: first
-    REAL                :: fn_val
+    INTEGER, INTENT(IN) :: iseed
+    REAL ( kind = 8 )   :: fn_val
 
     !     Local variables
     REAL, PARAMETER  :: aln4 = 1.3862944, one=1.0, two=2.0, vlarge = HUGE(1.0), vsmall = TINY(1.0), zero = 0.0
-    REAL             :: a, b, g, r, s, x, y, z
-    REAL, SAVE       :: d, f, h, t, c
-    LOGICAL, SAVE    :: swap
+    REAL ( kind = 8 ) :: a, b, g, r, s, x, y, z
+    REAL ( kind = 8 ), SAVE        :: d, f, h, t, c
+    LOGICAL, SAVE     :: swap
 
 
 
@@ -231,8 +230,11 @@ FUNCTION random_beta(aa, bb, first) RESULT(fn_val)
     END IF
 
     DO
-    CALL RANDOM_NUMBER(r)
-    CALL RANDOM_NUMBER(x)
+    r = runiform(iseed)
+    x = runiform(iseed)
+    !print*, r,x
+    !CALL RANDOM_NUMBER(r)
+    !CALL RANDOM_NUMBER(x)
     s = r*r*x
     IF (r < vsmall .OR. s <= zero) CYCLE
     IF (r < t) THEN
@@ -254,6 +256,105 @@ FUNCTION random_beta(aa, bb, first) RESULT(fn_val)
     IF (swap) fn_val = one - fn_val
     RETURN
     END FUNCTION random_beta
+
+
+    function runiform ( iseed )
+
+!*****************************************************************************80
+!
+!! RUNIFORM returns a unit pseudorandom R8.
+!
+!  Discussion:
+!
+!    An R8 is a real ( kind = 8 ) value.
+!
+!    For now, the input quantity iseed is an integer variable.
+!
+!    This routine implements the recursion
+!
+!      iseed = ( 16807 * iseed ) mod ( 2^31 - 1 )
+!      runiform = iseed / ( 2^31 - 1 )
+!
+!    The integer arithmetic never requires more than 32 bits,
+!    including a sign bit.
+!
+!    If the initial iseed is 12345, then the first three computations are
+!
+!      Input     Output      RUNIFORM
+!      iseed      iseed
+!
+!         12345   207482415  0.096616
+!     207482415  1790989824  0.833995
+!    1790989824  2035175616  0.947702
+!
+!  Licensing:
+!
+!    This code is distributed under the GNU LGPL license.
+!
+!  Modified:
+!
+!    31 May 2007
+!
+!  Author:
+!
+!    John Burkardt
+!
+!  Reference:
+!
+!    Paul Bratley, Bennett Fox, Linus Schrage,
+!    A Guide to Simulation,
+!    Second Edition,
+!    Springer, 1987,
+!    ISBN: 0387964673,
+!    LC: QA76.9.C65.B73.
+!
+!    Bennett Fox,
+!    Algorithm 647:
+!    Implementation and Relative Efficiency of Quasirandom
+!    Sequence Generators,
+!    ACM Transactions on Mathematical Software,
+!    Volume 12, Number 4, December 1986, pages 362-376.
+!
+!    Pierre L'Ecuyer,
+!    Random Number Generation,
+!    in Handbook of Simulation,
+!    edited by Jerry Banks,
+!    Wiley, 1998,
+!    ISBN: 0471134031,
+!    LC: T57.62.H37.
+!
+!    Peter Lewis, Allen Goodman, James Miller,
+!    A Pseudo-Random Number Generator for the System/360,
+!    IBM Systems Journal,
+!    Volume 8, Number 2, 1969, pages 136-143.
+!
+!  Parameters:
+!
+!    Input/output, integer ( kind = 8 ) iseed, the "iseed" value, which should
+!    NOT be 0. On output, iseed has been updated.
+!
+!    Output, real ( kind = 8 ) RUNIFORM, a new pseudorandom variate,
+!    strictly between 0 and 1.
+!
+  implicit none
+
+  integer ( kind = 4 ), parameter :: i4_huge = 2147483647
+  integer ( kind = 4 ) k
+  real ( kind = 8 ) runiform
+  integer ( kind = 4 ) iseed
+
+  k = iseed / 127773
+
+  iseed = 16807 * ( iseed - k * 127773 ) - k * 2836
+
+  if ( iseed < 0 ) then
+    iseed = iseed + i4_huge
+  end if
+
+  runiform = real ( iseed, kind = 8 ) * 4.656612875D-10
+
+return
+end function
 
 end subroutine draw_ju
 
@@ -331,6 +432,10 @@ subroutine compute_rcet2(numE,drawsIn,wIn,delta,rcEt,meanOut,covmOut,samsize,num
     covmOut(1:(numcorr-numE),1:(numcorr-numE)) = covmDummy((numE+1):numcorr,(numE+1):numcorr)
 !
 end subroutine compute_rcet2
+
+
+
+
 
 
 

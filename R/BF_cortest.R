@@ -73,6 +73,7 @@ cor_test <- function(..., formula = NULL, iter = 5e3){
   CHat <- array(0,dim=c(numG,P,P))
   SumSq <- array(0,dim=c(numG,P,P))
   SumSqInv <- array(0,dim=c(numG,P,P))
+  sdsd <- matrix(0,nrow=numG,ncol=P)
 
   for(g in 1:numG){
     Y_g <- scale(YXlist[[g]][[1]])
@@ -94,13 +95,18 @@ cor_test <- function(..., formula = NULL, iter = 5e3){
     Sigma_g <- SumSq[g,,]/ngroups[g]
     sdHat[g,] <- sqrt(diag(Sigma_g))
     CHat[g,,] <- diag(1/sdHat[g,])%*%Sigma_g%*%diag(1/sdHat[g,])
+    #get rough estimate of posterior sd of the standard deviations (used for random walk sd)
+    drawsSigma_g <- rWishart(1e2,df=ngroups[g],Sigma=SumSqInv[g,,])
+    sdsd[g,] <- unlist(lapply(1:P,function(p){
+      sd(sqrt(drawsSigma_g[p,p,]))
+    }))
   }
   samsize0 <- iter
 
   # call Fortran subroutine for Gibbs sampling using noninformative improper priors
   # for regression coefficients, Jeffreys priors for standard deviations, and a proper
   # joint uniform prior for the correlation matrices.
-  res <-.Fortran("estimate_postmeancov_fisherz",
+  res <- .Fortran("estimate_postmeancov_fisherz",
                  postZmean=matrix(0,numcorr,1),
                  postZcov=matrix(0,numcorr,numcorr),
                  P=as.integer(P),
@@ -108,7 +114,7 @@ cor_test <- function(..., formula = NULL, iter = 5e3){
                  K=as.integer(K),
                  numG=as.integer(numG),
                  BHat=BHat,
-                 sdHat=sdHat,
+                 sdHat=rbind(sdHat,sdsd),
                  CHat=CHat,
                  XtXi=XtXi,
                  samsize0=as.integer(samsize0),

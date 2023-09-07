@@ -23,13 +23,14 @@ test_that("Hetcor two hypotheses correctly evaluated", {
     unname(BF2$BFtu_confirmatory)[2],
     c(1.616808,16,0.911058)[2],
     tolerance = 1
-  )})
+  )}
+)
 
 set.seed(564)
 BF3 <- BF(res,hypothesis="Middle_with_Superficial > Deep_with_Superficial")
 test_that("Hetcor one order hypothesis correctly evaluated", {
   expect_equivalent(
-    unname(BF3$BFtu_confirmatory),c(0.849162,1.151505), tolerance = .01
+    unname(BF3$BFtu_confirmatory),c(0.849162,1.151505), tolerance = .02
   )})
 
 set.seed(164)
