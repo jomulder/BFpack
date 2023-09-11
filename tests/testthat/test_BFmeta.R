@@ -32,7 +32,5 @@ test_that("exploratory metafor test for I^2", {
     round(BFmeta2$PHP_exploratory,3),c(0.844,0.082,0.074), tolerance = .05
   )})
 
-# 1 + 1 = 3
-
 
 
