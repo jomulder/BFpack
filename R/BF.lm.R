@@ -994,8 +994,8 @@ Student_prob_Hc <- function(mean1,scale1,df1,relmeas1,constraints,RrO1=NULL){
           rownames(relmeas)[numhyp+1] <- "complement"
         }else{ #the order constrained subspaces at least partly overlap
 
-          # funtion below gives a rough estimate of the posterior probability under Hc
-          # a bain type of algorithm would be better of course. but for now this is ok.
+          # the function below gives a rough estimate of the posterior probability under Hc
+          # a bain type of algorithm would be better of course.
 
           randomDraws <- rmvt(draws2,delta=mean1,sigma=scale1,df=df1)
           checksOC <- lapply(welk,function(h){
