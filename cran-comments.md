@@ -8,10 +8,10 @@
 * Local Windows 10, R version 4.1.1
 * rhub check: Fedora Linux, R-devel, clang, gfortran
 * rhub check: Windows Server 2022, R-devel, 64 bit
-* Github R-CMD-check: windows-latest, r: 'release'
-* Github R-CMD-check: ubuntu-latest,   r: 'devel'
-* Github R-CMD-check: ubuntu-latest,   r: 'release'
-* Github R-CMD-check: ubuntu-latest,   r: 'oldrel-1'
+* Github check: windows-latest, r: 'release'
+* Github check: ubuntu-latest, r: 'devel'
+* Github check: ubuntu-latest, r: 'release'
+* Github check: ubuntu-latest, r: 'oldrel-1'
 
 ## R CMD check results
 There were no ERRORs, WARNINGs, or NOTEs
