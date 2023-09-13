@@ -6,8 +6,10 @@ subroutine estimate_postmeancov_fisherz(postZmean, postZcov, P, numcorr, K, numG
     Ygroups, Xgroups, Ntot, C_quantiles, sigma_quantiles, B_quantiles, BDrawsStore, sigmaDrawsStore, CDrawsStore, &
     seed)
 !
+!
     implicit none
-
+!
+!
     integer, intent(in) :: P, numcorr, K, numG, samsize0, Njs(numG), Ntot, seed
     real(8), intent(in) :: BHat(numG,K,P), sdHat(2*numG,P), CHat(numG,P,P), XtXi(numG,K,K)
     real(8), intent(out):: postZmean(numcorr,1), postZcov(numcorr,numcorr), Ygroups(numG,Ntot,P), Xgroups(numG,Ntot,K),&
@@ -22,7 +24,7 @@ subroutine estimate_postmeancov_fisherz(postZmean, postZcov, P, numcorr, K, numG
                            dummy3(samsize0), dummy2(samsize0), meanO(P*K), para(((P*K)*((P*K)+3)/2 + 1)), SS2(P,P)
     integer             :: s1, g1, i1, corrteller, c1, c2, p1, p2, k1, errorflag, lower_int, median_int, upper_int, &
                            iseed!, nn
-!    integer, allocatable, dimension(:) :: iseed
+!
 !
     !set seed
     !call RANDOM_SEED(size=nn)

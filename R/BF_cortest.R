@@ -233,6 +233,8 @@ FisherZ <- function(r){.5*log((1+r)/(1-r))}
 
 #' @importFrom mvtnorm dmvnorm pmvnorm rmvnorm
 #' @importFrom stats dnorm pnorm
+#' @importFrom fitHeavyTail fit_mvt
+#' @importFrom QRM fit.st
 #' @method BF cor_test
 #' @export
 BF.cor_test <- function(x,
@@ -254,7 +256,9 @@ BF.cor_test <- function(x,
   # Exploratory testing of correlation coefficients
   #get height of prior density at 0 of Fisher transformed correlation
   drawsJU <- draw_ju_r(P,samsize=50000,Fisher=1)
-  relcomp0 <- approxfun(density(drawsJU[,1]))(0)
+  approx_studt <- QRM::fit.st(c(drawsJU))$par.ests
+  relcomp0 <- dt(0,df=approx_studt[1])/approx_studt[3] # all marginal priors are the same
+
   # compute exploratory BFs
   corr_names <- rownames(x$correstimates)
   numcorr <- length(corrmeanN)
@@ -274,17 +278,14 @@ BF.cor_test <- function(x,
   # confirmatory testing if hypothesis argument is used
   if(!is.null(hypothesis)){
 
-    #check if constraints are formulated on correlaties in different populations
-    #if so, then the correlation names contains the string "_group" at the end
+    #check if constraints are formulated on correlations in different populations
+    #if so, then the correlation names contains the string "_in_g" at the end
     params_in_hyp1 <- params_in_hyp(hypothesis)
 
     corr_names <- unlist(lapply(1:length(x$corrnames),function(g){
       c(x$corrnames[[g]][lower.tri(x$corrnames[[g]])],
         t(x$corrnames[[g]])[lower.tri(x$corrnames[[g]])])
     })) #which includes Y1_with_Y2 and Y2_with_Y1
-    # checkLabels <- matrix(unlist(lapply(1:length(params_in_hyp1),function(par){
-    #   params_in_hyp1[par]==corr_names
-    # })),nrow=length(params_in_hyp1),byrow=T)
 
     parse_hyp <- parse_hypothesis(corr_names,hypothesis)
     parse_hyp$hyp_mat <- do.call(rbind, parse_hyp$hyp_mat)
@@ -305,21 +306,40 @@ BF.cor_test <- function(x,
     RrE <- RrList[[1]]
     RrO <- RrList[[2]]
 
-    # RrStack <- rbind(do.call(rbind,RrE),do.call(rbind,RrO))
-    # RStack <- RrStack[,-(numcorr+1)]
-    # rStack <- RrStack[,(numcorr+1)]
-
     numhyp <- length(RrE)
     relfit <- t(matrix(unlist(lapply(1:numhyp,function(h){
       Gaussian_measures(corrmeanN,corrcovmN,RrE1=RrE[[h]],RrO1=RrO[[h]])
     })),nrow=2))
+    #names1 and constraints1 ... to fix ...
+    # approximate unconstrained Fisher transformed correlations with a multivariate Student t
+    if(numcorrgroup==1){
+      if(numcorr==1){
+        Scale0 <- as.matrix(approx_studt[3]**2)
+      }else{
+        Scale0 <- diag(rep(approx_studt[3]**2,numG))
+      }
+      mean0 <- rep(0,numG)
+      df0 <- round(approx_studt[1])
+    }else{
+      approx_studt <- fit_mvt(X=drawsJU)
+      mean0 <- rep(0,numcorrgroup*numG)
+      Scale0 <- diag(rep(mean(diag(approx_studt$scatter)),numcorrgroup*numG))
+      df0 <- round(approx_studt$nu)
+    }
     relcomp <- t(matrix(unlist(lapply(1:numhyp,function(h){
-      jointuniform_measures(P,numcorrgroup,numG,RrE1=RrE[[h]],RrO1=RrO[[h]],Fisher=1)
+      relcomp_h <- Student_measures(mean1=mean0,
+                                    Scale1=Scale0,
+                                    df1=df0,
+                                    RrE1=RrE[[h]],
+                                    RrO1=RrO[[h]])
+      return(relcomp_h)
+
     })),nrow=2))
+
     row.names(relfit) <- row.names(relcomp) <- parse_hyp$original_hypothesis
     if(complement == TRUE){
       relfit <- Gaussian_prob_Hc(corrmeanN,corrcovmN,relfit,RrO)
-      relcomp <- jointuniform_prob_Hc(P,numcorrgroup,numG,relcomp,RrO)
+      relcomp <- Student_prob_Hc(mean1=mean0,scale1=Scale0,df1=df0,relmeas1=relcomp,constraints=NULL,RrO1=RrO)
     }
     hypothesisshort <- unlist(lapply(1:nrow(relfit),function(h) paste0("H",as.character(h))))
     row.names(relfit) <- row.names(relfit) <- hypothesisshort
@@ -379,4 +399,20 @@ BF.cor_test <- function(x,
 
 }
 
+
+#get draws from joint uniform prior in Fisher transformed space
+#Call Fortran subroutine in from bct_prior.f90
+draw_ju_r <- function(P, samsize=50000, Fisher=1){
+  testm <- matrix(0,ncol=.5*P*(P-1),nrow=samsize)
+  #  random1 <- rnorm(1)
+  #  random1 <- (random1 - floor(random1))*1e6
+  res <-.Fortran("draw_ju",P = as.integer(P),
+                 drawscorr=testm,
+                 samsize=as.integer(samsize),
+                 numcorrgroup=as.integer(.5*P*(P-1)),
+                 Fisher=as.integer(Fisher),
+                 seed=as.integer( sample.int(1e6,1) ),PACKAGE="BFpack")
+  return(res$drawscorr)
+
+}
 

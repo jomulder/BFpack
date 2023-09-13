@@ -4,34 +4,50 @@ set.seed(123)
 cor1 <- cor_test(mtcars[,4:6])
 BF1 <- BF(cor1)
 PHPexplo <- matrix(
-  c(0.103,  0.888,  0.008,
-    0.001,  0.000,  0.999,
-    0.000,  1.000,  0.000),nrow=3,byrow=T)
+  c(0.1,  0.9,  0.0,
+    0.0,  0.0,  1.0,
+    0.0,  1.0,  0.0),nrow=3,byrow=T)
 test_that("BF.cor_test exploratory hypotheses on correlations correctly evaluated", {
   expect_equivalent(
-    BF1$PHP_exploratory,PHPexplo, tolerance = .2
+    BF1$PHP_exploratory,PHPexplo, tolerance = .1
   )})
 # confirmatory hypothesis test on the correlations
 BF2 <- BF(cor1,hypothesis="wt_with_drat<drat_with_hp<wt_with_hp;
    wt_with_drat=drat_with_hp<0<wt_with_hp")
-BFtable <- log(matrix(c(1.000, 3.495, 287.256,
-                    0.286, 1.000,  82.192,
-                    0.004, 0.012,   1.000),byrow=TRUE,nrow=3))
+BFtable <- matrix(c(   0,    1,  5.6,
+                      -1,    0,  4.6,
+                    -5.6, -4.6,    0),byrow=TRUE,nrow=3)
 test_that("BF.cor_test confirmatory hypotheses on correlations correctly evaluated", {
   expect_equivalent(
     log(BF2$BFmatrix_confirmatory),BFtable, tolerance = .5
   )})
 
-# confirmatory hypothesis test on the correlations
-BF2 <- BF(cor1,hypothesis="wt_with_drat<drat_with_hp<wt_with_hp;
-   wt_with_drat=drat_with_hp<0<wt_with_hp",complement=FALSE)
-BFtable <- matrix(c(1.000, 3.446,
-                    0.290, 1.000),byrow=TRUE,nrow=2)
+# test a single correlation
+set.seed(123)
+cor2 <- cor_test(mtcars[,1:2])
+
+BF2 <- BF(cor2,hypothesis="cyl_with_mpg= -.9")
+PHPexplo <- matrix(
+  c(0.0,  1,  0.0),nrow=1,byrow=T)
+# exploratory hypothesis test on the correlation
+test_that("BF.cor_test exploratory hypotheses on correlations correctly evaluated", {
+  expect_equivalent(
+    BF2$PHP_exploratory,PHPexplo, tolerance = .1
+  )})
+# confirmatory hypothesis test on the correlation
 test_that("BF.cor_test confirmatory hypotheses on correlations correctly evaluated", {
   expect_equivalent(
-    unname(BF2$PHP_confirmatory),c(0.775,0.225), tolerance = .2
+    log(BF2$BFmatrix_confirmatory[1,2]),.9, tolerance = .2
   )})
 
+# test a single correlation in multiple groups
+set.seed(123)
+cor3 <- cor_test(mtcars[,3:4],mtcars[,5:6])
+BF3 <- BF(cor3,hypothesis="hp_with_disp_in_g1= -wt_with_drat_in_g2")
+test_that("BF.cor_test exploratory hypotheses on correlations correctly evaluated", {
+  expect_equivalent(
+    BF3$PHP_confirmatory,c(.78,.22), tolerance = .1
+  )})
 
 
 
