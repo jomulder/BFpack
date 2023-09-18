@@ -112,6 +112,7 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                         Yi1Categorie = Ygroups(g1,i1,p1)
                         call compute_condMeanVar(p1,P,meanMat(i1,1:P),SigmaMatDraw,Wgroups(g1,i1,1:P),condMean,condVar)
 
+call ipv(condMean,condVar,0,1,alphaMat(g1,1,p1),alphaMat(g1,2,p1),Wgroups(g1,i1,p1),iseed)
 
 
                         write(*,*),s1,g1,p1,condMean,condVar
@@ -783,7 +784,7 @@ subroutine inverse_prob_sampling(condMean,condVar,LBtrue,UBtrue,LB,UB,condDraw,i
     real ( kind = 8 )              :: xdraw
     real ( kind = 8 )              :: LBstand, UBstand, yUB, yLB, rnIPS, diffUBLB, &
                                       bb, cc, Discr, xi, Zstar, &
-                                      lambda, pi, machPres
+                                      lambda, pi, machPres, rrand
     logical                        :: uppie
 
     parameter(pi=3.141592653)
@@ -797,9 +798,11 @@ subroutine inverse_prob_sampling(condMean,condVar,LBtrue,UBtrue,LB,UB,condDraw,i
     yUB = alnorm ( UBstand, uppie )
     !yLB = anordf (LBstand)
     yLB = alnorm ( LBstand, uppie )
-601     rnIPS = runiform(iseed)*(yUB - yLB) + yLB
+    rrand = runiform(iseed)
+601     rnIPS = rrand*(yUB - yLB) + yLB
     if(LBtrue+UBtrue==0) then !unconstrained sampling
-        condDraw = rnormal(iseed)*sqrt(condVar) + condMean
+        rrand = rnormal(iseed)
+        condDraw = rrand*sqrt(condVar) + condMean
     else if(abs(rnIPS) > machPres .and. abs(rnIPS-1) > machPres) then
         !inverse probability sampling
         call normal_01_cdf_inv ( rnIPS, xdraw )
@@ -827,7 +830,7 @@ subroutine ipv(condMean,condVar,LBtrue,UBtrue,LB,UB,condDraw,iseed)
     real ( kind = 8 )              :: xdraw
     real ( kind = 8 )              :: LBstand, UBstand, yUB, yLB, rnIPS, diffUBLB, &
                                       bb, cc, Discr, xi, Zstar, &
-                                      lambda, pi, machPres
+                                      lambda, pi, machPres, rrand
     logical                        :: uppie
 
     parameter(pi=3.141592653)
@@ -838,9 +841,12 @@ subroutine ipv(condMean,condVar,LBtrue,UBtrue,LB,UB,condDraw,iseed)
     UBstand = (UB - condMean)/sqrt(condVar)
     LBstand = (LB - condMean)/sqrt(condVar)
 
-    condDraw = 0
-
-
+    yUB = alnorm ( UBstand, uppie )
+    yLB = alnorm ( LBstand, uppie )
+    rrand = runiform(iseed)
+    rnIPS = rrand * (yUB - yLB) + yLB
+!    call normal_01_cdf_inv ( rnIPS, xdraw )
+!    condDraw = xdraw * sqrt(condVar) + condMean
 !
 end subroutine ipv
 
