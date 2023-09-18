@@ -805,7 +805,8 @@ subroutine inverse_prob_sampling(condMean,condVar,LBtrue,UBtrue,LB,UB,condDraw,i
         condDraw = rrand*sqrt(condVar) + condMean
     else if(abs(rnIPS) > machPres .and. abs(rnIPS-1) > machPres) then
         !inverse probability sampling
-        call normal_01_cdf_inv ( rnIPS, xdraw )
+        !call normal_01_cdf_inv ( rnIPS, xdraw )
+        xdraw = dinvnr ( rnIPS )
         condDraw = xdraw * sqrt(condVar) + condMean
     else if(UBstand>-5.0 .and. LBstand<5.0) then !IPS must be redone
         go to 601
@@ -845,6 +846,7 @@ subroutine ipv(condMean,condVar,LBtrue,UBtrue,LB,UB,condDraw,iseed)
     yLB = alnorm ( LBstand, uppie )
     rrand = runiform(iseed)
     rnIPS = rrand * (yUB - yLB) + yLB
+    xdraw = dinvnr ( rnIPS )
 !    call normal_01_cdf_inv ( rnIPS, xdraw )
 !    condDraw = xdraw * sqrt(condVar) + condMean
 !
