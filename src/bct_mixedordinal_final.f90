@@ -817,6 +817,34 @@ subroutine inverse_prob_sampling(condMean,condVar,LBtrue,UBtrue,LB,UB,condDraw,i
 end subroutine inverse_prob_sampling
 
 
+subroutine ipv(condMean,condVar,LBtrue,UBtrue,LB,UB,condDraw,iseed)
+
+    implicit none
+
+    integer, intent(in)            :: LBtrue, UBtrue, iseed
+    real ( kind = 8 ), intent(in)  :: condMean, condVar, LB, UB
+    real ( kind = 8 ), intent(out) :: condDraw
+    real ( kind = 8 )              :: xdraw
+    real ( kind = 8 )              :: LBstand, UBstand, yUB, yLB, rnIPS, diffUBLB, &
+                                      bb, cc, Discr, xi, Zstar, &
+                                      lambda, pi, machPres
+    logical                        :: uppie
+
+    parameter(pi=3.141592653)
+    uppie = .true.
+!
+    machPres = 1e-6
+    !normalize bounds
+    UBstand = (UB - condMean)/sqrt(condVar)
+    LBstand = (LB - condMean)/sqrt(condVar)
+
+    condDraw = 0
+
+
+!
+end subroutine ipv
+
+
 
 function alnorm ( x, upper )
 
