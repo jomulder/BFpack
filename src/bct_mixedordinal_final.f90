@@ -1141,6 +1141,400 @@ end
 
 
 
+function dinvnr ( p )
+
+!*****************************************************************************80
+!
+!! DINVNR computes the inverse of the normal distribution.
+!
+!  Discussion:
+!
+!    This routine returns X such that
+!
+!      CUMNOR(X) = P,
+!
+!    that is, so that
+!
+!      P = integral ( -oo <= T <= X ) exp(-U*U/2)/sqrt(2*PI) dU
+!
+!    The rational function is used as a
+!    starting value for the Newton method of finding roots.
+!
+!  Reference:
+!
+!    William Kennedy, James Gentle,
+!    Statistical Computing,
+!    Marcel Dekker, NY, 1980,
+!    QA276.4 K46
+!
+!  Parameters:
+!
+!    Input, real ( kind = 8 ) P.
+!
+!    Output, real ( kind = 8 ) DINVNR, the argument X for which the
+!    Normal CDF has the value P.
+!
+  implicit none
+
+  real ( kind = 8 ) cum
+  real ( kind = 8 ) dinvnr
+  real ( kind = 8 ) dx
+  real ( kind = 8 ), parameter :: eps = 1.0D-13
+  integer ( kind = 4 ) i
+  integer ( kind = 4 ), parameter :: maxit = 100
+  real ( kind = 8 ) p
+  real ( kind = 8 ) pp
+  real ( kind = 8 ), parameter :: r2pi = 0.3989422804014326D+00
+  real ( kind = 8 ) strtx
+  !real ( kind = 8 ) stvaln
+  real ( kind = 8 ) xcur
+
+  pp = min ( p, 1-p )
+  strtx = stvaln(pp)
+  xcur = strtx
+!
+!  Newton iterations.
+!
+  do i = 1, maxit
+
+    cum = cumnor(xcur)
+    dx = ( cum - pp ) / ( r2pi * exp ( -0.5D+00 * xcur * xcur ) )
+    xcur = xcur - dx
+
+    if ( abs ( dx / xcur ) < eps ) then
+      if ( p <= 1-p ) then
+        dinvnr = xcur
+      else
+        dinvnr = -xcur
+      end if
+      return
+    end if
+
+  end do
+
+  if ( p <= 1-p ) then
+    dinvnr = strtx
+  else
+    dinvnr = -strtx
+  end if
+
+  return
+end function dinvnr
+
+
+
+function stvaln ( p )
+
+!*****************************************************************************80
+!
+!! STVALN provides starting values for the inverse of the normal distribution.
+!
+!  Discussion:
+!
+!    The routine returns an X for which it is approximately true that
+!      P = CUMNOR(X),
+!    that is,
+!      P = Integral ( -infinity < U <= X ) exp(-U*U/2)/sqrt(2*PI) dU.
+!
+!  Reference:
+!
+!    William Kennedy, James Gentle,
+!    Statistical Computing,
+!    Marcel Dekker, NY, 1980, page 95,
+!    QA276.4 K46
+!
+!  Parameters:
+!
+!    Input, real ( kind = 8 ) P, the probability whose normal deviate
+!    is sought.
+!
+!    Output, real ( kind = 8 ) STVALN, the normal deviate whose probability
+!    is approximately P.
+!
+  implicit none
+
+  !real ( kind = 8 ) eval_pol
+  real ( kind = 8 ) p
+  real ( kind = 8 ) sgn
+  real ( kind = 8 ) stvaln
+  real ( kind = 8 ), parameter, dimension(0:4) :: xden = (/ &
+    0.993484626060D-01, &
+    0.588581570495D+00, &
+    0.531103462366D+00, &
+    0.103537752850D+00, &
+    0.38560700634D-02 /)
+  real ( kind = 8 ), parameter, dimension(0:4) :: xnum = (/ &
+    -0.322232431088D+00, &
+    -1.000000000000D+00, &
+    -0.342242088547D+00, &
+    -0.204231210245D-01, &
+    -0.453642210148D-04 /)
+  real ( kind = 8 ) y
+  real ( kind = 8 ) z
+
+  if ( p <= 0.5D+00 ) then
+
+    sgn = -1.0D+00
+    z = p
+
+  else
+
+    sgn = 1.0D+00
+    z = 1.0D+00 - p
+
+  end if
+
+  y = sqrt ( -2.0D+00 * log ( z ) )
+  stvaln = y + eval_pol ( xnum, 4, y ) / eval_pol ( xden, 4, y )
+  stvaln = sgn * stvaln
+
+  return
+end function
+
+
+function eval_pol ( a, n, x )
+
+!*****************************************************************************80
+!
+!! EVAL_POL evaluates a polynomial at X.
+!
+!  Discussion:
+!
+!    EVAL_POL = A(0) + A(1)*X + ... + A(N)*X**N
+!
+!  Modified:
+!
+!    15 December 1999
+!
+!  Parameters:
+!
+!    Input, real ( kind = 8 ) A(0:N), coefficients of the polynomial.
+!
+!    Input, integer ( kind = 4 ) N, length of A.
+!
+!    Input, real ( kind = 8 ) X, the point at which the polynomial
+!    is to be evaluated.
+!
+!    Output, real ( kind = 8 ) EVAL_POL, the value of the polynomial at X.
+!
+  implicit none
+
+  integer ( kind = 4 ) n
+
+  real ( kind = 8 ) a(0:n)
+  real ( kind = 8 ) eval_pol
+  integer ( kind = 4 ) i
+  real ( kind = 8 ) term
+  real ( kind = 8 ) x
+
+  term = a(n)
+  do i = n - 1, 0, -1
+    term = term * x + a(i)
+  end do
+
+  eval_pol = term
+
+  return
+end function eval_pol
+
+
+function cumnor ( arg )
+
+!*****************************************************************************
+! The original code was modified
+!
+!
+!! CUMNOR computes the cumulative normal distribution.
+!
+!  Discussion:
+!
+!    This function evaluates the normal distribution function:
+!
+!                              / x
+!                     1       |       -t*t/2
+!          P(x) = ----------- |      e       dt
+!                 sqrt(2 pi)  |
+!                             /-oo
+!
+!    This transportable program uses rational functions that
+!    theoretically approximate the normal distribution function to
+!    at least 18 significant decimal digits.  The accuracy achieved
+!    depends on the arithmetic system, the compiler, the intrinsic
+!    functions, and proper selection of the machine dependent
+!    constants.
+!
+!  Author:
+!
+!    William Cody
+!    Mathematics and Computer Science Division
+!    Argonne National Laboratory
+!    Argonne, IL 60439
+!
+!  Reference:
+!
+!    William Cody,
+!    Rational Chebyshev approximations for the error function,
+!    Mathematics of Computation,
+!    1969, pages 631-637.
+!
+!    William Cody,
+!    Algorithm 715:
+!    SPECFUN - A Portable FORTRAN Package of Special Function Routines
+!    and Test Drivers,
+!    ACM Transactions on Mathematical Software,
+!    Volume 19, Number 1, 1993, pages 22-32.
+!
+!  Parameters:
+!
+!    Input, real ( kind = 8 ) ARG, the upper limit of integration.
+!
+!    Output, real ( kind = 8 ) the Normal density CDF.
+!
+!  Local Parameters:
+!
+!    Local, real ( kind = 8 ) EPS, the argument below which anorm(x)
+!    may be represented by 0.5 and above which  x*x  will not underflow.
+!    A conservative value is the largest machine number X
+!    such that   1.0D+00 + X = 1.0D+00   to machine precision.
+!
+  implicit none
+
+  real ( kind = 8 ), parameter, dimension ( 5 ) :: a = (/ &
+    2.2352520354606839287D+00, &
+    1.6102823106855587881D+02, &
+    1.0676894854603709582D+03, &
+    1.8154981253343561249D+04, &
+    6.5682337918207449113D-02 /)
+  real ( kind = 8 ) arg
+  real ( kind = 8 ), parameter, dimension ( 4 ) :: b = (/ &
+    4.7202581904688241870D+01, &
+    9.7609855173777669322D+02, &
+    1.0260932208618978205D+04, &
+    4.5507789335026729956D+04 /)
+  real ( kind = 8 ), parameter, dimension ( 9 ) :: c = (/ &
+    3.9894151208813466764D-01, &
+    8.8831497943883759412D+00, &
+    9.3506656132177855979D+01, &
+    5.9727027639480026226D+02, &
+    2.4945375852903726711D+03, &
+    6.8481904505362823326D+03, &
+    1.1602651437647350124D+04, &
+    9.8427148383839780218D+03, &
+    1.0765576773720192317D-08 /)
+  real ( kind = 8 ) cumnor
+  real ( kind = 8 ), parameter, dimension ( 8 ) :: d = (/ &
+    2.2266688044328115691D+01, &
+    2.3538790178262499861D+02, &
+    1.5193775994075548050D+03, &
+    6.4855582982667607550D+03, &
+    1.8615571640885098091D+04, &
+    3.4900952721145977266D+04, &
+    3.8912003286093271411D+04, &
+    1.9685429676859990727D+04 /)
+  real ( kind = 8 ) del
+  real ( kind = 8 ) eps
+  integer ( kind = 4 ) i
+  real ( kind = 8 ), parameter, dimension ( 6 ) :: p = (/ &
+    2.1589853405795699D-01, &
+    1.274011611602473639D-01, &
+    2.2235277870649807D-02, &
+    1.421619193227893466D-03, &
+    2.9112874951168792D-05, &
+    2.307344176494017303D-02 /)
+  real ( kind = 8 ), parameter, dimension ( 5 ) :: q = (/ &
+    1.28426009614491121D+00, &
+    4.68238212480865118D-01, &
+    6.59881378689285515D-02, &
+    3.78239633202758244D-03, &
+    7.29751555083966205D-05 /)
+  real ( kind = 8 ), parameter :: root32 = 5.656854248D+00
+  real ( kind = 8 ), parameter :: sixten = 16.0D+00
+  real ( kind = 8 ), parameter :: sqrpi = 3.9894228040143267794D-01
+  real ( kind = 8 ), parameter :: thrsh = 0.66291D+00
+  real ( kind = 8 ) x
+  real ( kind = 8 ) xden
+  real ( kind = 8 ) xnum
+  real ( kind = 8 ) y
+  real ( kind = 8 ) xsq
+!
+!  Machine dependent constants
+!
+  eps = epsilon ( 1.0D+00 ) * 0.5D+00
+
+  x = arg
+  y = abs ( x )
+
+  if ( y <= thrsh ) then
+!
+!  Evaluate  anorm  for  |X| <= 0.66291
+!
+    if ( eps < y ) then
+      xsq = x * x
+    else
+      xsq = 0.0D+00
+    end if
+
+    xnum = a(5) * xsq
+    xden = xsq
+    do i = 1, 3
+      xnum = ( xnum + a(i) ) * xsq
+      xden = ( xden + b(i) ) * xsq
+    end do
+    cumnor = x * ( xnum + a(4) ) / ( xden + b(4) )
+    cumnor = 0.5D+00 + cumnor
+!
+!  Evaluate ANORM for 0.66291 <= |X| <= sqrt(32)
+!
+  else if ( y <= root32 ) then
+
+    xnum = c(9) * y
+    xden = y
+    do i = 1, 7
+      xnum = ( xnum + c(i) ) * y
+      xden = ( xden + d(i) ) * y
+    end do
+    cumnor = ( xnum + c(8) ) / ( xden + d(8) )
+    xsq = aint ( y * sixten ) / sixten
+    del = ( y - xsq ) * ( y + xsq )
+    cumnor = exp ( - xsq * xsq * 0.5D+00 ) * exp ( -del * 0.5D+00 ) * cumnor
+
+    if ( 0.0D+00 < x ) then
+       cumnor = 1D+00 - cumnor
+    end if
+!
+!  Evaluate ANORM for sqrt(32) < |X|.
+!
+  else
+
+    cumnor = 0.0D+00
+    xsq = 1.0D+00 / ( x * x )
+    xnum = p(6) * xsq
+    xden = xsq
+    do i = 1, 4
+      xnum = ( xnum + p(i) ) * xsq
+      xden = ( xden + q(i) ) * xsq
+    end do
+
+    cumnor = xsq * ( xnum + p(5) ) / ( xden + q(5) )
+    cumnor = ( sqrpi - cumnor ) / y
+    xsq = aint ( x * sixten ) / sixten
+    del = ( x - xsq ) * ( x + xsq )
+    cumnor = exp ( - xsq * xsq * 0.5D+00 ) &
+      * exp ( - del * 0.5D+00 ) * cumnor
+
+    if ( 0.0D+00 < x ) then
+        cumnor = 1D+00 - cumnor
+    end if
+
+  end if
+
+  if ( cumnor < tiny ( cumnor ) ) then
+    cumnor = 0.0D+00
+  end if
+
+  return
+ end function
+
 
 !Subroutine to find the inverse of a square matrix
 !Author : Louisda16th a.k.a Ashwith J. Rego
