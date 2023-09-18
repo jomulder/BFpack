@@ -781,7 +781,8 @@ subroutine inverse_prob_sampling(condMean,condVar,LBtrue,UBtrue,LB,UB,condDraw,i
     real ( kind = 8 ), intent(in)  :: condMean, condVar, LB, UB
     real ( kind = 8 ), intent(out) :: condDraw
     real ( kind = 8 )              :: xdraw
-    real ( kind = 8 )              :: LBstand, UBstand, yUB, yLB, rnIPS, diffUBLB, bb, cc, Discr, xi, Zstar, &
+    real ( kind = 8 )              :: LBstand, UBstand, yUB, yLB, rnIPS, diffUBLB, &
+                                      bb, cc, Discr, xi, Zstar, &
                                       lambda, pi, machPres
     logical                        :: uppie
 
@@ -799,7 +800,8 @@ subroutine inverse_prob_sampling(condMean,condVar,LBtrue,UBtrue,LB,UB,condDraw,i
 601     rnIPS = runiform(iseed)*(yUB - yLB) + yLB
     if(LBtrue+UBtrue==0) then !unconstrained sampling
         condDraw = rnormal(iseed)*sqrt(condVar) + condMean
-    else if(abs(rnIPS) > machPres .and. abs(rnIPS-1) > machPres) then !inverse probability sampling
+    else if(abs(rnIPS) > machPres .and. abs(rnIPS-1) > machPres) then
+        !inverse probability sampling
         call normal_01_cdf_inv ( rnIPS, xdraw )
         condDraw = xdraw * sqrt(condVar) + condMean
     else if(UBstand>-5.0 .and. LBstand<5.0) then !IPS must be redone
