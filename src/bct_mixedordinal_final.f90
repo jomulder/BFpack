@@ -196,6 +196,38 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                 BDraws(g1,:,p1) = betaDrawj(1,((p1-1)*K+1):(p1*K)) + Bmean(1:K,p1)
             end do
 
+            !draw R using method of Liu and Daniels (LD, 2006)
+            !draw candidate R
+            diffmat(1:Njs(g1),1:P) = Wgroups(g1,1:Njs(g1),1:P) - matmul(Xgroups(g1,1:Njs(g1),1:K), &
+                BDraws(g1,1:K,1:P))
+            errorMatj = matmul(transpose(diffmat(1:Njs(g1),1:P)),diffmat(1:Njs(g1),1:P))
+            Ds = diag(1/sqrt(diagonals(errorMatj,P)),P)
+            diffmat(1:Njs(g1),1:P) = matmul(diffmat(1:Njs(g1),1:P),Ds) !diffmat is now epsilon in LD
+            epsteps = matmul(transpose(diffmat(1:Njs(g1),1:P)),diffmat(1:Njs(g1),1:P))
+            SS1 = matmul(matmul(diag(1/sigmaDraws(g1,:),P),epsteps),diag(1/sigmaDraws(g1,:),P))
+            call FINDInv(SS1,SS1inv,P,errorflag)
+            call gen_wish(SS1inv,Njs(g1),dummyPP,P,iseed)
+            call FINDInv(dummyPP,dummyPPinv,P,errorflag)
+	    	    Ccan = matmul(matmul(diag(1/sqrt(diagonals(dummyPPinv,P)),P),dummyPPinv), &
+	    	        diag(1/sqrt(diagonals(dummyPPinv,P)),P))
+!	    	Ccan = Ccan + Cnugget
+            call FINDInv(Ccan,CcanInv,P,errorflag)
+            call FINDInv(Ccurr,CcurrInv,P,errorflag)
+            !target prior of Barnard et al. with nu = p + kappa0
+            !proposal prior
+            logR_MH_part3 = (-.5*real(P+1))*(log(det(Ccurr,P,-1))-log(det(Ccan,P,-1)))
+            R_MH = exp(logR_MH_part3)
+
+            !note that if Wp is not the identity matrix we have to
+            !compute sum(diagonals(matmul(Wp,RcurrInv)))
+            rnunif = runiform(iseed)
+            if(rnunif(1) < R_MH) then
+                CDraws(g1,:,:) = Ccan(:,:)
+                acceptC(g1) = acceptC(g1) + 1
+                Cinv = CcanInv
+            else
+                Cinv = CcurrInv
+            end if
 
 
         end do
