@@ -110,13 +110,65 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                 if(ordinal(p1)>0) then
                     do i1=1,Njs(g1)
                         Yi1Categorie = Ygroups(g1,i1,p1)
-                        call compute_condMeanVar(p1,P,meanMat(i1,1:P),SigmaMatDraw,Wgroups(g1,i1,1:P),condMean,condVar)
-
-call ipv(condMean,condVar,0,1,alphaMat(g1,1,p1),alphaMat(g1,2,p1),Wgroups(g1,i1,p1),iseed)
-
-
-                        write(*,*),s1,g1,p1,condMean,condVar
-
+                        call compute_condMeanVar(p1,P,meanMat(i1,1:P),SigmaMatDraw, &
+                            Wgroups(g1,i1,1:P),condMean,condVar)
+                        select case (Yi1Categorie)
+                            case(1)
+                                call inverse_prob_sampling(condMean,condVar,0,1,alphaMat(g1,1,p1), &
+                                    alphaMat(g1,2,p1),Wgroups(g1,i1,p1),iseed)
+                                tellers(g1,1,p1) = tellers(g1,1,p1) + 1
+                                Wdummy(g1,p1,tellers(g1,1,p1),1) = Wgroups(g1,i1,p1)
+                            case(2)
+                                call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,2,p1), &
+                                    alphaMat(g1,3,p1),Wgroups(g1,i1,p1),iseed)
+                                tellers(g1,2,p1) = tellers(g1,2,p1) + 1
+                                Wdummy(g1,p1,tellers(g1,2,p1),2) = Wgroups(g1,i1,p1)
+                            case(3)
+                                call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,3,p1), &
+                                    alphaMat(g1,4,p1),Wgroups(g1,i1,p1),iseed)
+                                tellers(g1,3,p1) = tellers(g1,3,p1) + 1
+                                Wdummy(g1,p1,tellers(g1,3,p1),3) = Wgroups(g1,i1,p1)
+                            case(4)
+                                call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,4,p1), &
+                                    alphaMat(g1,5,p1),Wgroups(g1,i1,p1),iseed)
+                                tellers(g1,4,p1) = tellers(g1,4,p1) + 1
+                                Wdummy(g1,p1,tellers(g1,4,p1),4) = Wgroups(g1,i1,p1)
+                            case(5)
+                                call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,5,p1), &
+                                    alphaMat(g1,6,p1),Wgroups(g1,i1,p1),iseed)
+                                tellers(g1,5,p1) = tellers(g1,5,p1) + 1
+                                Wdummy(g1,p1,tellers(g1,5,p1),5) = Wgroups(g1,i1,p1)
+                            case(6)
+                                call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,6,p1), &
+                                    alphaMat(g1,7,p1),Wgroups(g1,i1,p1),iseed)
+                                tellers(g1,6,p1) = tellers(g1,6,p1) + 1
+                                Wdummy(g1,p1,tellers(g1,6,p1),6) = Wgroups(g1,i1,p1)
+                            case(7)
+                                call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,7,p1), &
+                                    alphaMat(g1,8,p1),Wgroups(g1,i1,p1),iseed)
+                                tellers(g1,7,p1) = tellers(g1,7,p1) + 1
+                                Wdummy(g1,p1,tellers(g1,7,p1),7) = Wgroups(g1,i1,p1)
+                            case(8)
+                                call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,8,p1), &
+                                    alphaMat(g1,9,p1),Wgroups(g1,i1,p1),iseed)
+                                tellers(g1,8,p1) = tellers(g1,8,p1) + 1
+                                Wdummy(g1,p1,tellers(g1,8,p1),8) = Wgroups(g1,i1,p1)
+                            case(9)
+                                call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,9,p1), &
+                                    alphaMat(g1,10,p1),Wgroups(g1,i1,p1),iseed)
+                                tellers(g1,9,p1) = tellers(g1,9,p1) + 1
+                                Wdummy(g1,p1,tellers(g1,9,p1),9) = Wgroups(g1,i1,p1)
+                            case(10)
+                                call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,10,p1), &
+                                    alphaMat(g1,11,p1),Wgroups(g1,i1,p1),iseed)
+                                tellers(g1,10,p1) = tellers(g1,10,p1) + 1
+                                Wdummy(g1,p1,tellers(g1,10,p1),10) = Wgroups(g1,i1,p1)
+                            case(11)
+                                call inverse_prob_sampling(condMean,condVar,1,0,alphaMat(g1,11,p1), &
+                                    alphaMat(g1,12,p1),Wgroups(g1,i1,p1),iseed)
+                                tellers(g1,11,p1) = tellers(g1,11,p1) + 1
+                                Wdummy(g1,p1,tellers(g1,11,p1),11) = Wgroups(g1,i1,p1)
+                         end select
                     end do
 !
                     !draw boundary's in alphaMat
@@ -133,6 +185,16 @@ call ipv(condMean,condVar,0,1,alphaMat(g1,1,p1),alphaMat(g1,2,p1),Wgroups(g1,i1,
 
 
             ! HOLE
+
+            Bmean(1:K,1:P) = matmul(matmul(XtXi(g1,:,:),transpose(Xgroups(g1,1:Njs(g1),1:K))), &
+                Wgroups(g1,1:Njs(g1),1:P))
+            call kronecker(K,P,XtXi(g1,:,:),SigmaMatDraw,covBeta)
+
+            call setgmn(meanO,covBeta,P*K,para)
+            call GENMN(para,betaDrawj(1,1:(P*K)),P*K,iseed)
+            do p1 = 1,P
+                BDraws(g1,:,p1) = betaDrawj(1,((p1-1)*K+1):(p1*K)) + Bmean(1:K,p1)
+            end do
 
 
 
@@ -179,6 +241,23 @@ function eye(n)
 end function eye
 
 
+
+subroutine kronecker(dimA,dimB,A,B,AB)
+!
+    implicit none
+!
+    integer, intent(in) :: dimA, dimB
+    real(8), intent(in)    :: A(dimA,dimA), B(dimB,dimB) !dummy arguments
+    real(8), intent(out)   :: AB(dimA*dimB,dimA*dimB) !output matrix of the kronecker product
+    integer             :: i,j !loop counters
+!
+    do i=1,dimA
+        do j=1,dimA
+            AB((1+dimB*(i-1)):(dimB+dimB*(i-1)),(1+dimB*(j-1)):(dimB+dimB*(j-1))) = A(i,j)*B(:,:)
+        end do
+    end do
+!
+end subroutine kronecker
 
 
 
@@ -808,6 +887,7 @@ subroutine inverse_prob_sampling(condMean,condVar,LBtrue,UBtrue,LB,UB,condDraw,i
         !call normal_01_cdf_inv ( rnIPS, xdraw )
         xdraw = dinvnr ( rnIPS )
         condDraw = xdraw * sqrt(condVar) + condMean
+        write(*,*),rnIPS,xdraw
     else if(UBstand>-5.0 .and. LBstand<5.0) then !IPS must be redone
         go to 601
     else
