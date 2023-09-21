@@ -3,7 +3,7 @@
 
 subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, sdHat, CHat, XtXi, samsize0, &
     burnin, Ntot, Xgroups, Ygroups, C_quantiles, sigma_quantiles, B_quantiles, BDrawsStore, sigmaDrawsStore, &
-    CDrawsStore, sdMH, ordinal, Cat, maxCat, seed)
+    CDrawsStore, sdMH, ordinal, Cat, maxCat, gLiuSab, seed)
 !
     implicit none
 !
@@ -13,7 +13,8 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                            sdMH(numG,P), Xgroups(numG,Ntot,K), Ygroups(numG,Ntot,P)
     real(8), intent(out):: postZmean(numcorr,1), postZcov(numcorr,numcorr), B_quantiles(numG,K,P,3), &
                            C_quantiles(numG,P,P,3), sigma_quantiles(numG,P,3), BDrawsStore(samsize0,numG,K,P), &
-                           sigmaDrawsStore(samsize0,numG,P), CDrawsStore(samsize0,numG,P,P)
+                           sigmaDrawsStore(samsize0,numG,P), CDrawsStore(samsize0,numG,P,P), &
+                           gLiuSab(samsize0,numG,P)
     real(8) :: BDraws(numG,K,P), CDraws(numG,P,P), sigmaDraws(numG,P), SSj(P,P), meanMat(Ntot,P), SigmaMatDraw(P,P), &
                R_MH, cholSigmaPK(K*P,K*P), covBeta(K*P,K*P), Ds(P,P), Ccan(P,P), CcanInv(P,P), Ccurr(P,P), &
                CcurrInv(P,P), SS1(P,P), SS1inv(P,P), rnunif(1), errorMatj(P,P), sigma_can(P), aa, bb, cc, dummy1(1),  &
@@ -22,12 +23,12 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                Wp(P,P), epsteps(P,P), logR_MH_part1, logR_MH_part2, logR_MH_part3, logR_MH_part4, &
                varz1, varz2, varz1z2Plus, varz1z2Min, Cnugget(P,P), SigmaInv(P,P), sdMHg(numG,P), gLiuSab_can, &
                Wgroups(numG,Ntot,P), dummyVar, alphaMin, alphaMax, Cinv(P,P), Bmean(K,P), acceptLS(numG,P), &
-               alphaMat(numG,maxCat+1,P), Wdummy(numG,P,Ntot,maxCat), condMean, condVar, gLiuSab(numG,P), &
+               alphaMat(numG,maxCat+1,P), Wdummy(numG,P,Ntot,maxCat), condMean, condVar, &
                ones(samsize0,1), Zcorr_sample(samsize0,numcorr), dummy3(samsize0), dummy2(samsize0), diffmat(Ntot,P), &
                meanO(P*K), para(((P*K)*((P*K)+3)/2 + 1))
     integer :: s1, g1, rankP, acceptC(numG), i1, dummyI, testPr, rr1, rr2, nutarget, a0, iter1, corrteller, &
                c1, c2, p1, Yi1Categorie, tellers(numG,maxCat,P), k1, k2, CatUpper, p2, iperm1(samsize0), iseed, &
-               errorflag, Njs(numG)
+               errorflag, Njs(numG), lower_int, median_int, upper_int
 !
 !   set seed
     iseed = seed
@@ -180,6 +181,188 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                         end do
                     end if
                 end if
+            end do
+
+            Bmean(1:K,1:P) = matmul(matmul(XtXi(g1,:,:),transpose(Xgroups(g1,1:Njs(g1),1:K))), &
+                Wgroups(g1,1:Njs(g1),1:P))
+            call kronecker(K,P,XtXi(g1,:,:),SigmaMatDraw,covBeta)
+
+            call setgmn(meanO,covBeta,P*K,para)
+            call GENMN(para,betaDrawj(1,1:(P*K)),P*K,iseed)
+            do p1 = 1,P
+                BDraws(g1,:,p1) = betaDrawj(1,((p1-1)*K+1):(p1*K)) + Bmean(1:K,p1)
+            end do
+            write(*,*)'B',BDraws(1,1,:)
+
+            !draw R using method of Liu and Daniels (LD, 2006)
+            !draw candidate R
+            diffmat(1:Njs(g1),1:P) = Wgroups(g1,1:Njs(g1),1:P) - matmul(Xgroups(g1,1:Njs(g1),1:K), &
+                BDraws(g1,1:K,1:P))
+            errorMatj = matmul(transpose(diffmat(1:Njs(g1),1:P)),diffmat(1:Njs(g1),1:P))
+            Ds = diag(1/sqrt(diagonals(errorMatj,P)),P)
+            diffmat(1:Njs(g1),1:P) = matmul(diffmat(1:Njs(g1),1:P),Ds) !diffmat is now epsilon in LD
+            epsteps = matmul(transpose(diffmat(1:Njs(g1),1:P)),diffmat(1:Njs(g1),1:P))
+            SS1 = matmul(matmul(diag(1/sigmaDraws(g1,:),P),epsteps),diag(1/sigmaDraws(g1,:),P))
+            call FINDInv(SS1,SS1inv,P,errorflag)
+            call gen_wish(SS1inv,Njs(g1),dummyPP,P,iseed)
+            call FINDInv(dummyPP,dummyPPinv,P,errorflag)
+	    	    Ccan = matmul(matmul(diag(1/sqrt(diagonals(dummyPPinv,P)),P),dummyPPinv), &
+	    	        diag(1/sqrt(diagonals(dummyPPinv,P)),P))
+!	    	Ccan = Ccan + Cnugget
+            call FINDInv(Ccan,CcanInv,P,errorflag)
+            call FINDInv(Ccurr,CcurrInv,P,errorflag)
+            !target prior of Barnard et al. with nu = p + kappa0
+            !proposal prior
+            logR_MH_part3 = (-.5*real(P+1))*(log(det(Ccurr,P,-1))-log(det(Ccan,P,-1)))
+            R_MH = exp(logR_MH_part3)
+
+            !note that if Wp is not the identity matrix we have to
+            !compute sum(diagonals(matmul(Wp,RcurrInv)))
+            rnunif = runiform(iseed)
+            if(rnunif(1) < R_MH) then
+                CDraws(g1,:,:) = Ccan(:,:)
+                acceptC(g1) = acceptC(g1) + 1
+                Cinv = CcanInv
+            else
+                Cinv = CcurrInv
+            end if
+
+            !draw sigma's
+            do p1 = 1,P
+                if(ordinal(p1)==0) then
+                    bb = sum(errorMatj(p1,:)*Cinv(p1,:)/sigmaDraws(g1,:)) - &
+                        errorMatj(p1,p1)*Cinv(p1,p1)/sigmaDraws(g1,p1)
+                    aa = Cinv(p1,p1)*errorMatj(p1,p1)
+                    sigma_can(:) = sigmaDraws(g1,:)
+                    sigma_can(p1) = rnormal(iseed)
+                    sigma_can(p1) = sigma_can(p1)*sdMH(g1,p1) + sigmaDraws(g1,p1) !random walk
+                    R_MH = exp((-real(Njs(g1))-1.0)*(log(sigma_can(p1)-log(sigmaDraws(g1,p1)))) &
+                           -.5*aa*(sigma_can(p1)**(-2) - sigmaDraws(g1,p1)**(-2)) &
+                           -bb*(sigma_can(p1)**(-1) - sigmaDraws(g1,p1)**(-1)))
+                    if(rnunif(1) < R_MH .and. sigma_can(p1)>0) then
+                        sigmaDraws(g1,p1) = sigma_can(p1)
+                        acceptSigma(g1,p1) = acceptSigma(g1,p1) + 1
+                    end if
+                end if
+            end do
+
+            !Draw parameter extended parameter by Liu and Sabatti (2001) via random walk
+            SigmaInv = matmul(matmul(diag(1/sigmaDraws(g1,:),P),Cinv),diag(1/sigmaDraws(g1,:),P))
+            do p1 = 1,P
+                if(ordinal(p1)>0) then !draw gLiuSab(s1,g1,p1)
+                    aa = errorMatj(p1,p1)*SigmaInv(p1,p1)/2
+                    bb = sum(errorMatj(p1,:)*SigmaInv(p1,:)*gLiuSab(s1,g1,:)) - errorMatj(p1,p1) * &
+                        SigmaInv(p1,p1)*gLiuSab(s1,g1,p1)
+                    !gLiuSab_can = rnnof()
+                    gLiuSab_can = rnormal(iseed)
+                    gLiuSab_can = gLiuSab_can*sdMHg(g1,p1) + gLiuSab(s1,g1,p1) ! random (moon) walk
+                    R_MH = exp((K + Cat(g1,p1) - 2 + Njs(g1) - 1)*(log(gLiuSab_can) - log(gLiuSab(s1,g1,p1))) &
+                                -aa*(gLiuSab_can**2 - gLiuSab(s1,g1,p1)**2) - bb*(gLiuSab_can - gLiuSab(s1,g1,p1)))
+                    if(rnunif(1) < R_MH .and. gLiuSab_can>0) then
+                        gLiuSab(s1,g1,p1) = gLiuSab_can
+                        acceptLS(g1,p1) = acceptLS(g1,p1) + 1
+                        !update the other parameter through the parameter transformation g(x) = g * x
+                        BDraws(g1,1:K,p1) = BDraws(g1,1:K,p1)*gLiuSab(s1,g1,p1)
+                        alphaMat(g1,3:Cat(g1,p1),p1) = alphaMat(g1,3:Cat(g1,p1),p1)*gLiuSab(s1,g1,p1)
+                        Wgroups(g1,1:Njs(g1),p1) = Wgroups(g1,1:Njs(g1),p1)*gLiuSab(s1,g1,p1)
+                    end if
+                end if
+            end do
+
+
+        end do
+
+        write(*,*)burnin-s1
+!
+    end do
+
+
+    do s1 = 1,samsize0
+        corrteller = 0
+        tellers = 0
+        do g1 = 1,numG
+            !compute means of latent W's for all observations
+            meanMat(1:Njs(g1),1:P) = matmul(Xgroups(g1,1:Njs(g1),1:K),BDraws(g1,1:K,1:P))
+            Ccurr = CDraws(g1,:,:)
+            SigmaMatDraw = matmul(matmul(diag(sigmaDraws(g1,:),P),Ccurr),diag(sigmaDraws(g1,:),P))
+!
+            !draw latent W's for the ordinal Y's
+            !compute mean vector for
+
+            do p1=1,P
+                if(ordinal(p1)>0) then
+                    do i1=1,Njs(g1)
+                        Yi1Categorie = Ygroups(g1,i1,p1)
+                        call compute_condMeanVar(p1,P,meanMat(i1,1:P),SigmaMatDraw, &
+                            Wgroups(g1,i1,1:P),condMean,condVar)
+                        select case (Yi1Categorie)
+                            case(1)
+                                call inverse_prob_sampling(condMean,condVar,0,1,alphaMat(g1,1,p1), &
+                                    alphaMat(g1,2,p1),Wgroups(g1,i1,p1),iseed)
+                                tellers(g1,1,p1) = tellers(g1,1,p1) + 1
+                                Wdummy(g1,p1,tellers(g1,1,p1),1) = Wgroups(g1,i1,p1)
+                            case(2)
+                                call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,2,p1), &
+                                    alphaMat(g1,3,p1),Wgroups(g1,i1,p1),iseed)
+                                tellers(g1,2,p1) = tellers(g1,2,p1) + 1
+                                Wdummy(g1,p1,tellers(g1,2,p1),2) = Wgroups(g1,i1,p1)
+                            case(3)
+                                call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,3,p1), &
+                                    alphaMat(g1,4,p1),Wgroups(g1,i1,p1),iseed)
+                                tellers(g1,3,p1) = tellers(g1,3,p1) + 1
+                                Wdummy(g1,p1,tellers(g1,3,p1),3) = Wgroups(g1,i1,p1)
+                            case(4)
+                                call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,4,p1), &
+                                    alphaMat(g1,5,p1),Wgroups(g1,i1,p1),iseed)
+                                tellers(g1,4,p1) = tellers(g1,4,p1) + 1
+                                Wdummy(g1,p1,tellers(g1,4,p1),4) = Wgroups(g1,i1,p1)
+                            case(5)
+                                call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,5,p1), &
+                                    alphaMat(g1,6,p1),Wgroups(g1,i1,p1),iseed)
+                                tellers(g1,5,p1) = tellers(g1,5,p1) + 1
+                                Wdummy(g1,p1,tellers(g1,5,p1),5) = Wgroups(g1,i1,p1)
+                            case(6)
+                                call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,6,p1), &
+                                    alphaMat(g1,7,p1),Wgroups(g1,i1,p1),iseed)
+                                tellers(g1,6,p1) = tellers(g1,6,p1) + 1
+                                Wdummy(g1,p1,tellers(g1,6,p1),6) = Wgroups(g1,i1,p1)
+                            case(7)
+                                call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,7,p1), &
+                                    alphaMat(g1,8,p1),Wgroups(g1,i1,p1),iseed)
+                                tellers(g1,7,p1) = tellers(g1,7,p1) + 1
+                                Wdummy(g1,p1,tellers(g1,7,p1),7) = Wgroups(g1,i1,p1)
+                            case(8)
+                                call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,8,p1), &
+                                    alphaMat(g1,9,p1),Wgroups(g1,i1,p1),iseed)
+                                tellers(g1,8,p1) = tellers(g1,8,p1) + 1
+                                Wdummy(g1,p1,tellers(g1,8,p1),8) = Wgroups(g1,i1,p1)
+                            case(9)
+                                call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,9,p1), &
+                                    alphaMat(g1,10,p1),Wgroups(g1,i1,p1),iseed)
+                                tellers(g1,9,p1) = tellers(g1,9,p1) + 1
+                                Wdummy(g1,p1,tellers(g1,9,p1),9) = Wgroups(g1,i1,p1)
+                            case(10)
+                                call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,10,p1), &
+                                    alphaMat(g1,11,p1),Wgroups(g1,i1,p1),iseed)
+                                tellers(g1,10,p1) = tellers(g1,10,p1) + 1
+                                Wdummy(g1,p1,tellers(g1,10,p1),10) = Wgroups(g1,i1,p1)
+                            case(11)
+                                call inverse_prob_sampling(condMean,condVar,1,0,alphaMat(g1,11,p1), &
+                                    alphaMat(g1,12,p1),Wgroups(g1,i1,p1),iseed)
+                                tellers(g1,11,p1) = tellers(g1,11,p1) + 1
+                                Wdummy(g1,p1,tellers(g1,11,p1),11) = Wgroups(g1,i1,p1)
+                         end select
+                    end do
+!
+                    !draw boundary's in alphaMat
+                    if(Cat(g1,p1)>2) then
+                        do c1=3,Cat(g1,p1)
+                            alphaMin = maxval(Wdummy(g1,p1,1:tellers(g1,c1-1,p1),c1-1))
+                            alphaMax = minval(Wdummy(g1,p1,1:tellers(g1,c1,p1),c1))
+                            alphaMat(g1,c1,p1) = runiform(iseed)*(alphaMax-alphaMin)*.9999999+alphaMin+.0000001
+                        end do
+                    end if
+                end if
 !
             end do
 
@@ -228,32 +411,201 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
             else
                 Cinv = CcurrInv
             end if
+            do i1 = 1,P-1 !keep Fisher z transformed posterior draws of rho's
+                Zcorr_sample(s1,(corrteller+1):(corrteller+P-i1)) = .5*log((1+CDraws(g1,(1+i1):P,i1))/ &
+                    (1-CDraws(g1,(1+i1):P,i1)))
+                corrteller = corrteller + (P - i1)
+            end do
 
+            !draw sigma's
+            do p1 = 1,P
+                if(ordinal(p1)==0) then
+                    bb = sum(errorMatj(p1,:)*Cinv(p1,:)/sigmaDraws(g1,:)) - &
+                        errorMatj(p1,p1)*Cinv(p1,p1)/sigmaDraws(g1,p1)
+                    aa = Cinv(p1,p1)*errorMatj(p1,p1)
+                    sigma_can(:) = sigmaDraws(g1,:)
+                    sigma_can(p1) = rnormal(iseed)
+                    sigma_can(p1) = sigma_can(p1)*sdMH(g1,p1) + sigmaDraws(g1,p1) !random walk
+                    R_MH = exp((-real(Njs(g1))-1.0)*(log(sigma_can(p1)-log(sigmaDraws(g1,p1)))) &
+                           -.5*aa*(sigma_can(p1)**(-2) - sigmaDraws(g1,p1)**(-2)) &
+                           -bb*(sigma_can(p1)**(-1) - sigmaDraws(g1,p1)**(-1)))
+                    if(rnunif(1) < R_MH .and. sigma_can(p1)>0) then
+                        sigmaDraws(g1,p1) = sigma_can(p1)
+                        acceptSigma(g1,p1) = acceptSigma(g1,p1) + 1
+                    end if
+                end if
+            end do
+
+            !Draw parameter extended parameter by Liu and Sabatti (2001) via random walk
+            SigmaInv = matmul(matmul(diag(1/sigmaDraws(g1,:),P),Cinv),diag(1/sigmaDraws(g1,:),P))
+            do p1 = 1,P
+                if(ordinal(p1)>0) then !draw gLiuSab(s1,g1,p1)
+                    aa = errorMatj(p1,p1)*SigmaInv(p1,p1)/2
+                    bb = sum(errorMatj(p1,:)*SigmaInv(p1,:)*gLiuSab(s1,g1,:)) - errorMatj(p1,p1) * &
+                        SigmaInv(p1,p1)*gLiuSab(s1,g1,p1)
+                    !gLiuSab_can = rnnof()
+                    gLiuSab_can = rnormal(iseed)
+                    gLiuSab_can = gLiuSab_can*sdMHg(g1,p1) + gLiuSab(s1,g1,p1) ! random (moon) walk
+                    R_MH = exp((K + Cat(g1,p1) - 2 + Njs(g1) - 1)*(log(gLiuSab_can) - log(gLiuSab(s1,g1,p1))) &
+                                -aa*(gLiuSab_can**2 - gLiuSab(s1,g1,p1)**2) - bb*(gLiuSab_can - gLiuSab(s1,g1,p1)))
+                    if(rnunif(1) < R_MH .and. gLiuSab_can>0) then
+                        gLiuSab(s1,g1,p1) = gLiuSab_can
+                        acceptLS(g1,p1) = acceptLS(g1,p1) + 1
+                        !update the other parameter through the parameter transformation g(x) = g * x
+                        BDraws(g1,1:K,p1) = BDraws(g1,1:K,p1)*gLiuSab(s1,g1,p1)
+                        alphaMat(g1,3:Cat(g1,p1),p1) = alphaMat(g1,3:Cat(g1,p1),p1)*gLiuSab(s1,g1,p1)
+                        Wgroups(g1,1:Njs(g1),p1) = Wgroups(g1,1:Njs(g1),p1)*gLiuSab(s1,g1,p1)
+                    end if
+                end if
+            end do
 
         end do
+
+        BDrawsStore(s1,1:numG,1:K,1:P) = BDraws(1:numG,1:K,1:P)
+        sigmaDrawsStore(s1,1:numG,1:P) = sigmaDraws(1:numG,1:P)
+        CDrawsStore(s1,1:numG,1:P,1:P) = CDraws(1:numG,1:P,1:P)
+
+        write(*,*)samsize0 - s1
 !
-!        write(60,*)Wgroups(1,6,3),Wgroups(1,1,3),Wgroups(1,3,3),Wgroups(1,5,3)
-!        write(61,*)alphaMat(1,2,3),alphaMat(1,3,3),alphaMat(1,4,3)
+    end do
+
+    ! compute posterior mean
+    do c1=1,numcorr
+        dummy2(:) = Zcorr_sample(:,c1)
+        dummy3 = dummy2
+        call piksrt(samsize0,dummy3)
+        postZmean(c1,1) = dummy3(int(samsize0*.5))
+    end do
 !
-!        if(modulo(s1,burnin/10)==0) then
-!            write(*,*)100*s1/burnin,' percent done'
-!        end if
+    ! compute posterior covariance matrix
+    do c1=1,numcorr
+        do c2=c1,numcorr
+            call robust_covest(samsize0, Zcorr_sample(1:samsize0,c1), Zcorr_sample(1:samsize0,c2), &
+                postZmean(c1,1), postZmean(c2,1), varz1, varz2, varz1z2Plus, varz1z2Min)
+            postZcov(c1,c2) = (varz1*varz2)**.5 * (varz1z2Plus - varz1z2Min)/(varz1z2Plus + varz1z2Min)
+            postZcov(c2,c1) = postZcov(c1,c2)
+        end do
+    end do
+!
+    ! compute posterior quantiles
+    lower_int = int(samsize0*.025)
+    median_int = int(samsize0*.5)
+    upper_int = int(samsize0*.975)
+    C_quantiles = 0
+    do g1=1,numG
+        do p1=1,P
+            !for the sigma's
+            dummy2(:) = sigmaDrawsStore(:,g1,p1)
+            dummy3=dummy2
+            call piksrt(samsize0,dummy3)
+            sigma_quantiles(g1,p1,1) = dummy3(lower_int)
+            sigma_quantiles(g1,p1,2) = dummy3(median_int)
+            sigma_quantiles(g1,p1,3) = dummy3(upper_int)
+            !for the beta coefficients
+            do k1=1,K
+                dummy2(:) = BDrawsStore(:,g1,k1,p1)
+                dummy3 = dummy2
+                call piksrt(samsize0,dummy3)
+                B_quantiles(g1,k1,p1,1) = dummy3(lower_int)
+                B_quantiles(g1,k1,p1,2) = dummy3(median_int)
+                B_quantiles(g1,k1,p1,3) = dummy3(upper_int)
+            end do
+            if(p1>1)then
+                do p2=1,p1-1
+                    dummy2(:) = CDrawsStore(:,g1,p1,p2)
+                    dummy3 = dummy2
+                    call piksrt(samsize0,dummy3)
+                    C_quantiles(g1,p1,p2,1) = dummy3(lower_int)
+                    C_quantiles(g1,p1,p2,2) = dummy3(median_int)
+                    C_quantiles(g1,p1,p2,3) = dummy3(upper_int)
+                end do
+            end if
+        end do
     end do
 
 
-!!!!!!!!!!!!
-!!!!
-!!!! ERROR WHEN 'SELECT CASE' PART IS ADDED
-!!!!
-!!!!!!!!!!!!
-
-!
-!
-!
 contains
+
+
+subroutine robust_covest(m, betas1, betas2, mn1, mn2, varb1, varb2, varb1b2Plus, varb1b2Min)
+    implicit none
 !
+    !Declare local variables
+    integer, intent(in)    :: m
+    real(8), intent(in)    :: betas1(m), betas2(m), mn1, mn2
+    real(8), intent(out)   :: varb1, varb2, varb1b2Plus, varb1b2Min
+
+    real(8)                :: dummy1(m), dummy2(m), Phi075, xxx
+    integer                :: mmin, i
 !
+    xxx=0.75
+    Phi075 = dinvnr(xxx)
+    mmin = 0
 !
+    !robust variance estimators of beta1 and beta2
+
+    dummy1=abs(betas1 - mn1)
+    call piksrt(m,dummy1)
+    do i=1,m
+        if(dummy1(i)>0) then
+            mmin = i
+            exit
+        end if
+    end do
+    varb1 = ((dummy1(int(mmin+(m-mmin)*.5)) + dummy1(int(mmin+(m-mmin)*.5+1)))*.5/Phi075)**2.0
+    dummy1=abs(betas2 - mn2)
+    call piksrt(m,dummy1)
+    do i=1,m
+        if(dummy1(i)>0) then
+            mmin = i
+            exit
+        end if
+    end do
+    varb2 = ((dummy1(int(mmin+(m-mmin)*.5)) + dummy1(int(mmin+(m-mmin)*.5+1)))*.5/Phi075)**2.0
+!
+    !robust variance estimators of beta1 + beta2
+    dummy2 = betas1 + betas2
+    dummy1=abs(dummy2 - mn1 - mn2)
+    call piksrt (m,dummy1)
+    do i=1,m
+        if(dummy1(i)>0) then
+            mmin = i
+            exit
+        end if
+    end do
+    varb1b2Plus = ((dummy1(int(mmin+(m-mmin)*.5)) + dummy1(int(mmin+(m-mmin)*.5+1)))*.5/Phi075)**2.0
+!
+    !robust variance estimators of beta1 - beta2
+    dummy2 = betas1 - betas2
+    dummy1= abs(dummy2 - mn1 + mn2)
+    call piksrt(m,dummy1)
+    do i=1,m
+        if(dummy1(i)>0) then
+            mmin = i
+            exit
+        end if
+    end do
+    varb1b2Min = ((dummy1(int(mmin+(m-mmin)*.5)) + dummy1(int(mmin+(m-mmin)*.5+1)))*.5/Phi075)**2.0
+!
+end subroutine
+
+
+SUBROUTINE piksrt(n,arr)
+
+  integer:: n, i,j
+  real(8):: arr(n), a
+
+  do j=2, n
+    a=arr(j)
+    do i=j-1,1,-1
+      if (arr(i)<=a) goto 10
+      arr(i+1)=arr(i)
+    end do
+  i=0
+10  arr(i+1)=a
+  end do
+  return
+END SUBROUTINE
 
 
 function eye(n)
@@ -896,6 +1248,7 @@ subroutine inverse_prob_sampling(condMean,condVar,LBtrue,UBtrue,LB,UB,condDraw,i
     real ( kind = 8 )              :: LBstand, UBstand, yUB, yLB, rnIPS, diffUBLB, &
                                       bb, cc, Discr, xi, Zstar, &
                                       lambda, pi, machPres, rrand
+    integer                           teller
     logical                        :: uppie
 
     parameter(pi=3.141592653)
@@ -909,6 +1262,7 @@ subroutine inverse_prob_sampling(condMean,condVar,LBtrue,UBtrue,LB,UB,condDraw,i
     yUB = alnorm ( UBstand, uppie )
     !yLB = anordf (LBstand)
     yLB = alnorm ( LBstand, uppie )
+    teller = 0
     rrand = runiform(iseed)
 601     rnIPS = rrand*(yUB - yLB) + yLB
     if(LBtrue+UBtrue==0) then !unconstrained sampling
@@ -919,8 +1273,9 @@ subroutine inverse_prob_sampling(condMean,condVar,LBtrue,UBtrue,LB,UB,condDraw,i
         !call normal_01_cdf_inv ( rnIPS, xdraw )
         xdraw = dinvnr ( rnIPS )
         condDraw = xdraw * sqrt(condVar) + condMean
-        write(*,*),rnIPS,xdraw
-    else if(UBstand>-5.0 .and. LBstand<5.0) then !IPS must be redone
+        !write(*,*),rnIPS,xdraw
+    else if(UBstand>-4.0 .and. LBstand<4.0) then !IPS must be redone
+        teller = teller + 1
         go to 601
     else
         if(condMean > UB) then
