@@ -1,4 +1,5 @@
 
+
 #' @title Bayesian correlation analysis
 #'
 #' @name cor_test

@@ -3,9 +3,9 @@
 #' @method BF hetcor
 #' @export
 BF.hetcor <- function(x,
-                       hypothesis = NULL,
-                       prior.hyp = NULL,
-                       ...){
+                      hypothesis = NULL,
+                      prior.hyp = NULL,
+                      ...){
   get_est <- get_estimates(x)
   P <- nrow(x$std.errors)
   numcorr <- P*(P-1)/2
@@ -40,7 +40,7 @@ BF.hetcor <- function(x,
     relcomp <- t(matrix(unlist(
       lapply(1:numhyp, function(h){
         jointuniform_measures(P,numcorr, 1, RrE[[h]], RrO[[h]], Fisher=0)
-    })
+      })
     ),nrow=2))
     relfit <- t(matrix(unlist(lapply(1:numhyp,function(h){
       Gaussian_measures(estimates,errcov,RrE1=RrE[[h]],RrO1=RrO[[h]],names1=names(estimates),
@@ -105,4 +105,3 @@ BF.hetcor <- function(x,
   return(BF_out)
 
 }
-
