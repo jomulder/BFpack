@@ -3,31 +3,30 @@
 
 subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, sdHat, CHat, XtXi, samsize0, &
     burnin, Ntot, Xgroups, Ygroups, C_quantiles, sigma_quantiles, B_quantiles, BDrawsStore, sigmaDrawsStore, &
-    CDrawsStore, sdMH, ordinal, Cat, maxCat, gLiuSab, seed)
+    CDrawsStore, sdMH, ordinal_in, Cat_in, maxCat, gLiuSab, seed)
 !
     implicit none
 !
-    integer, intent(in) :: P, numcorr, K, numG, samsize0, burnin, Ntot, ordinal(P), Cat(numG,P), &
+    integer, intent(in) :: P, numcorr, K, numG, samsize0, burnin, Ntot, &
                            maxCat, seed
-    real(8), intent(in) :: BHat(numG,K,P), sdHat(numG,P), CHat(numG,P,P), XtXi(numG,K,K), &
-                           sdMH(numG,P), Xgroups(numG,Ntot,K), Ygroups(numG,Ntot,P)
+    real(8), intent(in) :: BHat(numG,K,P), sdHat(numG,P), CHat(numG,P,P), XtXi(numG,K,K), Cat_in(numG,P), &
+                           sdMH(numG,P), Xgroups(numG,Ntot,K), Ygroups(numG,Ntot,P), ordinal_in(numG,P)
     real(8), intent(out):: postZmean(numcorr,1), postZcov(numcorr,numcorr), B_quantiles(numG,K,P,3), &
                            C_quantiles(numG,P,P,3), sigma_quantiles(numG,P,3), BDrawsStore(samsize0,numG,K,P), &
                            sigmaDrawsStore(samsize0,numG,P), CDrawsStore(samsize0,numG,P,P), &
                            gLiuSab(samsize0,numG,P)
-    real(8) :: BDraws(numG,K,P), CDraws(numG,P,P), sigmaDraws(numG,P), SSj(P,P), meanMat(Ntot,P), SigmaMatDraw(P,P), &
-               R_MH, cholSigmaPK(K*P,K*P), covBeta(K*P,K*P), Ds(P,P), Ccan(P,P), CcanInv(P,P), Ccurr(P,P), &
-               CcurrInv(P,P), SS1(P,P), SS1inv(P,P), rnunif(1), errorMatj(P,P), sigma_can(P), aa, bb, cc, dummy1(1),  &
-               telft, telct, f1, f0, f_1, UB, LB, alpha1, beta1, rr_can(1), betaDrawj(1,P*K), acceptSigma(numG,P), &
-               C_can(P,P), C_canInv(P,P), bounds(2), MHpart1, MHpart2, MHpart3, dummyPP(P,P), dummyPPinv(P,P), &
-               Wp(P,P), epsteps(P,P), logR_MH_part1, logR_MH_part2, logR_MH_part3, logR_MH_part4, &
+    real(8) :: BDraws(numG,K,P), CDraws(numG,P,P), sigmaDraws(numG,P), meanMat(Ntot,P), SigmaMatDraw(P,P), &
+               R_MH, covBeta(K*P,K*P), Ds(P,P), Ccan(P,P), CcanInv(P,P), Ccurr(P,P), Wp(P,P), epsteps(P,P), &
+               CcurrInv(P,P), SS1(P,P), SS1inv(P,P), rnunif(1), errorMatj(P,P), sigma_can(P), aa, bb, &
+               telft, telct, betaDrawj(1,P*K), acceptSigma(numG,P), dummyPP(P,P), dummyPPinv(P,P), &
                varz1, varz2, varz1z2Plus, varz1z2Min, Cnugget(P,P), SigmaInv(P,P), sdMHg(numG,P), gLiuSab_can, &
                Wgroups(numG,Ntot,P), dummyVar, alphaMin, alphaMax, Cinv(P,P), Bmean(K,P), acceptLS(numG,P), &
-               alphaMat(numG,maxCat+1,P), Wdummy(numG,P,Ntot,maxCat), condMean, condVar, &
-               ones(samsize0,1), Zcorr_sample(samsize0,numcorr), dummy3(samsize0), dummy2(samsize0), diffmat(Ntot,P), &
-               meanO(P*K), para(((P*K)*((P*K)+3)/2 + 1))
-    integer :: s1, g1, rankP, acceptC(numG), i1, dummyI, testPr, rr1, rr2, nutarget, a0, iter1, corrteller, &
-               c1, c2, p1, Yi1Categorie, tellers(numG,maxCat,P), k1, k2, CatUpper, p2, iperm1(samsize0), iseed, &
+               alphaMat(numG,maxCat+1,P), Wdummy(numG,P,Ntot,maxCat), condMean, condVar, logR_MH_part3, &
+               ones(samsize0,1), Zcorr_sample(samsize0,numcorr), dummy3(samsize0), dummy2(samsize0), &
+               diffmat(Ntot,P), meanO(P*K), para(((P*K)*((P*K)+3)/2 + 1)), randraw, Cat(numG,P), &
+               ordinal(numG,P)
+    integer :: s1, g1, acceptC(numG), i1, nutarget, a0, corrteller, &
+               c1, c2, p1, Yi1Categorie, tellers(numG,maxCat,P), k1, p2, iseed, &
                errorflag, Njs(numG), lower_int, median_int, upper_int
 !
 !   set seed
@@ -42,17 +41,25 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
     iseed = seed
     Njs = Ntot
 !
+    do p1=1,P
+        do g1=1,numG
+            ordinal(g1,p1) = int(ordinal_in(g1,p1))
+            Cat(g1,p1) = int(Cat_in(g1,p1))
+        end do
+    end do
     !initial prior C
     nutarget = P + 1 !in the case of a marginally uniform prior
     do p1=1,P
-        !initial values
-        if(ordinal(p1)==1) then
-            sigmaDraws(:,p1) = 1
-            sigma_quantiles(:,p1,1) = 1
-            sigma_quantiles(:,p1,2) = 1
-            sigma_quantiles(:,p1,3) = 1
-            BDraws(:,:,p1) = 0
-        end if
+        do g1=1,numG
+            !initial values
+            if(ordinal(g1,p1)==1) then
+                sigmaDraws(g1,p1) = 1
+                sigma_quantiles(g1,p1,1) = 1
+                sigma_quantiles(g1,p1,2) = 1
+                sigma_quantiles(g1,p1,3) = 1
+                BDraws(g1,:,p1) = 0
+            end if
+        end do
     end do
     !specify candidate prior for R
     Wp = eye(P)
@@ -71,6 +78,8 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
     acceptLS = 0
     sdMHg = .1 !for gLiuBanhatti parameter
     dummyVar = 1.0
+    condMean = 0
+    condVar = 1
 !
     !initial values for latent W's corresponding to ordinal DVs
     Wgroups = Ygroups
@@ -82,14 +91,14 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
     alphaMat(:,1,:) = -1e10  !alpha0
     alphaMat(:,2,:) = 0      !alpha1
     do p1=1,P
-        if(ordinal(p1)>0) then
-            do g1=1,numG
+        do g1=1,numG
+            if(ordinal(g1,p1)>0) then
                 do c1=3,Cat(g1,p1)
                     alphaMat(g1,c1,p1) = .3*(c1-2.0)
                 end do
                 alphaMat(g1,Cat(g1,p1)+1,p1) = 1e10
-            end do
-        end if
+            end if
+        end do
     end do
 !
 
@@ -108,9 +117,9 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
             !compute mean vector for
 
             do p1=1,P
-                if(ordinal(p1)>0) then
+                if(ordinal(g1,p1)>0) then
                     do i1=1,Njs(g1)
-                        Yi1Categorie = Ygroups(g1,i1,p1)
+                        Yi1Categorie = int(Ygroups(g1,i1,p1))
                         call compute_condMeanVar(p1,P,meanMat(i1,1:P),SigmaMatDraw, &
                             Wgroups(g1,i1,1:P),condMean,condVar)
                         select case (Yi1Categorie)
@@ -177,7 +186,8 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                         do c1=3,Cat(g1,p1)
                             alphaMin = maxval(Wdummy(g1,p1,1:tellers(g1,c1-1,p1),c1-1))
                             alphaMax = minval(Wdummy(g1,p1,1:tellers(g1,c1,p1),c1))
-                            alphaMat(g1,c1,p1) = runiform(iseed)*(alphaMax-alphaMin)*.9999999+alphaMin+.0000001
+                            randraw = runiform(iseed) * .9999998 + .0000001
+                            alphaMat(g1,c1,p1) = randraw * (alphaMax-alphaMin) + alphaMin
                         end do
                     end if
                 end if
@@ -192,7 +202,6 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
             do p1 = 1,P
                 BDraws(g1,:,p1) = betaDrawj(1,((p1-1)*K+1):(p1*K)) + Bmean(1:K,p1)
             end do
-            write(*,*)'B',BDraws(1,1,:)
 
             !draw R using method of Liu and Daniels (LD, 2006)
             !draw candidate R
@@ -206,8 +215,8 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
             call FINDInv(SS1,SS1inv,P,errorflag)
             call gen_wish(SS1inv,Njs(g1),dummyPP,P,iseed)
             call FINDInv(dummyPP,dummyPPinv,P,errorflag)
-	    	    Ccan = matmul(matmul(diag(1/sqrt(diagonals(dummyPPinv,P)),P),dummyPPinv), &
-	    	        diag(1/sqrt(diagonals(dummyPPinv,P)),P))
+            Ccan = matmul(matmul(diag(1/sqrt(diagonals(dummyPPinv,P)),P),dummyPPinv), &
+                diag(1/sqrt(diagonals(dummyPPinv,P)),P))
 !	    	Ccan = Ccan + Cnugget
             call FINDInv(Ccan,CcanInv,P,errorflag)
             call FINDInv(Ccurr,CcurrInv,P,errorflag)
@@ -229,7 +238,7 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
 
             !draw sigma's
             do p1 = 1,P
-                if(ordinal(p1)==0) then
+                if(ordinal(g1,p1)==0) then
                     bb = sum(errorMatj(p1,:)*Cinv(p1,:)/sigmaDraws(g1,:)) - &
                         errorMatj(p1,p1)*Cinv(p1,p1)/sigmaDraws(g1,p1)
                     aa = Cinv(p1,p1)*errorMatj(p1,p1)
@@ -249,7 +258,7 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
             !Draw parameter extended parameter by Liu and Sabatti (2001) via random walk
             SigmaInv = matmul(matmul(diag(1/sigmaDraws(g1,:),P),Cinv),diag(1/sigmaDraws(g1,:),P))
             do p1 = 1,P
-                if(ordinal(p1)>0) then !draw gLiuSab(s1,g1,p1)
+                if(ordinal(g1,p1)>0) then !draw gLiuSab(s1,g1,p1)
                     aa = errorMatj(p1,p1)*SigmaInv(p1,p1)/2
                     bb = sum(errorMatj(p1,:)*SigmaInv(p1,:)*gLiuSab(s1,g1,:)) - errorMatj(p1,p1) * &
                         SigmaInv(p1,p1)*gLiuSab(s1,g1,p1)
@@ -269,10 +278,9 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                 end if
             end do
 
-
         end do
 
-        write(*,*)burnin-s1
+!        write(*,*)burnin-s1
 !
     end do
 
@@ -290,9 +298,9 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
             !compute mean vector for
 
             do p1=1,P
-                if(ordinal(p1)>0) then
+                if(ordinal(g1,p1)>0) then
                     do i1=1,Njs(g1)
-                        Yi1Categorie = Ygroups(g1,i1,p1)
+                        Yi1Categorie = int(Ygroups(g1,i1,p1))
                         call compute_condMeanVar(p1,P,meanMat(i1,1:P),SigmaMatDraw, &
                             Wgroups(g1,i1,1:P),condMean,condVar)
                         select case (Yi1Categorie)
@@ -359,15 +367,13 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                         do c1=3,Cat(g1,p1)
                             alphaMin = maxval(Wdummy(g1,p1,1:tellers(g1,c1-1,p1),c1-1))
                             alphaMax = minval(Wdummy(g1,p1,1:tellers(g1,c1,p1),c1))
-                            alphaMat(g1,c1,p1) = runiform(iseed)*(alphaMax-alphaMin)*.9999999+alphaMin+.0000001
+                            randraw = runiform(iseed) * .9999998 + .0000001
+                            alphaMat(g1,c1,p1) = randraw * (alphaMax-alphaMin) + alphaMin
                         end do
                     end if
                 end if
 !
             end do
-
-
-            ! HOLE
 
             Bmean(1:K,1:P) = matmul(matmul(XtXi(g1,:,:),transpose(Xgroups(g1,1:Njs(g1),1:K))), &
                 Wgroups(g1,1:Njs(g1),1:P))
@@ -391,8 +397,8 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
             call FINDInv(SS1,SS1inv,P,errorflag)
             call gen_wish(SS1inv,Njs(g1),dummyPP,P,iseed)
             call FINDInv(dummyPP,dummyPPinv,P,errorflag)
-	    	    Ccan = matmul(matmul(diag(1/sqrt(diagonals(dummyPPinv,P)),P),dummyPPinv), &
-	    	        diag(1/sqrt(diagonals(dummyPPinv,P)),P))
+            Ccan = matmul(matmul(diag(1/sqrt(diagonals(dummyPPinv,P)),P),dummyPPinv), &
+                diag(1/sqrt(diagonals(dummyPPinv,P)),P))
 !	    	Ccan = Ccan + Cnugget
             call FINDInv(Ccan,CcanInv,P,errorflag)
             call FINDInv(Ccurr,CcurrInv,P,errorflag)
@@ -419,7 +425,7 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
 
             !draw sigma's
             do p1 = 1,P
-                if(ordinal(p1)==0) then
+                if(ordinal(g1,p1)==0) then
                     bb = sum(errorMatj(p1,:)*Cinv(p1,:)/sigmaDraws(g1,:)) - &
                         errorMatj(p1,p1)*Cinv(p1,p1)/sigmaDraws(g1,p1)
                     aa = Cinv(p1,p1)*errorMatj(p1,p1)
@@ -439,7 +445,7 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
             !Draw parameter extended parameter by Liu and Sabatti (2001) via random walk
             SigmaInv = matmul(matmul(diag(1/sigmaDraws(g1,:),P),Cinv),diag(1/sigmaDraws(g1,:),P))
             do p1 = 1,P
-                if(ordinal(p1)>0) then !draw gLiuSab(s1,g1,p1)
+                if(ordinal(g1,p1)>0) then !draw gLiuSab(s1,g1,p1)
                     aa = errorMatj(p1,p1)*SigmaInv(p1,p1)/2
                     bb = sum(errorMatj(p1,:)*SigmaInv(p1,:)*gLiuSab(s1,g1,:)) - errorMatj(p1,p1) * &
                         SigmaInv(p1,p1)*gLiuSab(s1,g1,p1)
@@ -465,7 +471,7 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
         sigmaDrawsStore(s1,1:numG,1:P) = sigmaDraws(1:numG,1:P)
         CDrawsStore(s1,1:numG,1:P,1:P) = CDraws(1:numG,1:P,1:P)
 
-        write(*,*)samsize0 - s1
+!        write(*,*)samsize0 - s1
 !
     end do
 
@@ -1214,7 +1220,7 @@ subroutine compute_condMeanVar(welke,dimIn,meanIn,covmIn,obsIn,condMean,condVar)
     real (kind = 8), intent(in)    :: meanIn(dimIn), covmIn(dimIn,dimIn), obsIn(dimIn)
     real (kind = 8), intent(out)   :: condMean, condVar
     real (kind = 8)                :: dummy3(1,1), dummy2(dimIn-1,1), S12(1,dimIn-1), S22(dimIn-1,dimIn-1), &
-                                      S22inv(dimIn-1,dimIn-1), ZS(dimIn,1), meanLocal(dimIn,1)
+                                      S22inv(dimIn-1,dimIn-1), meanLocal(dimIn,1)
     integer                        :: errorflag
 !
     meanLocal(1:dimIn,1) = meanIn(1:dimIn)
@@ -1236,7 +1242,6 @@ subroutine compute_condMeanVar(welke,dimIn,meanIn,covmIn,obsIn,condMean,condVar)
 end subroutine compute_condMeanVar
 
 
-
 subroutine inverse_prob_sampling(condMean,condVar,LBtrue,UBtrue,LB,UB,condDraw,iseed)
 
     implicit none
@@ -1245,14 +1250,13 @@ subroutine inverse_prob_sampling(condMean,condVar,LBtrue,UBtrue,LB,UB,condDraw,i
     real ( kind = 8 ), intent(in)  :: condMean, condVar, LB, UB
     real ( kind = 8 ), intent(out) :: condDraw
     real ( kind = 8 )              :: xdraw
-    real ( kind = 8 )              :: LBstand, UBstand, yUB, yLB, rnIPS, diffUBLB, &
-                                      bb, cc, Discr, xi, Zstar, &
-                                      lambda, pi, machPres, rrand
+    real ( kind = 8 )              :: LBstand, UBstand, yUB, yLB, rnIPS, &
+                                      pi, machPres, rrand
     integer                           teller
     logical                        :: uppie
 
     parameter(pi=3.141592653)
-    uppie = .true.
+    uppie = .false.
 !
     machPres = 1e-6
     !normalize bounds
@@ -1263,17 +1267,15 @@ subroutine inverse_prob_sampling(condMean,condVar,LBtrue,UBtrue,LB,UB,condDraw,i
     !yLB = anordf (LBstand)
     yLB = alnorm ( LBstand, uppie )
     teller = 0
-    rrand = runiform(iseed)
-601     rnIPS = rrand*(yUB - yLB) + yLB
+601    rrand = runiform(iseed)
+    rnIPS = rrand*(yUB - yLB) + yLB
     if(LBtrue+UBtrue==0) then !unconstrained sampling
         rrand = rnormal(iseed)
         condDraw = rrand*sqrt(condVar) + condMean
     else if(abs(rnIPS) > machPres .and. abs(rnIPS-1) > machPres) then
         !inverse probability sampling
-        !call normal_01_cdf_inv ( rnIPS, xdraw )
         xdraw = dinvnr ( rnIPS )
         condDraw = xdraw * sqrt(condVar) + condMean
-        !write(*,*),rnIPS,xdraw
     else if(UBstand>-4.0 .and. LBstand<4.0) then !IPS must be redone
         teller = teller + 1
         go to 601
@@ -1286,38 +1288,6 @@ subroutine inverse_prob_sampling(condMean,condVar,LBtrue,UBtrue,LB,UB,condDraw,i
     end if
 !
 end subroutine inverse_prob_sampling
-
-
-subroutine ipv(condMean,condVar,LBtrue,UBtrue,LB,UB,condDraw,iseed)
-
-    implicit none
-
-    integer, intent(in)            :: LBtrue, UBtrue, iseed
-    real ( kind = 8 ), intent(in)  :: condMean, condVar, LB, UB
-    real ( kind = 8 ), intent(out) :: condDraw
-    real ( kind = 8 )              :: xdraw
-    real ( kind = 8 )              :: LBstand, UBstand, yUB, yLB, rnIPS, diffUBLB, &
-                                      bb, cc, Discr, xi, Zstar, &
-                                      lambda, pi, machPres, rrand
-    logical                        :: uppie
-
-    parameter(pi=3.141592653)
-    uppie = .true.
-!
-    machPres = 1e-6
-    !normalize bounds
-    UBstand = (UB - condMean)/sqrt(condVar)
-    LBstand = (LB - condMean)/sqrt(condVar)
-
-    yUB = alnorm ( UBstand, uppie )
-    yLB = alnorm ( LBstand, uppie )
-    rrand = runiform(iseed)
-    rnIPS = rrand * (yUB - yLB) + yLB
-    xdraw = dinvnr ( rnIPS )
-!    call normal_01_cdf_inv ( rnIPS, xdraw )
-!    condDraw = xdraw * sqrt(condVar) + condMean
-!
-end subroutine ipv
 
 
 
@@ -1435,174 +1405,6 @@ function alnorm ( x, upper )
 
   if ( .not. up ) then
     alnorm = 1.0D+00 - alnorm
-  end if
-
-  return
-end
-
-
-
-subroutine normal_01_cdf_inv ( p, x )
-
-!*****************************************************************************80
-!
-!! NORMAL_01_CDF_INV inverts the standard normal CDF.
-!
-!  Discussion:
-!
-!    The result is accurate to about 1 part in 10^16.
-!
-!  Licensing:
-!
-!    This code is distributed under the GNU LGPL license.
-!
-!  Modified:
-!
-!    24 February 2015
-!
-!  Author:
-!
-!    Original FORTRAN77 version by Michael Wichura.
-!    FORTRAN90 version by John Burkardt.
-!
-!  Reference:
-!
-!    Michael Wichura,
-!    Algorithm AS241:
-!    The Percentage Points of the Normal Distribution,
-!    Applied Statistics,
-!    Volume 37, Number 3, pages 477-484, 1988.
-!
-!  Parameters:
-!
-!    Input, real ( kind = 8 ) P, the value of the cumulative probability
-!    densitity function.  0 < P < 1.  If P is outside this range, an
-!    "infinite" value will be returned.
-!
-!    Output, real ( kind = 8 ) X, the normal deviate value
-!    with the property that the probability of a standard normal deviate being
-!    less than or equal to the value is P.
-!
-  implicit none
-
-  real ( kind = 8 ), parameter, dimension ( 8 ) :: a = (/ &
-    3.3871328727963666080D+00, &
-    1.3314166789178437745D+02, &
-    1.9715909503065514427D+03, &
-    1.3731693765509461125D+04, &
-    4.5921953931549871457D+04, &
-    6.7265770927008700853D+04, &
-    3.3430575583588128105D+04, &
-    2.5090809287301226727D+03 /)
-  real ( kind = 8 ), parameter, dimension ( 8 ) :: b = (/ &
-    1.0D+00, &
-    4.2313330701600911252D+01, &
-    6.8718700749205790830D+02, &
-    5.3941960214247511077D+03, &
-    2.1213794301586595867D+04, &
-    3.9307895800092710610D+04, &
-    2.8729085735721942674D+04, &
-    5.2264952788528545610D+03 /)
-  real ( kind = 8 ), parameter, dimension ( 8 ) :: c = (/ &
-    1.42343711074968357734D+00, &
-    4.63033784615654529590D+00, &
-    5.76949722146069140550D+00, &
-    3.64784832476320460504D+00, &
-    1.27045825245236838258D+00, &
-    2.41780725177450611770D-01, &
-    2.27238449892691845833D-02, &
-    7.74545014278341407640D-04 /)
-  real ( kind = 8 ), parameter :: const1 = 0.180625D+00
-  real ( kind = 8 ), parameter :: const2 = 1.6D+00
-  real ( kind = 8 ), parameter, dimension ( 8 ) :: d = (/ &
-    1.0D+00, &
-    2.05319162663775882187D+00, &
-    1.67638483018380384940D+00, &
-    6.89767334985100004550D-01, &
-    1.48103976427480074590D-01, &
-    1.51986665636164571966D-02, &
-    5.47593808499534494600D-04, &
-    1.05075007164441684324D-09 /)
-  real ( kind = 8 ), parameter, dimension ( 8 ) :: e = (/ &
-    6.65790464350110377720D+00, &
-    5.46378491116411436990D+00, &
-    1.78482653991729133580D+00, &
-    2.96560571828504891230D-01, &
-    2.65321895265761230930D-02, &
-    1.24266094738807843860D-03, &
-    2.71155556874348757815D-05, &
-    2.01033439929228813265D-07 /)
-  real ( kind = 8 ), parameter, dimension ( 8 ) :: f = (/ &
-    1.0D+00, &
-    5.99832206555887937690D-01, &
-    1.36929880922735805310D-01, &
-    1.48753612908506148525D-02, &
-    7.86869131145613259100D-04, &
-    1.84631831751005468180D-05, &
-    1.42151175831644588870D-07, &
-    2.04426310338993978564D-15 /)
-  real ( kind = 8 ) p
-  real ( kind = 8 ) q
-  real ( kind = 8 ) r
-  real ( kind = 8 ) r8poly_value_horner
-  real ( kind = 8 ), parameter :: split1 = 0.425D+00
-  real ( kind = 8 ), parameter :: split2 = 5.0D+00
-  real ( kind = 8 ) x
-
-  if ( p <= 0.0D+00 ) then
-    x = - huge ( x )
-    return
-  end if
-
-  if ( 1.0D+00 <= p ) then
-    x = huge ( x )
-    return
-  end if
-
-  q = p - 0.5D+00
-
-  if ( abs ( q ) <= split1 ) then
-
-    r = const1 - q * q
-    x = q * r8poly_value_horner ( 7, a, r ) &
-          / r8poly_value_horner ( 7, b, r )
-
-  else
-
-    if ( q < 0.0D+00 ) then
-      r = p
-    else
-      r = 1.0D+00 - p
-    end if
-
-    if ( r <= 0.0D+00 ) then
-
-      x = huge ( x )
-
-    else
-
-      r = sqrt ( - log ( r ) )
-
-      if ( r <= split2 ) then
-
-        r = r - const2
-        x = r8poly_value_horner ( 7, c, r ) &
-          / r8poly_value_horner ( 7, d, r )
-
-      else
-
-        r = r - split2
-        x = r8poly_value_horner ( 7, e, r ) &
-          / r8poly_value_horner ( 7, f, r )
-
-      end if
-
-    end if
-
-    if ( q < 0.0D+00 ) then
-      x = -x
-    end if
-
   end if
 
   return
