@@ -173,7 +173,7 @@ cor_test <- function(..., formula = NULL, iter = 5e3, burnin = 3e3){
                   samsize0=as.integer(samsize0),
                   burnin=as.integer(burnin),
                   Ntot=as.integer(Ntot),
-                  Njs=ngroups,
+                  Njs_in=ngroups,
                   Xgroups=Xgroups,
                   Ygroups=Ygroups,
                   C_quantiles=array(0,dim=c(numG,P,P,3)),

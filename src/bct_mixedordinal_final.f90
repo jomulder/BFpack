@@ -45,7 +45,7 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
             ordinal(g1,p1) = int(ordinal_in(g1,p1))
             Cat(g1,p1) = int(Cat_in(g1,p1))
         end do
-        Njs(g1) = Njs_in(g1)
+        Njs(g1) = int(Njs_in(g1))
     end do
     !initial prior C
     nutarget = P + 1 !in the case of a marginally uniform prior
