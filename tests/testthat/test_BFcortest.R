@@ -51,6 +51,14 @@ test_that("check estimate of polychoric correlation", {
     cor2$correstimates[1,1],.24, tolerance = .1
   )})
 
+# estimate correlations for unequal groups
+set.seed(123)
+cor2b <- cor_test(mtcars[1:10,2:4],mtcars[11:32,2:4])
+test_that("check estimate of polychoric correlation", {
+  expect_equivalent(
+    cor2b$correstimates[,1],.24, tolerance = .1
+  )})
+
 BF2 <- BF(cor2,hypothesis="cyl_with_mpg= -.9")
 PHPexplo <- matrix(
   c(0.0,  1,  0.0),nrow=1,byrow=T)
@@ -75,14 +83,15 @@ test_that("BF.cor_test exploratory hypotheses on correlations correctly evaluate
   )})
 
 # test with combinations between continuous and ordinal (categorical) outcome variables
-mtcars_test <- mtcars[,c(1,2,9)]
+set.seed(187)
+mtcars_test <- mtcars[,c(1,2,9,10)]
 mtcars_test[,2] <- as.ordered(mtcars_test[,2])
 mtcars_test[,3] <- as.factor(mtcars_test[,3])
+mtcars_test[,4] <- as.integer(mtcars_test[,4])
 cor4 <- cor_test(mtcars_test)
 BF4 <- BF(cor4)
 test_that("BF.cor_test exploratory hypotheses on correlations mixed measurement levels", {
   expect_equivalent(
-    BF4$PHP_exploratory[,1],c(0,.06,.07), tolerance = .1
+    BF4$PHP_exploratory[,1],c(0,.04,.07,.05,.07,.02), tolerance = .1
   )})
-BF4$PHP_exploratory[,1]
 

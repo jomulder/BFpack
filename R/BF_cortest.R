@@ -45,25 +45,47 @@ cor_test <- function(..., formula = NULL, iter = 5e3, burnin = 3e3){
 
   Y_groups <- list(...)
   numG <- length(Y_groups)
-  P <- ncol(Y_groups[[1]])
-  ordi <- numcats <- matrix(0,nrow=numG,ncol=P)
 
-  #check class of variables in input data
+  if(is.null(formula)){
+    formula <- ~ 1
+  }
+  Xnames <- attr(terms(formula), "term.labels")
+  whichDV <- lapply(Y_groups,function(y){
+    unlist(lapply(colnames(y),function(x){sum(x==Xnames)==0}))
+  })
+  if(numG>1){ #check that the same number of DVs are present in each group (that's how dimensions are coded)
+    numDV <- rep(NA,numG)
+    for(gg in 1:numG){
+      numDV[gg] <- sum(whichDV[[gg]])
+    }
+    if(sum(abs(diff(numDV)))!=0){
+      stop("Each group should contain same number of dependent variables.")
+    }
+  }
+
+  #check measurement level of dependent variables, and convert to numericals
+  P <- sum(whichDV[[1]])
+  ordi <- numcats <- matrix(0,nrow=numG,ncol=P)
+  teller <- 1
   for(gg in 1:numG){
-    for(pp in 1:P){
-      if(!(class(Y_groups[[gg]][,pp])[1] == "numeric" | class(Y_groups[[gg]][,pp])[1] == "integer")){
+    for(pp in which(whichDV[[gg]])){
+      if(class(Y_groups[[gg]][,pp])[1] == "numeric" | class(Y_groups[[gg]][,pp])[1] == "integer"){
+        teller <- teller + 1
+      }else{
         if(class(Y_groups[[gg]][,pp])[1] == "ordered"){
           levels(Y_groups[[gg]][,pp]) <- 1:length(levels(Y_groups[[gg]][,pp]))
           Y_groups[[gg]][,pp] <- as.numeric(Y_groups[[gg]][,pp])
-          ordi[gg,pp] <- 1
-          numcats[gg,pp] <- max(Y_groups[[gg]][,pp])
+          ordi[gg,teller] <- 1
+          numcats[gg,teller] <- max(Y_groups[[gg]][,pp])
+          teller <- teller + 1
         }else{
           if(class(Y_groups[[gg]][,pp])[1] == "factor"){
             if(length(levels(Y_groups[[gg]][,pp]))==2){
               levels(Y_groups[[gg]][,pp]) <- 1:length(levels(Y_groups[[gg]][,pp]))
               Y_groups[[gg]][,pp] <- as.numeric(Y_groups[[gg]][,pp])
-              ordi[gg,pp] <- 1
-              numcats[gg,pp] <- 2
+              ordi[gg,teller] <- 1
+              numcats[gg,teller] <- 2
+              teller <- teller + 1
             }else{
               stop("Outcome variables should be either of class 'numeric', 'ordered', or a 2-level 'factor'.")
             }
@@ -73,10 +95,6 @@ cor_test <- function(..., formula = NULL, iter = 5e3, burnin = 3e3){
         }
       }
     }
-  }
-
-  if(is.null(formula)){
-    formula <- ~ 1
   }
 
   model_matrices <- lapply(seq_len(numG) , function(x) {
@@ -155,6 +173,7 @@ cor_test <- function(..., formula = NULL, iter = 5e3, burnin = 3e3){
                   samsize0=as.integer(samsize0),
                   burnin=as.integer(burnin),
                   Ntot=as.integer(Ntot),
+                  Njs=ngroups,
                   Xgroups=Xgroups,
                   Ygroups=Ygroups,
                   C_quantiles=array(0,dim=c(numG,P,P,3)),
