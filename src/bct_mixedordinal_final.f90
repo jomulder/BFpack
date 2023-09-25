@@ -23,9 +23,8 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                Wgroups(numG,Ntot,P), dummyVar, alphaMin, alphaMax, Cinv(P,P), Bmean(K,P), acceptLS(numG,P), &
                alphaMat(numG,maxCat+1,P), Wdummy(numG,P,Ntot,maxCat), condMean, condVar, logR_MH_part3, &
                ones(samsize0,1), Zcorr_sample(samsize0,numcorr), dummy3(samsize0), dummy2(samsize0), &
-               diffmat(Ntot,P), meanO(P*K), para(((P*K)*((P*K)+3)/2 + 1)), randraw, Cat(numG,P), &
-               ordinal(numG,P)
-    integer :: s1, g1, acceptC(numG), i1, nutarget, a0, corrteller, &
+               diffmat(Ntot,P), meanO(P*K), para(((P*K)*((P*K)+3)/2 + 1)), randraw
+    integer :: s1, g1, acceptC(numG), i1, nutarget, a0, corrteller, Cat(numG,P), ordinal(numG,P), &
                c1, c2, p1, Yi1Categorie, tellers(numG,maxCat,P), k1, p2, iseed, &
                errorflag, Njs(numG), lower_int, median_int, upper_int
 !
@@ -97,7 +96,7 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
         do g1=1,numG
             if(ordinal(g1,p1)>0) then
                 do c1=3,Cat(g1,p1)
-                    alphaMat(g1,c1,p1) = .3*(c1-2.0)
+                    alphaMat(g1,c1,p1) = .3*(real(c1)-2.0)
                 end do
                 alphaMat(g1,Cat(g1,p1)+1,p1) = 1e10
             end if

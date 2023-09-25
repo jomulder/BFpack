@@ -40,6 +40,31 @@ test_that("BF.cor_test confirmatory hypotheses on correlations correctly evaluat
     log(BF2$BFmatrix_confirmatory[1,2]),.9, tolerance = .2
   )})
 
+# test a single correlation on categorical outcomes
+set.seed(123)
+mtcars_test <- mtcars[,8:9]
+mtcars_test[,2] <- as.factor(mtcars_test[,2])
+mtcars_test[,1] <- as.factor(mtcars_test[,1])
+cor2 <- cor_test(mtcars_test)
+test_that("check estimate of polychoric correlation", {
+  expect_equivalent(
+    cor2$correstimates[1,1],.24, tolerance = .1
+  )})
+
+BF2 <- BF(cor2,hypothesis="cyl_with_mpg= -.9")
+PHPexplo <- matrix(
+  c(0.0,  1,  0.0),nrow=1,byrow=T)
+# exploratory hypothesis test on the correlation
+test_that("BF.cor_test exploratory hypotheses on correlations correctly evaluated", {
+  expect_equivalent(
+    BF2$PHP_exploratory,PHPexplo, tolerance = .1
+  )})
+# confirmatory hypothesis test on the correlation
+test_that("BF.cor_test confirmatory hypotheses on correlations correctly evaluated", {
+  expect_equivalent(
+    log(BF2$BFmatrix_confirmatory[1,2]),.9, tolerance = .2
+  )})
+
 # test a single correlation in multiple groups
 set.seed(123)
 cor3 <- cor_test(mtcars[,3:4],mtcars[,5:6])
