@@ -23,11 +23,10 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                Wgroups(numG,Ntot,P), dummyVar, alphaMin, alphaMax, Cinv(P,P), Bmean(K,P), acceptLS(numG,P), &
                alphaMat(numG,maxCat+1,P), Wdummy(numG,P,Ntot,maxCat), condMean, condVar, logR_MH_part3, &
                ones(samsize0,1), Zcorr_sample(samsize0,numcorr), dummy3(samsize0), dummy2(samsize0), &
-               diffmat(Ntot,P), meanO(P*K), para(((P*K)*((P*K)+3)/2 + 1)), randraw, gLiuSab_curr(numG,P),&
-               Njs(numG)
+               diffmat(Ntot,P), meanO(P*K), para(((P*K)*((P*K)+3)/2 + 1)), randraw, gLiuSab_curr(numG,P)
     integer :: s1, g1, acceptC(numG), i1, nutarget, a0, corrteller, Cat(numG,P), ordinal(numG,P), &
-               c1, c2, p1, Yi1Categorie, tellers(numG,maxCat,P), k1, p2, iseed, &
-               errorflag, lower_int, median_int, upper_int
+               c1, c2, p1, Yi1Categorie, tellers(numG,maxCat,P), k1, p2, iseed, Njs(numG), errorflag, lower_int,&
+               median_int, upper_int
 !
 !   set seed
     iseed = seed
