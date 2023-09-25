@@ -1,4 +1,5 @@
 
+
 #' @title Bayesian correlation analysis
 #'
 #' @name cor_test
@@ -40,16 +41,45 @@
 #' }
 #' @rdname cor_test
 #' @export
-cor_test <- function(..., formula = NULL, iter = 5e3){
-  Y_groups <- list(...)
+cor_test <- function(..., formula = NULL, iter = 5e3, burnin = 3e3){
 
-  groups <- length(Y_groups)
+  Y_groups <- list(...)
+  numG <- length(Y_groups)
+  P <- ncol(Y_groups[[1]])
+  ordi <- numcats <- matrix(0,nrow=numG,ncol=P)
+
+  #check class of variables in input data
+  for(gg in 1:numG){
+    for(pp in 1:P){
+      if(!(class(Y_groups[[gg]][,pp])[1] == "numeric" | class(Y_groups[[gg]][,pp])[1] == "integer")){
+        if(class(Y_groups[[gg]][,pp])[1] == "ordered"){
+          levels(Y_groups[[gg]][,pp]) <- 1:length(levels(Y_groups[[gg]][,pp]))
+          Y_groups[[gg]][,pp] <- as.numeric(Y_groups[[gg]][,pp])
+          ordi[gg,pp] <- 1
+          numcats[gg,pp] <- max(Y_groups[[gg]][,pp])
+        }else{
+          if(class(Y_groups[[gg]][,pp])[1] == "factor"){
+            if(length(levels(Y_groups[[gg]][,pp]))==2){
+              levels(Y_groups[[gg]][,pp]) <- 1:length(levels(Y_groups[[gg]][,pp]))
+              Y_groups[[gg]][,pp] <- as.numeric(Y_groups[[gg]][,pp])
+              ordi[gg,pp] <- 1
+              numcats[gg,pp] <- 2
+            }else{
+              stop("Outcome variables should be either of class 'numeric', 'ordered', or a 2-level 'factor'.")
+            }
+          }else{
+            stop("Outcome variables should be either of class 'numeric', 'ordered', or a 2-level 'factor'.")
+          }
+        }
+      }
+    }
+  }
 
   if(is.null(formula)){
     formula <- ~ 1
   }
 
-  model_matrices <- lapply(seq_len(groups) , function(x) {
+  model_matrices <- lapply(seq_len(numG) , function(x) {
     model.matrix(formula, Y_groups[[x]])
   })
 
@@ -59,8 +89,6 @@ cor_test <- function(..., formula = NULL, iter = 5e3){
     list(as.matrix(correlate[[g]]),as.matrix(model_matrices[[g]]))
   })
 
-  numG <- length(YXlist)
-  P <- ncol(YXlist[[1]][[1]])
   K <- ncol(YXlist[[1]][[2]])
   numcorr <- numG*P*(P-1)/2
   ngroups <- unlist(lapply(1:numG,function(g){nrow(YXlist[[g]][[1]])}))
@@ -76,7 +104,12 @@ cor_test <- function(..., formula = NULL, iter = 5e3){
   sdsd <- matrix(0,nrow=numG,ncol=P)
 
   for(g in 1:numG){
-    Y_g <- scale(YXlist[[g]][[1]])
+    Y_g <- YXlist[[g]][[1]]
+    for(p in 1:P){
+      if(ordi[g,p]==0){
+        Y_g[,p] <- c(scale(Y_g[,p]))
+      }
+    }
     X_g <- YXlist[[g]][[2]]
     Ygroups[g,1:ngroups[g],] <- Y_g
     #standardize data to get a more stable sampler for the correlations.
@@ -102,33 +135,40 @@ cor_test <- function(..., formula = NULL, iter = 5e3){
     }))
   }
   samsize0 <- iter
+  gLiuSab <- array(0,dim=c(samsize0,numG,P))
 
   # call Fortran subroutine for Gibbs sampling using noninformative improper priors
   # for regression coefficients, Jeffreys priors for standard deviations, and a proper
   # joint uniform prior for the correlation matrices.
-  res <- .Fortran("estimate_postmeancov_fisherz",
-                 postZmean=matrix(0,numcorr,1),
-                 postZcov=matrix(0,numcorr,numcorr),
-                 P=as.integer(P),
-                 numcorr=as.integer(numcorr),
-                 K=as.integer(K),
-                 numG=as.integer(numG),
-                 BHat=BHat,
-                 sdHat=rbind(sdHat,sdsd),
-                 CHat=CHat,
-                 XtXi=XtXi,
-                 samsize0=as.integer(samsize0),
-                 Njs=as.integer(ngroups),
-                 Ygroups=Ygroups,
-                 Xgroups=Xgroups,
-                 Ntot=as.integer(Ntot),
-                 C_quantiles=array(0,dim=c(numG,P,P,3)),
-                 sigma_quantiles=array(0,dim=c(numG,P,3)),
-                 B_quantiles=array(0,dim=c(numG,K,P,3)),
-                 BDrawsStore=array(0,dim=c(samsize0,numG,K,P)),
-                 sigmaDrawsStore=array(0,dim=c(samsize0,numG,P)),
-                 CDrawsStore=array(0,dim=c(samsize0,numG,P,P)),
-                 seed=as.integer( sample.int(1e6,1) ))
+
+  res <- .Fortran("estimate_bct_ordinal",
+                  postZmean=matrix(0,numcorr,1),
+                  postZcov=matrix(0,numcorr,numcorr),
+                  P=as.integer(P),
+                  numcorr=as.integer(numcorr),
+                  K=as.integer(K),
+                  numG=as.integer(numG),
+                  BHat=round(BHat,3),
+                  sdHat=round(sdHat,3),
+                  CHat=round(CHat,3),
+                  XtXi=XtXi,
+                  samsize0=as.integer(samsize0),
+                  burnin=as.integer(burnin),
+                  Ntot=as.integer(Ntot),
+                  Xgroups=Xgroups,
+                  Ygroups=Ygroups,
+                  C_quantiles=array(0,dim=c(numG,P,P,3)),
+                  sigma_quantiles=array(0,dim=c(numG,P,3)),
+                  B_quantiles=array(0,dim=c(numG,K,P,3)),
+                  BDrawsStore=array(0,dim=c(samsize0,numG,K,P)),
+                  sigmaDrawsStore=array(0,dim=c(samsize0,numG,P)),
+                  CDrawsStore=array(0,dim=c(samsize0,numG,P,P)),
+                  sdMH=sdsd,
+                  ordinal_in=ordi,
+                  Cat_in=numcats,
+                  maxCat=as.integer(max(numcats)),
+                  gLiuSab=gLiuSab,
+                  seed=as.integer( sample.int(1e6,1) ))
 
   varnames <- lapply(1:numG,function(g){
     names(correlate[[g]])
@@ -199,6 +239,7 @@ cor_test <- function(..., formula = NULL, iter = 5e3){
   return(cor_out)
 }
 
+
 #' @importFrom stats terms
 remove_predictors_helper <- function(Y_groups, formula){
 
@@ -227,6 +268,7 @@ remove_predictors_helper <- function(Y_groups, formula){
     })
   }
 }
+
 
 FisherZ <- function(r){.5*log((1+r)/(1-r))}
 

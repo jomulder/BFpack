@@ -67,7 +67,10 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                   !the parameterization in Remark 9 of Liu&Daniels seems a bit odd.
 !
     !define nugget matrix to avoid approximate nonpositive definite correlation matrices for candidates
-    Cnugget = Wp*1e-4
+    Cnugget = .999
+    do p1=1,P
+        Cnugget(p1,1) = 1
+    end do
 !
     telft = 0
     telct = 0
@@ -217,7 +220,7 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
             call FINDInv(dummyPP,dummyPPinv,P,errorflag)
             Ccan = matmul(matmul(diag(1/sqrt(diagonals(dummyPPinv,P)),P),dummyPPinv), &
                 diag(1/sqrt(diagonals(dummyPPinv,P)),P))
-!	    	Ccan = Ccan + Cnugget
+            Ccan = Ccan * Cnugget
             call FINDInv(Ccan,CcanInv,P,errorflag)
             call FINDInv(Ccurr,CcurrInv,P,errorflag)
             !target prior of Barnard et al. with nu = p + kappa0
@@ -399,7 +402,7 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
             call FINDInv(dummyPP,dummyPPinv,P,errorflag)
             Ccan = matmul(matmul(diag(1/sqrt(diagonals(dummyPPinv,P)),P),dummyPPinv), &
                 diag(1/sqrt(diagonals(dummyPPinv,P)),P))
-!	    	Ccan = Ccan + Cnugget
+            Ccan = Ccan * Cnugget
             call FINDInv(Ccan,CcanInv,P,errorflag)
             call FINDInv(Ccurr,CcurrInv,P,errorflag)
             !target prior of Barnard et al. with nu = p + kappa0

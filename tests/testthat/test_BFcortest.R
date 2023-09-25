@@ -49,9 +49,15 @@ test_that("BF.cor_test exploratory hypotheses on correlations correctly evaluate
     BF3$PHP_confirmatory,c(.78,.22), tolerance = .1
   )})
 
-
-
-
-
-
+# test with combinations between continuous and ordinal (categorical) outcome variables
+mtcars_test <- mtcars[,c(1,2,9)]
+mtcars_test[,2] <- as.ordered(mtcars_test[,2])
+mtcars_test[,3] <- as.factor(mtcars_test[,3])
+cor4 <- cor_test(mtcars_test)
+BF4 <- BF(cor4)
+test_that("BF.cor_test exploratory hypotheses on correlations mixed measurement levels", {
+  expect_equivalent(
+    BF4$PHP_exploratory[,1],c(0,.06,.07), tolerance = .1
+  )})
+BF4$PHP_exploratory[,1]
 
