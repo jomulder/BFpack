@@ -14,6 +14,8 @@
 #'
 #' @param iter number of iterations from posterior (default is 5000).
 #'
+#' @param burnin number of iterations for burnin (default is 3000).
+#'
 #' @return list of class \code{cor_test}:
 #' \itemize{
 #' \item \code{meanF} posterior means of Fisher transform correlations
@@ -33,11 +35,17 @@
 #' # for the Cat variable
 #' fit <- cor_test(BFpack::memory[,c(1:4)],formula = ~ Cat)
 #'
+#' # Example of Bayesian estimation of polyserial correlations
+#' memory_example <- memory[,c("Im","Rat")]
+#' memory_example$Rat <- as.ordered(memory_example$Rat)
+#' fit <- cor_test(memory_example)
+#'
 #' # Bayesian correlation analysis of first three variables in memory data
 #' # for two different groups
 #' HC <- subset(BFpack::memory[,c(1:3,7)], Group == "HC")[,-4]
 #' SZ <- subset(BFpack::memory[,c(1:3,7)], Group == "SZ")[,-4]
 #' fit <- cor_test(HC,SZ)
+#'
 #' }
 #' @rdname cor_test
 #' @export
@@ -78,6 +86,9 @@ cor_test <- function(..., formula = NULL, iter = 5e3, burnin = 3e3){
           ordi[gg,teller] <- 1
           numcats[gg,teller] <- max(Y_groups[[gg]][,pp])
           teller <- teller + 1
+          if(max(Y_groups[[gg]][,pp])>11){
+            stop("Ordinal variables are not allowed to have more than 11 categories")
+          }
         }else{
           if(class(Y_groups[[gg]][,pp])[1] == "factor"){
             if(length(levels(Y_groups[[gg]][,pp]))==2){
@@ -158,7 +169,6 @@ cor_test <- function(..., formula = NULL, iter = 5e3, burnin = 3e3){
   # call Fortran subroutine for Gibbs sampling using noninformative improper priors
   # for regression coefficients, Jeffreys priors for standard deviations, and a proper
   # joint uniform prior for the correlation matrices.
-
   res <- .Fortran("estimate_bct_ordinal",
                   postZmean=matrix(0,numcorr,1),
                   postZcov=matrix(0,numcorr,numcorr),
@@ -173,7 +183,7 @@ cor_test <- function(..., formula = NULL, iter = 5e3, burnin = 3e3){
                   samsize0=as.integer(samsize0),
                   burnin=as.integer(burnin),
                   Ntot=as.integer(Ntot),
-                  Njs_in=ngroups,
+                  Njs_in=as.numeric(ngroups),
                   Xgroups=Xgroups,
                   Ygroups=Ygroups,
                   C_quantiles=array(0,dim=c(numG,P,P,3)),

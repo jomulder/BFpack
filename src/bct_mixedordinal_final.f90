@@ -20,13 +20,13 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                CcurrInv(P,P), SS1(P,P), SS1inv(P,P), rnunif(1), errorMatj(P,P), sigma_can(P), aa, bb, &
                telft, telct, betaDrawj(1,P*K), acceptSigma(numG,P), dummyPP(P,P), dummyPPinv(P,P), &
                varz1, varz2, varz1z2Plus, varz1z2Min, Cnugget(P,P), SigmaInv(P,P), sdMHg(numG,P), gLiuSab_can, &
-               Wgroups(numG,Ntot,P), dummyVar, alphaMin, alphaMax, Cinv(P,P), Bmean(K,P), acceptLS(numG,P), &
+               Wgroups(numG,Ntot,P), alphaMin, alphaMax, Cinv(P,P), Bmean(K,P), acceptLS(numG,P), &
                alphaMat(numG,maxCat+1,P), Wdummy(numG,P,Ntot,maxCat), condMean, condVar, logR_MH_part3, &
                ones(samsize0,1), Zcorr_sample(samsize0,numcorr), dummy3(samsize0), dummy2(samsize0), &
                diffmat(Ntot,P), meanO(P*K), para(((P*K)*((P*K)+3)/2 + 1)), randraw, gLiuSab_curr(numG,P)
     integer :: s1, g1, acceptC(numG), i1, nutarget, a0, corrteller, Cat(numG,P), ordinal(numG,P), &
-               c1, c2, p1, Yi1Categorie, tellers(numG,maxCat,P), k1, p2, iseed, Njs(numG), errorflag, lower_int,&
-               median_int, upper_int
+               c1, c2, p1, Yi1Categorie, tellers(numG,maxCat,P), k1, p2, iseed, Njs(numG), errorflag, &
+               lower_int, median_int, upper_int
 !
 !   set seed
     iseed = seed
@@ -56,7 +56,7 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                 sigma_quantiles(g1,p1,1) = 1
                 sigma_quantiles(g1,p1,2) = 1
                 sigma_quantiles(g1,p1,3) = 1
-                BDraws(g1,:,p1) = 0
+!                BDraws(g1,:,p1) = 0
             end if
         end do
     end do
@@ -79,9 +79,6 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
     acceptSigma = 0
     acceptLS = 0
     sdMHg = .1 !for gLiuBanhatti parameter
-    dummyVar = 1.0
-    condMean = 0
-    condVar = 1
 !
     !initial values for latent W's corresponding to ordinal DVs
     Wgroups = Ygroups
@@ -226,6 +223,7 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
             !proposal prior
             logR_MH_part3 = (-.5*real(P+1))*(log(det(Ccurr,P,-1))-log(det(Ccan,P,-1)))
             R_MH = exp(logR_MH_part3)
+            !write(*,*) s1, R_MH, logR_MH_part3
 
             !note that if Wp is not the identity matrix we have to
             !compute sum(diagonals(matmul(Wp,RcurrInv)))
@@ -839,7 +837,7 @@ function runiform ( iseed )
   runiform = real ( iseed, kind = 8 ) * 4.656612875D-10
 
 return
-end function
+end function runiform
 
 
 recursive function det(a,n,permanent) result(accumulation)
@@ -985,7 +983,7 @@ SUBROUTINE setgmn(meanv,covm,p,parm)
    50 CONTINUE
       RETURN
 !
-END SUBROUTINE
+END SUBROUTINE setgmn
 
 
 
@@ -1067,7 +1065,7 @@ SUBROUTINE genmn(parm,x,p,iseed)
      30 CONTINUE
         RETURN
   !
-END SUBROUTINE
+END SUBROUTINE genmn
 
 
 subroutine spofa(a,lda,n,info)
@@ -1210,8 +1208,6 @@ REAL(8) FUNCTION sdot(N,SX,INCX,SY,INCY)
             sdot = stemp
         RETURN
 END FUNCTION sdot
-
-
 
 
 
@@ -1411,7 +1407,7 @@ function alnorm ( x, upper )
   end if
 
   return
-end
+end function alnorm
 
 
 
@@ -1563,7 +1559,7 @@ function stvaln ( p )
   stvaln = sgn * stvaln
 
   return
-end function
+end function stvaln
 
 
 function eval_pol ( a, n, x )
@@ -1807,7 +1803,7 @@ function cumnor ( arg )
   end if
 
   return
- end function
+ end function cumnor
 
 
 !Subroutine to find the inverse of a square matrix
@@ -1815,7 +1811,7 @@ function cumnor ( arg )
 !Reference : Algorithm has been well explained in:
 !http://math.uww.edu/~mcfarlat/inverse.htm
 !http://www.tutor.ms.unimelb.edu.au/matrix/matrix_inverse.html
-SUBROUTINE FINDInv(matrix, inverse, n, errorflag)
+SUBROUTINE FINDinv(matrix, inverse, n, errorflag)
     IMPLICIT NONE
     !Declarations
     INTEGER, INTENT(IN) :: n

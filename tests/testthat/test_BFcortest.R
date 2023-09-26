@@ -25,19 +25,18 @@ test_that("BF.cor_test confirmatory hypotheses on correlations correctly evaluat
 # test a single correlation
 set.seed(123)
 cor2 <- cor_test(mtcars[,1:2])
-
 BF2 <- BF(cor2,hypothesis="cyl_with_mpg= -.9")
-PHPexplo <- matrix(
-  c(0.0,  1,  0.0),nrow=1,byrow=T)
+logBFexplo <- matrix(
+  c(-19.75,  .7,  -23.4),nrow=1,byrow=T)
 # exploratory hypothesis test on the correlation
 test_that("BF.cor_test exploratory hypotheses on correlations correctly evaluated", {
   expect_equivalent(
-    BF2$PHP_exploratory,PHPexplo, tolerance = .1
+    log(BF2$BFtu_exploratory),logBFexplo, tolerance = .3
   )})
 # confirmatory hypothesis test on the correlation
 test_that("BF.cor_test confirmatory hypotheses on correlations correctly evaluated", {
   expect_equivalent(
-    log(BF2$BFmatrix_confirmatory[1,2]),.9, tolerance = .2
+    log(BF2$BFmatrix_confirmatory[1,2]),.86, tolerance = .2
   )})
 
 # test a single correlation on categorical outcomes
@@ -50,18 +49,9 @@ test_that("check estimate of polychoric correlation", {
   expect_equivalent(
     cor2$correstimates[1,1],.24, tolerance = .1
   )})
-
-# estimate correlations for unequal groups
-set.seed(123)
-cor2b <- cor_test(mtcars[1:10,2:4],mtcars[11:32,2:4])
-test_that("check estimate of polychoric correlation", {
-  expect_equivalent(
-    cor2b$correstimates[,1],.24, tolerance = .1
-  )})
-
-BF2 <- BF(cor2,hypothesis="cyl_with_mpg= -.9")
+BF2 <- BF(cor2,hypothesis="am_with_vs= .1")
 PHPexplo <- matrix(
-  c(0.0,  1,  0.0),nrow=1,byrow=T)
+  c(.5,  .09,  .41),nrow=1,byrow=T)
 # exploratory hypothesis test on the correlation
 test_that("BF.cor_test exploratory hypotheses on correlations correctly evaluated", {
   expect_equivalent(
@@ -71,6 +61,15 @@ test_that("BF.cor_test exploratory hypotheses on correlations correctly evaluate
 test_that("BF.cor_test confirmatory hypotheses on correlations correctly evaluated", {
   expect_equivalent(
     log(BF2$BFmatrix_confirmatory[1,2]),.9, tolerance = .2
+  )})
+
+# estimate correlations for unequal groups
+set.seed(123)
+cor2b <- cor_test(mtcars[1:10,2:4],mtcars[11:32,2:4])
+estimates_check <- c(.7,.63,.62,.83,.73,.66)
+test_that("check estimate of polychoric correlation", {
+  expect_equivalent(
+    cor2b$correstimates[,1],estimates_check, tolerance = .1
   )})
 
 # test a single correlation in multiple groups
