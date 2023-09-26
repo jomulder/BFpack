@@ -121,14 +121,18 @@
 #'                               anchorrounded < motivationlow")
 #' summary(BF1)
 #'
-#' # EXAMPLE 3. Logistic regression
+#' # EXAMPLE 3. linear regression
+#' lm1 <- lm(mpg ~ cyl + hp + wt, data = mtcars)
+#' BF(lm1, hypothesis = "wt < cyl < hp = 0")
+#'
+#' # EXAMPLE 4. Logistic regression
 #' fit <- glm(sent ~ ztrust + zfWHR + zAfro + glasses + attract + maturity +
 #'    tattoos, family = binomial(), data = wilson)
 #' BF1 <- BF(fit, hypothesis = "ztrust > zfWHR > 0;
 #'                              ztrust > 0 & zfWHR = 0")
 #' summary(BF1)
 #'
-#' # EXAMPLE 4. Correlation analysis
+#' # EXAMPLE 5. Correlation analysis
 #' set.seed(123)
 #' cor1 <- cor_test(memory[1:20,1:3])
 #' BF1 <- BF(cor1)
@@ -137,7 +141,7 @@
 #'                               Wmn_with_Im = Wmn_with_Del = 0")
 #' summary(BF2)
 #'
-#' # EXAMPLE 5. Bayes factor testing on a named vector
+#' # EXAMPLE 6. Bayes factor testing on a named vector
 #' # A Poisson regression model is used to illustrate the computation
 #' # of Bayes factors with a named vector as input
 #' poisson1 <- glm(formula = breaks ~ wool + tension,
@@ -170,14 +174,18 @@
 #'                               anchorrounded > motivationlow")
 #' summary(BF1)
 #'
-#' # EXAMPLE 3. Logistic regression
+#' # EXAMPLE 3. linear regression
+#' lm1 <- lm(mpg ~ cyl + hp + wt, data = mtcars)
+#' BF(lm1, hypothesis = "wt < cyl < hp = 0")
+#'
+#' # EXAMPLE 4. Logistic regression
 #' fit <- glm(sent ~ ztrust + zfWHR + zAfro + glasses + attract + maturity +
 #'    tattoos, family = binomial(), data = wilson)
 #' BF1 <- BF(fit, hypothesis = "ztrust > (zfWHR, zAfro) > 0;
 #'                              ztrust > 0 & zfWHR=zAfro= 0")
 #' summary(BF1)
 #'
-#' # EXAMPLE 4. Correlation analysis
+#' # EXAMPLE 5. Correlation analysis
 #' set.seed(123)
 #' cor1 <- cor_test(memory[1:20,1:3])
 #' BF1 <- BF(cor1)
@@ -186,7 +194,7 @@
 #'                               Wmn_with_Im = Wmn_with_Del = 0")
 #' summary(BF2)
 #'
-#' # EXAMPLE 5. Bayes factor testing on a named vector
+#' # EXAMPLE 6. Bayes factor testing on a named vector
 #' # We illustrate the computation of Bayes factors using a named vector
 #' # as input on a Poisson regression model
 #' poisson1 <- glm(formula = breaks ~ wool + tension,
