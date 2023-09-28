@@ -211,7 +211,6 @@ Savage.Dickey.Gaussian <- function(prior.mean,
 
 # compute relative meausures (fit or complexity) under a multivariate Gaussian distribution
 #' @importFrom mvtnorm dmvnorm pmvnorm
-#' @importFrom Matrix rankMatrix
 Gaussian_measures <- function(mean1,Sigma1,n1=0,RrE1,RrO1,names1=NULL,constraints1=NULL){
   K <- length(mean1)
   relE <- relO <- 1
@@ -234,7 +233,7 @@ Gaussian_measures <- function(mean1,Sigma1,n1=0,RrE1,RrO1,names1=NULL,constraint
     qO1 <- nrow(RO1)
     rO1 <- RrO1[,(K+1)]
 
-    if(rankMatrix(RO1)[[1]]==nrow(RO1)){ #RO1 is of full row rank. So use transformation.
+    if(Rank(RO1)==nrow(RO1)){ #RO1 is of full row rank. So use transformation.
       meanO <- c(RO1%*%mean1)
       SigmaO <- RO1%*%Sigma1%*%t(RO1)
       check_vcov(SigmaO)
@@ -270,7 +269,7 @@ Gaussian_measures <- function(mean1,Sigma1,n1=0,RrE1,RrO1,names1=NULL,constraint
     rO1 <- RrO1[,(K+1)]
     Rr1 <- rbind(RrE1,RrO1)
 
-    if(rankMatrix(Rr1)[[1]] == nrow(Rr1)){
+    if(Rank(Rr1) == nrow(Rr1)){
 
       R1 <- rbind(RE1,RO1)
 

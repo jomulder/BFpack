@@ -32,10 +32,10 @@ set.seed(222)
 # florentine data
 data(florentine)
 # example analysis
-bergm_fit <- bergm(flomarriage ~ edges + kstar(2) + absdiff("wealth"),
+bergm_fit <- bergm(flomarriage ~ kstar(2) + edges + absdiff("wealth"),
                  seed = 1)
 
-BFbergm.test <- BF(bergm_fit,hypothesis = "0 = theta3 > theta2")
+BFbergm.test <- BF(bergm_fit,hypothesis = "0 = theta3 > theta1")
 
 #check if confirmatory test are the same
 test_that("BF.bergm one hypotheses correctly evaluated", {

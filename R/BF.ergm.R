@@ -2,6 +2,7 @@
 
 #' @importFrom sandwich sandwich
 #' @importFrom ergm ergmMPLE
+#' @importFrom stats as.formula
 #' @method BF ergm
 #' @export
 BF.ergm <- function(x,
@@ -14,7 +15,11 @@ BF.ergm <- function(x,
   estimate <- coef(x)
   K1 <- length(estimate)
   # get design matrix of pseudo likelihood to construct prior covariance matrix
-  x_MPLE <- ergmMPLE(formula=x$formula,output="dyadlist")
+  nw <- x$network
+  form.char <- format(x$formula)
+  location_tilde <- regexpr("~",form.char)[1]
+  form.new <- as.formula(paste0("nw ~",substr(form.char,start=location_tilde+1,stop=nchar(form.char))))
+  x_MPLE <- ergmMPLE(form.new,output="dyadlist")
   design.X <- x_MPLE$predictor[,2+1:K1]
   which.edges <- which(colnames(design.X)=="edges")
   if(length(which.edges)==0){ #no intercept 'edges'
@@ -38,7 +43,7 @@ BF.ergm <- function(x,
       }
     }
   }
-  Bergm.out <- Bergm::bergm(x$formula,prior.mean=rep(0,K1),prior.sigma=priorcov,...)
+  Bergm.out <- Bergm::bergm(form.new,prior.mean=rep(0,K1),prior.sigma=priorcov,...)
   #get robust estimates for the Gaussian mean and covariance matrix
   post.mean <- apply(Bergm.out$Theta,2,median)
   names(post.mean) <- names(estimate)
@@ -84,9 +89,15 @@ BF.ergm <- function(x,
 #' @method get_estimates ergm
 #' @export
 get_estimates.ergm <- function(x, ...){
+
+  nw <- x$network
+  form.char <- format(x$formula)
+  location_tilde <- regexpr("~",form.char)[1]
+  form.new <- as.formula(paste0("nw ~",substr(form.char,start=location_tilde+1,stop=nchar(form.char))))
+
   estimate <- coef(x)
   K1 <- length(estimate)
-  x_MPLE <- ergmMPLE(formula=x$formula,output="dyadlist")
+  x_MPLE <- ergmMPLE(form.new,output="dyadlist")
   design.X <- x_MPLE$predictor[,2+1:K1]
   which.edges <- which(colnames(design.X)=="edges")
   out <- list()
@@ -110,6 +121,14 @@ BF.bergm <- function(x,
                     prior.hyp = NULL,
                     complement = TRUE,
                     ...){
+
+  form.char <- format(x$formula)
+  location_tilde <- regexpr("~",form.char)[1]
+  name.nw <- substr(form.char,start=1,stop=location_tilde-2)
+  if(!exists(name.nw)){
+    stop(paste0("For an object of class 'bergm', the function 'BF()' only runs if the network data object '",name.nw,
+                   "' is also present in the environment."))
+  }
 
   # first check if effect names in hypothesis argument correspond with names in x
   coef_names_hyp <- names(get_estimates(x)$estimate)
@@ -192,6 +211,14 @@ BF.bergm <- function(x,
 #' @method get_estimates bergm
 #' @export
 get_estimates.bergm <- function(x, ...){
+
+  form.char <- format(x$formula)
+  location_tilde <- regexpr("~",form.char)[1]
+  name.nw <- substr(form.char,start=1,stop=location_tilde-2)
+  if(!exists(name.nw)){
+    stop(paste0("For an object of class 'bergm', the function 'BF()' only runs if the network data object '",name.nw,
+                "' is also present in the environment."))
+  }
 
   K1 <- length(apply(x$Theta,2,median))
   names.bergm.coef <- paste0("theta",1:K1)

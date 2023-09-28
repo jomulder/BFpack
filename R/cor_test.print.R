@@ -1,8 +1,8 @@
 #' @method print cor_test
 #' @export
 print.cor_test <- function(x,
-                     digits = 3,
-                     na.print = "", ...){
+                           digits = 3,
+                           na.print = "", ...){
 
   estimates <- x$correstimates
   names <- x$corrnames
@@ -11,13 +11,13 @@ print.cor_test <- function(x,
   numcorr <- P*(P-1)/2
   countg = 0
   corrlist <- lapply(1:groups,function(g){
-      lapply(1:3,function(b){
-        matje <- matrix(NA,P,P)
-        row.names(matje) <- colnames(matje) <- x$variables[[1]]
-        matje[lower.tri(diag(P))] <- estimates[numcorr*(g-1)+1:numcorr,1+b]
-        matje
-      })
+    lapply(1:3,function(b){
+      matje <- matrix(NA,P,P)
+      row.names(matje) <- colnames(matje) <- x$variables[[1]]
+      matje[lower.tri(diag(P))] <- estimates[numcorr*(g-1)+1:numcorr,1+b]
+      matje
     })
+  })
 
   cat("\n")
   cat("Unconstrained Bayesian estimates","\n", sep = "")

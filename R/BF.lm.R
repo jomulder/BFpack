@@ -1,6 +1,5 @@
-#' @importFrom pracma rref
+#' @importFrom pracma rref Rank
 #' @importFrom mvtnorm dmvnorm pmvnorm rmvnorm dmvt pmvt rmvt
-#' @importFrom Matrix rankMatrix
 #' @importFrom stats rWishart qt
 #' @importFrom MASS ginv
 #' @describeIn BF S3 method for an object of class 'lm'
@@ -631,7 +630,7 @@ MatrixStudent_measures <- function(Mean1,Scale1,tXXi1,df1,RrE1,RrO1,Names1=NULL,
       qO1 <- nrow(RO1)
       rO1 <- RrO1[,(K*P+1)]
 
-      if(rankMatrix(RO1)[[1]]==nrow(RO1)){ #RO1 is of full row rank. So use transformation.
+      if(Rank(RO1)==nrow(RO1)){ #RO1 is of full row rank. So use transformation.
 
         Scale1inv <- solve(Scale1)
         relO <- unlist(lapply(1:1e3,function(s){
@@ -690,7 +689,7 @@ MatrixStudent_measures <- function(Mean1,Scale1,tXXi1,df1,RrE1,RrO1,Names1=NULL,
       mean1_E <- RE1 %*% mean1
       relE <- mean(unlist(lapply(covm1_E,function(temp) dmvnorm(rE1,mean=mean1_E,sigma=temp))))
 
-      if(rankMatrix(Rr1)[[1]] == nrow(Rr1)){
+      if(Rank(Rr1) == nrow(Rr1)){
         covm1_O <- lapply(SigmaList,function(temp) R1%*%(kronecker(temp,tXXi1))%*%t(R1) )
         mean1_O <- c(R1%*%mean1)
 
@@ -755,7 +754,7 @@ Student_measures <- function(mean1,Scale1,df1,RrE1,RrO1,names1=NULL,constraints1
     qO1 <- nrow(RO1)
     rO1 <- RrO1[,(K+1)]
 
-    if(rankMatrix(RO1)[[1]]==nrow(RO1)){ #RO1 is of full row rank. So use transformation.
+    if(Rank(RO1)==nrow(RO1)){ #RO1 is of full row rank. So use transformation.
       meanO <- c(RO1%*%mean1)
       scaleO <- RO1%*%Scale1%*%t(RO1)
       relO <- ifelse(nrow(scaleO)==1,
@@ -837,7 +836,7 @@ Student_measures <- function(mean1,Scale1,df1,RrE1,RrO1,names1=NULL,constraints1
     Tscale1OgE <- as.vector((df1 + (t(matrix(rE1 - Tmean1E)) %*% solve(Tscale1EE) %*% matrix(rE1 - Tmean1E))) /
                               (df1 + qE1)) * (Tscale1OO - Tscale1OE %*% solve(Tscale1EE) %*% t(Tscale1OE))
 
-    if(rankMatrix(RO1tilde)[[1]] == nrow(RO1tilde)){
+    if(Rank(RO1tilde) == nrow(RO1tilde)){
       rO1tilde <- as.vector(rO1tilde)
 
       delta_trans <- as.vector(RO1tilde %*% Tmean1OgE)
