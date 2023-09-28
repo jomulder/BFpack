@@ -1,3 +1,12 @@
+# BFpack 1.3.0
+
+* Date: 2023-09-28
+* Faster and more accurate computation of BFs for correlations.
+* BF for testing correlations can now also handle ordinal dependent variables.
+* Further updates of Fortran code according to CRAN rules.
+* Minor edits.
+
+
 # BFpack 1.2.2
 
 * Date: 2023-09-11
