@@ -119,7 +119,6 @@ Depends:
 Imports: 
     stats,
     MASS,
-    Matrix,
     mvtnorm,
     pracma,
     lme4,

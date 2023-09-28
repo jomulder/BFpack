@@ -3,7 +3,6 @@
 #' @method BF hetcor
 #' @export
 BF.hetcor <- function(x,
-BCT_ordinal_extension
                        hypothesis = NULL,
                        prior.hyp = NULL,
                        complement = TRUE,

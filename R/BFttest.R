@@ -131,11 +131,6 @@ BF.t_test <- function(x,
       df1 <- data.frame(out=out,differenc=factor(c(rep("a",x$n[2]),rep("e",x$n[1]))))
       lm1 <- lm(out ~ differenc,df1)
       BFlm1 <- BF(lm1,hypothesis=hypothesis,prior.hyp=prior.hyp,complement=complement,BF.type=BF.type)
-
-      #
-      # CHECK IF IF IT x - y OR y - x. error in 2-sample test.
-      #
-
       BFtu_exploratory <- t(as.matrix(BFlm1$BFtu_exploratory[2,]))
       PHP_exploratory <- t(as.matrix(BFlm1$PHP_exploratory[2,]))
       row.names(BFtu_exploratory) <- row.names(PHP_exploratory) <- "difference"
@@ -289,7 +284,7 @@ BF.t_test <- function(x,
     hypotheses=hypotheses,
     estimates=x$coefficients,
     model=x,
-    bayesfactor="generalized adjusted fractional Bayes factors",
+    bayesfactor=bayesfactor,
     parameter=parameter,
     call=match.call())
 
