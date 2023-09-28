@@ -126,7 +126,9 @@ Imports:
     extraDistr,
     ergm,
     Bergm,
-    sandwich
+    sandwich,
+    fitHeavyTail,
+    QRM
 Suggests: 
     testthat,
     polycor,

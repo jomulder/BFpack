@@ -14,6 +14,8 @@
 #'
 #' @param iter number of iterations from posterior (default is 5000).
 #'
+#' @param burnin number of iterations for burnin (default is 3000).
+#'
 #' @return list of class \code{cor_test}:
 #' \itemize{
 #' \item \code{meanF} posterior means of Fisher transform correlations
@@ -33,24 +35,80 @@
 #' # for the Cat variable
 #' fit <- cor_test(BFpack::memory[,c(1:4)],formula = ~ Cat)
 #'
+#' # Example of Bayesian estimation of polyserial correlations
+#' memory_example <- memory[,c("Im","Rat")]
+#' memory_example$Rat <- as.ordered(memory_example$Rat)
+#' fit <- cor_test(memory_example)
+#'
 #' # Bayesian correlation analysis of first three variables in memory data
 #' # for two different groups
 #' HC <- subset(BFpack::memory[,c(1:3,7)], Group == "HC")[,-4]
 #' SZ <- subset(BFpack::memory[,c(1:3,7)], Group == "SZ")[,-4]
 #' fit <- cor_test(HC,SZ)
+#'
 #' }
 #' @rdname cor_test
 #' @export
-cor_test <- function(..., formula = NULL, iter = 5e3){
-  Y_groups <- list(...)
+cor_test <- function(..., formula = NULL, iter = 5e3, burnin = 3e3){
 
-  groups <- length(Y_groups)
+  Y_groups <- list(...)
+  numG <- length(Y_groups)
 
   if(is.null(formula)){
     formula <- ~ 1
   }
+  Xnames <- attr(terms(formula), "term.labels")
+  whichDV <- lapply(Y_groups,function(y){
+    unlist(lapply(colnames(y),function(x){sum(x==Xnames)==0}))
+  })
+  if(numG>1){ #check that the same number of DVs are present in each group (that's how dimensions are coded)
+    numDV <- rep(NA,numG)
+    for(gg in 1:numG){
+      numDV[gg] <- sum(whichDV[[gg]])
+    }
+    if(sum(abs(diff(numDV)))!=0){
+      stop("Each group should contain same number of dependent variables.")
+    }
+  }
 
-  model_matrices <- lapply(seq_len(groups) , function(x) {
+  #check measurement level of dependent variables, and convert to numericals
+  P <- sum(whichDV[[1]])
+  ordi <- numcats <- matrix(0,nrow=numG,ncol=P)
+  teller <- 1
+  for(gg in 1:numG){
+    for(pp in which(whichDV[[gg]])){
+      if(class(Y_groups[[gg]][,pp])[1] == "numeric" | class(Y_groups[[gg]][,pp])[1] == "integer"){
+        teller <- teller + 1
+      }else{
+        if(class(Y_groups[[gg]][,pp])[1] == "ordered"){
+          levels(Y_groups[[gg]][,pp]) <- 1:length(levels(Y_groups[[gg]][,pp]))
+          Y_groups[[gg]][,pp] <- as.numeric(Y_groups[[gg]][,pp])
+          ordi[gg,teller] <- 1
+          numcats[gg,teller] <- max(Y_groups[[gg]][,pp])
+          teller <- teller + 1
+          if(max(Y_groups[[gg]][,pp])>11){
+            stop("Ordinal variables are not allowed to have more than 11 categories")
+          }
+        }else{
+          if(class(Y_groups[[gg]][,pp])[1] == "factor"){
+            if(length(levels(Y_groups[[gg]][,pp]))==2){
+              levels(Y_groups[[gg]][,pp]) <- 1:length(levels(Y_groups[[gg]][,pp]))
+              Y_groups[[gg]][,pp] <- as.numeric(Y_groups[[gg]][,pp])
+              ordi[gg,teller] <- 1
+              numcats[gg,teller] <- 2
+              teller <- teller + 1
+            }else{
+              stop("Outcome variables should be either of class 'numeric', 'ordered', or a 2-level 'factor'.")
+            }
+          }else{
+            stop("Outcome variables should be either of class 'numeric', 'ordered', or a 2-level 'factor'.")
+          }
+        }
+      }
+    }
+  }
+
+  model_matrices <- lapply(seq_len(numG) , function(x) {
     model.matrix(formula, Y_groups[[x]])
   })
 
@@ -60,8 +118,6 @@ cor_test <- function(..., formula = NULL, iter = 5e3){
     list(as.matrix(correlate[[g]]),as.matrix(model_matrices[[g]]))
   })
 
-  numG <- length(YXlist)
-  P <- ncol(YXlist[[1]][[1]])
   K <- ncol(YXlist[[1]][[2]])
   numcorr <- numG*P*(P-1)/2
   ngroups <- unlist(lapply(1:numG,function(g){nrow(YXlist[[g]][[1]])}))
@@ -77,7 +133,12 @@ cor_test <- function(..., formula = NULL, iter = 5e3){
   sdsd <- matrix(0,nrow=numG,ncol=P)
 
   for(g in 1:numG){
-    Y_g <- scale(YXlist[[g]][[1]])
+    Y_g <- YXlist[[g]][[1]]
+    for(p in 1:P){
+      if(ordi[g,p]==0){
+        Y_g[,p] <- c(scale(Y_g[,p]))
+      }
+    }
     X_g <- YXlist[[g]][[2]]
     Ygroups[g,1:ngroups[g],] <- Y_g
     #standardize data to get a more stable sampler for the correlations.
@@ -103,33 +164,40 @@ cor_test <- function(..., formula = NULL, iter = 5e3){
     }))
   }
   samsize0 <- iter
+  gLiuSab <- array(0,dim=c(samsize0,numG,P))
 
   # call Fortran subroutine for Gibbs sampling using noninformative improper priors
   # for regression coefficients, Jeffreys priors for standard deviations, and a proper
   # joint uniform prior for the correlation matrices.
-  res <- .Fortran("estimate_postmeancov_fisherz",
-                 postZmean=matrix(0,numcorr,1),
-                 postZcov=matrix(0,numcorr,numcorr),
-                 P=as.integer(P),
-                 numcorr=as.integer(numcorr),
-                 K=as.integer(K),
-                 numG=as.integer(numG),
-                 BHat=BHat,
-                 sdHat=rbind(sdHat,sdsd),
-                 CHat=CHat,
-                 XtXi=XtXi,
-                 samsize0=as.integer(samsize0),
-                 Njs=as.integer(ngroups),
-                 Ygroups=Ygroups,
-                 Xgroups=Xgroups,
-                 Ntot=as.integer(Ntot),
-                 C_quantiles=array(0,dim=c(numG,P,P,3)),
-                 sigma_quantiles=array(0,dim=c(numG,P,3)),
-                 B_quantiles=array(0,dim=c(numG,K,P,3)),
-                 BDrawsStore=array(0,dim=c(samsize0,numG,K,P)),
-                 sigmaDrawsStore=array(0,dim=c(samsize0,numG,P)),
-                 CDrawsStore=array(0,dim=c(samsize0,numG,P,P)),
-                 seed=as.integer( sample.int(1e6,1) ))
+  res <- .Fortran("estimate_bct_ordinal",
+                  postZmean=matrix(0,numcorr,1),
+                  postZcov=matrix(0,numcorr,numcorr),
+                  P=as.integer(P),
+                  numcorr=as.integer(numcorr),
+                  K=as.integer(K),
+                  numG=as.integer(numG),
+                  BHat=round(BHat,3),
+                  sdHat=round(sdHat,3),
+                  CHat=round(CHat,3),
+                  XtXi=XtXi,
+                  samsize0=as.integer(samsize0),
+                  burnin=as.integer(burnin),
+                  Ntot=as.integer(Ntot),
+                  Njs_in=as.numeric(ngroups),
+                  Xgroups=Xgroups,
+                  Ygroups=Ygroups,
+                  C_quantiles=array(0,dim=c(numG,P,P,3)),
+                  sigma_quantiles=array(0,dim=c(numG,P,3)),
+                  B_quantiles=array(0,dim=c(numG,K,P,3)),
+                  BDrawsStore=array(0,dim=c(samsize0,numG,K,P)),
+                  sigmaDrawsStore=array(0,dim=c(samsize0,numG,P)),
+                  CDrawsStore=array(0,dim=c(samsize0,numG,P,P)),
+                  sdMH=sdsd,
+                  ordinal_in=ordi,
+                  Cat_in=numcats,
+                  maxCat=as.integer(max(numcats)),
+                  gLiuSab=gLiuSab,
+                  seed=as.integer( sample.int(1e6,1) ))
 
   varnames <- lapply(1:numG,function(g){
     names(correlate[[g]])
@@ -200,6 +268,7 @@ cor_test <- function(..., formula = NULL, iter = 5e3){
   return(cor_out)
 }
 
+
 #' @importFrom stats terms
 remove_predictors_helper <- function(Y_groups, formula){
 
@@ -229,11 +298,14 @@ remove_predictors_helper <- function(Y_groups, formula){
   }
 }
 
+
 FisherZ <- function(r){.5*log((1+r)/(1-r))}
 
 
 #' @importFrom mvtnorm dmvnorm pmvnorm rmvnorm
 #' @importFrom stats dnorm pnorm
+#' @importFrom fitHeavyTail fit_mvt
+#' @importFrom QRM fit.st
 #' @method BF cor_test
 #' @export
 BF.cor_test <- function(x,
@@ -255,7 +327,9 @@ BF.cor_test <- function(x,
   # Exploratory testing of correlation coefficients
   #get height of prior density at 0 of Fisher transformed correlation
   drawsJU <- draw_ju_r(P,samsize=50000,Fisher=1)
-  relcomp0 <- approxfun(density(drawsJU[,1]))(0)
+  approx_studt <- QRM::fit.st(c(drawsJU))$par.ests
+  relcomp0 <- dt(0,df=approx_studt[1])/approx_studt[3] # all marginal priors are the same
+
   # compute exploratory BFs
   corr_names <- rownames(x$correstimates)
   numcorr <- length(corrmeanN)
@@ -275,17 +349,14 @@ BF.cor_test <- function(x,
   # confirmatory testing if hypothesis argument is used
   if(!is.null(hypothesis)){
 
-    #check if constraints are formulated on correlaties in different populations
-    #if so, then the correlation names contains the string "_group" at the end
+    #check if constraints are formulated on correlations in different populations
+    #if so, then the correlation names contains the string "_in_g" at the end
     params_in_hyp1 <- params_in_hyp(hypothesis)
 
     corr_names <- unlist(lapply(1:length(x$corrnames),function(g){
       c(x$corrnames[[g]][lower.tri(x$corrnames[[g]])],
         t(x$corrnames[[g]])[lower.tri(x$corrnames[[g]])])
     })) #which includes Y1_with_Y2 and Y2_with_Y1
-    # checkLabels <- matrix(unlist(lapply(1:length(params_in_hyp1),function(par){
-    #   params_in_hyp1[par]==corr_names
-    # })),nrow=length(params_in_hyp1),byrow=T)
 
     parse_hyp <- parse_hypothesis(corr_names,hypothesis)
     parse_hyp$hyp_mat <- do.call(rbind, parse_hyp$hyp_mat)
@@ -306,21 +377,40 @@ BF.cor_test <- function(x,
     RrE <- RrList[[1]]
     RrO <- RrList[[2]]
 
-    # RrStack <- rbind(do.call(rbind,RrE),do.call(rbind,RrO))
-    # RStack <- RrStack[,-(numcorr+1)]
-    # rStack <- RrStack[,(numcorr+1)]
-
     numhyp <- length(RrE)
     relfit <- t(matrix(unlist(lapply(1:numhyp,function(h){
       Gaussian_measures(corrmeanN,corrcovmN,RrE1=RrE[[h]],RrO1=RrO[[h]])
     })),nrow=2))
+    #names1 and constraints1 ... to fix ...
+    # approximate unconstrained Fisher transformed correlations with a multivariate Student t
+    if(numcorrgroup==1){
+      if(numcorr==1){
+        Scale0 <- as.matrix(approx_studt[3]**2)
+      }else{
+        Scale0 <- diag(rep(approx_studt[3]**2,numG))
+      }
+      mean0 <- rep(0,numG)
+      df0 <- round(approx_studt[1])
+    }else{
+      approx_studt <- fit_mvt(X=drawsJU)
+      mean0 <- rep(0,numcorrgroup*numG)
+      Scale0 <- diag(rep(mean(diag(approx_studt$scatter)),numcorrgroup*numG))
+      df0 <- round(approx_studt$nu)
+    }
     relcomp <- t(matrix(unlist(lapply(1:numhyp,function(h){
-      jointuniform_measures(P,numcorrgroup,numG,RrE1=RrE[[h]],RrO1=RrO[[h]],Fisher=1)
+      relcomp_h <- Student_measures(mean1=mean0,
+                                    Scale1=Scale0,
+                                    df1=df0,
+                                    RrE1=RrE[[h]],
+                                    RrO1=RrO[[h]])
+      return(relcomp_h)
+
     })),nrow=2))
+
     row.names(relfit) <- row.names(relcomp) <- parse_hyp$original_hypothesis
     if(complement == TRUE){
       relfit <- Gaussian_prob_Hc(corrmeanN,corrcovmN,relfit,RrO)
-      relcomp <- jointuniform_prob_Hc(P,numcorrgroup,numG,relcomp,RrO)
+      relcomp <- Student_prob_Hc(mean1=mean0,scale1=Scale0,df1=df0,relmeas1=relcomp,constraints=NULL,RrO1=RrO)
     }
     hypothesisshort <- unlist(lapply(1:nrow(relfit),function(h) paste0("H",as.character(h))))
     row.names(relfit) <- row.names(relfit) <- hypothesisshort
@@ -380,4 +470,20 @@ BF.cor_test <- function(x,
 
 }
 
+
+#get draws from joint uniform prior in Fisher transformed space
+#Call Fortran subroutine in from bct_prior.f90
+draw_ju_r <- function(P, samsize=50000, Fisher=1){
+  testm <- matrix(0,ncol=.5*P*(P-1),nrow=samsize)
+  #  random1 <- rnorm(1)
+  #  random1 <- (random1 - floor(random1))*1e6
+  res <-.Fortran("draw_ju",P = as.integer(P),
+                 drawscorr=testm,
+                 samsize=as.integer(samsize),
+                 numcorrgroup=as.integer(.5*P*(P-1)),
+                 Fisher=as.integer(Fisher),
+                 seed=as.integer( sample.int(1e6,1) ),PACKAGE="BFpack")
+  return(res$drawscorr)
+
+}
 
