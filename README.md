@@ -346,7 +346,7 @@ You can cite the package and the paper using the following reference
 
 Other references with technical details of the methodology, please see
 
-vBayes factors for (multivariate) t tests, (M)AN(C)OVA, (multivariate) regression**
+**Bayes factors for (multivariate) t tests, (M)AN(C)OVA, (multivariate) regression**
 > Mulder, J. (2014). Prior adjusted default Bayes factors for testing (in)equality
 > constrained hypotheses. Computational Statistics and Data Analysis, 71, 448–463.
 > <https://doi.org/10.1016/j.csda.2013.07.017>
