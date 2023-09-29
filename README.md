@@ -330,14 +330,14 @@ are based on the adjusted default Bayes factor using Gaussian approximations
 
 You can cite the package and the paper using the following reference
 
-Paper:
+**Software paper**
 > Mulder, J., Williams, D. R., Gu, X., Olsson-Collentine, A., Tomarken,
 > A., Böing-Messing, F., Hoijtink, H., . . . van Lissa  (2021).
 > BFpack: Flexible Bayes factor testing of scientific theories in R.
 > Journal of Statistical Software, 100(18).
 > Retrieved from <https://arxiv.org/abs/1911.07728>
 
-Software package:
+**Software package**
 > Mulder, J., van Lissa, C., Gu, X., Olsson-Collentine, A.,
 > Boeing-Messing, F., Williams, D. R., Fox, J.-P., Menke, J., et
 > al. (2020). BFpack: Flexible Bayes Factor Testing of Scientific
@@ -346,7 +346,7 @@ Software package:
 
 Other references with technical details of the methodology, please see
 
-Bayes factors for (multivariate) t tests, (M)AN(C)OVA, (multivariate) regression:
+vBayes factors for (multivariate) t tests, (M)AN(C)OVA, (multivariate) regression**
 > Mulder, J. (2014). Prior adjusted default Bayes factors for testing (in)equality
 > constrained hypotheses. Computational Statistics and Data Analysis, 71, 448–463.
 > <https://doi.org/10.1016/j.csda.2013.07.017>
@@ -356,30 +356,30 @@ Bayes factors for (multivariate) t tests, (M)AN(C)OVA, (multivariate) regression
 57:5, 767-783.
 > <https://doi.org/10.1080/00273171.2021.1904809>
 
-Bayes factors for testing measures of association (e.g., correlations): 
+**Bayes factors for testing measures of association (e.g., correlations)** 
 > Mulder, J., & Gelissen, J. P. (2023). Bayes factor testing of equality
 > and order constraints on measures of association in social research.
 > Journal of Applied Statistics, 50(2), 315-351.
 > <https://doi.org/10.1080/02664763.2021.1992360>
 
-Default Bayes factors using Gaussian approximations:
+**Default Bayes factors using Gaussian approximations**
 > Gu. X., Mulder, J., & Hoijtink, J. (2018). Approximated adjusted
 > fractional Bayes factors: A general method for testing informative
 > hypotheses. British Journal of Mathematical and Statistical
 > Psychology.
 > <https://doi.org/10.1111/bmsp.12110>
 
-Bayes factors under exponential random graphs
+**Bayes factors under exponential random graphs**
 > Mulder, J., Friel, N., & Leifeld, P. (2023). Bayesian Testing of Scientific
 > Expectations Under Exponential Random Graph Models.
 > <https://doi.org/10.48550/arXiv.2304.14750>
 
-Bayes factors of intraclass correlations
+**Bayes factors of intraclass correlations**
 > Mulder, J., & Fox, J.-P. (2019). Bayes Factor Testing of Multiple
 > Intraclass Correlations. Bayesian Analysis. 14(2), 521-552.
 > <https://doi.org/10.1214/18-BA1115>
 
-Bayes factors for testing group variances
+**Bayes factors for testing group variances**
 > Böing-Messing, F., van Assen, M. A. L. M., Hofman, A. D., Hoijtink, H., 
 > & Mulder, J. (2017). Bayesian evaluation of constrained hypotheses on
 > variances of multiple independent groups. Psychological Methods, 22(2), 
@@ -391,7 +391,7 @@ Bayes factors for testing group variances
 > 83, 586–617.
 > <https://link.springer.com/article/10.1007/s11336-018-9615-z>
 
-Bayes factors for meta-analyses
+**Bayes factors for meta-analyses**
 > Van Aert R.C.M. & Mulder, J. (2022). Bayesian hypothesis testing and 
 > estimation under the marginalized random-effects meta-analysis model.
 > Psychonomic Bulletin & Review, 29, 55–69.
