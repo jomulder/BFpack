@@ -14,14 +14,9 @@ set.seed(463)
 
 test_that("Hetcor two hypotheses correctly evaluated", {
   expect_equivalent(
-    unname(BF2$BFtu_confirmatory)[-2],
-    c(1.63,0.91),
+    unname(BF2$BFtu_confirmatory),
+    c(1.63,10.2,0.91),
     tolerance = .05
-)
-  expect_equivalent(
-    unname(BF2$BFtu_confirmatory)[2],
-    c(1.616808,16,0.911058)[2],
-    tolerance = 1
   )}
 )
 

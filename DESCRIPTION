@@ -119,6 +119,7 @@ Depends:
     bain
 Imports: 
     stats,
+    utils,
     MASS,
     mvtnorm,
     pracma,
@@ -127,7 +128,6 @@ Imports:
     ergm,
     Bergm,
     sandwich,
-    fitHeavyTail,
     QRM
 Suggests: 
     testthat,
