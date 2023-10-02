@@ -340,7 +340,7 @@ You can cite the package and the paper using the following reference
 **Software package**
 > Mulder, J., van Lissa, C., Gu, X., Olsson-Collentine, A.,
 > Boeing-Messing, F., Williams, D. R., Fox, J.-P., Menke, J., et
-> al. (2020). BFpack: Flexible Bayes Factor Testing of Scientific
+> al. (2020). BFpack: Flexible Bayes Factor Testing of Scientific
 > Expectations. (Version 1.3.0) \[R package\].
 > <https://CRAN.R-project.org/package=BFpack>
 
