@@ -16,7 +16,7 @@ BF.ergm <- function(x,
   K1 <- length(estimate)
   # get design matrix of pseudo likelihood to construct prior covariance matrix
   nw <- x$network
-  form.char <- format(x$formula)
+  form.char <- paste(format(x$formula), collapse = '')
   location_tilde <- regexpr("~",form.char)[1]
   form.new <- as.formula(paste0("nw ~",substr(form.char,start=location_tilde+1,stop=nchar(form.char))))
   x_MPLE <- ergmMPLE(form.new,output="dyadlist")
@@ -122,7 +122,7 @@ BF.bergm <- function(x,
                     complement = TRUE,
                     ...){
 
-  form.char <- format(x$formula)
+  form.char <- paste(format(x$formula), collapse = '')
   location_tilde <- regexpr("~",form.char)[1]
   name.nw <- substr(form.char,start=1,stop=location_tilde-2)
   if(!exists(name.nw)){
