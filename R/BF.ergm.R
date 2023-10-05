@@ -91,7 +91,7 @@ BF.ergm <- function(x,
 get_estimates.ergm <- function(x, ...){
 
   nw <- x$network
-  form.char <- format(x$formula)
+  form.char <- paste(format(x$formula), collapse = '')
   location_tilde <- regexpr("~",form.char)[1]
   form.new <- as.formula(paste0("nw ~",substr(form.char,start=location_tilde+1,stop=nchar(form.char))))
 
@@ -212,7 +212,7 @@ BF.bergm <- function(x,
 #' @export
 get_estimates.bergm <- function(x, ...){
 
-  form.char <- format(x$formula)
+  form.char <- paste(format(x$formula), collapse = '')
   location_tilde <- regexpr("~",form.char)[1]
   name.nw <- substr(form.char,start=1,stop=location_tilde-2)
   if(!exists(name.nw)){
