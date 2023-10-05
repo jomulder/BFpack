@@ -545,12 +545,12 @@ subroutine robust_covest(m, betas1, betas2, mn1, mn2, varb1, varb2, varb1b2Plus,
     integer, parameter :: i6 = selected_int_kind(6)
 
     !Declare local variables
-    integer, intent(in)    :: m
+    integer(i6), intent(in)  :: m
     real(r15), intent(in)    :: betas1(m), betas2(m), mn1, mn2
     real(r15), intent(out)   :: varb1, varb2, varb1b2Plus, varb1b2Min
 
     real(r15)                :: dummy1(m), dummy2(m), Phi075, xxx
-    integer(i6)                :: mmin, i
+    integer(i6)              :: mmin, i
 !
     xxx=0.75
     Phi075 = dinvnr(xxx)
@@ -611,8 +611,8 @@ SUBROUTINE piksrt(n,arr)
   integer, parameter :: r15 = selected_real_kind(15)
   integer, parameter :: i6 = selected_int_kind(6)
 
-  integer(i6):: n, i,j
-  real(r15):: arr(n), a
+  integer(i6) :: n, i,j
+  real(r15)   :: arr(n), a
 
   do j=2, n
     a=arr(j)
@@ -669,7 +669,6 @@ subroutine kronecker(dimA,dimB,A,B,AB)
     end do
 !
 end subroutine kronecker
-
 
 
 function diag(A, n)
@@ -871,7 +870,7 @@ function runiform ( iseed )
     iseed = iseed + i4_huge
   end if
 
-  runiform = real ( iseed, kind = 8 ) * 4.656612875D-10
+  runiform = real ( iseed, kind = r15 ) * 4.656612875D-10
 
 return
 end function runiform
@@ -1088,7 +1087,7 @@ SUBROUTINE genmn(parm,x,p,iseed)
   !     ..
   !     .. Local Scalars ..
         real(r15) ae
-        integer(i6) i,icount,j
+        integer(i6) :: i,icount,j
   !    ..
   !     .. External Functions ..
   !     ..
@@ -1175,9 +1174,9 @@ subroutine spofa(a,lda,n,info)
 !
 !     internal variables
 !
-      real(8) t
-      real(8) s
-      integer j,jm1,k
+      real(r15) t
+      real(r15) s
+      integer(i6) :: j,jm1,k
 !     begin block with ...exits to 40
 !
 !
@@ -1220,17 +1219,17 @@ REAL(8) FUNCTION sdot(N,SX,INCX,SY,INCY)
     integer, parameter :: r15 = selected_real_kind(15)
     integer, parameter :: i6 = selected_int_kind(6)
 
-    INTEGER(i6) INCX,INCY,N
+    INTEGER(i6) :: INCX,INCY,N
  !     ..
   !    .. Array Arguments ..
-    REAL(r15) SX(*),SY(*)
+    REAL(r15) :: SX(*),SY(*)
  !    ..
  !
  !  =====================================================================
  !
  !     .. Local Scalars ..
-    REAL(r15) STEMP
-    INTEGER(i6) I,IX,IY,M,MP1
+    REAL(r15) :: STEMP
+    INTEGER(i6) :: I,IX,IY,M,MP1
  !     ..
  !     .. Intrinsic Functions ..
     INTRINSIC mod

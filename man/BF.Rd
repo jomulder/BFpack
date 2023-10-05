@@ -198,8 +198,6 @@ BF(ttest1)
 
 # EXAMPLE 2. ANOVA
 aov1 <- aov(price ~ anchor * motivation, data = tvprices)
-# check the names of the model parameters
-names(aov1$coefficients)
 BF1 <- BF(aov1, hypothesis = "anchorrounded = motivationlow;
                               anchorrounded < motivationlow;
                               anchorrounded > motivationlow")
@@ -212,8 +210,8 @@ BF(lm1, hypothesis = "wt < cyl < hp = 0")
 # EXAMPLE 4. Logistic regression
 fit <- glm(sent ~ ztrust + zfWHR + zAfro + glasses + attract + maturity +
    tattoos, family = binomial(), data = wilson)
-BF1 <- BF(fit, hypothesis = "ztrust > (zfWHR, zAfro) > 0;
-                             ztrust > 0 & zfWHR=zAfro= 0")
+BF1 <- BF(fit, hypothesis = "(ztrust, zfWHR ) > 0;
+                             ztrust > 0 & zfWHR = 0")
 summary(BF1)
 
 # EXAMPLE 5. Correlation analysis
