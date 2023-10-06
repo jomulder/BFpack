@@ -76,6 +76,14 @@ BF.ergm <- function(x,
                                          complement = complement)
   }
 
+  postestimates <- cbind(apply(Bergm.out$Theta,2,mean),
+                          apply(Bergm.out$Theta,2,median),
+                          apply(Bergm.out$Theta,2,quantile,.025),
+                          apply(Bergm.out$Theta,2,quantile,.975))
+  rownames(postestimates) <- names(estimate)
+  colnames(postestimates) <- c("mean","median","2.5%","97.5%")
+
+  BFergm_out$estimates <- postestimates
   BFergm_out$model <- x
   BFergm_out$call <- match.call()
   BFergm_out$bayesfactor <- "Bayes factors based on unit-information priors and Gaussian approximations"
@@ -198,6 +206,14 @@ BF.bergm <- function(x,
                                          complement = complement)
   }
 
+  postestimates <- cbind(apply(Bergm.out$Theta,2,mean),
+                         apply(Bergm.out$Theta,2,median),
+                         apply(Bergm.out$Theta,2,quantile,.025),
+                         apply(Bergm.out$Theta,2,quantile,.975))
+  rownames(postestimates) <- names(estimate)
+  colnames(postestimates) <- c("mean","median","2.5%","97.5%")
+
+  BFergm_out$estimates <- postestimates
   BFergm_out$model <- x
   BFergm_out$call <- match.call()
   BFergm_out$bayesfactor <- "Bayes factors based on unit-information priors and Gaussian approximations"
