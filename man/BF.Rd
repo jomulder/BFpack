@@ -106,13 +106,13 @@ equality and/or order constraints on the parameters of interest.
 }
 \details{
 The function requires a fitted modeling object. Current analyses
-that are supported: \code{\link[bain]{t_test}},
+that are supported of objects of class: \code{\link[bain]{t_test}},
 \code{\link[BFpack]{bartlett_test}},
 \code{\link[stats]{aov}}, \code{\link[stats]{manova}},
 \code{\link[stats]{lm}}, \code{mlm},
 \code{\link[stats]{glm}}, \code{\link[polycor]{hetcor}},
 \code{\link[lme4]{lmer}}, \code{\link[survival]{coxph}},
-\code{\link[survival]{survreg}},
+\code{\link[survival]{survreg}}, \code{\link[survival]{ergm}}, \code{\link[survival]{bergm}}
 \code{\link[pscl]{zeroinfl}}, \code{\link[metafor]{rma}} and \code{\link[MASS]{polr}}.
 
 For testing parameters from the results of t_test(), lm(), aov(),
