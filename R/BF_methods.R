@@ -106,6 +106,8 @@
 #' in R. Journal of Statistical Software. <DOI:10.18637/jss.v100.i18>
 #' @examples
 #' \dontshow{
+#' library(BFpack)
+#'
 #' # EXAMPLE 1. One-sample t test
 #' ttest1 <- t_test(therapeutic, mu = 5)
 #' print(ttest1)
@@ -156,6 +158,8 @@
 #' summary(BF1)
 #' }
 #' \donttest{
+#' library(BFpack)
+#'
 #' # EXAMPLE 1. One-sample t test
 #' ttest1 <- bain::t_test(therapeutic, mu = 5)
 #' print(ttest1)

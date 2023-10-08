@@ -109,6 +109,7 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
         corrteller = 0
         tellers = 0
         do g1 = 1,numG
+
             !compute means of latent W's for all observations
             meanMat(1:Njs(g1),1:P) = matmul(Xgroups(g1,1:Njs(g1),1:K),BDraws(g1,1:K,1:P))
             Ccurr = CDraws(g1,:,:)
@@ -117,7 +118,12 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
             !draw latent W's for the ordinal Y's
             !compute mean vector for
 
+            write(*,*)'burnin',s1,g1,0
+
             do p1=1,P
+
+                write(*,*)'burnin',s1,g1,p1
+
                 if(ordinal(g1,p1)>0) then
                     do i1=1,Njs(g1)
                         Yi1Categorie = int(Ygroups(g1,i1,p1))
@@ -194,15 +200,21 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                 end if
             end do
 
+            write(*,*)'burnin',s1,g1,1
+
             Bmean(1:K,1:P) = matmul(matmul(XtXi(g1,:,:),transpose(Xgroups(g1,1:Njs(g1),1:K))), &
                 Wgroups(g1,1:Njs(g1),1:P))
             call kronecker(K,P,XtXi(g1,:,:),SigmaMatDraw,covBeta)
+
+            write(*,*)'burnin',s1,g1,2
 
             call setgmn(meanO,covBeta,P*K,para)
             call GENMN(para,betaDrawj(1,1:(P*K)),P*K,iseed)
             do p1 = 1,P
                 BDraws(g1,:,p1) = betaDrawj(1,((p1-1)*K+1):(p1*K)) + Bmean(1:K,p1)
             end do
+
+            write(*,*)'burnin',s1,g1,3
 
             !draw R using method of Liu and Daniels (LD, 2006)
             !draw candidate R
@@ -227,6 +239,8 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
             R_MH = exp(logR_MH_part3)
             !write(*,*) s1, R_MH, logR_MH_part3
 
+            write(*,*)'burnin',s1,g1,4
+
             !note that if Wp is not the identity matrix we have to
             !compute sum(diagonals(matmul(Wp,RcurrInv)))
             rnunif = runiform(iseed)
@@ -257,6 +271,8 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                 end if
             end do
 
+            write(*,*)'burnin',s1,g1,5
+
             !Draw parameter extended parameter by Liu and Sabatti (2001) via random walk
             SigmaInv = matmul(matmul(diag(1/sigmaDraws(g1,:),P),Cinv),diag(1/sigmaDraws(g1,:),P))
             do p1 = 1,P
@@ -280,6 +296,8 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                 end if
             end do
 
+            write(*,*)'burnin',s1,g1,6
+
         end do
 !
     end do
@@ -288,7 +306,11 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
     do s1 = 1,samsize0
         corrteller = 0
         tellers = 0
+
         do g1 = 1,numG
+
+            write(*,*)'samsize0',s1,g1,1
+
             !compute means of latent W's for all observations
             meanMat(1:Njs(g1),1:P) = matmul(Xgroups(g1,1:Njs(g1),1:K),BDraws(g1,1:K,1:P))
             Ccurr = CDraws(g1,:,:)
@@ -375,15 +397,21 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
 !
             end do
 
+            write(*,*)'samsize0',s1,g1,2
+
             Bmean(1:K,1:P) = matmul(matmul(XtXi(g1,:,:),transpose(Xgroups(g1,1:Njs(g1),1:K))), &
                 Wgroups(g1,1:Njs(g1),1:P))
             call kronecker(K,P,XtXi(g1,:,:),SigmaMatDraw,covBeta)
+
+            write(*,*)'samsize0',s1,g1,3
 
             call setgmn(meanO,covBeta,P*K,para)
             call GENMN(para,betaDrawj(1,1:(P*K)),P*K,iseed)
             do p1 = 1,P
                 BDraws(g1,:,p1) = betaDrawj(1,((p1-1)*K+1):(p1*K)) + Bmean(1:K,p1)
             end do
+
+            write(*,*)'samsize0',s1,g1,4
 
             !draw R using method of Liu and Daniels (LD, 2006)
             !draw candidate R
@@ -407,6 +435,8 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
             logR_MH_part3 = (-.5*real(P+1))*(log(det(Ccurr,P,-1))-log(det(Ccan,P,-1)))
             R_MH = exp(logR_MH_part3)
 
+            write(*,*)'samsize0',s1,g1,5
+
             !note that if Wp is not the identity matrix we have to
             !compute sum(diagonals(matmul(Wp,RcurrInv)))
             rnunif = runiform(iseed)
@@ -422,6 +452,8 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                     (1-CDraws(g1,(1+i1):P,i1)))
                 corrteller = corrteller + (P - i1)
             end do
+
+            write(*,*)'samsize0',s1,g1,6
 
             !draw sigma's
             do p1 = 1,P
@@ -441,6 +473,8 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                     end if
                 end if
             end do
+
+            write(*,*)'samsize0',s1,g1,7
 
             !Draw parameter extended parameter by Liu and Sabatti (2001) via random walk
             SigmaInv = matmul(matmul(diag(1/sigmaDraws(g1,:),P),Cinv),diag(1/sigmaDraws(g1,:),P))
@@ -465,6 +499,8 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                 end if
             end do
 
+            write(*,*)'samsize0',s1,g1,8
+
         end do
 
         BDrawsStore(s1,1:numG,1:K,1:P) = BDraws(1:numG,1:K,1:P)
@@ -476,6 +512,8 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
 !
     end do
 
+    write(*,*)'compute posterior mean'
+
     ! compute posterior mean
     do c1=1,numcorr
         dummy2(:) = Zcorr_sample(:,c1)
@@ -483,6 +521,8 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
         call piksrt(samsize0,dummy3)
         postZmean(c1,1) = dummy3(int(samsize0*.5))
     end do
+
+    write(*,*)'compute posterior covariance matrix'
 !
     ! compute posterior covariance matrix
     do c1=1,numcorr
@@ -493,6 +533,8 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
             postZcov(c2,c1) = postZcov(c1,c2)
         end do
     end do
+
+    write(*,*)'compute posterior quantiles'
 !
     ! compute posterior quantiles
     lower_int = int(samsize0*.025)
@@ -529,6 +571,8 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
             end if
         end do
     end do
+
+    write(*,*)'end'
 
 
 contains
