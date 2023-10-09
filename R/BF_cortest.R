@@ -221,6 +221,9 @@ cor_test <- function(..., formula = NULL, iter = 5e3, burnin = 3e3){
     mean_g <- apply(Fdraws_g,2,mean)
     names(mean_g) <- corrnames[[g]][lower.tri(diag(P))]
     covm_g <- cov(Fdraws_g)
+    ### DELETE THIS
+    #covm_g <- diag(numcorr/numG)
+    ### DELETE THIS
     return(list(mean_g,covm_g))
   })
 
