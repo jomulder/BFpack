@@ -221,6 +221,9 @@ cor_test <- function(..., formula = NULL, iter = 5e3, burnin = 3e3){
     mean_g <- apply(Fdraws_g,2,mean)
     names(mean_g) <- corrnames[[g]][lower.tri(diag(P))]
     covm_g <- cov(Fdraws_g)
+    ### DELETE THIS
+    #covm_g <- diag(numcorr/numG)
+    ### DELETE THIS
     return(list(mean_g,covm_g))
   })
 
@@ -301,10 +304,11 @@ remove_predictors_helper <- function(Y_groups, formula){
 
 FisherZ <- function(r){.5*log((1+r)/(1-r))}
 
+globalVariables(c("Fcor"))
 
 #' @importFrom mvtnorm dmvnorm pmvnorm rmvnorm
+#' @importFrom utils globalVariables
 #' @importFrom stats dnorm pnorm
-#' @importFrom fitHeavyTail fit_mvt
 #' @importFrom QRM fit.st
 #' @method BF cor_test
 #' @export
@@ -326,9 +330,15 @@ BF.cor_test <- function(x,
 
   # Exploratory testing of correlation coefficients
   #get height of prior density at 0 of Fisher transformed correlation
-  drawsJU <- draw_ju_r(P,samsize=50000,Fisher=1)
-  approx_studt <- QRM::fit.st(c(drawsJU))$par.ests
-  relcomp0 <- dt(0,df=approx_studt[1])/approx_studt[3] # all marginal priors are the same
+  if(sum(P==Fcor$P)==0){
+    #number of draws to get 1e7 draws for the marginal of 1 Fisher transformation correlation
+    numdraws <- round(1e7/(P*(P-1)/2))
+    drawsJU <- draw_ju_r(P,samsize=numdraws,Fisher=1)
+    approx_studt <- QRM::fit.st(c(drawsJU))$par.ests[c(1,3)]
+  }else{
+    approx_studt <- unlist(c(Fcor[which(P==Fcor$P),1:2]))
+  }
+  relcomp0 <- dt(0,df=approx_studt[1])/approx_studt[2] # all marginal priors are the same
 
   # compute exploratory BFs
   corr_names <- rownames(x$correstimates)
@@ -385,17 +395,16 @@ BF.cor_test <- function(x,
     # approximate unconstrained Fisher transformed correlations with a multivariate Student t
     if(numcorrgroup==1){
       if(numcorr==1){
-        Scale0 <- as.matrix(approx_studt[3]**2)
+        Scale0 <- as.matrix(approx_studt[2]**2)
       }else{
-        Scale0 <- diag(rep(approx_studt[3]**2,numG))
+        Scale0 <- diag(rep(approx_studt[2]**2,numG))
       }
       mean0 <- rep(0,numG)
       df0 <- round(approx_studt[1])
     }else{
-      approx_studt <- fit_mvt(X=drawsJU)
       mean0 <- rep(0,numcorrgroup*numG)
-      Scale0 <- diag(rep(mean(diag(approx_studt$scatter)),numcorrgroup*numG))
-      df0 <- round(approx_studt$nu)
+      Scale0 <- diag(rep(approx_studt[2]**2,numcorrgroup*numG))
+      df0 <- round(approx_studt[1])
     }
     relcomp <- t(matrix(unlist(lapply(1:numhyp,function(h){
       relcomp_h <- Student_measures(mean1=mean0,

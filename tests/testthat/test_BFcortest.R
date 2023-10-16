@@ -4,7 +4,7 @@ set.seed(123)
 cor1 <- cor_test(mtcars[,4:6])
 BF1 <- BF(cor1)
 PHPexplo <- matrix(
-  c(0.1,  0.9,  0.0,
+  c(0.12,  0.87,  0.0,
     0.0,  0.0,  1.0,
     0.0,  1.0,  0.0),nrow=3,byrow=T)
 test_that("BF.cor_test exploratory hypotheses on correlations correctly evaluated", {
@@ -14,9 +14,9 @@ test_that("BF.cor_test exploratory hypotheses on correlations correctly evaluate
 # confirmatory hypothesis test on the correlations
 BF2 <- BF(cor1,hypothesis="wt_with_drat<drat_with_hp<wt_with_hp;
    wt_with_drat=drat_with_hp<0<wt_with_hp")
-BFtable <- matrix(c(   0,    1,  5.6,
-                      -1,    0,  4.6,
-                    -5.6, -4.6,    0),byrow=TRUE,nrow=3)
+BFtable <- matrix(c(   0,    1.3,  6,
+                      -1.3,    0,  4.7,
+                    -6, -4.7,    0),byrow=TRUE,nrow=3)
 test_that("BF.cor_test confirmatory hypotheses on correlations correctly evaluated", {
   expect_equivalent(
     log(BF2$BFmatrix_confirmatory),BFtable, tolerance = .5
@@ -51,7 +51,7 @@ test_that("check estimate of polychoric correlation", {
   )})
 BF2 <- BF(cor2,hypothesis="am_with_vs= .1")
 PHPexplo <- matrix(
-  c(.5,  .09,  .41),nrow=1,byrow=T)
+  c(.49,  .09,  .42),nrow=1,byrow=T)
 # exploratory hypothesis test on the correlation
 test_that("BF.cor_test exploratory hypotheses on correlations correctly evaluated", {
   expect_equivalent(
@@ -60,7 +60,7 @@ test_that("BF.cor_test exploratory hypotheses on correlations correctly evaluate
 # confirmatory hypothesis test on the correlation
 test_that("BF.cor_test confirmatory hypotheses on correlations correctly evaluated", {
   expect_equivalent(
-    log(BF2$BFmatrix_confirmatory[1,2]),.9, tolerance = .2
+    log(BF2$BFmatrix_confirmatory[1,2]),.93, tolerance = .1
   )})
 
 # estimate correlations for unequal groups
@@ -91,6 +91,6 @@ cor4 <- cor_test(mtcars_test)
 BF4 <- BF(cor4)
 test_that("BF.cor_test exploratory hypotheses on correlations mixed measurement levels", {
   expect_equivalent(
-    BF4$PHP_exploratory[,1],c(0,.04,.07,.05,.07,.02), tolerance = .1
+    BF4$PHP_exploratory[,1],c(0,.074,.06,.075,.061,.00), tolerance = .1
   )})
 

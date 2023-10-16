@@ -1,6 +1,9 @@
-# Version 1.2.2
-* Necessary updates on the random number generation in Fortran subroutines.
-* Extension of BF.ergm and BF.bergm for Bayesian hypothesis testing under exponential random graph models
+# BFpack 1.3.0
+
+* Date: 2023-10-02
+* Faster computation of BFs for correlations.
+* BF for testing correlations can now also handle ordinal dependent variables.
+* Further updates of Fortran code to resolve warnings related to use of 'kind'.
 * Minor edits.
 
 ## Test environments

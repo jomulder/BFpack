@@ -10,7 +10,7 @@ BF6_cor <- BF(cor1, hypothesis=
 #check results
 test_that("correlation test on cor_test object with two groups correctly evaluated", {
   expect_equivalent(
-    log(BF6_cor$BFmatrix_confirmatory[1,2]), 5.0, tolerance = .3
+    log(BF6_cor$BFmatrix_confirmatory[1,2]), 5.0, tolerance = .5
 )})
 
 
