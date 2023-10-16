@@ -107,6 +107,8 @@ cor_test <- function(..., formula = NULL, iter = 5e3, burnin = 3e3){
       }
     }
   }
+  #because ordinal variables are not yet supported we set these indicators to '0'
+  ordi <- numcats <- matrix(0,nrow=numG,ncol=P)
 
   model_matrices <- lapply(seq_len(numG) , function(x) {
     model.matrix(formula, Y_groups[[x]])
@@ -169,7 +171,7 @@ cor_test <- function(..., formula = NULL, iter = 5e3, burnin = 3e3){
   # call Fortran subroutine for Gibbs sampling using noninformative improper priors
   # for regression coefficients, Jeffreys priors for standard deviations, and a proper
   # joint uniform prior for the correlation matrices.
-  res <- .Fortran("estimate_bct_ordinal",
+  res <- .Fortran("estimate_postmeancov_fisherz",
                   postZmean=matrix(0,numcorr,1),
                   postZcov=matrix(0,numcorr,numcorr),
                   P=as.integer(P),
@@ -177,26 +179,20 @@ cor_test <- function(..., formula = NULL, iter = 5e3, burnin = 3e3){
                   K=as.integer(K),
                   numG=as.integer(numG),
                   BHat=round(BHat,3),
-                  sdHat=round(sdHat,3),
+                  sdHat=rbind(sdHat,sdsd),
                   CHat=round(CHat,3),
                   XtXi=XtXi,
                   samsize0=as.integer(samsize0),
-                  burnin=as.integer(burnin),
-                  Ntot=as.integer(Ntot),
-                  Njs_in=as.numeric(ngroups),
-                  Xgroups=Xgroups,
+                  Njs=as.integer(ngroups),
                   Ygroups=Ygroups,
+                  Xgroups=Xgroups,
+                  Ntot=as.integer(Ntot),
                   C_quantiles=array(0,dim=c(numG,P,P,3)),
                   sigma_quantiles=array(0,dim=c(numG,P,3)),
                   B_quantiles=array(0,dim=c(numG,K,P,3)),
                   BDrawsStore=array(0,dim=c(samsize0,numG,K,P)),
                   sigmaDrawsStore=array(0,dim=c(samsize0,numG,P)),
                   CDrawsStore=array(0,dim=c(samsize0,numG,P,P)),
-                  sdMH=sdsd,
-                  ordinal_in=ordi,
-                  Cat_in=numcats,
-                  maxCat=as.integer(max(numcats)),
-                  gLiuSab=gLiuSab,
                   seed=as.integer( sample.int(1e6,1) ))
 
   varnames <- lapply(1:numG,function(g){

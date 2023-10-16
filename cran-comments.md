@@ -1,9 +1,8 @@
-# BFpack 1.3.0
+# BFpack 1.2.3
 
-* Date: 2023-10-02
+* Date: 2023-10-16
+* Resolve CRAN warnings related to use of 'kind' in Fortran subroutines.
 * Faster computation of BFs for correlations.
-* BF for testing correlations can now also handle ordinal dependent variables.
-* Further updates of Fortran code to resolve warnings related to use of 'kind'.
 * Minor edits.
 
 ## Test environments
