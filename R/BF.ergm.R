@@ -16,7 +16,7 @@ BF.ergm <- function(x,
   K1 <- length(estimate)
   # get design matrix of pseudo likelihood to construct prior covariance matrix
   nw <- x$network
-  form.char <- paste(format(x$formula), collapse = '')
+  form.char <- format(x$formula)
   location_tilde <- regexpr("~",form.char)[1]
   form.new <- as.formula(paste0("nw ~",substr(form.char,start=location_tilde+1,stop=nchar(form.char))))
   x_MPLE <- ergmMPLE(form.new,output="dyadlist")
@@ -76,14 +76,6 @@ BF.ergm <- function(x,
                                          complement = complement)
   }
 
-  postestimates <- cbind(apply(Bergm.out$Theta,2,mean),
-                          apply(Bergm.out$Theta,2,median),
-                          apply(Bergm.out$Theta,2,quantile,.025),
-                          apply(Bergm.out$Theta,2,quantile,.975))
-  rownames(postestimates) <- names(estimate)
-  colnames(postestimates) <- c("mean","median","2.5%","97.5%")
-
-  BFergm_out$estimates <- postestimates
   BFergm_out$model <- x
   BFergm_out$call <- match.call()
   BFergm_out$bayesfactor <- "Bayes factors based on unit-information priors and Gaussian approximations"
@@ -99,7 +91,7 @@ BF.ergm <- function(x,
 get_estimates.ergm <- function(x, ...){
 
   nw <- x$network
-  form.char <- paste(format(x$formula), collapse = '')
+  form.char <- format(x$formula)
   location_tilde <- regexpr("~",form.char)[1]
   form.new <- as.formula(paste0("nw ~",substr(form.char,start=location_tilde+1,stop=nchar(form.char))))
 
@@ -130,7 +122,7 @@ BF.bergm <- function(x,
                     complement = TRUE,
                     ...){
 
-  form.char <- paste(format(x$formula), collapse = '')
+  form.char <- format(x$formula)
   location_tilde <- regexpr("~",form.char)[1]
   name.nw <- substr(form.char,start=1,stop=location_tilde-2)
   if(!exists(name.nw)){
@@ -206,14 +198,6 @@ BF.bergm <- function(x,
                                          complement = complement)
   }
 
-  postestimates <- cbind(apply(Bergm.out$Theta,2,mean),
-                         apply(Bergm.out$Theta,2,median),
-                         apply(Bergm.out$Theta,2,quantile,.025),
-                         apply(Bergm.out$Theta,2,quantile,.975))
-  rownames(postestimates) <- names(estimate)
-  colnames(postestimates) <- c("mean","median","2.5%","97.5%")
-
-  BFergm_out$estimates <- postestimates
   BFergm_out$model <- x
   BFergm_out$call <- match.call()
   BFergm_out$bayesfactor <- "Bayes factors based on unit-information priors and Gaussian approximations"
@@ -228,7 +212,7 @@ BF.bergm <- function(x,
 #' @export
 get_estimates.bergm <- function(x, ...){
 
-  form.char <- paste(format(x$formula), collapse = '')
+  form.char <- format(x$formula)
   location_tilde <- regexpr("~",form.char)[1]
   name.nw <- substr(form.char,start=1,stop=location_tilde-2)
   if(!exists(name.nw)){

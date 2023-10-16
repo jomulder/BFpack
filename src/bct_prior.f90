@@ -4,18 +4,16 @@ subroutine draw_ju(P,drawscorr,samsize,numcorrgroup,Fisher,seed)
 
     implicit none
 
-    integer, parameter :: r15 = selected_real_kind(15)
-    integer, parameter :: i6 = selected_int_kind(6)
-
-    integer(i6), intent(in) :: P, samsize, numcorrgroup, Fisher, seed
-    integer(i6)             :: s1,r1, r2, i1, i2, k1, corrIndex(P,P), teldummy,&
-                               t1, t2, iseed, error1
-    real (r15)              :: corrMat(P,P),draw1(1),&
-                               R2inv(P,P), vec1(P,1), vec2(P,1),&
-                               dummy11(1,1), dummy12(1,1), dummy22(1,1),&
-                               Di1i2, preinv(P,P)
-    real(r15), intent (out) :: drawscorr(samsize,numcorrgroup)
-    real(r15)               :: alpha
+    integer, intent(in)                 :: P, samsize, numcorrgroup, Fisher, seed
+    integer                             :: s1,r1, r2, i1, i2, k1, corrIndex(P,P), teldummy,&
+                                           t1, t2, iseed
+    real (8)                            :: corrMat(P,P),draw1(1),&
+                                           R2inv(P,P), vec1(P,1), vec2(P,1),&
+                                           dummy11(1,1), dummy12(1,1), dummy22(1,1),&
+                                           Di1i2, &
+                                           preinv(P,P)
+    real(8), intent (out)               :: drawsCorr(samsize,numcorrgroup)
+    real(4)                             :: alpha
 
 !========================================================================================!
 
@@ -55,7 +53,7 @@ subroutine draw_ju(P,drawscorr,samsize,numcorrgroup,Fisher,seed)
             draw1 = draw1*2.0-1.0
             corrMat(r1,r1+1) = draw1(1)
             corrMat(r1+1,r1) = corrMat(r1,r1+1)
-            drawscorr(s1,corrIndex(r1+1,r1)) = corrMat(r1,r1+1)
+            drawsCorr(s1,corrIndex(r1+1,r1)) = corrMat(r1,r1+1)
         end do
         R2inv(:,:) = 0
         preinv(:,:)= 0
@@ -72,9 +70,7 @@ subroutine draw_ju(P,drawscorr,samsize,numcorrgroup,Fisher,seed)
                 vec1(1:(k1-1),1) = corrMat(i1,(i1+1):(i1+k1-1))
                 vec2(1:(k1-1),1) = corrMat(i2,(i1+1):(i1+k1-1))
                 preinv(1:(i2-i1-1),1:(i2-i1-1)) = ((corrMat((i1+1):(i2-1),(i1+1):(i2-1))))
-        !        R2inv(1:(i2-i1-1),1:(i2-i1-1)) = inverse(preinv(1:(i2-i1-1),1:(i2-i1-1)),(i2-i1-1))
-                call FINDinv(preinv(1:(i2-i1-1),1:(i2-i1-1)),R2inv(1:(i2-i1-1),1:(i2-i1-1)),(i2-i1-1),error1)
-
+                R2inv(1:(i2-i1-1),1:(i2-i1-1)) = inverse(preinv(1:(i2-i1-1),1:(i2-i1-1)),(i2-i1-1))
                 dummy11 = matmul(matmul(transpose(vec1(1:(k1-1),:)),R2inv(1:(i2-i1-1),1:(i2-i1-1))),vec1(1:(k1-1),:))
                 dummy22 = matmul(matmul(transpose(vec2(1:(k1-1),:)),R2inv(1:(i2-i1-1),1:(i2-i1-1))),vec2(1:(k1-1),:))
                 dummy12 = matmul(matmul(transpose(vec1(1:(k1-1),:)),R2inv(1:(i2-i1-1),1:(i2-i1-1))),vec2(1:(k1-1),:))
@@ -83,120 +79,98 @@ subroutine draw_ju(P,drawscorr,samsize,numcorrgroup,Fisher,seed)
                 corrMat(i1,i2) = dummy12(1,1) + Di1i2*draw1(1)
                 corrMat(i2,i1) = corrMat(i1,i2)
 
-                drawscorr(s1,corrIndex(i1,i2)) = corrMat(i1,i2)
+                drawsCorr(s1,corrIndex(i1,i2)) = corrMat(i1,i2)
                 end do
             end do
         end do
     if(Fisher==1) then
-        drawscorr(1:samsize,1:numcorrgroup) = .5*log((1.0+drawscorr(1:samsize,1:numcorrgroup)) &
-                                        /(1.0-drawscorr(1:samsize,1:numcorrgroup)))
+        drawsCorr(1:samsize,1:numcorrgroup) = .5*log((1.0+drawsCorr(1:samsize,1:numcorrgroup)) &
+                                        /(1.0-drawsCorr(1:samsize,1:numcorrgroup)))
     end if
-
-
 contains
 
 
-!Subroutine to find the inverse of a square matrix
-!Author : Louisda16th a.k.a Ashwith J. Rego
-!Reference : Algorithm has been well explained in:
-!http://math.uww.edu/~mcfarlat/inverse.htm
-!http://www.tutor.ms.unimelb.edu.au/matrix/matrix_inverse.html
-SUBROUTINE FINDinv(matrix, inverse, n, errorflag)
 
-    implicit none
-!
-    integer, parameter :: r15 = selected_real_kind(15)
-    integer, parameter :: i6 = selected_int_kind(6)
+function inverse(a,n)
+!============================================================
+! Inverse matrix
+! Method: Based on Doolittle LU factorization for Ax=b
+! Alex G. December 2009
+!-----------------------------------------------------------
+! input ...
+! a(n,n) - array of coefficients for matrix A
+! n      - dimension
+! output ...
+! c(n,n) - inverse matrix of A
+! comments ...
+! the original matrix a(n,n) will be destroyed
+! during the calculation
+!===========================================================
 
-    !Declarations
-    INTEGER(i6), INTENT(IN) :: n
-    REAL(r15), INTENT(IN) :: matrix(n,n)  !Input matrix
-    INTEGER(i6), INTENT(OUT) :: errorflag  !Return error status. -1 for error, 0 for normal
-    REAL(r15), INTENT(OUT) :: inverse(n,n) !Inverted matrix
+integer n
+double precision a(n,n), inverse(n,n)
+double precision L(n,n), U(n,n), b(n), d(n), x(n)
+double precision coeff
+integer i, j, k
 
-    LOGICAL :: FLAG = .TRUE.
-    INTEGER(i6) :: i, j, k
-    REAL(r15) :: m
-    REAL(r15), DIMENSION(n,2*n) :: augmatrix !augmented matrix
+! step 0: initialization for matrices L and U and b
+! Fortran 90/95 aloows such operations on matrices
+L=0.0
+U=0.0
+b=0.0
 
-    inverse = eye(n)
-    !Augment input matrix with an identity matrix
-    DO i = 1, n
-        DO j = 1, 2*n
-            IF (j <= n ) THEN
-                augmatrix(i,j) = matrix(i,j)
-            ELSE IF ((i+n) == j) THEN
-                augmatrix(i,j) = 1
-            Else
-                augmatrix(i,j) = 0
-            ENDIF
-        END DO
-    END DO
+! step 1: forward elimination
+do k=1, n-1
+   do i=k+1,n
+      coeff=a(i,k)/a(k,k)
+      L(i,k) = coeff
+      do j=k+1,n
+         a(i,j) = a(i,j)-coeff*a(k,j)
+      end do
+   end do
+end do
 
-    !Reduce augmented matrix to upper traingular form
-    DO k =1, n-1
-        IF (augmatrix(k,k) == 0) THEN
-            FLAG = .FALSE.
-            DO i = k+1, n
-                IF (augmatrix(i,k) /= 0) THEN
-                    DO j = 1,2*n
-                        augmatrix(k,j) = augmatrix(k,j)+augmatrix(i,j)
-                    END DO
-                    FLAG = .TRUE.
-                    EXIT
-                ENDIF
-                IF (FLAG .EQV. .FALSE.) THEN
-!                    PRINT*, "Matrix is non - invertible"
-                    inverse = 0
-                    errorflag = -1
-                    return
-                ENDIF
-            END DO
-        ENDIF
-        DO j = k+1, n
-            m = augmatrix(j,k)/augmatrix(k,k)
-            DO i = k, 2*n
-                augmatrix(j,i) = augmatrix(j,i) - m*augmatrix(k,i)
-            END DO
-        END DO
-    END DO
+! Step 2: prepare L and U matrices
+! L matrix is a matrix of the elimination coefficient
+! + the diagonal elements are 1.0
+do i=1,n
+  L(i,i) = 1.0
+end do
+! U matrix is the upper triangular part of A
+do j=1,n
+  do i=1,j
+    U(i,j) = a(i,j)
+  end do
+end do
 
-    !Test for invertibility
-    DO i = 1, n
-        IF (augmatrix(i,i) == 0) THEN
-!            PRINT*, "Matrix is non - invertible"
-            inverse = 0
-            errorflag = -1
-            return
-        ENDIF
-    END DO
+! Step 3: compute columns of the inverse matrix C
+do k=1,n
+  b(k)=1.0
+  d(1) = b(1)
+! Step 3a: Solve Ld=b using the forward substitution
+  do i=2,n
+    d(i)=b(i)
+    do j=1,i-1
+      d(i) = d(i) - L(i,j)*d(j)
+    end do
+  end do
+! Step 3b: Solve Ux=d using the back substitution
+  x(n)=d(n)/U(n,n)
+  do i = n-1,1,-1
+    x(i) = d(i)
+    do j=n,i+1,-1
+      x(i)=x(i)-U(i,j)*x(j)
+    end do
+    x(i) = x(i)/u(i,i)
+  end do
+! Step 3c: fill the solutions x(n) into column k of C
+  do i=1,n
+    inverse(i,k) = x(i)
+  end do
+  b(k)=0.0
+end do
+end function inverse
 
-    !Make diagonal elements as 1
-    DO i = 1 , n
-        m = augmatrix(i,i)
-        DO j = i , (2 * n)
-            augmatrix(i,j) = (augmatrix(i,j) / m)
-        END DO
-    END DO
-
-    !Reduced right side half of augmented matrix to identity matrix
-    DO k = n-1, 1, -1
-        DO i = 1, k
-            m = augmatrix(i,k+1)
-            DO j = k, (2*n)
-                augmatrix(i,j) = augmatrix(i,j) -augmatrix(k+1,j) * m
-            END DO
-        END DO
-    END DO
-
-    !store answer
-    DO i =1, n
-        DO j = 1, n
-            inverse(i,j) = augmatrix(i,j+n)
-        END DO
-    END DO
-    errorflag = 0
-END SUBROUTINE FINDinv
 
 
 
@@ -221,21 +195,15 @@ FUNCTION random_beta(aa, bb, first, iseed) RESULT(fn_val)
 !     AA = SHAPE PARAMETER FROM DISTRIBUTION (0 < REAL)
 !     BB = SHAPE PARAMETER FROM DISTRIBUTION (0 < REAL)
 
-    implicit none
-
-    integer, parameter :: r15 = selected_real_kind(15)
-    integer, parameter :: i6 = selected_int_kind(6)
-
-    REAL(r15), INTENT(IN)    :: aa, bb
+    REAL, INTENT(IN)    :: aa, bb
     LOGICAL, INTENT(IN) :: first
-    INTEGER(i6), INTENT(IN) :: iseed
-    REAL ( kind = r15 )   :: fn_val
+    INTEGER, INTENT(IN) :: iseed
+    REAL ( kind = 8 )   :: fn_val
 
     !     Local variables
-    REAL(r15), PARAMETER  :: aln4 = 1.3862944, one=1.0, two=2.0, &
-                             vlarge = HUGE(1.0), vsmall = TINY(1.0), zero = 0.0
-    REAL ( kind = r15 ) :: a, b, g, r, s, x, y, z
-    REAL ( kind = r15 ), SAVE        :: d, f, h, t, c
+    REAL, PARAMETER  :: aln4 = 1.3862944, one=1.0, two=2.0, vlarge = HUGE(1.0), vsmall = TINY(1.0), zero = 0.0
+    REAL ( kind = 8 ) :: a, b, g, r, s, x, y, z
+    REAL ( kind = 8 ), SAVE        :: d, f, h, t, c
     LOGICAL, SAVE     :: swap
 
 
@@ -370,13 +338,10 @@ FUNCTION random_beta(aa, bb, first, iseed) RESULT(fn_val)
 !
   implicit none
 
-  integer, parameter :: r15 = selected_real_kind(15)
-  integer, parameter :: i6 = selected_int_kind(6)
-
-  integer ( kind = i6 ), parameter :: i4_huge = 2147483647
-  integer ( kind = i6 ) k
-  real ( kind = r15 ) runiform
-  integer ( kind = i6 ) iseed
+  integer ( kind = 4 ), parameter :: i4_huge = 2147483647
+  integer ( kind = 4 ) k
+  real ( kind = 8 ) runiform
+  integer ( kind = 4 ) iseed
 
   k = iseed / 127773
 
@@ -386,36 +351,18 @@ FUNCTION random_beta(aa, bb, first, iseed) RESULT(fn_val)
     iseed = iseed + i4_huge
   end if
 
-  runiform = real ( iseed, kind = r15 ) * 4.656612875D-10
+  runiform = real ( iseed, kind = 8 ) * 4.656612875D-10
 
 return
 end function
 
-
-function eye(n)
-
-    implicit none
-
-    integer, parameter :: r15 = selected_real_kind(15)
-    integer, parameter :: i6 = selected_int_kind(6)
-
-    integer(i6):: i,n
-    real(r15):: eye(n,n)
-    real(r15):: check(n,n)
-
-    check=0
-    do i=1,n
-        check(i,i)= 1
-    enddo
-
-    eye(:,:)=check(:,:)
-    return
-
-end function eye
-
-
-
 end subroutine draw_ju
+
+
+
+
+
+
 
 
 

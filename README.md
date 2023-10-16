@@ -47,14 +47,12 @@ remotes::install_github("jomulder/BFpack")
 
 ## Example analyses
 
-Below several example analyses are provided using **BFpack**. As input the main function `BF()` requires
-a fitted model which which the necessary elements are extracted to compute Bayes factors and posterior
-probabilities for the hypotheses.
+Below several example analyses are provided using **BFpack**.
 
 ### Bayesian t testing
 
-First a classical one sample t test needs executed on the test value
-\(mu = 5\) on the `therapeutic` data (part of `BFpack`). Here a right one-tailed classical test is executed:
+First a classical one sample t test is executed on the test value
+\(&mu = 5\) on the `therapeutic` data (part of `BFpack`). Here a right one-tailed classical test is executed:
 
 ``` r
 ttest1 <- bain::t_test(therapeutic, alternative = "greater", mu = 5)
@@ -65,24 +63,15 @@ equivalent to the standard `t.test` function with the addition that the
 returned object contains additional output than the standard `t.test`
 function.
 
-Two default Bayes factors are implemented in **BFpack** to execute a t test: the fractional Bayes factor
-(O'Hagan, 1995) and the prior adjusted fractional Bayes factor (Mulder, 2014). Both do not require a
-prior to be manually specified as a default prior is implicitly constructed using a minimal fraction
-of the data. The remaining fraction is used for hypothesis testing. The fractional Bayes factor
-behaves similar as the JZS Bayes factor (Rouder et al., 2009, as implemented in the **BayesFactor** package)
-for standard null hypothesis testing and the prior adjusted Bayes factor was specifically designed for
-testing one-sided hypotheses. When setting the argument `BF.type=1` or `BF.type=2`, the fractional
-Bayes factor and the prior adjusted fractional Bayes factor is used, respectively. The default choice
-is `BF.type=2`.
-
-To perform a Bayesian t test, the `BF` function is run on the fitted object. 
+To perform a Bayesian t test plug the fitted object into the `BF`
+function.
 
 ``` r
 library(BFpack)
 BF1 <- BF(ttest1)
 ```
 
-This executes an exploratory test around the null value: `H1: mu = 5`
+This executes an exploratoory ('exhaustive') test around the null value: `H1: mu = 5`
 versus `H2: mu < 5` versus `H3: mu > 5` assuming equal prior
 probabilities for `H1`, `H2`, and `H3` of 1/3. The output presents the
 posterior probabilities for the three hypotheses.
@@ -128,59 +117,6 @@ By default posterior probabilities are computed of whether main effects
 and interaction effects are present. Alternative constrained hypotheses
 can be tested on the model parameters `get_estimates(aov1)`.
 
-Similar as for the Bayesian t test, two default Bayes factors are implemented in **BFpack** for (multivariate)
-analysis of (co)variance: the fractional Bayes factor (O'Hagan, 1995) and the prior adjusted fractional Bayes factor (Mulder, 2014, Mulder and Gu, 2022). The default choice is `BF.type=2`, which uses the prior adjusted fractional
-Bayes factor.
-
-
-### Univariate/Multivariate multiple regression
-
-As an example we consider the `fmri` data (McGuigin et al, 2020) as discussed in Mulder et al. (2021). First, a classical linear regression is fitted with dependent variable `Deep` and predictor variables `Face` and `Vehicle`:
-
-``` r
-lm1 <- lm(Deep ~ Face + Vehicle, data = fmri)
-```
-
-When not using the `hypothesis` argument, Bayes factors and posterior probabilities are given of whether each predictor
-has a zero, negative, or positive effect (assuming equal prior probabilities) against the full model:
-
-``` r
-BF(lm1)
-```
-
-As motivated in Mulder et al. (2021), it was expected that `Face` had a negative effect on `Deep` and `Vehicle` had a positive effect on `Deep`. This (combined) one-sided hypothesis can be tested against its complement according to
-
-``` r
-BF(lm1, hypothesis = "Face < 0 < Vehicle")
-```
-
-The hypothesis of interest receives clear support from the data.
-
-In a multivariate multiple regression model, hypotheses can be tested on the
-effects on the same dependent variable, and on effects across different
-dependent variables. The name of an effect is constructed as the name of
-the predictor variable and the dependent variable separated by `_on_`.
-Testing hypotheses with both constraints within a dependent variable and
-across dependent variables makes use of a Monte Carlo estimate which may
-take a few seconds.
-
-``` r
-lm2 <- lm(cbind(Superficial, Middle, Deep) ~ Face + Vehicle,
-              data = fmri)
-constraint2 <- "Face_on_Deep = Face_on_Superficial = Face_on_Middle < 0 <
-     Vehicle_on_Deep = Vehicle_on_Superficial = Vehicle_on_Middle;
-     Face_on_Deep < Face_on_Superficial = Face_on_Middle < 0 < Vehicle_on_Deep =
-     Vehicle_on_Superficial = Vehicle_on_Middle"
-set.seed(123)
-BF3 <- BF(lm2, hypothesis = constraint2)
-summary(BF3)
-```
-
-Finally note that for (multivariate) multiple regression again note that two default Bayes factors are implemented in **BFpack**: the fractional Bayes factor (O'Hagan, 1995) and the prior adjusted fractional Bayes factor (Mulder, 2014; Mulder and Gu, 2022) which can be chosen using the argument `BF.type=1` and `BF.type=2`, respectively. The default
-choice is the prior adjusted fractional Bayes factor. This criterion was specifically designed for testing one-sided
-and order constrained hypotheses.
-
-
 ### Logistic regression
 
 An example hypothesis test is consdered under a logistic regression
@@ -220,20 +156,12 @@ the hypotheses of interest. In the above example, the complement
 hypothesis covers the parameter space where neither `"ztrust > (zfWHR,
 zAfro) > 0"` holds, nor where `"ztrust > zfWHR = zAfro = 0"` holds.
 
-The Bayes factors and posterior posterior probabilities are based on the
-approximated adjusted default Bayes factor (Gu et al., 2018).
-
-
 ### Correlation analysis
 
-Bayes factors and posterior posterior probabilities among constrained hypotheses on measures of association
-are computed using uniform prior for the correlations (Mulder and Gelissen, 2023).
 By default `BF` performs exhaustice tests of whether the separate
 correlations are zero, negative, or positive. The name of the
 correlations is constructed using the names of the variables separated
-by `_with_`. To compute Bayes factors and posterior probabilities, first
-the unconstrained model needs to be fit using the `cor_test()` function. The
-resulting object can be added to the `BF()` function:
+by `_with_`.
 
 ``` r
 set.seed(123)
@@ -243,38 +171,53 @@ print(BF1)
 ```
 
 Constraints can also be tested between correlations, e.g., whether all
-correlations are equal and positive versus an unconstrained complement. The function
-`get_estimates()` gives the names of the correlations on which constrained hypotheses
-can be formulated:
+correlations are equal and positive versus an unconstrained complement.
 
 ``` r
-get_estimates(cor1)
 BF2 <- BF(cor1, hypothesis = "Del_with_Im = Wmn_with_Im = Wmn_with_Del > 0")
 print(BF2)
 ```
 
-Depending on the class of the variables (`numeric`, `ordered`, `factor` with 2 levels), biserial,
-polyserial, polychoric, tetrachoric, or product-moment correlations are tested. As an illustration
-of these other types of measures of association, we change the measurement levels of a subset of
-the `mtcars` data:
+### Univariate/Multivariate multiple regression
+
+For a univariate regression model, by default an exhaustive test is
+executed of whether an effect is zero, negative, or postive.
 
 ``` r
-mtcars_test <- mtcars[,c(1,2,9,10)]
-mtcars_test[,2] <- as.ordered(mtcars_test[,2])
-mtcars_test[,3] <- as.factor(mtcars_test[,3])
-mtcars_test[,4] <- as.integer(mtcars_test[,4])
+lm1 <- lm(Superficial ~ Face + Vehicle, data = fmri)
+BF1 <- BF(lm1)
+print(BF1)
 ```
 
-To compute the Bayes factors and posterior probabilities, again we first the full unconstrained model
-using the `cor_test()` function. The resulting object is placed in the `BF()` function to obtain the
-Bayes factors and posterior proabilities:
+Hypotheses can be tested with equality and/or order constraints on the
+effects of interest. If prefered the complement hypothesis can be
+omitted using the `complement` argument
 
 ``` r
-cor2 <- cor_test(mtcars_test)
-BF2 <- BF(cor2, hypothesis = "0 < am_with_mpg = gear_with_mpg")
+BF2 <- BF(lm1, hypothesis = "Vehicle > 0 & Face < 0; Vehicle = Face = 0",
+          complement = FALSE)
 print(BF2)
 ```
 
+In a multivariate regression model hypotheses can be tested on the
+effects on the same dependent variable, and on effects across different
+dependent variables. The name of an effect is constructed as the name of
+the predictor variable and the dependent variable separated by `_on_`.
+Testing hypotheses with both constraints within a dependent variable and
+across dependent variables makes use of a Monte Carlo estimate which may
+take a few seconds.
+
+``` r
+lm2 <- lm(cbind(Superficial, Middle, Deep) ~ Face + Vehicle,
+              data = fmri)
+constraint2 <- "Face_on_Deep = Face_on_Superficial = Face_on_Middle < 0 <
+     Vehicle_on_Deep = Vehicle_on_Superficial = Vehicle_on_Middle;
+     Face_on_Deep < Face_on_Superficial = Face_on_Middle < 0 < Vehicle_on_Deep =
+     Vehicle_on_Superficial = Vehicle_on_Middle"
+set.seed(123)
+BF3 <- BF(lm2, hypothesis = constraint2)
+summary(BF3)
+```
 
 ### Running `BF` on a named vector
 
@@ -321,82 +264,20 @@ because the same Bayes factor is used when running `BF` on an object of
 class `glm` (see `Method: Bayes factor using Gaussian approximations`
 when calling `print(BF11)` and `print(BF2)`).
 
-The Bayes factors and posterior posterior probabilities on named vectors
-are based on the adjusted default Bayes factor using Gaussian approximations
-(Gu et al., 2018).
-
-
 ## Citing **BFpack**
 
 You can cite the package and the paper using the following reference
 
-**Software paper**
-> Mulder, J., Williams, D. R., Gu, X., Olsson-Collentine, A., Tomarken,
-> A., Böing-Messing, F., Hoijtink, H., . . . van Lissa  (2021).
-> BFpack: Flexible Bayes factor testing of scientific theories in R.
-> Journal of Statistical Software, 100(18).
-> Retrieved from <https://arxiv.org/abs/1911.07728>
-
-**Software package**
 > Mulder, J., van Lissa, C., Gu, X., Olsson-Collentine, A.,
 > Boeing-Messing, F., Williams, D. R., Fox, J.-P., Menke, J., et
-> al. (2020). BFpack: Flexible Bayes Factor Testing of Scientific
-> Expectations. (Version 1.3.0) \[R package\].
+> al. (2020). BFpack: Flexible Bayes Factor Testing of Scientific
+> Expectations. (Version 0.3.1) \[R package\].
 > <https://CRAN.R-project.org/package=BFpack>
 
-Other references with technical details of the methodology, please see
-
-**Bayes factors for (multivariate) t tests, (M)AN(C)OVA, (multivariate) regression**
-> Mulder, J. (2014). Prior adjusted default Bayes factors for testing (in)equality
-> constrained hypotheses. Computational Statistics and Data Analysis, 71, 448–463.
-> <https://doi.org/10.1016/j.csda.2013.07.017>
-
-> Mulder, J. & Gu, X. (2022) Bayesian Testing of Scientific Expectations
-> under Multivariate Normal Linear Models, Multivariate Behavioral Research,
-57:5, 767-783.
-> <https://doi.org/10.1080/00273171.2021.1904809>
-
-**Bayes factors for testing measures of association (e.g., correlations)** 
-> Mulder, J., & Gelissen, J. P. (2023). Bayes factor testing of equality
-> and order constraints on measures of association in social research.
-> Journal of Applied Statistics, 50(2), 315-351.
-> <https://doi.org/10.1080/02664763.2021.1992360>
-
-**Default Bayes factors using Gaussian approximations**
-> Gu. X., Mulder, J., & Hoijtink, J. (2018). Approximated adjusted
-> fractional Bayes factors: A general method for testing informative
-> hypotheses. British Journal of Mathematical and Statistical
-> Psychology.
-> <https://doi.org/10.1111/bmsp.12110>
-
-**Bayes factors under exponential random graphs**
-> Mulder, J., Friel, N., & Leifeld, P. (2023). Bayesian Testing of Scientific
-> Expectations Under Exponential Random Graph Models.
-> <https://doi.org/10.48550/arXiv.2304.14750>
-
-**Bayes factors of intraclass correlations**
-> Mulder, J., & Fox, J.-P. (2019). Bayes Factor Testing of Multiple
-> Intraclass Correlations. Bayesian Analysis. 14(2), 521-552.
-> <https://doi.org/10.1214/18-BA1115>
-
-**Bayes factors for testing group variances**
-> Böing-Messing, F., van Assen, M. A. L. M., Hofman, A. D., Hoijtink, H., 
-> & Mulder, J. (2017). Bayesian evaluation of constrained hypotheses on
-> variances of multiple independent groups. Psychological Methods, 22(2), 
-> 262–287.
-> <https://doi.org/10.1037/met0000116>
-
-> Böing-Messing, F. & Mulder, J. (2018). Automatic Bayes factors for testing
-> equality-and inequality-constrained hypotheses on variances. Psychometrika,
-> 83, 586–617.
-> <https://link.springer.com/article/10.1007/s11336-018-9615-z>
-
-**Bayes factors for meta-analyses**
-> Van Aert R.C.M. & Mulder, J. (2022). Bayesian hypothesis testing and 
-> estimation under the marginalized random-effects meta-analysis model.
-> Psychonomic Bulletin & Review, 29, 55–69.
-> <https://doi.org/10.3758/s13423-021-01918-9>
-
+> Mulder, J., Williams, D. R., Gu, X., Olsson-Collentine, A., Tomarken,
+> A., Böing-Messing, F., Hoijtink, H., . . . van Lissa, C. (2019).
+> BFpack: Flexible Bayes factor testing of scientific theories in R.
+> Retrieved from <https://arxiv.org/abs/1911.07728>
 
 ## Contributing and Contact Information
 

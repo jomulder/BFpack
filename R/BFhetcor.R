@@ -3,6 +3,7 @@
 #' @method BF hetcor
 #' @export
 BF.hetcor <- function(x,
+BCT_ordinal_extension
                        hypothesis = NULL,
                        prior.hyp = NULL,
                        complement = TRUE,
@@ -34,14 +35,9 @@ BF.hetcor <- function(x,
                      pnorm(0,mean=estimates.F,sd=sqrt(diag(errcov.F))),
                      1-pnorm(0,mean=estimates.F,sd=sqrt(diag(errcov.F)))),ncol=3)
   # get draws from joint uniform prior to compute relative measures
-  if(sum(P==Fcor$P)==0){
-    numdraws <- round(1e7/(P*(P-1)/2))
-    drawsJU <- draw_ju_r(P,samsize=numdraws,Fisher=1)
-    approx_studt <- QRM::fit.st(c(drawsJU))$par.ests[c(1,3)]
-  }else{
-    approx_studt <- unlist(c(Fcor[which(P==Fcor$P),1:2]))
-  }
-  relcomp0 <- dt(0,df=approx_studt[1])/approx_studt[2] # all marginal priors are the same
+  drawsJU <- draw_ju_r(P,samsize=50000,Fisher=1)
+  approx_studt <- QRM::fit.st(c(drawsJU))$par.ests
+  relcomp0 <- dt(0,df=approx_studt[1])/approx_studt[3] # all marginal priors are the same
   relcomp <- matrix(c(rep(relcomp0,numcorr),rep(.5,numcorr*2)),ncol=3)
   row.names(relfit) <- row.names(relcomp) <- names(estimates.F)
 
@@ -102,11 +98,12 @@ BF.hetcor <- function(x,
     # approximate unconstrained Fisher transformed correlations with a multivariate Student t
     mean0 <- rep(0,numcorr)
     if(numcorr==1){
-      Scale0 <- as.matrix(approx_studt[2]**2)
+      Scale0 <- as.matrix(approx_studt[3]**2)
       df0 <- round(approx_studt[1])
     }else{
-      Scale0 <- diag(rep(approx_studt[2]**2,numcorr))
-      df0 <- round(approx_studt[1])
+      approx_studt <- fit_mvt(X=drawsJU)
+      Scale0 <- diag(rep(mean(diag(approx_studt$scatter)),numcorr))
+      df0 <- round(approx_studt$nu)
     }
     mean0 <- rep(0,numcorr)
     relcomp <- t(matrix(unlist(lapply(1:numhyp,function(h){

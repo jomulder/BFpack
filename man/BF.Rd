@@ -112,8 +112,7 @@ that are supported: \code{\link[bain]{t_test}},
 \code{\link[stats]{lm}}, \code{mlm},
 \code{\link[stats]{glm}}, \code{\link[polycor]{hetcor}},
 \code{\link[lme4]{lmer}}, \code{\link[survival]{coxph}},
-\code{\link[survival]{survreg}}, \code{\link[ergm]{ergm}},
-\code{\link[Bergm]{bergm}},
+\code{\link[survival]{survreg}},
 \code{\link[pscl]{zeroinfl}}, \code{\link[metafor]{rma}} and \code{\link[MASS]{polr}}.
 
 For testing parameters from the results of t_test(), lm(), aov(),
@@ -137,6 +136,7 @@ a classical Wald test.
 
 }}
 \examples{
+\dontshow{
 # EXAMPLE 1. One-sample t test
 ttest1 <- t_test(therapeutic, mu = 5)
 print(ttest1)
@@ -185,6 +185,61 @@ samplesize <- nobs(poisson1)
 BF1 <- BF(estimates, Sigma = covmatrix, n = samplesize, hypothesis =
 "woolB > tensionM > tensionH; woolB = tensionM = tensionH")
 summary(BF1)
+}
+\donttest{
+# EXAMPLE 1. One-sample t test
+ttest1 <- bain::t_test(therapeutic, mu = 5)
+print(ttest1)
+# confirmatory Bayesian one sample t test
+BF1 <- BF(ttest1, hypothesis = "mu = 5")
+summary(BF1)
+# exploratory Bayesian one sample t test
+BF(ttest1)
+
+# EXAMPLE 2. ANOVA
+aov1 <- aov(price ~ anchor * motivation, data = tvprices)
+# check the names of the model parameters
+names(aov1$coefficients)
+BF1 <- BF(aov1, hypothesis = "anchorrounded = motivationlow;
+                              anchorrounded < motivationlow;
+                              anchorrounded > motivationlow")
+summary(BF1)
+
+# EXAMPLE 3. linear regression
+lm1 <- lm(mpg ~ cyl + hp + wt, data = mtcars)
+BF(lm1, hypothesis = "wt < cyl < hp = 0")
+
+# EXAMPLE 4. Logistic regression
+fit <- glm(sent ~ ztrust + zfWHR + zAfro + glasses + attract + maturity +
+   tattoos, family = binomial(), data = wilson)
+BF1 <- BF(fit, hypothesis = "ztrust > (zfWHR, zAfro) > 0;
+                             ztrust > 0 & zfWHR=zAfro= 0")
+summary(BF1)
+
+# EXAMPLE 5. Correlation analysis
+set.seed(123)
+cor1 <- cor_test(memory[1:20,1:3])
+BF1 <- BF(cor1)
+summary(BF1)
+BF2 <- BF(cor1, hypothesis = "Wmn_with_Im > Wmn_with_Del > 0;
+                              Wmn_with_Im = Wmn_with_Del = 0")
+summary(BF2)
+
+# EXAMPLE 6. Bayes factor testing on a named vector
+# We illustrate the computation of Bayes factors using a named vector
+# as input on a Poisson regression model
+poisson1 <- glm(formula = breaks ~ wool + tension,
+  data = datasets::warpbreaks, family = poisson)
+# extract estimates, error covariance matrix, and sample size,
+# from fitted object
+estimates <- poisson1$coefficients
+covmatrix <- vcov(poisson1)
+samplesize <- nobs(poisson1)
+# compute Bayes factors on equal/order constrained hypotheses on coefficients
+BF1 <- BF(estimates, Sigma = covmatrix, n = samplesize, hypothesis =
+"woolB > tensionM > tensionH; woolB = tensionM = tensionH")
+summary(BF1)
+}
 }
 \references{
 Mulder, J., D.R. Williams, Gu, X., A. Tomarken,
