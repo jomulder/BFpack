@@ -17,7 +17,7 @@ Authors@R:
              email = "drwwilliams@ucdavis.edu"),
       person(given = "Xin",
              family = "Gu",
-             role = c("aut", "ctb"),
+             role = "aut",
              email = "guxin57@hotmail.com"),
       person(given = "Anton",
              family = "Olsson-Collentine",
