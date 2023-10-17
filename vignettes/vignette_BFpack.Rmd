@@ -1,5 +1,5 @@
 ---
-title: "Introduction to ***BFpack***"
+title: "Introduction to BFpack"
 author: "Mulder, J., Williams, D. R., Gu, X., Tomarken, A., Boeing-Messing, F., Olsson-Collentine, A., Meijerink, M., Menke, J., van Aert, R., Fox, J.-P., Hoijtink, H., Rosseel, Y., Wagenmakers, E.-J., and van Lissa, C."
 date: "`r Sys.Date()`"
 output:
@@ -25,7 +25,7 @@ Alternatively, when the model of interest is not of a class that is currently su
 
 The key references for the package are
 
-Mulder, J., Williams, D. R., Gu, X., Tomarken, A., Boeing-Messing, F., Olsson-Collentine, A., Meijerink, M., Menke, J., van Aert, R., Fox, J.-P., Hoijtink, H., Rosseel, Y., Wagenmakers, E.-J., and van Lissa, C. (to appear). BFpack: Flexible Bayes Factor Testing of Scientific Theories in R. *Journal of Statistical Software*.
+Mulder, J., Williams, D. R., Gu, X., Tomarken, A., Boeing-Messing, F., Olsson-Collentine, A., Meijerink, M., Menke, J., van Aert, R., Fox, J.-P., Hoijtink, H., Rosseel, Y., Wagenmakers, E.-J., and van Lissa, C. (2021). BFpack: Flexible Bayes Factor Testing of Scientific Theories in R. *Journal of Statistical Software*. <https://www.jstatsoft.org/article/view/v100i18>
 
 Mulder, J., van Lissa, C., Gu, X., Olsson-Collentine, A., Boeing-Messing, F., Williams, D. R., Fox, J.-P., Menke, J., et al. (2021). BFpack: Flexible Bayes Factor Testing of Scientific Expectations. (Version 0.3.2) <https://CRAN.R-project.org/package=BFpack>
 
@@ -126,14 +126,14 @@ BF(ttest1, hypothesis = hypothesis)
 
 The argument `prior.hyp` can be used to specify different prior probabilities
 for the hypotheses. For example, when the left one-tailed hypothesis is not possible
-based on prior considerations (e.g., see [Mulder et al. (2021, Section 4.1, preprint)](https://arxiv.org/abs/1911.07728)) while the precise (null) hypothesis and the right
+based on prior considerations (e.g., see [Mulder et al. (2021, Section 4.1)](https://www.jstatsoft.org/article/view/v100i18)) while the precise (null) hypothesis and the right
 one-tailed hypothesis are equally likely, the argument `prior.hyp` should be a vector
 specifying the prior probabilities of the respective hypotheses
 ``` r
 BF(ttest1, hypothesis = "mu = 5; mu < 5; mu > 5", prior.hyp = c(.5,0,.5))
 ```
 
-For more information about the methodology, we refer the interested reader to [Mulder et al. (2021)](https://arxiv.org/abs/1911.07728) and [Mulder and Gu (2021)](https://arxiv.org/abs/1904.00679).
+For more information about the methodology, we refer the interested reader to [Mulder et al. (2021)](https://www.jstatsoft.org/article/view/v100i18) and [Mulder and Gu (2021)](https://doi.org/10.1080/00273171.2021.1904809).
 
 
 ### Analysis of variance
@@ -147,7 +147,7 @@ aov1 <- aov(price ~ anchor * motivation, data = tvprices)
 
 Next a Bayesian test can be performed on the fitted object. By default
 exploratory tests are executed of whether the individual main and interaction effects
-are zero or not (corresponding to the full model) (see [Mulder et al. (2021, Section 4.2)](https://arxiv.org/abs/1911.07728))
+are zero or not (corresponding to the full model) (see [Mulder et al. (2021, Section 4.2)](https://www.jstatsoft.org/article/view/v100i18))
 
 ``` r
 BF(aov1)
@@ -155,7 +155,7 @@ BF(aov1)
 
 One can also test for specific equal/order hypotheses based on scientific expectations
 such as whether `anchorrounded` is positive, `motivationlow` is negative, and the interaction
-effect `anchorrounded:motivationlow` is negative (see [Mulder et al. (2021, Section 4.2)](https://arxiv.org/abs/1911.07728)) versus null hypothesis versus the complement hypothesis
+effect `anchorrounded:motivationlow` is negative (see [Mulder et al. (2021, Section 4.2)](https://www.jstatsoft.org/article/view/v100i18)) versus null hypothesis versus the complement hypothesis
 (which assumes that the constraints of neither two hypotheses hold). This test can be executed
 as follows:
 ``` r
@@ -166,7 +166,7 @@ set.seed(1234)
 BF(aov1, hypothesis = constraints2)
 ```
 
-For more information about the methodology, we refer the interested reader to [Mulder et al. (2021) ](https://arxiv.org/abs/1911.07728) and [Mulder and Gu (2021)](https://arxiv.org/abs/1904.00679).
+For more information about the methodology, we refer the interested reader to [Mulder et al. (2021) ](https://www.jstatsoft.org/article/view/v100i18) and [Mulder and Gu (2021)](https://doi.org/10.1080/00273171.2021.1904809).
 
 
 ### Testing independent group variances
@@ -232,7 +232,7 @@ can be formualted can be extracted using the `get_estimates` function.
 get_estimates(fit_glm)
 ```
 Two different hypotheses are formulated with competing equality and/or
-order constraints on the regression coefficients of interest [Mulder et al. (2021, Section 4.4) ](https://arxiv.org/abs/1911.07728)
+order constraints on the regression coefficients of interest [Mulder et al. (2021, Section 4.4) ](https://www.jstatsoft.org/article/view/v100i18)
 
 ``` r
 BF_glm <- BF(fit_glm, hypothesis = "ztrust > (zfWHR, zAfro) > 0;
@@ -251,7 +251,7 @@ the hypotheses of interest. In the above example, the complement
 hypothesis covers the parameter space where neither `"ztrust > (zfWHR,
 zAfro) > 0"` holds, nor where `"ztrust > zfWHR = zAfro = 0"` holds.
 
-For more information about the methodology, we refer the interested reader to [Gu et al. (2018)](https://bpspsychub.onlinelibrary.wiley.com/doi/full/10.1111/bmsp.12110?casa_token=tjWwoVqLI7QAAAAA%3Ac84DWKNw8pf23ybOgZTs1pzgyZMuCc-BeTaPFj8vnfnTytzHd0gr-D9ymVxYbKj_MTO1ITGFW8tGBZ1J) and [Mulder et al. (2021)](https://arxiv.org/abs/1911.07728)
+For more information about the methodology, we refer the interested reader to [Gu et al. (2018)](https://bpspsychub.onlinelibrary.wiley.com/doi/full/10.1111/bmsp.12110?casa_token=tjWwoVqLI7QAAAAA%3Ac84DWKNw8pf23ybOgZTs1pzgyZMuCc-BeTaPFj8vnfnTytzHd0gr-D9ymVxYbKj_MTO1ITGFW8tGBZ1J) and [Mulder et al. (2021)](https://www.jstatsoft.org/article/view/v100i18)
 
 
 ### Correlation analysis
@@ -308,7 +308,7 @@ BF6_cor <- BF(cor1, hypothesis =
 
 By running `print(BF6_cor)`, the output shows that the one-sided hypothesis received a posterior probability of 0.991 and the alternative received a posterior probability of .009 (assuming equal prior probabilities).
 
-For more information about the methodology, we refer the interested reader to [Mulder (2016)](https://www.researchgate.net/publication/280256902_Bayes_factors_for_testing_order-constrained_hypotheses_on_correlations) and [Mulder and Gelissen (2019)](https://arxiv.org/abs/1807.05819)
+For more information about the methodology, we refer the interested reader to [Mulder (2016)](https://www.researchgate.net/publication/280256902_Bayes_factors_for_testing_order-constrained_hypotheses_on_correlations) and [Mulder and Gelissen (2019)](https://doi.org/10.1080/02664763.2021.1992360)
 
 
 
@@ -354,7 +354,7 @@ BF3 <- BF(lm2, hypothesis = constraint2)
 summary(BF3)
 ```
 
-For more information about the methodology, we refer the interested reader to [Mulder and Olsson-Collentine (2019)](https://link.springer.com/article/10.3758/s13428-018-01196-9) and [Mulder and Gu (2021)](https://arxiv.org/abs/1904.00679)
+For more information about the methodology, we refer the interested reader to [Mulder and Olsson-Collentine (2019)](https://link.springer.com/article/10.3758/s13428-018-01196-9) and [Mulder and Gu (2021)](https://doi.org/10.1080/00273171.2021.1904809)
 
 
 ### Testing the effect size and beteen-study heterogeneity in a meta-analysis
@@ -389,7 +389,7 @@ The unconstrained estimates (posterior mean and median) and the lower and upper 
 BFmeta$estimates
 ```
 
-For more information about the methodology, we refer the interested reader to [Van Aert and Mulder (2021)](https://psyarxiv.com/ktcq4/)
+For more information about the methodology, we refer the interested reader to [Van Aert and Mulder (2021)](http://doi.org/10.3758/s13423-021-01918-9/)
 
 
 ### Running `BF` on a named vector

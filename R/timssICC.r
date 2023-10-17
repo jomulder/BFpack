@@ -69,4 +69,3 @@
 #' intraclass correlations. Bayesian Analysis. 14, 2, p. 521-552.
 #' @format A data.frame with 16770 rows and 15 columns.
 NULL
-
