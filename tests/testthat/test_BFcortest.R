@@ -49,10 +49,11 @@ test_that("check estimate of polychoric correlation", {
   )})
 
 # test a single correlation in multiple groups
-set.seed(123)
-cor3 <- cor_test(mtcars[,3:4],mtcars[,5:6])
-BF3 <- BF(cor3,hypothesis="hp_with_disp_in_g1= -wt_with_drat_in_g2")
 test_that("BF.cor_test exploratory hypotheses on correlations correctly evaluated", {
+  skip_on_cran()
+  set.seed(123)
+  cor3 <- cor_test(mtcars[,3:4],mtcars[,5:6])
+  BF3 <- BF(cor3,hypothesis="hp_with_disp_in_g1= -wt_with_drat_in_g2")
   expect_equivalent(
     BF3$PHP_confirmatory,c(.78,.22), tolerance = .1
   )})

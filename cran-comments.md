@@ -3,6 +3,7 @@
 * Date: 2023-10-17
 * This update fixes warnings and error that led to archival from CRAN
 * Faster computation of BFs for correlations.
+* Skip long tests for CRAN
 * Minor edits.
 
 ## Test environments

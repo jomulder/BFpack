@@ -3,8 +3,7 @@
 
 
 subroutine estimate_postmeancov_fisherz(postZmean, postZcov, P, numcorr, K, numG, BHat, sdHat, CHat, XtXi, samsize0, Njs, &
-    Ygroups, Xgroups, Ntot, C_quantiles, sigma_quantiles, B_quantiles, BDrawsStore, sigmaDrawsStore, CDrawsStore, &
-    seed)
+    Ygroups, Xgroups, Ntot, C_quantiles, sigma_quantiles, B_quantiles, BDrawsStore, sigmaDrawsStore, CDrawsStore, seed)
 !
     implicit none
 
@@ -12,26 +11,21 @@ subroutine estimate_postmeancov_fisherz(postZmean, postZcov, P, numcorr, K, numG
     integer, parameter :: i6 = selected_int_kind(6)
 
     integer(i6), intent(in) :: P, numcorr, K, numG, samsize0, Njs(numG), Ntot, seed
-    real(r15), intent(in) :: BHat(numG,K,P), sdHat(2*numG,P), CHat(numG,P,P), XtXi(numG,K,K)
-    real(r15), intent(out):: postZmean(numcorr,1), postZcov(numcorr,numcorr), Ygroups(numG,Ntot,P), Xgroups(numG,Ntot,K),&
-                           B_quantiles(numG,K,P,3), C_quantiles(numG,P,P,3), sigma_quantiles(numG,P,3), &
-                           BDrawsStore(samsize0,numG,K,P), sigmaDrawsStore(samsize0,numG,P), &
-                           CDrawsStore(samsize0,numG,P,P)
-    real(r15)             :: BDraws(numG,K,P), sigmaDraws(numG,P), CDraws(numG,P,P), Ccan(P,P), Ds(P,P), dummyPP2(P,P), &
-                           CcanInv(P,P), Ccurr(P,P), CcurrInv(P,P), SS1(P,P), rnunif(1), sdMH(numG,P), errorMatj(P,P), &
-                           sigma_can(P), aa, bb, SigmaMat(P,P), R_MH, epsteps(P,P), logR_MH, diffmat(Ntot,P), &
-                           varz1, varz2, varz1z2Plus, varz1z2Min, Cinv(P,P), Zcorr_sample(samsize0,numcorr), &
-                           acceptSigma(numG,P), acceptC(numG), covBeta(P*K,P*K), betaDrawj(1,P*K), dummyPP(P,P), &
-                           dummy3(samsize0), dummy2(samsize0), meanO(P*K), para(((P*K)*((P*K)+3)/2 + 1)), SS2(P,P)
+    real(r15), intent(in)   :: BHat(numG,K,P), sdHat(2*numG,P), CHat(numG,P,P), XtXi(numG,K,K), Ygroups(numG,Ntot,P), &
+                               Xgroups(numG,Ntot,K)
+    real(r15), intent(out)  :: postZmean(numcorr,1), postZcov(numcorr,numcorr), B_quantiles(numG,K,P,3), &
+                               C_quantiles(numG,P,P,3), sigma_quantiles(numG,P,3), BDrawsStore(samsize0,numG,K,P), &
+                               sigmaDrawsStore(samsize0,numG,P), CDrawsStore(samsize0,numG,P,P)
+    real(r15)               :: BDraws(numG,K,P), sigmaDraws(numG,P), CDraws(numG,P,P), Ccan(P,P), Ds(P,P), dummyPP2(P,P), &
+                            CcanInv(P,P), Ccurr(P,P), CcurrInv(P,P), SS1(P,P), rnunif(1), sdMH(numG,P), errorMatj(P,P), &
+                            sigma_can(P), aa, bb, SigmaMat(P,P), R_MH, epsteps(P,P), logR_MH, diffmat(Ntot,P), &
+                            varz1, varz2, varz1z2Plus, varz1z2Min, Cinv(P,P), Zcorr_sample(samsize0,numcorr), &
+                            acceptSigma(numG,P), acceptC(numG), covBeta(P*K,P*K), betaDrawj(1,P*K), dummyPP(P,P), &
+                            dummy3(samsize0), dummy2(samsize0), meanO(P*K), para(((P*K)*((P*K)+3)/2 + 1)), SS2(P,P)
     integer(i6)             :: s1, g1, i1, corrteller, c1, c2, p1, p2, k1, errorflag, lower_int, median_int, upper_int, &
-                           iseed!, nn
-!    integer, allocatable, dimension(:) :: iseed
+                               iseed
 !
     !set seed
-    !call RANDOM_SEED(size=nn)
-    !allocate(iseed(nn))
-    !iseed(:)=seed
-    !call RANDOM_SEED(put=iseed)
     iseed = seed
 !
     !initial posterior draws start at MLEs

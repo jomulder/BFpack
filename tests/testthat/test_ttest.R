@@ -56,11 +56,12 @@ test_that("2 samples t test of one-sided hypotheses correctly evaluated
 ########################################
 
 # check posterior probabilities for a given data set
-ttest5 <- t_test(therapeutic,therapeutic*.7+2.5,"two.sided",var.equal=FALSE)
-set.seed(123)
-BF5 <- BF(ttest5)
 test_that("2 samples t test of two-sided hypotheses correctly evaluated
           with unequal variances", {
+  skip_on_cran()
+  ttest5 <- t_test(therapeutic,therapeutic*.7+2.5,"two.sided",var.equal=FALSE)
+  set.seed(123)
+  BF5 <- BF(ttest5)
   expect_equivalent(
     c(unname(BF5$PHP_exploratory)),c(0.0607,0.9374,0.0019),
     tolerance = .001)

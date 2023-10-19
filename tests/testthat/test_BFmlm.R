@@ -32,10 +32,11 @@ test_that("BF.mlm two hypotheses on same DVs correctly evaluated", {
 expect_equivalent(
   round(BF3$PHP_confirmatory,3),c(0.902,0.094,0.005)
 )})
-# tests on different predictors on different DVs
-set.seed(4768)
-BF4 <- BF(lm1,hypothesis="disp_on_mpg<wt_on_cyl & disp_on_cyl<wt_on_hp; disp_on_mpg=wt_on_cyl & disp_on_cyl=wt_on_hp")
 test_that("BF.mlm two hypotheses different DVs and different IVs correctly evaluated", {
+  skip_on_cran()
+  # tests on different predictors on different DVs
+  set.seed(4768)
+  BF4 <- BF(lm1,hypothesis="disp_on_mpg<wt_on_cyl & disp_on_cyl<wt_on_hp; disp_on_mpg=wt_on_cyl & disp_on_cyl=wt_on_hp")
   expect_equivalent(
     round(BF4$PHP_confirmatory,3),c(0.018,0.919,0.062), tolerance = .005
 )})

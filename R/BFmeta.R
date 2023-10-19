@@ -138,7 +138,7 @@ BF.rma.uni <- function(x,
 
     sd_delta <- 1/sqrt(1/sd_prior_delta^2+sum(1/vi))
 
-    deltadraws <- rnorm(100000,mean=mean_delta,sd=sd_delta)
+    deltadraws <- rnorm(20000,mean=mean_delta,sd=sd_delta)
     deltastats <- c(mean(deltadraws),median(deltadraws),quantile(deltadraws,.025),
                     quantile(deltadraws,.975))
     uncestimates <- t(matrix(deltastats,ncol=1))
@@ -247,7 +247,7 @@ MM <- function(yi, vi, ai)
 }
 
 
-get_post_rho <- function(yi, vi, rho_min, typ_vi, start_rho, iters = 100000)
+get_post_rho <- function(yi, vi, rho_min, typ_vi, start_rho, iters = 20000)
 {
 
   rho_s <- numeric(iters) # Empty object for storing results
@@ -346,7 +346,7 @@ get_post_rho <- function(yi, vi, rho_min, typ_vi, start_rho, iters = 100000)
   return(list(post_rho_s = post_rho_s, post_rho_l = post_rho_l, rhodraws = rho_s, logmuu = logmuu))
 }
 
-get_condpost_rho <- function(yi, vi, rho_min, typ_vi, start_rho, iters = 100000)
+get_condpost_rho <- function(yi, vi, rho_min, typ_vi, start_rho, iters = 20000)
 {
   #condition on delta = 0
   rho_s <- numeric(iters) # Empty object for storing results
