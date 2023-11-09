@@ -14,12 +14,19 @@ test_that("BF.cor_test exploratory hypotheses on correlations correctly evaluate
 # confirmatory hypothesis test on the correlations
 BF2 <- BF(cor1,hypothesis="wt_with_drat<drat_with_hp<wt_with_hp;
    wt_with_drat=drat_with_hp<0<wt_with_hp")
-BFtable <- matrix(c(   0,    1,  5.66,
-                      -1,    0,  4.6,
-                    -5.66, -4.6,    0),byrow=TRUE,nrow=3)
+BFtable <- matrix(c(   0,    1,  5.62,
+                      -1.4,    0,  4.6,
+                    -5.62, -4.6,    0),byrow=TRUE,nrow=3)
 test_that("BF.cor_test confirmatory hypotheses on correlations correctly evaluated", {
   expect_equivalent(
     log(BF2$BFmatrix_confirmatory),BFtable, tolerance = .5
+  )})
+
+BF2.log <- BF(cor1,hypothesis="wt_with_drat<drat_with_hp<wt_with_hp;
+   wt_with_drat=drat_with_hp<0<wt_with_hp",log=TRUE)
+test_that("log BF.cor_test confirmatory hypotheses on correlations correctly evaluated", {
+  expect_equivalent(
+    BF2.log$BFmatrix_confirmatory,BFtable, tolerance = .5
   )})
 
 # test a single correlation

@@ -1,4 +1,4 @@
-library(BFpack)
+
 set.seed(57)
 x <- c(rnorm(20), rnorm(20, sd = .765))
 g <- factor(c(rep("V1", 20), rep("V2", 20)))
@@ -27,19 +27,22 @@ in_spray <- structure(c(1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 2L,
                         3L, 3L, 3L, 3L, 3L, 3L, 3L, 4L, 4L, 4L, 4L, 4L, 4L, 4L, 4L, 4L,
                         4L, 4L, 4L, 5L, 5L, 5L, 5L, 5L, 5L, 5L, 5L, 5L, 5L, 5L, 5L, 6L,
                         6L, 6L, 6L, 6L, 6L, 6L, 6L, 6L, 6L, 6L, 6L), .Label = c("A",
-                                                                                "B", "C", "D", "E", "F"), class = "factor")
+           "B", "C", "D", "E", "F"), class = "factor")
 
 res_standard <- bartlett.test(in_count, in_spray)
 res <- bartlett_test(in_count, in_spray)
-
 test_that("bartlett_test same as bartlett.test", {
   expect_equivalent(res_standard, res[1:length(res_standard)])
 })
 
-
 out <- BF(res, "F> A=B>D>E=C")
-
 test_that("BF.bartlett returns correct results,", {
   expect_equivalent(out$PHP_confirmatory, c(.9958, .00417), tolerance = .001)
+})
+
+set.seed(57)
+out2 <- BF(res, "F> A=B>D>E=C", log = TRUE)
+test_that("BF.bartlett returns correct results,", {
+  expect_equivalent(out2$BFmatrix_confirmatory[2,1], -5.452534, tolerance = .01)
 })
 

@@ -18,5 +18,14 @@ expect_equivalent(
 
 hypothesis <- "A=B=F>C=D=E; A=B=F>C>D>E"
 set.seed(123)
-BF1 <- BF(x=vtest1,hypothesis,complement = F)
+BF1 <- BF(x=vtest1,hypothesis,complement = F, log = TRUE)
+#check results confirmatory test
+test_that("BF.bartlett_htest confirmatory hypotheses correctly evaluated log(BF)", {
+  expect_equivalent(
+    round(BF1$BFtu_confirmatory,3),c(4.723,4.245)
+  )})
+test_that("BF.bartlett_htest confirmatory hypotheses correctly evaluated log(BF)", {
+  expect_equivalent(
+    round(BF1$BFtu_exploratory[1],4),-5.4178
+  )})
 

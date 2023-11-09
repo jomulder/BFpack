@@ -7,10 +7,13 @@
 #' @method BF lmerMod
 #' @export
 BF.lmerMod <- function(x,
-                           hypothesis = NULL,
-                           prior.hyp = NULL,
-                           complement = TRUE,
-                           ...){
+                       hypothesis = NULL,
+                       prior.hyp = NULL,
+                       complement = TRUE,
+                       log = FALSE,
+                       ...){
+
+  logIN <- log
 
   numcat <- length(x@cnms)
   namescat <- unlist(lapply(1:numcat,function(ca){
@@ -147,12 +150,17 @@ BF.lmerMod <- function(x,
       log(1-marglike_Hu$priorprobpositive[nc])
     marglike_explo[2] <- marglike_negative
 
-    return(exp(marglike_explo - marglike_Hu[[1]]))
+    return(marglike_explo - marglike_Hu[[1]])
   })),nrow=3))
 
   colnames(BFtu_exploratory_icc) <- c("icc=0","icc<0","icc>0")
   row.names(BFtu_exploratory_icc) <- iccnames
-  PHP_exploratory_icc <- round(BFtu_exploratory_icc / apply(BFtu_exploratory_icc,1,sum),3)
+  rowmax <- apply(BFtu_exploratory_icc,1,max)
+  PHP_exploratory_icc <- round(exp(BFtu_exploratory_icc - rowmax %*% t(rep(1,ncol(BFtu_exploratory_icc)))) /
+                            apply(exp(BFtu_exploratory_icc - rowmax %*% t(rep(1,ncol(BFtu_exploratory_icc)))),1,sum),3)
+  if(logIN == FALSE){
+    BFtu_exploratory_icc <- exp(BFtu_exploratory_icc)
+  }
   priorprobs <- rep(1,3)/3 #prior probs for exploratory tests
   cat("\n")
   cat("\n")
@@ -283,7 +291,7 @@ BF.lmerMod <- function(x,
     BF_E <- exp(output_marglike_icc[,1] - marglike_Hu[[1]])
     output_marglike_icc <- cbind(output_marglike_icc,output_marglike_icc[,1] + log(output_marglike_icc[,2]) -
                                    log(output_marglike_icc[,3]))
-    BFtu_confirmatory_icc <- exp(output_marglike_icc[,5]  - marglike_Hu[[1]])
+    BFtu_confirmatory_icc <- output_marglike_icc[,5]  - marglike_Hu[[1]]
     #compute BFmatrix and PHPs
     logBFmatrix <- matrix(rep(output_marglike_icc[,5],numhyp+complement),nrow=numhyp+complement) -
       matrix(rep(output_marglike_icc[,5],each=numhyp+complement),nrow=numhyp+complement)
@@ -293,8 +301,7 @@ BF.lmerMod <- function(x,
     }else{
       row.names(logBFmatrix) <- colnames(logBFmatrix) <- c(parse_hyp$original_hypothesis)
     }
-    BFmatrix_confirmatory_icc <- round(exp(logBFmatrix),3)
-    diag(BFmatrix_confirmatory_icc) <- 1
+    BFmatrix_confirmatory_icc <- logBFmatrix
     BFta_confirmatory_icc <- exp(output_marglike_icc[,5] - max(output_marglike_icc[,5]))
     # Change prior probs in case of default setting
     if(is.null(prior.hyp)){
@@ -314,6 +321,11 @@ BF.lmerMod <- function(x,
     colnames(BFtable) <- c("complex=","complex>","fit=","fit>","BF=","BF>","BF","PHP")
     hypotheses <- names(BFta_confirmatory_icc)
 
+    if(logIN == FALSE){
+      BFtu_confirmatory_icc <- exp(BFtu_confirmatory_icc)
+      BFmatrix_confirmatory_icc <- exp(BFmatrix_confirmatory_icc)
+    }
+
   }else{
     BFmatrix_confirmatory_icc <- PHP_confirmatory_icc <- BFtu_confirmatory_icc <- relfit <-
       relcomp <- hypotheses <- BFtable <- priorprobs <- NULL
@@ -331,6 +343,7 @@ BF.lmerMod <- function(x,
     model=x,
     bayesfactor="Bayes factors based on uniform priors",
     parameter="intraclass correlations",
+    log=logIN,
     call=match.call())
 
   class(BFlm_out) <- "BF"

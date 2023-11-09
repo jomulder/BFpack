@@ -3,13 +3,17 @@
 #' @importFrom sandwich sandwich
 #' @importFrom ergm ergmMPLE
 #' @importFrom stats as.formula
+#' @importFrom Bergm bergm
 #' @method BF ergm
 #' @export
 BF.ergm <- function(x,
                     hypothesis = NULL,
                     prior.hyp = NULL,
                     complement = TRUE,
+                    log = FALSE,
                     ...){
+
+  logIN <- log
 
   # extract coefficients
   estimate <- coef(x)
@@ -43,7 +47,7 @@ BF.ergm <- function(x,
       }
     }
   }
-  Bergm.out <- Bergm::bergm(form.new,prior.mean=rep(0,K1),prior.sigma=priorcov,...)
+  Bergm.out <- bergm(form.new,prior.mean=rep(0,K1),prior.sigma=priorcov,...)
   #get robust estimates for the Gaussian mean and covariance matrix
   post.mean <- apply(Bergm.out$Theta,2,median)
   names(post.mean) <- names(estimate)
@@ -62,7 +66,8 @@ BF.ergm <- function(x,
                      post.sigma = post.Sigma,
                      hypothesis = hypothesis,
                      prior.hyp = prior.hyp,
-                     complement = complement)
+                     complement = complement,
+                     log = logIN)
   }else{
     prior.mean = rep(0,K1)
     names(prior.mean) <- names(estimate)
@@ -73,7 +78,8 @@ BF.ergm <- function(x,
                                          post.sigma = post.Sigma[-which.edges,-which.edges],
                                          hypothesis = hypothesis,
                                          prior.hyp = prior.hyp,
-                                         complement = complement)
+                                         complement = complement,
+                                         log = logIN)
   }
 
   postestimates <- cbind(apply(Bergm.out$Theta,2,mean),
@@ -128,7 +134,10 @@ BF.bergm <- function(x,
                     hypothesis = NULL,
                     prior.hyp = NULL,
                     complement = TRUE,
+                    log = FALSE,
                     ...){
+
+  logIN <- log
 
   form.char <- paste(format(x$formula), collapse = '')
   location_tilde <- regexpr("~",form.char)[1]
@@ -173,7 +182,7 @@ BF.bergm <- function(x,
       }
     }
   }
-  Bergm.out <- Bergm::bergm(x$formula,prior.mean=rep(0,K1),prior.sigma=priorcov,...)
+  Bergm.out <- bergm(x$formula,prior.mean=rep(0,K1),prior.sigma=priorcov,...)
   #get robust estimates for the Gaussian mean and covariance matrix
   post.mean <- apply(Bergm.out$Theta,2,median)
   names(post.mean) <- paste0("theta",1:K1)
@@ -192,7 +201,8 @@ BF.bergm <- function(x,
                                          post.sigma = post.Sigma,
                                          hypothesis = hypothesis,
                                          prior.hyp = prior.hyp,
-                                         complement = complement)
+                                         complement = complement,
+                                         log = logIN)
   }else{
     prior.mean = rep(0,K1)
     names(prior.mean) <- coef_names
@@ -203,7 +213,8 @@ BF.bergm <- function(x,
                                          post.sigma = post.Sigma[-which.edges,-which.edges],
                                          hypothesis = hypothesis,
                                          prior.hyp = prior.hyp,
-                                         complement = complement)
+                                         complement = complement,
+                                         log = logIN)
   }
 
   postestimates <- cbind(apply(Bergm.out$Theta,2,mean),

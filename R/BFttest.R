@@ -21,6 +21,7 @@ BF.t_test <- function(x,
                       hypothesis = NULL,
                       prior.hyp = NULL,
                       complement = TRUE,
+                      log = FALSE,
                       BF.type = 2,
                       ...){
 
@@ -38,6 +39,8 @@ BF.t_test <- function(x,
   }else{
     bayesfactor <- "generalized fractional Bayes factors"
   }
+
+  logIN <- log
 
   if(numpop==1){ #one sample t test
     tvalue <- x$statistic
@@ -70,10 +73,11 @@ BF.t_test <- function(x,
     }
     logBFtu <- c(relfit0-relcomp0,relfit1-relcomp1,relfit2-relcomp2)
     names(logBFtu) <- hypotheses_exploratory
-    BFtu_exploratory <- matrix(exp(logBFtu),nrow=1)
+    BFtu_exploratory <- matrix(logBFtu,nrow=1)
+    maxBFtu <- max(BFtu_exploratory)
     colnames(BFtu_exploratory) <- hypotheses_exploratory
     row.names(BFtu_exploratory) <- "BFtu"
-    PHP_exploratory <- BFtu_exploratory/sum(BFtu_exploratory)
+    PHP_exploratory <- exp(BFtu_exploratory - maxBFtu) /sum(exp(BFtu_exploratory - maxBFtu))
     colnames(PHP_exploratory) <- c(paste0("Pr(=",as.character(mu0),")"),paste0("Pr(<",as.character(mu0),")"),
                                    paste0("Pr(>",as.character(mu0),")"))
     if(x$method=="Paired t-test"){
@@ -82,11 +86,11 @@ BF.t_test <- function(x,
       row.names(PHP_exploratory) <- "mu"
     }
 
-    relfit_exploratory <- matrix(c(exp(relfit0),rep(1,3),exp(relfit1),exp(relfit2)),ncol=2)
-    relcomp_exploratory <- matrix(c(exp(relcomp0),rep(1,3),rep(.5,2)),ncol=2)
-    row.names(relfit_exploratory) <- row.names(relcomp_exploratory) <- hypotheses_exploratory
-    colnames(relfit_exploratory) <- c("f=","f>")
-    colnames(relcomp_exploratory) <- c("c=","c>")
+    # relfit_exploratory <- matrix(c(exp(relfit0),rep(1,3),exp(relfit1),exp(relfit2)),ncol=2)
+    # relcomp_exploratory <- matrix(c(exp(relcomp0),rep(1,3),rep(.5,2)),ncol=2)
+    # row.names(relfit_exploratory) <- row.names(relcomp_exploratory) <- hypotheses_exploratory
+    # colnames(relfit_exploratory) <- c("f=","f>")
+    # colnames(relcomp_exploratory) <- c("c=","c>")
 
     if(!is.null(hypothesis)){ #perform confirmatory tests
       #execute via BF.lm
@@ -100,7 +104,7 @@ BF.t_test <- function(x,
       }else{
         names(lm1$coefficients) <- "mu"
       }
-      BFlm1 <- BF(lm1,hypothesis,prior.hyp=prior.hyp,complement=complement,BF.type=BF.type)
+      BFlm1 <- BF(lm1,hypothesis,prior.hyp=prior.hyp,complement=complement,BF.type=BF.type,log=logIN)
       BFtu_confirmatory <- BFlm1$BFtu_confirmatory
       PHP_confirmatory <- BFlm1$PHP_confirmatory
       BFmatrix_confirmatory <- BFlm1$BFmatrix_confirmatory
@@ -130,7 +134,8 @@ BF.t_test <- function(x,
       # is called 'difference'
       df1 <- data.frame(out=out,differenc=factor(c(rep("a",x$n[2]),rep("e",x$n[1]))))
       lm1 <- lm(out ~ differenc,df1)
-      BFlm1 <- BF(lm1,hypothesis=hypothesis,prior.hyp=prior.hyp,complement=complement,BF.type=BF.type)
+      BFlm1 <- BF(lm1,hypothesis=hypothesis,prior.hyp=prior.hyp,complement=complement,
+                  BF.type=BF.type,log=logIN)
       BFtu_exploratory <- t(as.matrix(BFlm1$BFtu_exploratory[2,]))
       PHP_exploratory <- t(as.matrix(BFlm1$PHP_exploratory[2,]))
       row.names(BFtu_exploratory) <- row.names(PHP_exploratory) <- "difference"
@@ -151,29 +156,31 @@ BF.t_test <- function(x,
       nulldiff <- x$null.value
       df0 <- rep(1,2)
       samsize <- 1e7
-      drawsN <- rt(samsize,df=dfN[1])*sqrt(scaleN[1]) + meanN[1] - rt(samsize,df=dfN[2])*sqrt(scaleN[2]) - meanN[2]
+      drawsN <- rt(samsize,df=dfN[1])*sqrt(scaleN[1]) + meanN[1] - rt(samsize,df=dfN[2]) *
+        sqrt(scaleN[2]) - meanN[2]
       densN <- approxfun(density(drawsN),yleft=0,yright=0)
       relfit0 <- log(densN(nulldiff))
       relfit1 <- log(mean(drawsN<nulldiff))
       relfit2 <- log(mean(drawsN>nulldiff))
       if(BF.type == 2){
         draws0 <- rt(samsize,df=df0[1])*sqrt(scale0[1]) - rt(samsize,df=df0[2])*sqrt(scale0[2])
-        relcomp0 <- log(mean((draws0<1)*(draws0> -1))/2)
-        relcomp1 <- log(mean(draws0<0))
-        relcomp2 <- log(mean(draws0>0))
+        relcomp0 <- log(mean((draws0 < 1)*(draws0 > -1))/2)
+        relcomp1 <- log(mean(draws0 < 0))
+        relcomp2 <- log(mean(draws0 > 0))
       }else{
         draws0 <- rt(samsize,df=df0[1])*sqrt(scale0[1]) + meanN[1] - rt(samsize,df=df0[2])*sqrt(scale0[2]) - meanN[2]
         relcomp0 <- log(mean((draws0 < nulldiff + 1)*(draws0 > nulldiff - 1))/2)
-        relcomp1 <- log(mean(draws0<nulldiff))
-        relcomp2 <- log(mean(draws0>nulldiff))
+        relcomp1 <- log(mean(draws0 < nulldiff))
+        relcomp2 <- log(mean(draws0 > nulldiff))
       }
 
       #exploratory Bayes factor test
       hypotheses_exploratory <- c("difference=0","difference<0","difference>0")
       logBFtu_exploratory <- c(relfit0-relcomp0,relfit1-relcomp1,relfit2-relcomp2)
       names(logBFtu_exploratory) <- hypotheses_exploratory
-      BFtu_exploratory <- exp(logBFtu_exploratory)
-      PHP_exploratory <- matrix(BFtu_exploratory/sum(BFtu_exploratory),nrow=1)
+      BFtu_exploratory <- logBFtu_exploratory
+      maxBFtu <- max(BFtu_exploratory)
+      PHP_exploratory <- matrix(exp(BFtu_exploratory - maxBFtu)/sum(exp(BFtu_exploratory - maxBFtu)),nrow=1)
       colnames(PHP_exploratory) <- c("Pr(=0)","Pr(<0)","Pr(>0)")
       row.names(PHP_exploratory) <- "difference"
       relfit <- matrix(c(exp(relfit0),rep(1,3),exp(relfit1),exp(relfit2)),ncol=2)
@@ -248,21 +255,28 @@ BF.t_test <- function(x,
         rm(drawsN)
         rm(draws0)
         #compute Bayes factors and posterior probabilities for confirmatory test
-        BFtu_confirmatory <- c(apply(relfit / relcomp, 1, prod))
-        PHP_confirmatory <- BFtu_confirmatory*priorprobs / sum(BFtu_confirmatory*priorprobs)
-        BFmatrix_confirmatory <- matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory))/
+        BFtu_confirmatory <- c(apply(relfit - relcomp, 1, sum))
+        maxBFtu <- max(BFtu_confirmatory)
+        PHP_confirmatory <- exp(BFtu_confirmatory-maxBFtu)*priorprobs / sum(exp(BFtu_confirmatory-maxBFtu)*priorprobs)
+        BFmatrix_confirmatory <- matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory)) -
           t(matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory)))
-        diag(BFmatrix_confirmatory) <- 1
+        diag(BFmatrix_confirmatory) <- log(1)
         row.names(BFmatrix_confirmatory) <- colnames(BFmatrix_confirmatory) <- names(BFtu_confirmatory)
         relative_fit <- relfit
         relative_complexity <- relcomp
 
-        BFtable <- cbind(relative_complexity,relative_fit,relative_fit[,1]/relative_complexity[,1],
-                         relative_fit[,2]/relative_complexity[,2],apply(relative_fit,1,prod)/
+        BFtable <- cbind(relative_complexity,relative_fit,relative_fit[,1]-relative_complexity[,1],
+                         relative_fit[,2]-relative_complexity[,2],apply(relative_fit,1,sum)/
                            apply(relative_complexity,1,prod),PHP_confirmatory)
+        BFtable[,1:7] <- exp(BFtable[,1:7])
         row.names(BFtable) <- names(BFtu_confirmatory)
         colnames(BFtable) <- c("complex=","complex>","fit=","fit>","BF=","BF>","BF","PHP")
         hypotheses <- row.names(relative_complexity)
+        if(logIN == FALSE){
+          BFtu_exploratory <- exp(BFtu_exploratory)
+          BFtu_confirmatory <- exp(BFtu_confirmatory)
+          BFmatrix_confirmatory <- exp(BFmatrix_confirmatory)
+        }
       }
     }
     parameter <- "difference in means"
@@ -286,6 +300,7 @@ BF.t_test <- function(x,
     model=x,
     bayesfactor=bayesfactor,
     parameter=parameter,
+    log = logIN,
     call=match.call())
 
   class(BFlm_out) <- "BF"

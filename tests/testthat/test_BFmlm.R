@@ -32,13 +32,24 @@ test_that("BF.mlm two hypotheses on same DVs correctly evaluated", {
 expect_equivalent(
   round(BF3$PHP_confirmatory,3),c(0.902,0.094,0.005)
 )})
+BF3.log <- BF(lm1,hypothesis="disp_on_mpg>wt_on_mpg;disp_on_mpg=wt_on_mpg;disp_on_mpg<wt_on_mpg",log=TRUE)
+test_that("BF.mlm two hypotheses on same DVs correctly evaluated", {
+  expect_equivalent(
+    round(BF3.log$BFtu_exploratory,3),round(log(BF3$BFtu_exploratory),3),tol=.01
+  )})
 test_that("BF.mlm two hypotheses different DVs and different IVs correctly evaluated", {
   skip_on_cran()
   # tests on different predictors on different DVs
   set.seed(4768)
-  BF4 <- BF(lm1,hypothesis="disp_on_mpg<wt_on_cyl & disp_on_cyl<wt_on_hp; disp_on_mpg=wt_on_cyl & disp_on_cyl=wt_on_hp")
+  BF4 <- BF(lm1,hypothesis="disp_on_mpg<wt_on_cyl & disp_on_cyl<wt_on_hp; disp_on_mpg=wt_on_cyl & disp_on_cyl=wt_on_hp",
+            log = TRUE)
   expect_equivalent(
     round(BF4$PHP_confirmatory,3),c(0.018,0.919,0.062), tolerance = .005
-)})
+  )
+  expect_equivalent(
+    BF4$PHP_confirmatory[1]/BF4$PHP_confirmatory[2],exp(BF4$BFtu_confirmatory[1] -
+            BF4$BFtu_confirmatory[2]), tolerance = .01
+  )
+})
 
 

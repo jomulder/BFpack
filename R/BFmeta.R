@@ -199,7 +199,7 @@ BF.rma.uni <- function(x,
 ### FUNCTIONS ###
 #################
 
-### Likelihood where delta is integrated out. JORIS: I made some changes in this to make it more efficient.
+### Likelihood where delta is integrated out.
 marg_lik <- function(yi, vi, rho, rho_min, typ_vi)
 {
   tau2 <- rho/(1-rho)*typ_vi # Compute tau2 based on rho

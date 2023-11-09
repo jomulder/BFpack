@@ -22,6 +22,8 @@
 #' The default is NULL which will specify equal prior probabilities.
 #' @param complement a logical specifying whether the complement should be added
 #' to the tested hypothesis under \code{hypothesis}.
+#' @param log a logical specifying whether the Bayes factors should be computed on a log scale.
+#' Default is \code{FALSE}.
 #' @param BF.type An integer that specified the type of Bayes factor (or prior) that is used for the test.
 #' Currently, this argument is only used for models of class 'lm' and 't_test',
 #' where \code{BF.type=2} implies an adjusted fractional Bayes factor with a 'fractional prior mean' at the null value (Mulder, 2014),
@@ -158,6 +160,6 @@
 #' @export
 #' @useDynLib BFpack, .registration = TRUE
 #'
-BF <- function(x, hypothesis, prior.hyp, complement, ...) {
+BF <- function(x, hypothesis, prior.hyp, complement, log, ...) {
   UseMethod("BF", x)
 }

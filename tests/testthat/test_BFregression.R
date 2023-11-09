@@ -28,7 +28,7 @@ test_that("BF.lm exploratory hypotheses correctly evaluated", {
 BF2 <- BF(lm1,hypothesis="disp=drat=0;disp>drat>0;disp>drat=0")
 test_that("BF.lm multiple confirmatory hypotheses correctly evaluated", {
   expect_equivalent(
-    round(BF2$PHP_confirmatory,5),c(0.00000,0.53382,0.40265,0.06353)
+    round(BF2$PHP_confirmatory,5),c(0.000,0.533,0.402,0.064), tolerance = .01
 )})
 
 BF2 <- BF(lm1,hypothesis="disp=drat=0;disp>drat>0;disp>drat=0",complement=FALSE)

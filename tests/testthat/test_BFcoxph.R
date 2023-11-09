@@ -9,3 +9,12 @@ test_that("BF.coxph exploratory hypotheses correctly evaluated", {
   expect_true(
     all.equal(c(unname(BF1$PHP_exploratory)),c(0.569,0.220,0.211))
 )})
+BF1log <- BF(coxph1,log = TRUE)
+test_that("BF.coxph exploratory hypotheses correctly evaluated", {
+  expect_true(
+    all.equal(exp(c(BF1log$BFtu_exploratory)),c(BF1$BFtu_exploratory))
+  )})
+test_that("BF.coxph exploratory hypotheses correctly evaluated", {
+  expect_true(
+    all.equal(c(unname(BF1$PHP_exploratory)),c(unname(BF1log$PHP_exploratory)))
+  )})

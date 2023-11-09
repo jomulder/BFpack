@@ -13,6 +13,15 @@ test_that("glm two hypotheses correctly evaluated via confirmatory test", {
   expect_equivalent(
   BF_glm$PHP_confirmatory,c(0.142, 0.002, 0.856), tolerance = .02
 )})
+
+#check results conformatory test
+BF_glm2 <- BF(fit, hypothesis="ztrust > zfWHR > zAfro > 0;
+             ztrust > 0 & zfWHR = zAfro = 0",log=TRUE)
+test_that("glm two hypotheses correctly evaluated via confirmatory test", {
+  expect_equivalent(
+    log(BF_glm$BFmatrix_confirmatory[,1]),BF_glm2$BFmatrix_confirmatory[,1], tolerance = .02
+  )})
+
 #check equal prior probabilities
 test_that("glm use correct prior probabilities", {
 expect_true(

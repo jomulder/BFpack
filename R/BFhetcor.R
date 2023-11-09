@@ -6,7 +6,11 @@ BF.hetcor <- function(x,
                        hypothesis = NULL,
                        prior.hyp = NULL,
                        complement = TRUE,
+                       log = FALSE,
                        ...){
+
+  logIN <- log
+
   get_est <- get_estimates(x)
   P <- nrow(x$std.errors)
   numcorr <- P*(P-1)/2
@@ -30,24 +34,40 @@ BF.hetcor <- function(x,
   names(estimates.F) <- colnames(errcov.F) <- row.names(errcov.F) <- corr_names
 
   #exploratory BF testing
-  relfit <- matrix(c(dnorm(0,mean=estimates.F,sd=sqrt(diag(errcov.F))),
-                     pnorm(0,mean=estimates.F,sd=sqrt(diag(errcov.F))),
-                     1-pnorm(0,mean=estimates.F,sd=sqrt(diag(errcov.F)))),ncol=3)
+  relfit <- matrix(c(dnorm(0,mean=estimates.F,sd=sqrt(diag(errcov.F)),log=TRUE),
+                     pnorm(0,mean=estimates.F,sd=sqrt(diag(errcov.F)),log.p=TRUE),
+                     pnorm(0,mean=estimates.F,sd=sqrt(diag(errcov.F)),log.p=TRUE,
+                           lower.tail=FALSE)),ncol=3)
   # get draws from joint uniform prior to compute relative measures
   if(sum(P==Fcor$P)==0){
+    #number of draws to get 1e7 draws for the marginal of 1 Fisher transformation correlation
     numdraws <- round(1e7/(P*(P-1)/2))
     drawsJU <- draw_ju_r(P,samsize=numdraws,Fisher=1)
     approx_studt <- QRM::fit.st(c(drawsJU))$par.ests[c(1,3)]
   }else{
+    # use the estimate of the scale from the Fcor object
+    # for the df the estimates show some numerical error for P>20, so use fitted line
     approx_studt <- unlist(c(Fcor[which(P==Fcor$P),1:2]))
+    if(P > 20){
+      # use fitted linear line rather than rough estimate of df
+      slpe1 <- 2.944494
+      intcept1 <- 1.864901
+      approx_studt[1] <- P * slpe1 + intcept1
+    }
   }
-  relcomp0 <- dt(0,df=approx_studt[1])/approx_studt[2] # all marginal priors are the same
-  relcomp <- matrix(c(rep(relcomp0,numcorr),rep(.5,numcorr*2)),ncol=3)
+  relcomp0 <- dt(0,df=approx_studt[1],log=TRUE)-log(approx_studt[2]) # all marginal priors are the same
+  relcomp <- matrix(c(rep(relcomp0,numcorr),rep(log(.5),numcorr*2)),ncol=3)
   row.names(relfit) <- row.names(relcomp) <- names(estimates.F)
 
-  BFtu_exploratory <- relfit / relcomp
+  BFtu_exploratory <- relfit - relcomp
   colnames(BFtu_exploratory) <- colnames(BFtu_exploratory) <-  c("Pr(=0)","Pr(<0)","Pr(>0)")
-  PHP_exploratory <- BFtu_exploratory / apply(BFtu_exploratory,1,sum)
+  maxrow <- apply(BFtu_exploratory,1,max)
+  PHP_exploratory <- exp(BFtu_exploratory - maxrow %*% t(rep(1,ncol(BFtu_exploratory)))) /
+    apply(exp(BFtu_exploratory - maxrow %*% t(rep(1,ncol(BFtu_exploratory)))),1,sum)
+
+  if(logIN == FALSE){
+    BFtu_exploratory <- exp(BFtu_exploratory)
+  }
 
   #confirmatory BF testing
   if(!is.null(hypothesis)){
@@ -124,7 +144,8 @@ BF.hetcor <- function(x,
     # evaluation of complement hypothesis
     if(complement == TRUE){
       relfit <- Gaussian_prob_Hc(estimates.F,errcov.F,relfit,RrO)
-      relcomp <- Student_prob_Hc(mean1=mean0,scale1=Scale0,df1=df0,relmeas1=relcomp,constraints=NULL,RrO1=RrO)
+      relcomp <- Student_prob_Hc(mean1=mean0,scale1=Scale0,df1=df0,relmeas1=relcomp,
+                                 constraints=NULL,RrO1=RrO)
     }
     hypothesisshort <- unlist(lapply(1:nrow(relfit),function(h) paste0("H",as.character(h))))
     row.names(relfit) <- row.names(relfit) <- hypothesisshort
@@ -133,7 +154,7 @@ BF.hetcor <- function(x,
     colnames(relfit) <- c("f_E","f_O")
     # computation of exploratory BFs and PHPs
     # the BF for the complement hypothesis vs Hu needs to be computed.
-    BFtu_confirmatory <- c(apply(relfit / relcomp, 1, prod))
+    BFtu_confirmatory <- c(apply(relfit - relcomp, 1, sum))
     # Check input of prior probabilies
     if(is.null(prior.hyp)){
       priorprobs <- rep(1/length(BFtu_confirmatory),length(BFtu_confirmatory))
@@ -146,16 +167,25 @@ BF.hetcor <- function(x,
       }
     }
     names(priorprobs) <- names(BFtu_confirmatory)
-    PHP_confirmatory <- BFtu_confirmatory*priorprobs / sum(BFtu_confirmatory*priorprobs)
-    BFtable <- cbind(relcomp,relfit,relfit[,1]/relcomp[,1],relfit[,2]/relcomp[,2],
-                     apply(relfit,1,prod)/apply(relcomp,1,prod),PHP_confirmatory)
+    maxBFtu <- max(BFtu_confirmatory)
+    PHP_confirmatory <- exp(BFtu_confirmatory-maxBFtu)*priorprobs /
+      sum(exp(BFtu_confirmatory-maxBFtu)*priorprobs)
+    BFtable <- cbind(relcomp,relfit,relfit[,1]-relcomp[,1],relfit[,2]-relcomp[,2],
+                     apply(relfit,1,sum)-apply(relcomp,1,sum),PHP_confirmatory)
+    BFtable[,1:7] <- exp(BFtable[,1:7])
     row.names(BFtable) <- names(BFtu_confirmatory)
     colnames(BFtable) <- c("complex=","complex>","fit=","fit>","BF=","BF>","BF","PHP")
-    BFmatrix_confirmatory <- matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory))/
+    BFmatrix_confirmatory <- matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory)) -
       t(matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory)))
-    diag(BFmatrix_confirmatory) <- 1
+    diag(BFmatrix_confirmatory) <- 0
     row.names(BFmatrix_confirmatory) <- colnames(BFmatrix_confirmatory) <- names(BFtu_confirmatory)
     hypotheses <- row.names(relcomp)
+
+    if(logIN == FALSE){
+      BFtu_confirmatory <- exp(BFtu_confirmatory)
+      BFmatrix_confirmatory <- exp(BFmatrix_confirmatory)
+    }
+
   }else{
     BFtu_confirmatory <- PHP_confirmatory <- BFmatrix_confirmatory <- relfit <-
       relcomp <- hypotheses <- BFtable <- priorprobs <- NULL
@@ -175,6 +205,7 @@ BF.hetcor <- function(x,
     model=x,
     bayesfactor="Bayes factors based on joint uniform priors",
     parameter="Correlations",
+    log=logIN,
     call=match.call())
 
   class(BF_out) <- "BF"

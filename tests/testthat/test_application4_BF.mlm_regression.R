@@ -26,6 +26,11 @@ test_that("for mlm object multiple hypotheses for same IV", {
   expect_equivalent(
     BF_fmri2$PHP_confirmatory,c(0.18941726,0.72354824,0.08703451)
   )})
+BF_fmri2b <- BF(fmri.lm, hypothesis = constraints.fmri, log=TRUE)
+test_that("for mlm object multiple hypotheses for same IV with log", {
+  expect_equivalent(
+    exp(BF_fmri2b$BFtu_confirmatory),BF_fmri2$BFtu_confirmatory
+)})
 
 #no seed required
 constraints.fmri <- "Face_on_Deep = Vehicle_on_Deep < 0;

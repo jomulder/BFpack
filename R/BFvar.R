@@ -97,6 +97,7 @@ BF.bartlett_htest <- function(x,
                            hypothesis = NULL,
                            prior.hyp = NULL,
                            complement = TRUE,
+                           log = FALSE,
                            ...) {
   get_est <- get_estimates(x)
   nsim <- 1e5
@@ -105,6 +106,8 @@ BF.bartlett_htest <- function(x,
   b <- 2/n
   J <- length(n)
   names_coef <- names(get_est$estimate)
+
+  logIN <- log
 
   # exploratory BF for equality of variances:
   logmx0 <- - 1 / 2 * sum((1 - b) * n) * log(pi) + 1 / 2 * log(prod(b)) +
@@ -115,11 +118,12 @@ BF.bartlett_htest <- function(x,
     sum(lgamma((n - 1) / 2) - lgamma((b * n - 1) / 2) -
           1 / 2 * (n - 1) * log((n - 1) * s2) +
           1 / 2 * (b * n - 1) * log(b * (n - 1) * s2))
-  BF0u <- exp(logmx0 - logmxu)
+  BF0u <- logmx0 - logmxu
 
-  BFtu_exploratory <- c(BF0u,1)
+  BFtu_exploratory <- c(BF0u,log(1))
   names(BFtu_exploratory) <- c("homogeneity of variances","no homogeneity of variances")
-  PHP_exploratory <- BFtu_exploratory / sum(BFtu_exploratory)
+  PHP_exploratory <- exp(BFtu_exploratory - max(BFtu_exploratory)) /
+    sum(exp(BFtu_exploratory - max(BFtu_exploratory)))
 
   if (!is.null(hypothesis)){
     parse_hyp <- parse_hypothesis(names_coef, hypothesis)
@@ -232,12 +236,12 @@ BF.bartlett_htest <- function(x,
       }
     }
     hypotheses <- names(logmx)
-    BFtu_confirmatory <- exp(logmx - logmxu)
-    BFmatrix_confirmatory <- BFtu_confirmatory %*% t(1 / BFtu_confirmatory)
-    diag(BFmatrix_confirmatory) <- 1
+    BFtu_confirmatory <- (logmx - logmxu)
+    BFmatrix_confirmatory <- BFtu_confirmatory %*% t(rep(1,length(BFtu_confirmatory))) -
+      rep(1,length(BFtu_confirmatory)) %*% t(BFtu_confirmatory)
+    diag(BFmatrix_confirmatory) <- log(1)
     names(BFtu_confirmatory) <- row.names(BFmatrix_confirmatory) <-
       colnames(BFmatrix_confirmatory) <- hypotheses
-    diag(BFmatrix_confirmatory) <- 1
 
     if(is.null(prior.hyp)){
       priorprobs <- rep(1/length(BFtu_confirmatory),length(BFtu_confirmatory))
@@ -250,7 +254,8 @@ BF.bartlett_htest <- function(x,
       }
     }
 
-    PHP_confirmatory <- BFtu_confirmatory * priorprobs / sum(BFtu_confirmatory * priorprobs)
+    PHP_confirmatory <- exp(BFtu_confirmatory - max(BFtu_confirmatory)) * priorprobs /
+      sum(exp(BFtu_confirmatory - max(BFtu_confirmatory)) * priorprobs)
     relcomp[which(is.na(relcomp))] <- 1
     relfit[which(is.na(relfit))] <- 1
     BF_E <- exp(logmxE - logmxu)
@@ -258,6 +263,12 @@ BF.bartlett_htest <- function(x,
                      relfit/relcomp,BF_E*relfit/relcomp,PHP_confirmatory)
     row.names(BFtable) <- names(PHP_confirmatory)
     colnames(BFtable) <- c("complex=","complex>","fit=","fit>","BF=","BF>","BF","PHP")
+
+    if(logIN == FALSE){
+      BFtu_exploratory <- exp(BFtu_exploratory)
+      BFtu_confirmatory <- exp(BFtu_confirmatory)
+      BFmatrix_confirmatory <- exp(BFmatrix_confirmatory)
+    }
   }
 
   BFlm_out <- list(
@@ -273,6 +284,7 @@ BF.bartlett_htest <- function(x,
     model=x,
     bayesfactor="generalized adjusted fractional Bayes factors",
     parameter="group variances",
+    log = logIN,
     call=match.call())
 
   class(BFlm_out) <- "BF"

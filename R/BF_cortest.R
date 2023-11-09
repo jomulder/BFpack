@@ -300,6 +300,7 @@ remove_predictors_helper <- function(Y_groups, formula){
 
 FisherZ <- function(r){.5*log((1+r)/(1-r))}
 
+
 globalVariables(c("Fcor"))
 
 #' @importFrom mvtnorm dmvnorm pmvnorm rmvnorm
@@ -312,10 +313,13 @@ BF.cor_test <- function(x,
                         hypothesis = NULL,
                         prior.hyp = NULL,
                         complement = TRUE,
+                        log = FALSE,
                         ...){
 
   bayesfactor <- "Bayes factors based on joint uniform priors"
   testedparameter <- "correlation coefficients"
+
+  logIN <- log
 
   P <- dim(x$corrdraws[[1]])[2]
   numG <- length(x$corrdraws)
@@ -325,32 +329,48 @@ BF.cor_test <- function(x,
   corrcovmN <- get_est$Sigma[[1]]
 
   # Exploratory testing of correlation coefficients
-  #get height of prior density at 0 of Fisher transformed correlation
+  # get height of prior density at 0 of Fisher transformed correlation
+  # slope and intercept of df as function of P based on Fcor
+
   if(sum(P==Fcor$P)==0){
     #number of draws to get 1e7 draws for the marginal of 1 Fisher transformation correlation
     numdraws <- round(1e7/(P*(P-1)/2))
     drawsJU <- draw_ju_r(P,samsize=numdraws,Fisher=1)
     approx_studt <- QRM::fit.st(c(drawsJU))$par.ests[c(1,3)]
   }else{
+    # use the estimate of the scale from the Fcor object
+    # for the df the estimates show some numerical error for P>20, so use fitted line
     approx_studt <- unlist(c(Fcor[which(P==Fcor$P),1:2]))
+    if(P > 20){
+      # use fitted linear line rather than rough estimate of df
+      slpe1 <- 2.944494
+      intcept1 <- 1.864901
+      approx_studt[1] <- P * slpe1 + intcept1
+    }
   }
-  relcomp0 <- dt(0,df=approx_studt[1])/approx_studt[2] # all marginal priors are the same
+  relcomp0 <- dt(0,df=approx_studt[1],log=TRUE)-log(approx_studt[2]) # all marginal priors are the same
 
   # compute exploratory BFs
   corr_names <- rownames(x$correstimates)
   numcorr <- length(corrmeanN)
-  relfit <- matrix(c(dnorm(0,mean=corrmeanN,sd=sqrt(diag(corrcovmN))),
-                     pnorm(0,mean=corrmeanN,sd=sqrt(diag(corrcovmN))),
-                     1-pnorm(0,mean=corrmeanN,sd=sqrt(diag(corrcovmN)))),ncol=3)
-  relcomp <- matrix(c(rep(relcomp0,numcorr),rep(.5,numcorr*2)),ncol=3)
+  relfit <- matrix(c(dnorm(0,mean=corrmeanN,sd=sqrt(diag(corrcovmN)),log=TRUE),
+                     pnorm(0,mean=corrmeanN,sd=sqrt(diag(corrcovmN)),log.p=TRUE),
+                     pnorm(0,mean=corrmeanN,sd=sqrt(diag(corrcovmN)),log.p=TRUE,
+                             lower.tail=FALSE)),ncol=3)
+  relcomp <- matrix(c(rep(relcomp0,numcorr),rep(log(.5),numcorr*2)),ncol=3)
   colnames(relcomp) <- colnames(relfit) <- c("p(=0)","Pr(<0)","Pr(>0)")
-  BFtu_exploratory <- relfit / relcomp
+  BFtu_exploratory <- relfit - relcomp
   row.names(BFtu_exploratory) <- rownames(x$correstimates)
   colnames(BFtu_exploratory) <- c("Pr(=0)","Pr(<0)","Pr(>0)")
-  PHP_exploratory <- round(BFtu_exploratory /
-                             apply(BFtu_exploratory,1,sum),3)
+  rowmax <- apply(BFtu_exploratory,1,max)
+  PHP_exploratory <- round(exp(BFtu_exploratory - rowmax %*% t(rep(1,ncol(BFtu_exploratory)))) /
+                             apply(exp(BFtu_exploratory - rowmax %*% t(rep(1,ncol(BFtu_exploratory)))),1,sum),3)
   # posterior estimates
   postestimates <- x$correstimates
+
+  if(logIN == FALSE){
+    BFtu_exploratory <- exp(BFtu_exploratory)
+  }
 
   # confirmatory testing if hypothesis argument is used
   if(!is.null(hypothesis)){
@@ -415,13 +435,14 @@ BF.cor_test <- function(x,
     row.names(relfit) <- row.names(relcomp) <- parse_hyp$original_hypothesis
     if(complement == TRUE){
       relfit <- Gaussian_prob_Hc(corrmeanN,corrcovmN,relfit,RrO)
-      relcomp <- Student_prob_Hc(mean1=mean0,scale1=Scale0,df1=df0,relmeas1=relcomp,constraints=NULL,RrO1=RrO)
+      relcomp <- Student_prob_Hc(mean1=mean0,scale1=Scale0,df1=df0,relmeas1=relcomp,
+                                 constraints=NULL,RrO1=RrO)
     }
     hypothesisshort <- unlist(lapply(1:nrow(relfit),function(h) paste0("H",as.character(h))))
     row.names(relfit) <- row.names(relfit) <- hypothesisshort
 
     # the BF for the complement hypothesis vs Hu needs to be computed.
-    BFtu_confirmatory <- c(apply(relfit / relcomp, 1, prod))
+    BFtu_confirmatory <- c(apply(relfit - relcomp, 1, sum))
     # Check input of prior probabilies
     if(is.null(prior.hyp)){
       priorprobs <- rep(1/length(BFtu_confirmatory),length(BFtu_confirmatory))
@@ -434,19 +455,26 @@ BF.cor_test <- function(x,
       }
     }
     names(priorprobs) <- names(BFtu_confirmatory)
-    PHP_confirmatory <- BFtu_confirmatory*priorprobs / sum(BFtu_confirmatory*priorprobs)
-    BFtable <- cbind(relcomp,relfit,relfit[,1]/relcomp[,1],relfit[,2]/relcomp[,2],
-                     apply(relfit,1,prod)/apply(relcomp,1,prod),PHP_confirmatory)
+    maxBFtu <- max(BFtu_confirmatory)
+    PHP_confirmatory <- exp(BFtu_confirmatory-maxBFtu)*priorprobs / sum(exp(BFtu_confirmatory-maxBFtu)*priorprobs)
+    BFtable <- cbind(relcomp,relfit,relfit[,1]-relcomp[,1],relfit[,2]-relcomp[,2],
+                     apply(relfit,1,sum)-apply(relcomp,1,sum),PHP_confirmatory)
+    BFtable[,1:7] <- exp(BFtable[,1:7])
     row.names(BFtable) <- names(BFtu_confirmatory)
     colnames(BFtable) <- c("complex=","complex>","fit=","fit>","BF=","BF>","BF","PHP")
-    BFmatrix_confirmatory <- matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory))/
+    BFmatrix_confirmatory <- matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory))-
       t(matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory)))
-    diag(BFmatrix_confirmatory) <- 1
+    diag(BFmatrix_confirmatory) <- 0
     row.names(BFmatrix_confirmatory) <- colnames(BFmatrix_confirmatory) <- names(BFtu_confirmatory)
     if(nrow(relfit)==length(parse_hyp$original_hypothesis)){
       hypotheses <- parse_hyp$original_hypothesis
     }else{
       hypotheses <- c(parse_hyp$original_hypothesis,"complement")
+    }
+
+    if(logIN == FALSE){
+      BFtu_confirmatory <- exp(BFtu_confirmatory)
+      BFmatrix_confirmatory <- exp(BFmatrix_confirmatory)
     }
 
   }else{
@@ -467,6 +495,7 @@ BF.cor_test <- function(x,
     model=x,
     bayesfactor=bayesfactor,
     parameter=testedparameter,
+    log=logIN,
     call=match.call())
 
   class(BFcorr_out) <- "BF"

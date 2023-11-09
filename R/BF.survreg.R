@@ -7,6 +7,7 @@ BF.survreg <- function(x,
                    hypothesis = NULL,
                    prior.hyp = NULL,
                    complement = TRUE,
+                   log = FALSE,
                    ...){
 
   #Extract summary statistics
@@ -19,6 +20,7 @@ BF.survreg <- function(x,
   Args$hypothesis <- hypothesis
   Args$prior.hyp <- prior.hyp
   Args$complement <- complement
+  Args$log <- log
   out <- do.call(BF, Args)
   out$model <- x
   out$call <- match.call()

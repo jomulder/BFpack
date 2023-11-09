@@ -12,3 +12,11 @@ expect_true(
           unname(BF1$PHP_confirmatory), tolerance = .005)
 )})
 
+BF1.log <- BF(x=glm.D93, hypothesis = "treatment2 = 0; treatment2 < 0", log = TRUE)
+#check if confirmatory and exploratory test are the same for Gaussian estimator
+test_that("BF.glm two hypotheses correctly evaluated", {
+  expect_true(
+    all.equal(BF1$BFmatrix_confirmatory,
+              exp(BF1.log$BFmatrix_confirmatory), tolerance = .005)
+  )})
+

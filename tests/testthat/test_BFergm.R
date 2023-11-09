@@ -1,6 +1,5 @@
 
 # test for BF on an ergm object
-library(BFpack)
 
 #check if confirmatory test are the same for ergm object
 test_that("BF.ergm tests", {
@@ -42,6 +41,7 @@ test_that("BF.bergm one hypotheses correctly evaluated", {
   expect_true(
     all.equal(0.17,
               unname(BFbergm.test$PHP_confirmatory)[1], tolerance = .2)
-  )})
+  )
+})
 
 

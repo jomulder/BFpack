@@ -18,6 +18,13 @@ test_that("1 sample t test of multiple hypotheses correctly evaluated", {
   expect_equal(
     c(0.3523759,0.6476241),unname(BF1$PHP_confirmatory),tol=.01
   )})
+ttest1 <- t_test(therapeutic,mu=5)
+
+BF1 <- BF(x=ttest1,hypothesis="mu=5;mu<5",complement=FALSE,log=TRUE)
+test_that("test log(BF) t test", {
+  expect_equal(
+    c(0.6086118),BF1$BFmatrix_confirmatory[2,1],tol=.01
+  )})
 
 # test if one-sided PMP is same as one-sided p-value
 ttest2 <- t_test(therapeutic,mu=5,alternative="less")

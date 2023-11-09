@@ -9,11 +9,36 @@
 \title{Bayes factors for Bayesian exploratory and confirmatory hypothesis
 testing}
 \usage{
-\method{BF}{default}(x, hypothesis = NULL, prior.hyp = NULL, complement = TRUE, Sigma, n, ...)
+\method{BF}{default}(
+  x,
+  hypothesis = NULL,
+  prior.hyp = NULL,
+  complement = TRUE,
+  log = FALSE,
+  Sigma,
+  n,
+  ...
+)
 
-\method{BF}{lm}(x, hypothesis = NULL, prior.hyp = NULL, complement = TRUE, BF.type = 2, ...)
+\method{BF}{lm}(
+  x,
+  hypothesis = NULL,
+  prior.hyp = NULL,
+  complement = TRUE,
+  log = FALSE,
+  BF.type = 2,
+  ...
+)
 
-\method{BF}{t_test}(x, hypothesis = NULL, prior.hyp = NULL, complement = TRUE, BF.type = 2, ...)
+\method{BF}{t_test}(
+  x,
+  hypothesis = NULL,
+  prior.hyp = NULL,
+  complement = TRUE,
+  log = FALSE,
+  BF.type = 2,
+  ...
+)
 }
 \arguments{
 \item{x}{An R object containing the outcome of a statistical analysis.
@@ -33,6 +58,9 @@ The default is NULL which will specify equal prior probabilities.}
 
 \item{complement}{a logical specifying whether the complement should be added
 to the tested hypothesis under \code{hypothesis}.}
+
+\item{log}{a logical specifying whether the Bayes factors should be computed on a log scale.
+Default is \code{FALSE}.}
 
 \item{Sigma}{An approximate posterior covariance matrix (e.g,. error covariance
 matrix) of the parameters of interest. This argument is only required when \code{x}

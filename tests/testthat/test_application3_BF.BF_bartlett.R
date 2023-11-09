@@ -31,8 +31,11 @@ expect_equivalent(
   round(BF_var$PHP_confirmatory,3),c(0.426,0.278,0.238,0.058)
 )})
 
-
-
+BF_var2 <- BF(bartlett, hypothesis, log = TRUE)
+test_that("names match of output for a bartlett_test", {
+  expect_equivalent(
+    round(BF_var$BFmatrix_confirmatory,2),round(exp(BF_var2$BFmatrix_confirmatory),2),tol=.02
+  )})
 
 
 
