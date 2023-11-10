@@ -68,10 +68,23 @@ test_that("2 samples t test of two-sided hypotheses correctly evaluated
   skip_on_cran()
   ttest5 <- t_test(therapeutic,therapeutic*.7+2.5,"two.sided",var.equal=FALSE)
   set.seed(123)
-  BF5 <- BF(ttest5)
+  BF5 <- BF(ttest5,hypothesis="difference=0;difference<0")
   expect_equivalent(
-    c(unname(BF5$PHP_exploratory)),c(0.0607,0.9374,0.0019),
-    tolerance = .001)
+    c(unname(BF5$PHP_exploratory)),c(unname(BF5$PHP_confirmatory)),
+    tolerance = .05)
+
+  BF5b <- BF(ttest5,hypothesis="difference=0; difference> -1 & difference<1; difference< -1; difference>1",
+             BF.type=1,log=TRUE)
+  expect_equivalent(
+    length(unname(BF5b$PHP_confirmatory)),4
+    )
+  expect_equivalent(
+    round(unname(BF5b$PHP_confirmatory),4),c(0.0464, 0.5373, 0.4163, 0.0000), tol=.05
+  )
+  BF5c <- BF(ttest5,hypothesis="difference=0; difference> -1 & difference<1; difference< -1",BF.type=1,log=TRUE)
+  expect_equivalent(
+    BF5c$BFtu_confirmatory[4],BF5b$BFtu_confirmatory[4], tol=.05
+  )
 })
 
 

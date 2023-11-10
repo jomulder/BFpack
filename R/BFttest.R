@@ -139,7 +139,7 @@ BF.t_test <- function(x,
       BFtu_exploratory <- t(as.matrix(BFlm1$BFtu_exploratory[2,]))
       PHP_exploratory <- t(as.matrix(BFlm1$PHP_exploratory[2,]))
       row.names(BFtu_exploratory) <- row.names(PHP_exploratory) <- "difference"
-#
+
       if(!is.null(hypothesis)){
         BFtu_confirmatory <- BFlm1$BFtu_confirmatory
         PHP_confirmatory <- BFlm1$PHP_confirmatory
@@ -149,30 +149,34 @@ BF.t_test <- function(x,
         priorprobs <- BFlm1$prior
       }
     }else{ #equal variances not assumed. BF.lm cannot be used
-      meanN <- x$estimate
-      scaleN <- (x$v)/(x$n)
-      dfN <- x$n-1
-      scale0 <- (x$v)*(x$n-1)/(x$n)
-      nulldiff <- x$null.value
-      df0 <- rep(1,2)
-      samsize <- 1e7
-      drawsN <- rt(samsize,df=dfN[1])*sqrt(scaleN[1]) + meanN[1] - rt(samsize,df=dfN[2]) *
-        sqrt(scaleN[2]) - meanN[2]
-      densN <- approxfun(density(drawsN),yleft=0,yright=0)
-      relfit0 <- log(densN(nulldiff))
-      relfit1 <- log(mean(drawsN<nulldiff))
-      relfit2 <- log(mean(drawsN>nulldiff))
+      diff.obs <- x$estimate[1] - x$estimate[2]
+      nvec <- x$n
+      bvec <- 2/nvec
+      s2vec <- (x$v)*(x$n-1)
+      #draws for Monte Carlo estimates
+      sigma2_1.draws <- rgamma(1e6,shape=(nvec[1]-1)/2,rate=s2vec[1]/2)
+      sigma2b_1.draws <- rgamma(1e6,shape=(nvec[1]*bvec[1]-1)/2,rate=s2vec[1]*bvec[1]/2)
+      sigma2_2.draws <- rgamma(1e6,shape=(nvec[2]-1)/2,rate=s2vec[2]/2)
+      sigma2b_2.draws <- rgamma(1e6,shape=(nvec[2]*bvec[2]-1)/2,rate=s2vec[2]*bvec[2]/2)
+      relfit0 <- log(mean(dnorm(x$null.value,
+                                mean=diff.obs,
+                                sd=sqrt(1/sigma2_1.draws*1/nvec[1] + 1/sigma2_2.draws*1/nvec[2]))))
+      relfit1 <- log(mean(pnorm(x$null.value,
+                                mean=diff.obs,
+                                sd=sqrt(1/sigma2_1.draws*1/nvec[1] + 1/sigma2_2.draws*1/nvec[2]))))
+      relfit2 <- log(1 - exp(relfit1))
       if(BF.type == 2){
-        draws0 <- rt(samsize,df=df0[1])*sqrt(scale0[1]) - rt(samsize,df=df0[2])*sqrt(scale0[2])
-        relcomp0 <- log(mean((draws0 < 1)*(draws0 > -1))/2)
-        relcomp1 <- log(mean(draws0 < 0))
-        relcomp2 <- log(mean(draws0 > 0))
+        prior.mean <- x$null.value
       }else{
-        draws0 <- rt(samsize,df=df0[1])*sqrt(scale0[1]) + meanN[1] - rt(samsize,df=df0[2])*sqrt(scale0[2]) - meanN[2]
-        relcomp0 <- log(mean((draws0 < nulldiff + 1)*(draws0 > nulldiff - 1))/2)
-        relcomp1 <- log(mean(draws0 < nulldiff))
-        relcomp2 <- log(mean(draws0 > nulldiff))
+        prior.mean <- diff.obs
       }
+      relcomp0 <- log(mean(dnorm(x$null.value,
+                                 mean=prior.mean,
+                                 sd=sqrt(1/sigma2b_1.draws*1/(nvec[1]*bvec[1]) + 1/sigma2b_2.draws*1/(nvec[2]*bvec[2])))))
+      relcomp1 <- log(mean(pnorm(x$null.value,
+                                 mean=prior.mean,
+                                 sd=sqrt(1/sigma2b_1.draws*1/(nvec[1]*bvec[1]) + 1/sigma2b_2.draws*1/(nvec[2]*bvec[2])))))
+      relcomp2 <- log(1 - exp(relcomp1))
 
       #exploratory Bayes factor test
       hypotheses_exploratory <- c("difference=0","difference<0","difference>0")
@@ -183,11 +187,6 @@ BF.t_test <- function(x,
       PHP_exploratory <- matrix(exp(BFtu_exploratory - maxBFtu)/sum(exp(BFtu_exploratory - maxBFtu)),nrow=1)
       colnames(PHP_exploratory) <- c("Pr(=0)","Pr(<0)","Pr(>0)")
       row.names(PHP_exploratory) <- "difference"
-      relfit <- matrix(c(exp(relfit0),rep(1,3),exp(relfit1),exp(relfit2)),ncol=2)
-      relcomp <- matrix(c(exp(relcomp0),rep(1,3),rep(.5,2)),ncol=2)
-      row.names(relfit) <- row.names(relcomp) <- hypotheses_exploratory
-      colnames(relfit) <- c("f=","f>")
-      colnames(relcomp) <- c("c=","c>")
 
       if(!is.null(hypothesis)){
         name1 <- "difference"
@@ -196,15 +195,70 @@ BF.t_test <- function(x,
         RrList <- make_RrList2(parse_hyp)
         RrE <- RrList[[1]]
         RrO <- RrList[[2]]
-        # if(ncol(do.call(rbind,RrE))>2 || ncol(do.call(rbind,RrO))>2){
-        #   stop("hypothesis should be formulated on the only parameter 'difference'.")
-        # }
+
+        if(length(RrE)==1){
+          RrStack <- rbind(RrE[[1]],RrO[[1]])
+          RrStack <- interval_RrStack(RrStack)
+        }else{
+          RrStack_list <- lapply(1:length(RrE),function(h){
+            interval_RrStack(rbind(RrE[[h]],RrO[[h]]))
+          })
+          RrStack <- do.call(rbind,RrStack_list)
+        }
+        if(nrow(RrStack)>1){
+          RStack <- RrStack[,-2]
+          rStack <- RrStack[,2]
+        }else{
+          RStack <- matrix(RrStack[,-2],nrow=1)
+          rStack <- RrStack[,2]
+        }
+
+        if(BF.type==2){
+          # check if a common boundary exists for prior location under all constrained hypotheses
+          # necessary for the adjusted FBF
+          if(nrow(RrStack) > 1){
+            rref_ei <- rref(RrStack)
+            nonzero <- rref_ei[,2]!=0
+            if(max(nonzero)>0){
+              row1 <- max(which(nonzero))
+              if(sum(abs(rref_ei[row1,1]))==0){
+                stop("No common boundary point for prior location. Conflicting constraints.")
+              }
+            }
+          }
+          prior.mean <- c(ginv(RStack)%*%rStack)
+        }else{
+          prior.mean <- diff.obs
+        }
+
         relfit <- t(matrix(unlist(lapply(1:length(RrE),function(h){
           if(!is.null(RrE[[h]]) & is.null(RrO[[h]])){ #only an equality constraint
             nullvalue <- RrE[[h]][1,2]/RrE[[h]][1,1]
-            relfit_h <- c(log(densN(nullvalue)),0)
+            relfit_h <- c(log(mean(dnorm(nullvalue,mean=diff.obs,
+                                      sd=sqrt(1/sigma2_1.draws*1/nvec[1] + 1/sigma2_2.draws*1/nvec[2])))),
+                          log(1))
+            # relfit_h <- c(log(densN(nullvalue)),0)
           }else if(is.null(RrE[[h]]) & !is.null(RrO[[h]])){
-            relfit_h <- log(c(1,mean(apply(as.matrix(RrO[[h]][,1])%*%t(drawsN) - as.matrix(RrO[[h]][,2])%*%t(rep(1,samsize)) > 0,2,prod)==1)))
+            which.LB <- which(RrO[[h]][,1]>0)
+            if(length(which.LB) == 0){
+              LB <- -Inf
+            }else{
+              LB <- max(RrO[[h]][which.LB,2] / RrO[[h]][which.LB,1])
+            }
+            which.UB <- which(RrO[[h]][,1]<0)
+            if(length(which.UB) == 0){
+              UB <- Inf
+            }else{
+              UB <- min(RrO[[h]][which.UB,2] / RrO[[h]][which.UB,1])
+            }
+            relfit_h <- c(log(1),
+                          log(mean(pnorm(UB,mean=diff.obs,
+                                         sd=sqrt(1/sigma2_1.draws*1/nvec[1] + 1/sigma2_2.draws*1/nvec[2])) -
+                                     pnorm(LB,mean=diff.obs,
+                                           sd=sqrt(1/sigma2_1.draws*1/nvec[1] + 1/sigma2_2.draws*1/nvec[2]))
+                                   )
+                              )
+                          )
           }else stop("hypothesis should either contain one equality constraint or inequality constraints on 'difference'.")
           return(relfit_h)
         })),nrow=2))
@@ -212,9 +266,30 @@ BF.t_test <- function(x,
         relcomp <- t(matrix(unlist(lapply(1:length(RrE),function(h){
           if(!is.null(RrE[[h]]) & is.null(RrO[[h]])){ #only an equality constraint
             nullvalue <- RrE[[h]][1,2]/RrE[[h]][1,1]
-            relcomp_h <- log(c((sum((draws0<1+nullvalue)*(draws0> -1+nullvalue))/samsize)/2,1))
+            relcomp_h <- c(log(mean(dnorm(nullvalue,mean=prior.mean,
+                                          sd=sqrt(1/sigma2b_1.draws*1/(nvec[1]*bvec[1]) + 1/sigma2b_2.draws*1/(nvec[1]*bvec[1]))))),
+                           log(1))
           }else if(is.null(RrE[[h]]) & !is.null(RrO[[h]])){ #order constraint(s)
-            relcomp_h <- log(c(1,mean(apply(as.matrix(RrO[[h]][,1])%*%t(draws0) - as.matrix(RrO[[h]][,2])%*%t(rep(1,samsize)) > 0,2,prod)==1)))
+            which.LB <- which(RrO[[h]][,1]>0)
+            if(length(which.LB) == 0){
+              LB <- -Inf
+            }else{
+              LB <- max(RrO[[h]][which.LB,2] / RrO[[h]][which.LB,1])
+            }
+            which.UB <- which(RrO[[h]][,1]<0)
+            if(length(which.UB) == 0){
+              UB <- Inf
+            }else{
+              UB <- min(RrO[[h]][which.UB,2] / RrO[[h]][which.UB,1])
+            }
+            relcomp_h <- c(log(1),
+                          log(mean(pnorm(UB,mean=prior.mean,
+                                         sd=sqrt(1/sigma2b_1.draws*1/(nvec[1]*bvec[1]) + 1/sigma2b_2.draws*1/(nvec[1]*bvec[1]))) -
+                                     pnorm(LB,mean=prior.mean,
+                                           sd=sqrt(1/sigma2b_1.draws*1/(nvec[1]*bvec[1]) + 1/sigma2b_2.draws*1/(nvec[1]*bvec[1])))
+                                   )
+                              )
+                          )
           }else stop("hypothesis should either contain one equality constraint or inequality constraints on 'difference'.")
           return(relcomp_h)
         })),nrow=2))
@@ -224,14 +299,24 @@ BF.t_test <- function(x,
         colnames(relcomp) <- c("c=","c>")
         if(complement == TRUE){
           #add complement to analysis
-          welk <- (relcomp==1)[,2]==F
-          if(sum((relcomp==1)[,2])>0){ #then there are only order hypotheses
-            relcomp_c <- 1-sum(exp(relcomp[welk,2]))
-            if(relcomp_c!=0){ # then add complement
-              relcomp <- rbind(relcomp,c(0,log(relcomp_c)))
-              relfit_c <- 1-sum(exp(relfit[welk,2]))
-              relfit <- rbind(relfit,c(0,log(relfit_c)))
-              row.names(relfit) <- row.names(relcomp) <- c(parse_hyp$original_hypothesis,"complement")
+          if(sum(relcomp[,1]==0)>0){ #then there are order hypotheses
+            # check if one-sided hypotheses are (partly) overlapping
+            check.draws <- c(rnorm(1e5,sd=1),rnorm(1e5,sd=100))
+            which.O <- which(unlist(lapply(RrO,function(x) {!is.null(x)})))
+            checks <- Reduce("+",lapply(which.O,function(h){
+              apply(as.matrix(RrO[[h]][,1]) %*% t(check.draws) > RrO[[h]][,2] %*%
+                      t(rep(1,length(check.draws))),2,prod)
+            }))
+            if(max(checks)>1){ #(partly) overlapping
+              warning("Complement hypothesis omitted because of (partly) overlapping hypotheses")
+            }else{
+              if(sum(exp(relcomp[which.O,2]))<1){#complement nonempty
+                relcomp_c <- log(1-sum(exp(relcomp[which.O,2])))
+                relcomp <- rbind(relcomp,c(0,relcomp_c))
+                relfit_c <- log(1-sum(exp(relfit[which.O,2])))
+                relfit <- rbind(relfit,c(0,relfit_c))
+                row.names(relfit) <- row.names(relcomp) <- c(parse_hyp$original_hypothesis,"complement")
+              }
             }
           }else{ #no order constraints
             relcomp <- rbind(relcomp,c(0,0))
@@ -239,8 +324,6 @@ BF.t_test <- function(x,
             row.names(relcomp) <- row.names(relfit) <- c(parse_hyp$original_hypothesis,"complement")
           }
         }
-        relfit <- exp(relfit)
-        relcomp <- exp(relcomp)
         # Check input of prior probabilies
         if(is.null(prior.hyp)){
           priorprobs <- rep(1/nrow(relcomp),nrow(relcomp))
@@ -252,8 +335,7 @@ BF.t_test <- function(x,
             priorprobs <- prior.hyp
           }
         }
-        rm(drawsN)
-        rm(draws0)
+
         #compute Bayes factors and posterior probabilities for confirmatory test
         BFtu_confirmatory <- c(apply(relfit - relcomp, 1, sum))
         maxBFtu <- max(BFtu_confirmatory)
@@ -272,14 +354,18 @@ BF.t_test <- function(x,
         row.names(BFtable) <- names(BFtu_confirmatory)
         colnames(BFtable) <- c("complex=","complex>","fit=","fit>","BF=","BF>","BF","PHP")
         hypotheses <- row.names(relative_complexity)
-        if(logIN == FALSE){
-          BFtu_exploratory <- exp(BFtu_exploratory)
-          BFtu_confirmatory <- exp(BFtu_confirmatory)
-          BFmatrix_confirmatory <- exp(BFmatrix_confirmatory)
-        }
       }
+      rm(sigma2_1.draws);rm(sigma2_2.draws);rm(sigma2b_1.draws);rm(sigma2b_2.draws)
     }
     parameter <- "difference in means"
+  }
+
+  if(logIN == FALSE){
+    BFtu_exploratory <- exp(BFtu_exploratory)
+    if(!is.null(hypothesis)){
+      BFtu_confirmatory <- exp(BFtu_confirmatory)
+      BFmatrix_confirmatory <- exp(BFmatrix_confirmatory)
+    }
   }
 
   if(is.null(hypothesis)){
