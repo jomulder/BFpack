@@ -53,6 +53,8 @@ probabilities for the hypotheses.
 
 ### Bayesian t testing
 
+#### Univariate t testing
+
 First a classical one sample t test needs executed on the test value
 \(mu = 5\) on the `therapeutic` data (part of `BFpack`). Here a right one-tailed classical test is executed:
 
@@ -108,6 +110,21 @@ specifying the prior probabilities of the respective hypotheses
 BF(ttest1, hypothesis = "mu = 5; mu < 5; mu > 5", prior.hyp = c(.5,0,.5))
 ```
 
+#### Multivariate t testing
+
+Bayesian multivariate t tests can be executed by first fitting a multivariate (regression) model using the `lm` function, and subsequently, the means of the dependent variables (or other coefficients) in the model can be tested using the `BF()` function. Users have to be aware however that means are modeled using intercepts which are named `(Intercept)` by default by `lm` while the hypothesis argument in `BF()` does not allow effect names that include brackets (i.e., `(` or `)`). To circumvent this, one can create a vector of 1s, with name (say) `ones`, to replace the intercept. For example, let us consider a multivariate normal model for the dependent variables `Superficial`, `Middle`, and `Deep` in the `fmri` data set:
+
+``` r
+fmri1 <- cbind(fmri,ones=1)
+mlm1 <- lm(cbind(Superficial,Middle,Deep) ~ -1 + ones, data = fmri1)
+```
+
+Next, we can (for instance) test whether all means equal 0 (`H1`), whether all means are positive (`H2`), or none of these two hypotheses (`complement`):
+
+``` r
+BFmlm1 <- BF(mlm1, hypothesis="ones_on_Superficial=ones_on_Middle=ones_on_Deep=0;
+                               (ones_on_Superficial,ones_on_Middle,ones_on_Deep)>0")
+```
 
 ### Analysis of variance
 
