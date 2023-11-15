@@ -18,7 +18,7 @@ BF.lm <- function(x,
   }
   if(!is.null(BF.type)){
     if(is.na(BF.type) | (BF.type!=1 & BF.type!=2))
-    stop("The argument 'BF.type' must be the integer 1 (for the fractional BF) or 2 (for the adjusted fractional BF).")
+      stop("The argument 'BF.type' must be the integer 1 (for the fractional BF) or 2 (for the adjusted fractional BF).")
   }
   if(BF.type==2){
     bayesfactor <- "generalized adjusted fractional Bayes factors"
@@ -204,11 +204,11 @@ BF.lm <- function(x,
 
   #compute estimates
   postestimates <- cbind(meanN,meanN,
-                     t(matrix(unlist(lapply(1:length(meanN),function(coef){
-                       ub <- qt(p=.975,df=dfN)*sqrt(ScaleN[coef,coef])+meanN[coef,1]
-                       lb <- qt(p=.025,df=dfN)*sqrt(ScaleN[coef,coef])+meanN[coef,1]
-                       return(c(ub,lb))
-                       })),nrow=2))
+                         t(matrix(unlist(lapply(1:length(meanN),function(coef){
+                           ub <- qt(p=.975,df=dfN)*sqrt(ScaleN[coef,coef])+meanN[coef,1]
+                           lb <- qt(p=.025,df=dfN)*sqrt(ScaleN[coef,coef])+meanN[coef,1]
+                           return(c(ub,lb))
+                         })),nrow=2))
   )
   row.names(postestimates) <- names_coef
   colnames(postestimates) <- c("mean","median","2.5%","97.5%")
@@ -216,7 +216,7 @@ BF.lm <- function(x,
   # Additional exploratory tests of main effects and interaction effects
   # in the case of an aov type object
   if(sum(class(x)=="aov")==1 & J > 1 & dummy01TRUE){
-     testedparameter <- "group means"
+    testedparameter <- "group means"
 
     # check main effects
     BFmain <- unlist(lapply(1:length(numlevels),function(fac){
@@ -755,12 +755,12 @@ MatrixStudent_measures <- function(Mean1,Scale1,tXXi1,df1,RrE1,RrO1,Names1=NULL,
                              matrix(temp[1:qE1,(qE1+1):qC1],nrow=qE1))
         #check covariance because some can be nonsymmetric due to a generation error
         welk1 <- which(unlist(lapply(covm1_OE,function(temp) isSymmetric(temp,
-                                       tol = sqrt(.Machine$double.eps),check.attributes = FALSE) &&
+                                                                         tol = sqrt(.Machine$double.eps),check.attributes = FALSE) &&
                                        min(eigen(temp)$values)>sqrt(.Machine$double.eps) )))
         covm1_OE <- covm1_OE[welk1]
         mean1_OE <- mean1_OE[welk1]
         relO <- log(mean(mapply(function(mu_temp,Sigma_temp) pmvnorm(lower=rO1,
-                 upper=rep(Inf,qO1),mean=mu_temp,sigma=Sigma_temp)[1],mean1_OE,covm1_OE)))
+                                                                     upper=rep(Inf,qO1),mean=mu_temp,sigma=Sigma_temp)[1],mean1_OE,covm1_OE)))
       }else{ #use bain for the computation of the probability
 
         mean1 <- c(Mean1)
@@ -871,7 +871,7 @@ Student_measures <- function(mean1,Scale1,df1,RrE1,RrO1,names1=NULL,constraints1
 
     # relative meausure for equalities
     relE <- dmvt(x = t(rE1), delta = Tmean1[1:qE1], sigma = matrix(Tscale1[1:qE1, 1:qE1],
-                  ncol = qE1), df = df1, log = TRUE)
+                                                                   ncol = qE1), df = df1, log = TRUE)
 
     # transform order constraints
     RO1tilde <- RO1 %*% ginv(D2)
@@ -901,7 +901,7 @@ Student_measures <- function(mean1,Scale1,df1,RrE1,RrO1,names1=NULL,constraints1
                    log.p = TRUE)[1]
       } else { # multivariate
         relO <- log(pmvt(lower = rO1tilde, upper = Inf, delta = delta_trans, sigma = scale1_trans,
-                     df = df1+qE1, type = "shifted")[1])
+                         df = df1+qE1, type = "shifted")[1])
       }
 
     }else{ #use bain for the computation of the probability
@@ -1167,5 +1167,3 @@ params_in_hyp <- function(hyp){
   params_in_hyp <- params_in_hyp[!sapply(params_in_hyp, grepl, pattern = "^[0-9]*\\.?[0-9]+$")]
   params_in_hyp[grepl("^[a-zA-Z]", params_in_hyp)]
 }
-
-
