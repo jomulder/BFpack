@@ -80,18 +80,34 @@ and \code{BF.type=1} implies a regular fractional Bayes factor (based on O'Hagan
 \value{
 The output is an object of class \code{BF}. The object has elements:
 \itemize{
-\item BFtu_exploratory: The Bayes factors of the constrained hypotheses against
+\item \code{BFtu_exploratory}: The Bayes factors of the constrained hypotheses against
 the unconstrained hypothesis in the exploratory test.
-\item PHP_exploratory: The posterior probabilities of the constrained hypotheses
+\item \code{BFtu_main} (only for \code{aov} objects with predictors of class \code{factor}):
+The Bayes factors of a constrained model where all levels of a \code{factor} are assumed
+to have the same effect on the outcome variable versus an unconstrained (full) model with
+no constraints.
+\item \code{BFtu_interaction} (only for \code{aov} objects with interaction effects with
+predictors of class \code{factor}): The Bayes factors of a constrained model where the effect
+of the dummy variables corresponding to an interaction effects are assumed to be zero versus
+an unconstrained (full) model with no constraints.
+\item \code{PHP_exploratory:} The posterior probabilities of the constrained hypotheses
 in the exploratory test.
-\item BFtu_confirmatory: The Bayes factors of the constrained hypotheses against
+\item \code{PHP_main} (only for \code{aov} objects with predictors of class \code{factor}):
+The posterior probabilities a constrained model where all levels of a \code{factor} are assumed
+to have the same effect on the outcome variable versus an unconstrained (full) model with
+no constraints.
+\item \code{PHP_interaction} (only for \code{aov} objects with interaction effects with
+predictors of class \code{factor}): The posterior probabilities of a constrained model where the
+effect of the dummy variables corresponding to an interaction effects are assumed to be zero versus
+an unconstrained (full) model with no constraints.
+\item \code{BFtu_confirmatory}: The Bayes factors of the constrained hypotheses against
 the unconstrained hypothesis in the confirmatory test using the \code{hypothesis}
 argument.
-\item PHP_confirmatory: The posterior probabilities of the constrained hypotheses
+\item \code{PHP_confirmatory}: The posterior probabilities of the constrained hypotheses
 in the confirmatory test using the \code{hypothesis} argument.
-\item BFmatrix_confirmatory: The evidence matrix which contains the Bayes factors
+\item \code{BFmatrix_confirmatory}: The evidence matrix which contains the Bayes factors
 between all possible pairs of hypotheses in the confirmatory test.
-\item BFtable_confirmatory: The \code{Specification table} (output when printing the
+\item \code{BFtable_confirmatory}: The \code{Specification table} (output when printing the
 \code{summary} of a \code{BF} for a confirmatory test) which contains the different
 elements of the extended Savage Dickey density ratio where
 \itemize{
@@ -116,11 +132,22 @@ against the unconstrained hypothesis.
 \item The eighth column `\code{BF=}' contains the posterior probabilities of the
 constrained hypotheses.
 }
-\item prior: The prior probabilities of the constrained hypotheses in a confirmatory test.
-\item hypotheses: The tested constrained hypotheses in a confirmatory test.
-\item estimates: The unconstrained estimates.
-\item model: The input model \code{x}.
-\item call: The call of the \code{BF} function.
+\item \code{prior}: The prior probabilities of the constrained hypotheses in a confirmatory test.
+\item \code{hypotheses}: The tested constrained hypotheses in a confirmatory test.
+\item \code{estimates}: The unconstrained estimates.
+\item \code{model}: The input model \code{x}.
+\item \code{bayesfactor}: The type of Bayes factor that is used for this model.
+\item \code{parameter}: The type of parameter that is tested.
+\item \code{log}: \code{logical} whether the Bayes factors were reported on a log scale.
+\item \code{fraction_number_groupID} (only for objects of class \code{lm}): The number of
+'group identifiers' that were identified based on the number of unique combinations of \code{level}s
+of predictor variables of class \code{factor}. These group identifiers are used to automatically
+specify the minimal fractions that are used to compute (adjusted) fractional Bayes factors.
+\item \code{fraction_groupID_observations} (only for objects of class \code{lm}): A vector that
+specifies to which 'group identifier' an observation belongs. The group identifiers are constructed
+based on the unique combination of the \code{levels} based on the predictor variables of class \code{factor}
+of the observations.
+\item \code{call}: The call of the \code{BF} function.
 }
 }
 \description{

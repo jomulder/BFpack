@@ -1,3 +1,10 @@
+# BFpack 1.2.4
+
+* Date: 2023-11-16
+* Changes to the identification of groups using factors, which are needed to determining the minimal fractions for lm objects.
+* Updates to the method for aov and manova objects (e.g. regarding the output object, and how intercepts are handled when testing main effects)
+
+
 # BFpack 1.2.3
 
 * Date: 2023-10-16

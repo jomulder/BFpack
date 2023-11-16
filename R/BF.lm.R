@@ -725,8 +725,8 @@ BF.lm <- function(x,
       bayesfactor=bayesfactor,
       parameter=testedparameter,
       log = logIN,
-      fraction_group_identifier = dvec,
-      fraction_number_of_groups = J,
+      fraction_number_groupIDs = J,
+      fraction_groupID_observations = dvec,
       call=match.call())
   }else{
     BFlm_out <- list(
@@ -743,8 +743,8 @@ BF.lm <- function(x,
       bayesfactor=bayesfactor,
       parameter=testedparameter,
       log = logIN,
-      fraction_group_identifier = dvec,
-      fraction_number_of_groups = J,
+      fraction_number_groupIDs = J,
+      fraction_groupID_observations = dvec,
       call=match.call())
   }
 
