@@ -782,6 +782,7 @@ MatrixStudent_measures <- function(Mean1,Scale1,tXXi1,df1,RrE1,RrO1,Names1=NULL,
           pmvnorm(lower=rO1,upper=Inf,mean=meanO,sigma=covmO)[1]
         }))
         relO <- log(mean(relO[relO!="NaN"]))
+        if(relO>0){relO <- 0}
 
       }else{ #no linear transformation can be used; pmvt cannot be used. Use bain with a multivariate normal approximation
         #compute covariance matrix for multivariate normal distribution
@@ -850,6 +851,7 @@ MatrixStudent_measures <- function(Mean1,Scale1,tXXi1,df1,RrE1,RrO1,Names1=NULL,
         mean1_OE <- mean1_OE[welk1]
         relO <- log(mean(mapply(function(mu_temp,Sigma_temp) pmvnorm(lower=rO1,
                                                                      upper=rep(Inf,qO1),mean=mu_temp,sigma=Sigma_temp)[1],mean1_OE,covm1_OE)))
+        if(relO > 0){relO <- 0}
       }else{ #use bain for the computation of the probability
 
         mean1 <- c(Mean1)
@@ -903,6 +905,7 @@ Student_measures <- function(mean1,Scale1,df1,RrE1,RrO1,names1=NULL,constraints1
                      pt((rO1-meanO)/sqrt(scaleO[1,1]),df=df1,lower.tail=FALSE,log.p = TRUE), #univariate
                      log(pmvt(lower=rO1,upper=Inf,delta=meanO,sigma=scaleO,df=df1,
                               type="shifted",algorithm="TVPACK")[1])) #multivariate
+      if(relO>0){relO <- 0}
     }else{ #no linear transformation can be used; pmvt cannot be used. Use bain with a multivariate normal approximation
       #compute covariance matrix for multivariate normal distribution
       row.names(mean1) <- names1
