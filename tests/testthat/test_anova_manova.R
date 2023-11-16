@@ -11,7 +11,7 @@ m2 <- aov(dv1 ~ -1 + group1, data.example)
 BF2 <- BF(m2)
 test_that("BF.aov exploratory ANOVA (1 factor) when including/excluding the intercept", {
   expect_equivalent(
-    BF1$BFtu_exploratory,BF2$BFtu_exploratory
+    BF1$BFtu_main,BF2$BFtu_main
   )})
 
 m3 <- aov(dv1 ~ 1 + group1 + group2, data.example)
@@ -20,7 +20,7 @@ m4 <- aov(dv1 ~ -1 + group1 + group2, data.example)
 BF4 <- BF(m4)
 test_that("BF.aov exploratory ANOVA (2 factors) when including/excluding the intercept", {
   expect_equivalent(
-    BF3$BFtu_exploratory,BF4$BFtu_exploratory
+    BF3$BFtu_main,BF4$BFtu_main
   )})
 
 test_that("BF.manova exploratory MANOVA (1 factor)", {
@@ -32,7 +32,7 @@ test_that("BF.manova exploratory MANOVA (1 factor)", {
   set.seed(123)
   BF6 <- BF(m6)
   expect_equivalent(
-    BF5$BFtu_exploratory,BF6$BFtu_exploratory
+    BF5$BFtu_main,BF6$BFtu_main
   )
 })
 
@@ -45,7 +45,7 @@ test_that("BF.manova exploratory MANOVA (2 factors)", {
   set.seed(123)
   BF6 <- BF(m6)
   expect_equivalent(
-    BF5$BFtu_exploratory,BF6$BFtu_exploratory
+    BF5$BFtu_main,BF6$BFtu_main
   )
 })
 
@@ -55,8 +55,12 @@ m8 <- aov(dv1 ~ -1 + group1 * group2, data.example)
 BF8 <- BF(m8)
 test_that("BF.aov exploratory ANOVA (2 factors w/ interaction) when including/excluding the intercept", {
   expect_equivalent(
-    BF7$BFtu_exploratory,BF8$BFtu_exploratory
-  )})
+    BF7$BFtu_main,BF8$BFtu_main
+  )
+  expect_equivalent(
+    BF7$PHP_interaction,BF8$PHP_interaction
+  )
+})
 
 test_that("BF.manova exploratory MANOVA (2 factors w/ interaction)", {
   skip_on_cran()
@@ -67,7 +71,10 @@ test_that("BF.manova exploratory MANOVA (2 factors w/ interaction)", {
   set.seed(123)
   BF6 <- BF(m6)
   expect_equivalent(
-    BF5$BFtu_exploratory,BF6$BFtu_exploratory
+    BF5$BFtu_main,BF6$BFtu_main
+  )
+  expect_equivalent(
+    BF5$PHP_interaction,BF6$PHP_interaction
   )
 })
 
@@ -84,6 +91,5 @@ test_that("BF.manova exploratory MANOVA (2 factors w/ interaction and numeric co
   )
 })
 
-test if interaction effects are properly tested (check how RE looks like)
 
 

@@ -706,27 +706,47 @@ BF.lm <- function(x,
       relcomp <- hypotheses <- BFtable <- priorprobs <- NULL
   }
 
-  BFlm_out <- list(
-    BFtu_exploratory=BFtu_exploratory,
-    BFtu_main=BFtu_main,
-    BFtu_interaction=BFtu_interaction,
-    PHP_exploratory=PHP_exploratory,
-    PHP_main=PHP_main,
-    PHP_interaction=PHP_interaction,
-    BFtu_confirmatory=BFtu_confirmatory,
-    PHP_confirmatory=PHP_confirmatory,
-    BFmatrix_confirmatory=BFmatrix_confirmatory,
-    BFtable_confirmatory=BFtable,
-    prior=priorprobs,
-    hypotheses=hypotheses,
-    estimates=postestimates,
-    model=x,
-    bayesfactor=bayesfactor,
-    parameter=testedparameter,
-    log = logIN,
-    fraction_group_identifier = dvec,
-    fraction_number_of_groups = J,
-    call=match.call())
+  if(sum(class(x)=="aov")==1 & J > 1){
+    BFlm_out <- list(
+      BFtu_exploratory=BFtu_exploratory,
+      BFtu_main=BFtu_main,
+      BFtu_interaction=BFtu_interaction,
+      PHP_exploratory=PHP_exploratory,
+      PHP_main=PHP_main,
+      PHP_interaction=PHP_interaction,
+      BFtu_confirmatory=BFtu_confirmatory,
+      PHP_confirmatory=PHP_confirmatory,
+      BFmatrix_confirmatory=BFmatrix_confirmatory,
+      BFtable_confirmatory=BFtable,
+      prior=priorprobs,
+      hypotheses=hypotheses,
+      estimates=postestimates,
+      model=x,
+      bayesfactor=bayesfactor,
+      parameter=testedparameter,
+      log = logIN,
+      fraction_group_identifier = dvec,
+      fraction_number_of_groups = J,
+      call=match.call())
+  }else{
+    BFlm_out <- list(
+      BFtu_exploratory=BFtu_exploratory,
+      PHP_exploratory=PHP_exploratory,
+      BFtu_confirmatory=BFtu_confirmatory,
+      PHP_confirmatory=PHP_confirmatory,
+      BFmatrix_confirmatory=BFmatrix_confirmatory,
+      BFtable_confirmatory=BFtable,
+      prior=priorprobs,
+      hypotheses=hypotheses,
+      estimates=postestimates,
+      model=x,
+      bayesfactor=bayesfactor,
+      parameter=testedparameter,
+      log = logIN,
+      fraction_group_identifier = dvec,
+      fraction_number_of_groups = J,
+      call=match.call())
+  }
 
   names(BFlm_out$fraction_group_identifier) <- NULL
 

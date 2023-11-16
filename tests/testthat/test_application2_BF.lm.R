@@ -3,12 +3,19 @@ aov1 <- aov(price ~ anchor * motivation, data = tvprices)
 BF1 <- BF(aov1)
 #check number of tests in exploratory ANOVA
 test_that("BF.lm works for an exploratory ANOVA test regarding number of tests", {
-expect_equivalent(
-  dim(BF1$BFtu_exploratory),c(3,2)
-)})
+  expect_equivalent(
+    dim(BF1$BFtu_exploratory),c(4,3)
+  )
+  expect_equivalent(
+    dim(BF1$PHP_main),c(2,2)
+  )
+  expect_equivalent(
+    dim(BF1$PHP_interaction),c(1,2)
+  )
+})
 test_that("BF.lm works for a specific exploratory ANOVA test", {
 expect_equivalent(
-  round(BF1$PHP_exploratory[,1],3),c(0,0,.251)
+  round(c(BF1$PHP_main[,1],BF1$PHP_interaction[1]),3),c(0,0,.251)
 )})
 
 BF2 <- BF(aov1,hypothesis="anchorrounded = anchorrounded:motivationlow < motivationlow;
