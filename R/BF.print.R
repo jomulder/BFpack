@@ -22,10 +22,30 @@ print.BF <- function(x,
     cat("Parameter: ",x$parameter,"\n", sep = "")
     cat("Method: ",x$bayesfactor,"\n\n", sep = "")
 
-    cat("Posterior probabilities:","\n", sep = "")
+    cat("Posterior probabilities","\n", sep = "")
+    cat("\n")
+    cat("Model parameters:")
+    cat("\n")
     print(round(x$PHP_exploratory,digits))
 
     cat("\n")
+
+    if(sum(class(x$model)=="aov")>0){
+      if(!is.null(x$PHP_main)){
+        cat("main effects:")
+        cat("\n")
+        print(round(x$PHP_main,digits))
+
+        cat("\n")
+      }
+      if(!is.null(x$PHP_interaction)){
+        cat("interaction effects:")
+        cat("\n")
+        print(round(x$PHP_interaction,digits))
+
+        cat("\n")
+      }
+    }
 
   }else{
 
@@ -35,7 +55,7 @@ print.BF <- function(x,
     cat("Parameter: ",x$parameter,"\n", sep = "")
     cat("Method: ",x$bayesfactor,"\n\n", sep = "")
 
-    cat("Posterior probabilities:")
+    cat("Posterior probabilities")
     cat("\n")
 
     PHPmatrix <- as.matrix(round(x$PHP_confirmatory,digits))
