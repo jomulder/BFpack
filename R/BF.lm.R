@@ -412,7 +412,7 @@ BF.lm <- function(x,
     matrixnames <- matrix(names_coef,nrow=K)
 
     # translate named constraints to matrices with coefficients for constraints
-    parse_hyp <- bain:::parse_hypothesis(names_coef,hypothesis)
+    parse_hyp <- parse_hypothesis(names_coef,hypothesis)
     parse_hyp$hyp_mat <- do.call(rbind, parse_hyp$hyp_mat)
     RrList <- make_RrList2(parse_hyp)
     RrE <- RrList[[1]]
@@ -801,8 +801,11 @@ MatrixStudent_measures <- function(Mean1,Scale1,tXXi1,df1,RrE1,RrO1,Names1=NULL,
           covmO <- RO1%*%kronecker(Sigma1,tXXi1)%*%t(RO1)
           pmvnorm(lower=rO1,upper=Inf,mean=meanO,sigma=covmO)[1]
         }))
-        relO <- log(mean(relO[relO!="NaN"]))
-        if(relO>0){relO <- 0}
+
+        relO <- mean(relO[relO!="NaN"])
+        if(relO>1){relO <- 1}
+        if(relO<0){relO <- 0}
+        relO <- log(relO)
 
       }else{ #no linear transformation can be used; pmvt cannot be used. Use bain with a multivariate normal approximation
         #compute covariance matrix for multivariate normal distribution
@@ -869,9 +872,12 @@ MatrixStudent_measures <- function(Mean1,Scale1,tXXi1,df1,RrE1,RrO1,Names1=NULL,
                                        min(eigen(temp)$values)>sqrt(.Machine$double.eps) )))
         covm1_OE <- covm1_OE[welk1]
         mean1_OE <- mean1_OE[welk1]
-        relO <- log(mean(mapply(function(mu_temp,Sigma_temp) pmvnorm(lower=rO1,
-                                                                     upper=rep(Inf,qO1),mean=mu_temp,sigma=Sigma_temp)[1],mean1_OE,covm1_OE)))
-        if(relO > 0){relO <- 0}
+        relO <- mean(mapply(function(mu_temp,Sigma_temp) pmvnorm(lower=rO1,
+                                                                     upper=rep(Inf,qO1),mean=mu_temp,sigma=Sigma_temp)[1],mean1_OE,covm1_OE))
+
+        if(relO > 1){relO <- 1}
+        if(relO < 0){relO <- 0}
+        relO <- log(relO)
       }else{ #use bain for the computation of the probability
 
         mean1 <- c(Mean1)
@@ -987,8 +993,9 @@ Student_measures <- function(mean1,Scale1,df1,RrE1,RrO1,names1=NULL,constraints1
     Tscale1 <- Tm %*% Scale1 %*% t(Tm)
 
     # relative meausure for equalities
-    relE <- dmvt(x = t(rE1), delta = Tmean1[1:qE1], sigma = matrix(Tscale1[1:qE1, 1:qE1],
-                                                                   ncol = qE1), df = df1, log = TRUE)
+    relE <- dmvt(x = t(rE1),
+                 delta = Tmean1[1:qE1],
+                 sigma = matrix(Tscale1[1:qE1, 1:qE1],ncol = qE1), df = df1, log = TRUE)
 
     # transform order constraints
     RO1tilde <- RO1 %*% ginv(D2)
@@ -1017,8 +1024,8 @@ Student_measures <- function(mean1,Scale1,df1,RrE1,RrO1,names1=NULL,constraints1
         relO <- pt((rO1tilde - delta_trans) / sqrt(scale1_trans), df = df1+qE1, lower.tail = FALSE,
                    log.p = TRUE)[1]
       } else { # multivariate
-        relO <- log(pmvt(lower = rO1tilde, upper = Inf, delta = delta_trans, sigma = scale1_trans,
-                         df = df1+qE1, type = "shifted",algorithm="TVPACK")[1])
+        relO <- pmvt(lower = rO1tilde, upper = Inf, delta = delta_trans, sigma = scale1_trans,
+                         df = df1+qE1, type = "shifted",algorithm="TVPACK")[1]
         if(relO<0){relO <- 0}
         if(relO>1){relO <- 1}
         relO <- log(relO)
