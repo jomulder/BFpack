@@ -59,12 +59,12 @@ BF.lm <- function(x,
     # unique combination of group indicators)
 
     numlevels <- unlist(lapply(x$xlevels,length))
-    mains <- names(x$xlevels)
+    main_names <- names(x$xlevels)
     names_coef <- colnames(model.matrix(x))
 
-    dummyX <- apply(matrix(unlist(lapply(1:length(mains),function(faclev){
+    dummyX <- apply(matrix(unlist(lapply(1:length(main_names),function(faclev){
       unlist(lapply(1:length(names_coef),function(cf){
-        grepl(mains[faclev],names_coef[cf],fixed=TRUE)
+        grepl(main_names[faclev],names_coef[cf],fixed=TRUE)
       }))
     })),nrow=length(names_coef)),1,max)==1
     #number of groups on variations of dummy combinations
@@ -257,6 +257,12 @@ BF.lm <- function(x,
   if(sum(class(x)=="aov")==1 & J > 1){
     testedparameter <- "group means"
 
+    mains <- unlist(lapply(1:length(x$xlevels),function(fac){
+      unlist(lapply(1:length(x$xlevels[[fac]]),function(lev){
+        paste0(names(x$xlevels)[fac],x$xlevels[[fac]][lev])
+      }))
+    }))
+
     # check main effects
     BFmain <- unlist(lapply(1:length(numlevels),function(fac){
       # if( number of levels of factor is less than the number of columns of main effect in model.matrix
@@ -268,24 +274,53 @@ BF.lm <- function(x,
         sum(colnames(Xmat)[col]==mains1)==1
       }))
       if(sum(which0) > 0){
-        if(P > 1){
-          RrE_f <- matrix(0,nrow=sum(which0),ncol=length(colnames(Xmat)))
-          for(r1 in 1:sum(which0)){
-            RrE_f[r1,which(which0)[r1]] <- 1
+        if(numlevels[fac]==sum(which0)){
+          #there is no reference group
+          #test whether the effects of all dummys are equal
+          if(P > 1){
+            RrE_f <- matrix(0,nrow=sum(which0)-1,ncol=length(colnames(Xmat)))
+            for(r1 in 1:(sum(which0)-1)){
+              RrE_f[r1,which(which0)[r1]] <- 1
+              RrE_f[r1,which(which0)[r1+1]] <- -1
+            }
+            RrE_f <- cbind(kronecker(diag(P),RrE_f),0)
+            relcomp_f <- MatrixStudent_measures(Mean1=matrix(mean0,ncol=P),Scale1=S_b,tXXi1=tXXi_b,
+                                                df1=df0,RrE1=RrE_f,RrO1=NULL,Names1=NULL,constraints1=NULL,
+                                                MCdraws=1e4)
+            relfit_f <- MatrixStudent_measures(Mean1=BetaHat,Scale1=S,tXXi1=tXXi,df1=dfN,RrE1=RrE_f,
+                                               RrO1=NULL,Names1=NULL,constraints1=NULL,MCdraws=1e4)
+          }else{
+            RrE_f <- matrix(0,nrow=sum(which0)-1,ncol=length(colnames(Xmat))+1)
+            for(r1 in 1:(sum(which0)-1)){
+              RrE_f[r1,which(which0)[r1]] <- 1
+              RrE_f[r1,which(which0)[r1+1]] <- -1
+            }
+            relcomp_f <- Student_measures(mean1=mean0,Scale1=Scale0,df1=df0,RrE1=RrE_f,RrO1=NULL)
+            relfit_f <- Student_measures(mean1=meanN,Scale1=ScaleN,df1=dfN,RrE1=RrE_f,RrO1=NULL)
           }
-          RrE_f <- cbind(kronecker(diag(P),RrE_f),rep(0,sum(which0)*P))
-          relcomp_f <- MatrixStudent_measures(Mean1=matrix(mean0,ncol=P),Scale1=S_b,tXXi1=tXXi_b,
-                                              df1=df0,RrE1=RrE_f,RrO1=NULL,Names1=NULL,constraints1=NULL,
-                                              MCdraws=1e4)
-          relfit_f <- MatrixStudent_measures(Mean1=BetaHat,Scale1=S,tXXi1=tXXi,df1=dfN,RrE1=RrE_f,
-                                             RrO1=NULL,Names1=NULL,constraints1=NULL,MCdraws=1e4)
+
         }else{
-          RrE_f <- matrix(0,nrow=sum(which0),ncol=length(colnames(Xmat))+1)
-          for(r1 in 1:sum(which0)){
-            RrE_f[r1,which(which0)[r1]] <- 1
+          #there is a reference group
+          #test whether the effects of the remaining dummys are zero of these indicators equals zero
+          if(P > 1){
+            RrE_f <- matrix(0,nrow=sum(which0),ncol=length(colnames(Xmat)))
+            for(r1 in 1:sum(which0)){
+              RrE_f[r1,which(which0)[r1]] <- 1
+            }
+            RrE_f <- cbind(kronecker(diag(P),RrE_f),rep(0,sum(which0)*P))
+            relcomp_f <- MatrixStudent_measures(Mean1=matrix(mean0,ncol=P),Scale1=S_b,tXXi1=tXXi_b,
+                                                df1=df0,RrE1=RrE_f,RrO1=NULL,Names1=NULL,constraints1=NULL,
+                                                MCdraws=1e4)
+            relfit_f <- MatrixStudent_measures(Mean1=BetaHat,Scale1=S,tXXi1=tXXi,df1=dfN,RrE1=RrE_f,
+                                               RrO1=NULL,Names1=NULL,constraints1=NULL,MCdraws=1e4)
+          }else{
+            RrE_f <- matrix(0,nrow=sum(which0),ncol=length(colnames(Xmat))+1)
+            for(r1 in 1:sum(which0)){
+              RrE_f[r1,which(which0)[r1]] <- 1
+            }
+            relcomp_f <- Student_measures(mean1=mean0,Scale1=Scale0,df1=df0,RrE1=RrE_f,RrO1=NULL)
+            relfit_f <- Student_measures(mean1=meanN,Scale1=ScaleN,df1=dfN,RrE1=RrE_f,RrO1=NULL)
           }
-          relcomp_f <- Student_measures(mean1=mean0,Scale1=Scale0,df1=df0,RrE1=RrE_f,RrO1=NULL)
-          relfit_f <- Student_measures(mean1=meanN,Scale1=ScaleN,df1=dfN,RrE1=RrE_f,RrO1=NULL)
         }
         BFtu <- relfit_f[1] - relcomp_f[1]
         names(BFtu) <- name1
@@ -302,7 +337,7 @@ BF.lm <- function(x,
       maxBFtu <- apply(BFtu_main,1,max)
       PHP_main <- exp(BFtu_main - maxBFtu %*% t(rep(1,ncol(BFtu_main)))) /
         apply(exp(BFtu_main - maxBFtu %*% t(rep(1,ncol(BFtu_main)))),1,sum)
-      colnames(PHP_main) <- c("Pr(zero effect)","Pr(nonzero effect)")
+      colnames(PHP_main) <- c("Pr(no effect)","Pr(full model)")
     }else{ PHP_main <- BFtu_main <- NULL}
     #check whether interaction effects are present
     prednames <- names(attr(x$term,"dataClasses"))
@@ -360,10 +395,10 @@ BF.lm <- function(x,
       maxrows <- apply(BFtu_interaction,1,max)
       PHP_interaction <- exp(BFtu_interaction - maxrows %*% t(rep(1,ncol(BFtu_interaction)))) /
         apply(exp(BFtu_interaction - maxrows %*% t(rep(1,ncol(BFtu_interaction)))),1,sum)
-      colnames(PHP_interaction) <- c("Pr(zero effect)","Pr(nonzero effect)")
+      colnames(PHP_interaction) <- c("Pr(no effect)","Pr(full model)")
     }else{ PHP_interaction <- BFtu_interaction <- NULL}
-    BFtu_exploratory <- rbind(BFtu_main,BFtu_interaction)
-    PHP_exploratory <- rbind(PHP_main,PHP_interaction)
+    #BFtu_exploratory <- rbind(BFtu_main,BFtu_interaction)
+    #PHP_exploratory <- rbind(PHP_main,PHP_interaction)
   }
 
   if(logIN == FALSE){
@@ -673,7 +708,11 @@ BF.lm <- function(x,
 
   BFlm_out <- list(
     BFtu_exploratory=BFtu_exploratory,
+    BFtu_main=BFtu_main,
+    BFtu_interaction=BFtu_interaction,
     PHP_exploratory=PHP_exploratory,
+    PHP_main=PHP_main,
+    PHP_interaction=PHP_interaction,
     BFtu_confirmatory=BFtu_confirmatory,
     PHP_confirmatory=PHP_confirmatory,
     BFmatrix_confirmatory=BFmatrix_confirmatory,
@@ -685,9 +724,11 @@ BF.lm <- function(x,
     bayesfactor=bayesfactor,
     parameter=testedparameter,
     log = logIN,
-    fraction_group_indicator = dvec,
+    fraction_group_identifier = dvec,
     fraction_number_of_groups = J,
     call=match.call())
+
+  names(BFlm_out$fraction_group_identifier) <- NULL
 
   class(BFlm_out) <- "BF"
 
@@ -860,7 +901,8 @@ Student_measures <- function(mean1,Scale1,df1,RrE1,RrO1,names1=NULL,constraints1
       scaleO <- RO1%*%Scale1%*%t(RO1)
       relO <- ifelse(nrow(scaleO)==1,
                      pt((rO1-meanO)/sqrt(scaleO[1,1]),df=df1,lower.tail=FALSE,log.p = TRUE), #univariate
-                     log(pmvt(lower=rO1,upper=Inf,delta=meanO,sigma=scaleO,df=df1,type="shifted"))) #multivariate
+                     log(pmvt(lower=rO1,upper=Inf,delta=meanO,sigma=scaleO,df=df1,
+                              type="shifted",algorithm="TVPACK")[1])) #multivariate
     }else{ #no linear transformation can be used; pmvt cannot be used. Use bain with a multivariate normal approximation
       #compute covariance matrix for multivariate normal distribution
       row.names(mean1) <- names1
@@ -949,7 +991,7 @@ Student_measures <- function(mean1,Scale1,df1,RrE1,RrO1,names1=NULL,constraints1
                    log.p = TRUE)[1]
       } else { # multivariate
         relO <- log(pmvt(lower = rO1tilde, upper = Inf, delta = delta_trans, sigma = scale1_trans,
-                         df = df1+qE1, type = "shifted")[1])
+                         df = df1+qE1, type = "shifted",algorithm="TVPACK")[1])
       }
 
     }else{ #use bain for the computation of the probability

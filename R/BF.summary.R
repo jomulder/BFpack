@@ -16,10 +16,30 @@ summary.BF <- function(object, ...){
   cat("Parameter: ",object$parameter,"\n", sep = "")
   cat("Method: ",object$bayesfactor,"\n\n", sep = "")
 
-  cat("Posterior probabilities:","\n", sep = "")
+  cat("Posterior probabilities","\n", sep = "")
+  cat("\n")
+  cat("Model parameters:")
+  cat("\n")
   print(round(object$PHP_exploratory,digits))
 
   cat("\n")
+
+  if(sum(class(object$model)=="aov")>0){
+    if(!is.null(object$PHP_main)){
+      cat("main effects:")
+      cat("\n")
+      print(round(object$PHP_main,digits))
+
+      cat("\n")
+    }
+    if(!is.null(object$PHP_interaction)){
+      cat("interaction effects:")
+      cat("\n")
+      print(round(object$PHP_interaction,digits))
+
+      cat("\n")
+    }
+  }
 
   if(!is.null(object$BFtu_confirmatory)){
 
