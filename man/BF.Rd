@@ -45,9 +45,9 @@ testing}
 An R object containing the outcome of a statistical analysis. Currently, the
 following objects can be processed: t_test(), bartlett_test(), lm(), aov(),
 manova(), cor_test(), lmer() (only for testing random intercep variances),
-glm(), coxph(), survreg(), polr(), zeroinfl(), rma(), ergm(), or named vector objects.
-In the case \code{x} is a named vector, the arguments \code{Sigma} and \code{n}
-are also needed. See vignettes for elaborations.}
+glm(), coxph(), survreg(), polr(), zeroinfl(), rma(), ergm(), bergm(), or named
+vector objects. In the case \code{x} is a named vector, the arguments \code{Sigma}
+and \code{n} are also needed. See vignettes for elaborations.}
 
 \item{hypothesis}{A character string containing the constrained (informative) hypotheses to
 evaluate in a confirmatory test. The default is NULL, which will result in standard exploratory testing
@@ -139,9 +139,9 @@ constrained hypotheses.
 \item \code{bayesfactor}: The type of Bayes factor that is used for this model.
 \item \code{parameter}: The type of parameter that is tested.
 \item \code{log}: \code{logical} whether the Bayes factors were reported on a log scale.
-\item \code{fraction_number_groupID} (only for objects of class \code{lm}): The number of
+\item \code{fraction_number_groupIDs} (only for objects of class \code{lm}): The number of
 'group identifiers' that were identified based on the number of unique combinations of \code{level}s
-of predictor variables of class \code{factor}. These group identifiers are used to automatically
+of predictor variables of class \code{factor} in the data. These group identifiers are used to automatically
 specify the minimal fractions that are used to compute (adjusted) fractional Bayes factors.
 \item \code{fraction_groupID_observations} (only for objects of class \code{lm}): A vector that
 specifies to which 'group identifier' an observation belongs. The group identifiers are constructed
@@ -152,12 +152,11 @@ of the observations.
 }
 \description{
 The \code{BF} function can be used for hypothesis testing and
- model
-selection using the Bayes factor. By default exploratory hypothesis tests are
+ model selection using the Bayes factor. By default exploratory hypothesis tests are
 performed of whether each model parameter equals zero, is negative, or is
- positive.
-Confirmatory hypothesis tests can be executed by specifying hypotheses with
-equality and/or order constraints on the parameters of interest.
+ positive. Confirmatory hypothesis tests can be executed by specifying hypotheses with
+equality and/or order constraints on the parameters of interest. Depending on the
+class of the fitted model different Bayes factors are used as described in the output.
 }
 \details{
 The function requires a fitted modeling object. Current analyses
@@ -246,5 +245,5 @@ Mulder, J., D.R. Williams, Gu, X., A. Tomarken,
 F. Böing-Messing, J.A.O.C. Olsson-Collentine, Marlyne Meyerink, J. Menke,
 J.-P. Fox, Y. Rosseel, E.J. Wagenmakers, H. Hoijtink., and van Lissa, C.
 (2021). BFpack: Flexible Bayes Factor Testing of Scientific Theories
-in R. Journal of Statistical Software. <DOI:10.18637/jss.v100.i18>
+in R. Journal of Statistical Software. <https://doi.org/10.18637/jss.v100.i18>
 }

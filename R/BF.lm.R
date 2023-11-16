@@ -412,7 +412,7 @@ BF.lm <- function(x,
     matrixnames <- matrix(names_coef,nrow=K)
 
     # translate named constraints to matrices with coefficients for constraints
-    parse_hyp <- parse_hypothesis(names_coef,hypothesis)
+    parse_hyp <- bain:::parse_hypothesis(names_coef,hypothesis)
     parse_hyp$hyp_mat <- do.call(rbind, parse_hyp$hyp_mat)
     RrList <- make_RrList2(parse_hyp)
     RrE <- RrList[[1]]
@@ -921,11 +921,15 @@ Student_measures <- function(mean1,Scale1,df1,RrE1,RrO1,names1=NULL,constraints1
     if(Rank(RO1)==nrow(RO1)){ #RO1 is of full row rank. So use transformation.
       meanO <- c(RO1%*%mean1)
       scaleO <- RO1%*%Scale1%*%t(RO1)
-      relO <- ifelse(nrow(scaleO)==1,
-                     pt((rO1-meanO)/sqrt(scaleO[1,1]),df=df1,lower.tail=FALSE,log.p = TRUE), #univariate
-                     log(pmvt(lower=rO1,upper=Inf,delta=meanO,sigma=scaleO,df=df1,
-                              type="shifted",algorithm="TVPACK")[1])) #multivariate
-      if(relO>0){relO <- 0}
+      if(nrow(scaleO)==1){
+        relO <- pt((rO1-meanO)/sqrt(scaleO[1,1]),df=df1,lower.tail=FALSE,log.p = TRUE)
+      }else{
+        relO <- pmvt(lower=rO1,upper=Inf,delta=meanO,sigma=scaleO,df=df1,
+             type="shifted",algorithm="TVPACK")[1]
+        if(relO<0){relO <- 0}
+        if(relO>1){relO <- 1}
+        relO <- log(relO)
+      }
     }else{ #no linear transformation can be used; pmvt cannot be used. Use bain with a multivariate normal approximation
       #compute covariance matrix for multivariate normal distribution
       row.names(mean1) <- names1
@@ -1009,12 +1013,15 @@ Student_measures <- function(mean1,Scale1,df1,RrE1,RrO1,names1=NULL,constraints1
       delta_trans <- as.vector(RO1tilde %*% Tmean1OgE)
       scale1_trans <- RO1tilde %*% Tscale1OgE %*% t(RO1tilde)
 
-      if(nrow(scale1_trans) == 1){ # univariate
+      if(nrow(scale1_trans)==1){ # univariate
         relO <- pt((rO1tilde - delta_trans) / sqrt(scale1_trans), df = df1+qE1, lower.tail = FALSE,
                    log.p = TRUE)[1]
       } else { # multivariate
         relO <- log(pmvt(lower = rO1tilde, upper = Inf, delta = delta_trans, sigma = scale1_trans,
                          df = df1+qE1, type = "shifted",algorithm="TVPACK")[1])
+        if(relO<0){relO <- 0}
+        if(relO>1){relO <- 1}
+        relO <- log(relO)
       }
 
     }else{ #use bain for the computation of the probability
