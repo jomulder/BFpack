@@ -4,7 +4,7 @@
 * Getting package ready for JASP implementation.
 * Changes to the identification of groups using factors.
 * Updates for aov and manova objects.
-* bug fixes.
+* Bug fixes.
 * Minor edits.
 
 ## Test environments
