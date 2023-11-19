@@ -1,13 +1,14 @@
-# BFpack 1.2.3
+# BFpack 1.2.4
 
-* Date: 2023-10-17
-* This update fixes warnings and error that led to archival from CRAN
-* Faster computation of BFs for correlations.
-* Skip long tests for CRAN
+* Date: 2023-11-19.
+* Getting package ready for JASP implementation.
+* Changes to the identification of groups using factors.
+* Updates for aov and manova objects.
+* bug fixes.
 * Minor edits.
 
 ## Test environments
-* Local OS X Ventura 13.5, R 4.2.3
+* Local OS X Ventura 13.5, R 4.3.2
 * Local Windows 10, R version 4.1.1
 * rhub check: Fedora Linux, R-devel, clang, gfortran
 * rhub check: Ubuntu Linux, R-release
