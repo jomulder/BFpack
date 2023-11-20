@@ -48,6 +48,18 @@ test_that("2 samples t test of exploratory hypotheses correctly evaluated
     ,tolerance = .00001)
 })
 
+# t test check for testing interval hypotheses
+set.seed(123)
+ttest3 <- t_test(therapeutic,therapeutic*runif(length(therapeutic),min=.9,max=1.1)+.1,var.equal=TRUE)
+BF3 <- BF(ttest3,hypothesis="difference< 0.5 & difference > -0.5; difference > 0.5; difference < -0.5",
+          BF.type = 1,log = TRUE)
+test_that("2 samples t test of exploratory hypotheses correctly evaluated
+          with equal variances", {
+            expect_equivalent(
+              c(unname(BF3$BFmatrix_confirmatory[1,])),c(0,3.5,4.1)
+              ,tolerance = 1)
+          })
+
 # test if one-sided PMP is same as one-sided p-value
 ttest4 <- t_test(therapeutic,therapeutic*.9+.1,var.equal=TRUE,alternative="greater")
 BF4 <- BF(ttest4,"difference<0")

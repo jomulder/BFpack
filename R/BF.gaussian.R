@@ -76,7 +76,8 @@ Savage.Dickey.Gaussian <- function(prior.mean,
   PHP_exploratory <- round(exp(BFtu_exploratory - maxrow %*% t(rep(1,3))) /
                              apply(exp(BFtu_exploratory - maxrow %*% t(rep(1,3))),1,sum),3)
   colnames(PHP_exploratory) <- c("Pr(=0)","Pr(<0)","Pr(>0)")
-  row.names(PHP_exploratory) <- names_coef
+  row.names(PHP_exploratory) <- row.names(BFtu_exploratory) <- names_coef
+  colnames(BFtu_exploratory) <- c("=0","<0",">0")
 
   # compute posterior estimates
   postestimates <- cbind(meanN,meanN,

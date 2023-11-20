@@ -132,7 +132,7 @@ against the unconstrained hypothesis.
 \item The eighth column `\code{BF=}' contains the posterior probabilities of the
 constrained hypotheses.
 }
-\item \code{prior}: The prior probabilities of the constrained hypotheses in a confirmatory test.
+\item \code{prior.hyp}: The prior probabilities of the constrained hypotheses in a confirmatory test.
 \item \code{hypotheses}: The tested constrained hypotheses in a confirmatory test.
 \item \code{estimates}: The unconstrained estimates.
 \item \code{model}: The input model \code{x}.

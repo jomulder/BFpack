@@ -84,6 +84,7 @@ BF.lm <- function(x,
     dvec <- unlist(lapply(1:N,function(i){
       which(rowSums(abs(t(matrix(rep(Xmat[i,dummyX],J),ncol=J)) - groupcode))==0)
     }))
+    names(dvec) <- NULL
     Nj <- c(table(dvec))
     #set minimal fractions for each group
     bj <- ((P+K)/J)/Nj
@@ -236,10 +237,11 @@ BF.lm <- function(x,
   row.names(relcomp) <- row.names(relfit) <- names_coef
 
   BFtu_exploratory <- relfit - relcomp
-  colnames(BFtu_exploratory) <- c("Pr(=0)","Pr(<0)","Pr(>0)")
+  colnames(BFtu_exploratory) <- c("=0","<0",">0")
   maxrows <- apply(BFtu_exploratory,1,max)
   PHP_exploratory <- exp(BFtu_exploratory - maxrows %*% t(rep(1,3))) /
     apply(exp(BFtu_exploratory - maxrows %*% t(rep(1,3))),1,sum)
+  colnames(PHP_exploratory) <- c("p(=0)","Pr(<0)","Pr(>0)")
 
   #compute estimates
   postestimates <- cbind(meanN,meanN,
@@ -436,7 +438,7 @@ BF.lm <- function(x,
     }
 
     # check if a common boundary exists for prior location under all constrained hypotheses
-    if(nrow(RrStack) > 1){
+    if(nrow(RrStack) > 1 & BF.type == 2){
       rref_ei <- rref(RrStack)
       nonzero <- rref_ei[,P*K+1]!=0
       if(max(nonzero)>0){
@@ -612,7 +614,7 @@ BF.lm <- function(x,
       }
       # posterior hyperparameters
       dfN <- N-K-P+1
-      ScaleN <- kronecker(S,tXXi)/(N-K-P+1) # off-diagonal elements have no meaning
+      ScaleN <- kronecker(S,tXXi)/(N-K-P+1)
       meanN <- as.matrix(c(BetaHat))
 
       relcomp <- t(matrix(unlist(lapply(1:numhyp,function(h){
@@ -621,7 +623,7 @@ BF.lm <- function(x,
       })),nrow=2))
 
       relfit <- t(matrix(unlist(lapply(1:numhyp,function(h){
-        Student_measures(meanN,ScaleN,dfN,RrE[[h]],RrO[[h]],
+        Student_measures(mean1=meanN,Scale1=ScaleN,df1=dfN,RrE[[h]],RrO[[h]],
                          names1=names_coef,constraints1=parse_hyp$original_hypothesis[h])
       })),nrow=2))
       colnames(relcomp) <- c("c_E","c_O")
@@ -718,7 +720,7 @@ BF.lm <- function(x,
       PHP_confirmatory=PHP_confirmatory,
       BFmatrix_confirmatory=BFmatrix_confirmatory,
       BFtable_confirmatory=BFtable,
-      prior=priorprobs,
+      prior.hyp=priorprobs,
       hypotheses=hypotheses,
       estimates=postestimates,
       model=x,
@@ -736,7 +738,7 @@ BF.lm <- function(x,
       PHP_confirmatory=PHP_confirmatory,
       BFmatrix_confirmatory=BFmatrix_confirmatory,
       BFtable_confirmatory=BFtable,
-      prior=priorprobs,
+      prior.hyp=priorprobs,
       hypotheses=hypotheses,
       estimates=postestimates,
       model=x,
@@ -812,18 +814,14 @@ MatrixStudent_measures <- function(Mean1,Scale1,tXXi1,df1,RrE1,RrO1,Names1=NULL,
         mean1 <- c(Mean1)
         names(mean1) <- c(Names1)
         if(df1>2){ #posterior measures
-          covm1 <- kronecker(Scale1,tXXi1)/(df1-2)
-          bain_res <- bain(x=mean1,hypothesis=constraints1,Sigma=covm1,n=999) #n not used in computation
-          relO <- log(bain_res$fit[1,3])
+          covm1 <- kronecker(Scale1,tXXi1)*df1/(df1-2) #estimate of covariance matrix
         }else if(df1==2){ #posterior measures
-          covm1 <- kronecker(Scale1,tXXi1)/(df1-1)
-          bain_res <- bain(x=mean1,hypothesis=constraints1,Sigma=covm1,n=999) #n not used in computation
-          relO <- log(bain_res$fit[1,3])
+          covm1 <- kronecker(Scale1,tXXi1)*4
         }else{
-          covm1 <- kronecker(Scale1,tXXi1) #for prior with df1==1, probability independent of common factor of scale1
-          bain_res <- bain(x=mean1,hypothesis=constraints1,Sigma=covm1,n=df1) #n not used in computation
-          relO <- log(bain_res$fit[1,4])
+          covm1 <- kronecker(Scale1,tXXi1)*5
         }
+        bain_res <- bain(x=mean1,hypothesis=constraints1,Sigma=covm1,n=999) #n not used in computation
+        relO <- log(bain_res$fit[1,3])
 
         # bain1 <- bain::bain(mean1,Sigma1=covm1,RrE1,RrO1,n=10) # choice of n does not matter
         # extract posterior probability (Fit_eq) from bain-object)
@@ -883,18 +881,14 @@ MatrixStudent_measures <- function(Mean1,Scale1,tXXi1,df1,RrE1,RrO1,Names1=NULL,
         mean1 <- c(Mean1)
         names(mean1) <- c(Names1)
         if(df1>2){ #posterior measures
-          covm1 <- kronecker(Scale1,tXXi1)/(df1-2)
-          bain_res <- bain(x=mean1,hypothesis=constraints1,Sigma=covm1,n=999) #n not used in computation
-          relO <- log(bain_res$fit[1,3])
+          covm1 <- kronecker(Scale1,tXXi1)*df1/(df1-2)
         }else if(df1==2){ #posterior measures
-          covm1 <- kronecker(Scale1,tXXi1)/(df1-1)
-          bain_res <- bain(x=mean1,hypothesis=constraints1,Sigma=covm1,n=999) #n not used in computation
-          relO <- log(bain_res$fit[1,3])
+          covm1 <- kronecker(Scale1,tXXi1)*4
         }else{
-          covm1 <- kronecker(Scale1,tXXi1) #for prior with df1==1, probability independent of common factor of scale1
-          bain_res <- bain(x=mean1,hypothesis=constraints1,Sigma=covm1,n=df1) #n not used in computation
-          relO <- log(bain_res$fit[1,4])
+          covm1 <- kronecker(Scale1,tXXi1)*5
         }
+        bain_res <- bain(x=mean1,hypothesis=constraints1,Sigma=covm1,n=999) #n not used in computation
+        relO <- log(bain_res$fit[1,3])
       }
     }
   }
@@ -940,24 +934,16 @@ Student_measures <- function(mean1,Scale1,df1,RrE1,RrO1,names1=NULL,constraints1
       #compute covariance matrix for multivariate normal distribution
       row.names(mean1) <- names1
       if(df1>2){ # we need posterior measures
-        covm1 <- Scale1/(df1-2)
-        mean1vec <- c(mean1)
-        names(mean1vec) <- row.names(mean1)
-        bain_res <- bain(x=mean1vec,hypothesis=constraints1,Sigma=covm1,n=999) #n not used in computation
-        relO <- log(bain_res$fit[1,3])
-      }else if(df1==2){ # we need posterior measures (there is very little information)
-        covm1 <- Scale1/(df1-1)
-        mean1vec <- c(mean1)
-        names(mean1vec) <- row.names(mean1)
-        bain_res <- bain(x=mean1vec,hypothesis=constraints1,Sigma=covm1,n=999) #n not used in computation
-        relO <- log(bain_res$fit[1,3])
-      }else{ #then df=1, so we need prior measures
-        covm1 <- Scale1 #for prior with df1==1, probability independent of common factor of scale1
-        mean1vec <- c(mean1)
-        names(mean1vec) <- row.names(mean1)
-        bain_res <- bain(x=mean1vec,hypothesis=constraints1,Sigma=covm1,n=df1) #n not used in computation
-        relO <- log(bain_res$fit[1,4])
+        covm1 <- Scale1*df1/(df1-2)
+      }else if(df1==2){
+        covm1 <- Scale1*4
+      }else{
+        covm1 <- Scale1*5
       }
+      mean1vec <- c(mean1)
+      names(mean1vec) <- row.names(mean1)
+      bain_res <- bain(x=mean1vec,hypothesis=constraints1,Sigma=covm1,n=999) #n not used in computation
+      relO <- log(bain_res$fit[1,3])
     }
   }
   if(!is.null(RrE1) && !is.null(RrO1)){ #hypothesis with equality and order constraints
@@ -1035,24 +1021,16 @@ Student_measures <- function(mean1,Scale1,df1,RrE1,RrO1,names1=NULL,constraints1
       #compute covariance matrix for multivariate normal distribution
       row.names(mean1) <- names1
       if(df1>2){ # we need posterior measures
-        covm1 <- Scale1/(df1-2)
-        mean1vec <- c(mean1)
-        names(mean1vec) <- row.names(mean1)
-        bain_res <- bain(x=mean1vec,hypothesis=constraints1,Sigma=covm1,n=999) #n not used in computation
-        relO <- log(bain_res$fit[1,3])
+        covm1 <- Scale1*df1/(df1-2) # variance estimate used for Gaussian approximation
       }else if(df1==2){ # we need posterior measures (there is very little information)
-        covm1 <- Scale1/(df1-1)
-        mean1vec <- c(mean1)
-        names(mean1vec) <- row.names(mean1)
-        bain_res <- bain(x=mean1vec,hypothesis=constraints1,Sigma=covm1,n=999) #n not used in computation
-        relO <- log(bain_res$fit[1,3])
+        covm1 <- Scale1*4
       }else{ #then df=1, so we need prior measures
-        covm1 <- Scale1 #for prior with df1==1, probability independent of common factor of scale1
-        mean1vec <- c(mean1)
-        names(mean1vec) <- row.names(mean1)
-        bain_res <- bain(x=mean1vec,hypothesis=constraints1,Sigma=covm1,n=df1) #n not used in computation
-        relO <- log(bain_res$fit[1,4])
+        covm1 <- Scale1*5 #for prior with df1==1, probability independent of common factor of scale1
       }
+      mean1vec <- c(mean1)
+      names(mean1vec) <- row.names(mean1)
+      bain_res <- bain(x=mean1vec,hypothesis=constraints1,Sigma=covm1,n=999) #n not used
+      relO <- log(bain_res$fit[1,3])
     }
   }
 

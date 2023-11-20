@@ -43,6 +43,7 @@ BF.t_test <- function(x,
   logIN <- log
 
   if(numpop==1){ #one sample t test
+
     tvalue <- x$statistic
     mu0 <- x$null.value
     xbar <- x$estimate
@@ -50,73 +51,110 @@ BF.t_test <- function(x,
     n <- df + 1
     stderr <- (xbar - mu0) / tvalue #standard error
     sigmaML <- stderr*sqrt(n-1)
-    #evaluation of posterior
-    relfit0 <- dt((xbar-mu0)/stderr,df=df,log=TRUE) - log(stderr)
-    relfit1 <- log(1-pt((xbar-mu0)/stderr,df=df))
-    relfit2 <- log(pt((xbar-mu0)/stderr,df=df))
-    #evaluation of prior
-    if(BF.type==2){
-      relcomp0 <- dt(0,df=1,log=T) - log(sigmaML)
-      relcomp1 <- relcomp2 <- log(.5)
-    }else{
-      relcomp0 <- dt((xbar-mu0)/sigmaML,df=1,log=TRUE) - log(sigmaML)
-      relcomp1 <- log(1-pt((xbar-mu0)/sigmaML,df=1))
-      relcomp2 <- log(pt((xbar-mu0)/sigmaML,df=1))
-    }
 
-    #exploratory BFs
-    if(x$method=="Paired t-test"){
-      hypotheses_exploratory <- c(paste0("difference=",as.character(mu0)),paste0("difference<",as.character(mu0)),
-                                  paste0("difference>",as.character(mu0)))
-    }else{
-      hypotheses_exploratory <- c(paste0("mu=",as.character(mu0)),paste0("mu<",as.character(mu0)),paste0("mu>",as.character(mu0)))
-    }
-    logBFtu <- c(relfit0-relcomp0,relfit1-relcomp1,relfit2-relcomp2)
-    names(logBFtu) <- hypotheses_exploratory
-    BFtu_exploratory <- matrix(logBFtu,nrow=1)
-    maxBFtu <- max(BFtu_exploratory)
-    colnames(BFtu_exploratory) <- hypotheses_exploratory
-    row.names(BFtu_exploratory) <- "BFtu"
-    PHP_exploratory <- exp(BFtu_exploratory - maxBFtu) /sum(exp(BFtu_exploratory - maxBFtu))
-    colnames(PHP_exploratory) <- c(paste0("Pr(=",as.character(mu0),")"),paste0("Pr(<",as.character(mu0),")"),
-                                   paste0("Pr(>",as.character(mu0),")"))
-    if(x$method=="Paired t-test"){
-      row.names(PHP_exploratory) <- "difference"
-    }else{
-      row.names(PHP_exploratory) <- "mu"
-    }
+    sampledata <- rnorm(n)
+    sampledata <- (sampledata - mean(sampledata)) / sd(sampledata)
+    sampledata <- sampledata * sqrt(x$v[1]) + xbar
+    sampledata_explo <- sampledata - mu0
+    mu <- rep(1,length(sampledata))
+    df.draws <- data.frame(obs=sampledata,obs_explo=sampledata_explo,mu=mu)
+    lm_conf <- lm(obs~mu-1,data=df.draws)
+    BF_conf <- BF(lm_conf,
+                  hypothesis=hypothesis,
+                  prior.hyp=prior.hyp,
+                  complement=complement,
+                  BF.type=BF.type,
+                  log=logIN)
+    sampledata_explo <- sampledata - x$null.value
+    lm_explo <- lm(obs_explo~mu-1,data=df.draws)
+    BF_explo <- BF(lm_explo,
+                   hypothesis=NULL,
+                   prior.hyp=prior.hyp,
+                   complement=complement,
+                   BF.type=BF.type,
+                   log=logIN)
+    BF_out <- BF_conf
+    BF_out$BFtu_exploratory <- BF_explo$BFtu_exploratory
+    BF_out$PHP_exploratory <- BF_explo$PHP_exploratory
+    colnames(BF_out$BFtu_exploratory) <- colnames(BF_out$PHP_exploratory) <-
+      c(paste0("Pr(=",as.character(mu0),")"),paste0("Pr(<",as.character(mu0),")"),
+        paste0("Pr(>",as.character(mu0),")"))
 
-    # relfit_exploratory <- matrix(c(exp(relfit0),rep(1,3),exp(relfit1),exp(relfit2)),ncol=2)
-    # relcomp_exploratory <- matrix(c(exp(relcomp0),rep(1,3),rep(.5,2)),ncol=2)
-    # row.names(relfit_exploratory) <- row.names(relcomp_exploratory) <- hypotheses_exploratory
-    # colnames(relfit_exploratory) <- c("f=","f>")
-    # colnames(relcomp_exploratory) <- c("c=","c>")
-
-    if(!is.null(hypothesis)){ #perform confirmatory tests
-      #execute via BF.lm
-      sd1 <- sqrt(n) * (xbar - mu0) / tvalue
-      y1 <- rnorm(n)
-      y1 <- y1 - mean(y1)
-      y1 <- sd1*y1/sd(y1) + xbar
-      lm1 <- lm(y1 ~ 1)
-      if(x$method=="Paired t-test"){
-        names(lm1$coefficients) <- "difference"
-      }else{
-        names(lm1$coefficients) <- "mu"
-      }
-      BFlm1 <- BF(lm1,hypothesis,prior.hyp=prior.hyp,complement=complement,BF.type=BF.type,log=logIN)
-      BFtu_confirmatory <- BFlm1$BFtu_confirmatory
-      PHP_confirmatory <- BFlm1$PHP_confirmatory
-      BFmatrix_confirmatory <- BFlm1$BFmatrix_confirmatory
-      BFtable <- BFlm1$BFtable_confirmatory
-      hypotheses <- row.names(BFtable)
-      priorprobs <- BFlm1$prior
-    }
-    if(x$method=="Paired t-test"){
-      parameter <- "difference in means"
-    }else{
-      parameter <- "mean"
-    }
+    # tvalue <- x$statistic
+    # mu0 <- x$null.value
+    # xbar <- x$estimate
+    # df <- x$parameter
+    # n <- df + 1
+    # stderr <- (xbar - mu0) / tvalue #standard error
+    # sigmaML <- stderr*sqrt(n-1)
+    # #evaluation of posterior
+    # relfit0 <- dt((xbar-mu0)/stderr,df=df,log=TRUE) - log(stderr)
+    # relfit1 <- log(1-pt((xbar-mu0)/stderr,df=df))
+    # relfit2 <- log(pt((xbar-mu0)/stderr,df=df))
+    # #evaluation of prior
+    # if(BF.type==2){
+    #   relcomp0 <- dt(0,df=1,log=T) - log(sigmaML)
+    #   relcomp1 <- relcomp2 <- log(.5)
+    # }else{
+    #   relcomp0 <- dt((xbar-mu0)/sigmaML,df=1,log=TRUE) - log(sigmaML)
+    #   relcomp1 <- log(1-pt((xbar-mu0)/sigmaML,df=1))
+    #   relcomp2 <- log(pt((xbar-mu0)/sigmaML,df=1))
+    # }
+    #
+    # #exploratory BFs
+    # if(x$method=="Paired t-test"){
+    #   hypotheses_exploratory <- c(paste0("difference=",as.character(mu0)),paste0("difference<",as.character(mu0)),
+    #                               paste0("difference>",as.character(mu0)))
+    # }else{
+    #   hypotheses_exploratory <- c(paste0("mu=",as.character(mu0)),paste0("mu<",as.character(mu0)),paste0("mu>",as.character(mu0)))
+    # }
+    # logBFtu <- c(relfit0-relcomp0,relfit1-relcomp1,relfit2-relcomp2)
+    # names(logBFtu) <- hypotheses_exploratory
+    # BFtu_exploratory <- matrix(logBFtu,nrow=1)
+    # maxBFtu <- max(BFtu_exploratory)
+    # colnames(BFtu_exploratory) <- hypotheses_exploratory
+    # row.names(BFtu_exploratory) <- "BFtu"
+    # PHP_exploratory <- exp(BFtu_exploratory - maxBFtu) /sum(exp(BFtu_exploratory - maxBFtu))
+    # colnames(PHP_exploratory) <- c(paste0("Pr(=",as.character(mu0),")"),paste0("Pr(<",as.character(mu0),")"),
+    #                                paste0("Pr(>",as.character(mu0),")"))
+    # if(x$method=="Paired t-test"){
+    #   row.names(PHP_exploratory) <- "difference"
+    # }else{
+    #   row.names(PHP_exploratory) <- "mu"
+    # }
+    #
+    # # relfit_exploratory <- matrix(c(exp(relfit0),rep(1,3),exp(relfit1),exp(relfit2)),ncol=2)
+    # # relcomp_exploratory <- matrix(c(exp(relcomp0),rep(1,3),rep(.5,2)),ncol=2)
+    # # row.names(relfit_exploratory) <- row.names(relcomp_exploratory) <- hypotheses_exploratory
+    # # colnames(relfit_exploratory) <- c("f=","f>")
+    # # colnames(relcomp_exploratory) <- c("c=","c>")
+    #
+    # if(!is.null(hypothesis)){ #perform confirmatory tests
+    #   #execute via BF.lm
+    #   sd1 <- sqrt(n) * (xbar - mu0) / tvalue
+    #   y1 <- rnorm(n)
+    #   y1 <- y1 - mean(y1)
+    #   y1 <- sd1*y1/sd(y1) + xbar
+    #   lm1 <- lm(y1 ~ 1)
+    #   if(x$method=="Paired t-test"){
+    #     names(lm1$coefficients) <- "difference"
+    #   }else{
+    #     names(lm1$coefficients) <- "mu"
+    #   }
+    #   BFlm1 <- BF(lm1,hypothesis,prior.hyp=prior.hyp,complement=complement,BF.type=BF.type,log=logIN)
+    #   BFlm1$parameter <- "mu"
+    #   # BFtu_confirmatory <- BFlm1$BFtu_confirmatory
+    #   # PHP_confirmatory <- BFlm1$PHP_confirmatory
+    #   # BFmatrix_confirmatory <- BFlm1$BFmatrix_confirmatory
+    #   # BFtable <- BFlm1$BFtable_confirmatory
+    #   # hypotheses <- row.names(BFtable)
+    #   # priorprobs <- BFlm1$prior
+    # }
+    # if(x$method=="Paired t-test"){
+    #   parameter <- "mean difference"
+    # }else{
+    #   parameter <- "mean"
+    # }
   }else{ # two samples t test
 
     if(!grepl("Welch",x$method)){ # equal variances assumed
@@ -134,20 +172,24 @@ BF.t_test <- function(x,
       # is called 'difference'
       df1 <- data.frame(out=out,differenc=factor(c(rep("a",x$n[2]),rep("e",x$n[1]))))
       lm1 <- lm(out ~ differenc,df1)
-      BFlm1 <- BF(lm1,hypothesis=hypothesis,prior.hyp=prior.hyp,complement=complement,
-                  BF.type=BF.type,log=logIN)
-      BFtu_exploratory <- t(as.matrix(BFlm1$BFtu_exploratory[2,]))
-      PHP_exploratory <- t(as.matrix(BFlm1$PHP_exploratory[2,]))
-      row.names(BFtu_exploratory) <- row.names(PHP_exploratory) <- "difference"
+      BF_out <- BF(lm1,
+                   hypothesis=hypothesis,
+                   prior.hyp=prior.hyp,
+                   complement=complement,
+                   BF.type=BF.type,
+                   log=logIN)
+      BF_out$BFtu_exploratory <- t(as.matrix(BF_out$BFtu_exploratory[2,]))
+      BF_out$PHP_exploratory <- t(as.matrix(BF_out$PHP_exploratory[2,]))
+      row.names(BF_out$BFtu_exploratory) <- row.names(BF_out$PHP_exploratory) <- "difference"
 
-      if(!is.null(hypothesis)){
-        BFtu_confirmatory <- BFlm1$BFtu_confirmatory
-        PHP_confirmatory <- BFlm1$PHP_confirmatory
-        BFmatrix_confirmatory <- BFlm1$BFmatrix_confirmatory
-        BFtable <- BFlm1$BFtable_confirmatory
-        hypotheses <- row.names(BFtable)
-        priorprobs <- BFlm1$prior
-      }
+      # if(!is.null(hypothesis)){
+      #   BFtu_confirmatory <- BFlm1$BFtu_confirmatory
+      #   PHP_confirmatory <- BFlm1$PHP_confirmatory
+      #   BFmatrix_confirmatory <- BFlm1$BFmatrix_confirmatory
+      #   BFtable <- BFlm1$BFtable_confirmatory
+      #   hypotheses <- row.names(BFtable)
+      #   priorprobs <- BFlm1$prior
+      # }
     }else{ #equal variances not assumed. BF.lm cannot be used
       diff.obs <- x$estimate[1] - x$estimate[2]
       nvec <- x$n
@@ -354,43 +396,46 @@ BF.t_test <- function(x,
         row.names(BFtable) <- names(BFtu_confirmatory)
         colnames(BFtable) <- c("complex=","complex>","fit=","fit>","BF=","BF>","BF","PHP")
         hypotheses <- row.names(relative_complexity)
+
+        if(logIN == FALSE){
+          BFtu_exploratory <- exp(BFtu_exploratory)
+          if(!is.null(hypothesis)){
+            BFtu_confirmatory <- exp(BFtu_confirmatory)
+            BFmatrix_confirmatory <- exp(BFmatrix_confirmatory)
+          }
+        }
+
+        if(is.null(hypothesis)){
+          BFtu_confirmatory <- PHP_confirmatory <- BFmatrix_confirmatory <- relative_fit <-
+            relative_complexity <- BFtable <- hypotheses <- priorprobs <- NULL
+        }
+
       }
       rm(sigma2_1.draws);rm(sigma2_2.draws);rm(sigma2b_1.draws);rm(sigma2b_2.draws)
+      parameter <- "mean difference"
+
+      BF_out <- list(
+        BFtu_exploratory=BFtu_exploratory,
+        PHP_exploratory=PHP_exploratory,
+        BFtu_confirmatory=BFtu_confirmatory,
+        PHP_confirmatory=PHP_confirmatory,
+        BFmatrix_confirmatory=BFmatrix_confirmatory,
+        BFtable_confirmatory=BFtable,
+        prior.hyp=priorprobs,
+        hypotheses=hypotheses,
+        estimates=x$coefficients,
+        model=x,
+        bayesfactor=bayesfactor,
+        parameter=parameter,
+        log = logIN,
+        fraction_number_groupIDs=2,
+        fraction_groupID_observation=rep(1:2,times=nvec),
+        call=match.call())
+      class(BF_out) <- "BF"
     }
-    parameter <- "difference in means"
   }
 
-  if(logIN == FALSE){
-    BFtu_exploratory <- exp(BFtu_exploratory)
-    if(!is.null(hypothesis)){
-      BFtu_confirmatory <- exp(BFtu_confirmatory)
-      BFmatrix_confirmatory <- exp(BFmatrix_confirmatory)
-    }
-  }
-
-  if(is.null(hypothesis)){
-    BFtu_confirmatory <- PHP_confirmatory <- BFmatrix_confirmatory <- relative_fit <-
-      relative_complexity <- BFtable <- hypotheses <- priorprobs <- NULL
-    }
-
-  BFlm_out <- list(
-    BFtu_exploratory=BFtu_exploratory,
-    PHP_exploratory=PHP_exploratory,
-    BFtu_confirmatory=BFtu_confirmatory,
-    PHP_confirmatory=PHP_confirmatory,
-    BFmatrix_confirmatory=BFmatrix_confirmatory,
-    BFtable_confirmatory=BFtable,
-    prior.hyp=priorprobs,
-    hypotheses=hypotheses,
-    estimates=x$coefficients,
-    model=x,
-    bayesfactor=bayesfactor,
-    parameter=parameter,
-    log = logIN,
-    call=match.call())
-
-  class(BFlm_out) <- "BF"
-  return(BFlm_out)
+  return(BF_out)
 }
 
 

@@ -1,7 +1,7 @@
 # BFpack 1.2.4
 
 * Date: 2023-11-19.
-* Getting package ready for JASP implementation.
+* Package update for implementation in JASP.
 * Changes to the identification of groups using factors.
 * Updates for aov and manova objects.
 * Bug fixes.
