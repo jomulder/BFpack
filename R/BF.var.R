@@ -130,7 +130,7 @@ BF.bartlett_htest <- function(x,
 
   BFtu_exploratory <- c(BF0u,log(1))
   names(BFtu_exploratory) <- c("homogeneity of variances","no homogeneity of variances")
-  norm_BF_explo <- exp(BFtu_exploratory - max(BFtu_exploratory)) * prior.hyp.explo
+  norm_BF_explo <- exp(BFtu_exploratory - max(BFtu_exploratory)) * prior.hyp.explo[[1]]
   PHP_exploratory <- norm_BF_explo / sum(norm_BF_explo)
 
   if (!is.null(hypothesis)){

@@ -9,9 +9,14 @@ process.prior.hyp.explo <- function(prior_hyp_explo, model){
 
   if(sum(class(model)=="bartlett_htest")>0){
     if(is.null(prior_hyp_explo)){
-      prior_hyp_explo <- rep(.5,2)
+      prior_hyp_explo <- list(rep(.5,2))
     }else{
-      if(length(prior_hyp_explo)!=2){
+      if(!is.list(prior_hyp_explo)){
+        prior_hyp_explo <- list(prior_hyp_explo)
+      }else{
+        prior_hyp_explo <- list(prior_hyp_explo[[1]])
+      }
+      if(length(prior_hyp_explo[[1]])!=2){
         stop("For an object of class 'bartlett_htest', the argument 'prior_hyp_explo' should be a vector
              of length 2 of the prior probabilities for the hypotheses of homogeneity of variances and an
              unconstrained alternative. Or use the default ('NULL') which implies equal prior probabilities.")
