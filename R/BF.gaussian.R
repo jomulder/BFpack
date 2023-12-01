@@ -7,6 +7,8 @@
 #' @export
 BF.default <- function(x,
                        hypothesis = NULL,
+                       prior.hyp.explo = NULL,
+                       prior.hyp.conf = NULL,
                        prior.hyp = NULL,
                        complement = TRUE,
                        log = FALSE,
@@ -24,6 +26,8 @@ BF.default <- function(x,
                                         post.mean = x,
                                         post.sigma = Sigma,
                                         hypothesis = hypothesis,
+                                        prior.hyp.explo = prior.hyp.explo,
+                                        prior.hyp.conf = prior.hyp.conf,
                                         prior.hyp = prior.hyp,
                                         complement = complement,
                                         log = log)
@@ -43,6 +47,8 @@ Savage.Dickey.Gaussian <- function(prior.mean,
                                    post.mean,
                                    post.sigma,
                                    hypothesis,
+                                   prior.hyp.explo,
+                                   prior.hyp.conf,
                                    prior.hyp,
                                    complement,
                                    log = FALSE){
@@ -63,6 +69,14 @@ Savage.Dickey.Gaussian <- function(prior.mean,
 
   logIN <- log
 
+  # check proper usage of argument 'prior.hyp.conf' and 'prior.hyp.explo'
+  if(!is.null(prior.hyp.conf)){
+    prior.hyp <- prior.hyp.conf
+  }
+  dummy <- 123
+  class(dummy) <- "dummy"
+  prior.hyp.explo <- process.prior.hyp.explo(prior_hyp_explo = prior.hyp.explo, model=dummy)
+
   # compute exploratory BFs for each parameter
   relfit <- matrix(c(dnorm(0,mean=meanN,sd=sqrt(diag(covmN)),log=TRUE),
                      pnorm(0,mean=meanN,sd=sqrt(diag(covmN)),log.p=TRUE),
@@ -73,11 +87,13 @@ Savage.Dickey.Gaussian <- function(prior.mean,
                       pnorm(0,mean=mean0,sd=sqrt(diag(covm0)),log.p=TRUE,lower.tail = FALSE)),ncol=3)
   BFtu_exploratory <- relfit - relcomp
   maxrow <- apply(BFtu_exploratory,1,max)
-  PHP_exploratory <- round(exp(BFtu_exploratory - maxrow %*% t(rep(1,3))) /
-                             apply(exp(BFtu_exploratory - maxrow %*% t(rep(1,3))),1,sum),3)
+  norm_BF_explo <- exp(BFtu_exploratory - maxrow %*% t(rep(1,3))) * (rep(1,nrow(relcomp)) %*% t(prior.hyp.explo[[1]]))
+  PHP_exploratory <- norm_BF_explo / apply(norm_BF_explo,1,sum)
+  # PHP_exploratory <- round(exp(BFtu_exploratory - maxrow %*% t(rep(1,3))) /
+  #                            apply(exp(BFtu_exploratory - maxrow %*% t(rep(1,3))),1,sum),3)
   colnames(PHP_exploratory) <- c("Pr(=0)","Pr(<0)","Pr(>0)")
   row.names(PHP_exploratory) <- row.names(BFtu_exploratory) <- names_coef
-  colnames(BFtu_exploratory) <- c("=0","<0",">0")
+  colnames(BFtu_exploratory) <- c("H(=0)","H(<0)","H(>0)")
 
   # compute posterior estimates
   postestimates <- cbind(meanN,meanN,
@@ -215,7 +231,8 @@ Savage.Dickey.Gaussian <- function(prior.mean,
     PHP_confirmatory=PHP_confirmatory,
     BFmatrix_confirmatory=BFmatrix_confirmatory,
     BFtable_confirmatory=BFtable,
-    prior.hyp=priorprobs,
+    prior.hyp.explo=prior.hyp.explo,
+    prior.hyp.conf=priorprobs,
     hypotheses=hypotheses,
     estimates=postestimates,
     model=NULL,

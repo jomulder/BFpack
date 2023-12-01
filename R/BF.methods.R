@@ -17,8 +17,17 @@
 #' @param hypothesis A character string containing the constrained (informative) hypotheses to
 #' evaluate in a confirmatory test. The default is NULL, which will result in standard exploratory testing
 #' under the model \code{x}.
-#' @param prior.hyp A vector specifying the prior probabilities of the hypotheses.
-#' The default is NULL which will specify equal prior probabilities.
+#' @param prior.hyp.explo The prior probabilities of the hypotheses in the exploratory tests. Except for
+#' objects of class \code{aov} (for (M)ANOVA, etc.), this argument should be a vector with three
+#' elements reflecting the prior probability of a zero effect, a negative effect, and a positive effect, respectively.
+#' For objects of class \code{aov}, the argument
+#' should be a list where the first element should be a vector of length 3 specifying the prior probabilities of each parameter
+#' being zero, negative, or positive, the second element should be a vector of length 2 specifying the prior probabilities
+#' of a model where is no main effect for a factor and the full model, and the third element should be a vector of length 2
+#' specifying the prior probabilities of a model where is no interaction effect (if present) for two factors and the full model.
+#' The default (\code{NULL}) specifies equal prior probabilities for each hypothesis per exploratory test.
+#' @param prior.hyp.conf The prior probabilities of the constrained hypotheses in the confirmatory test.
+#' @param prior.hyp Deprecated. Please use the argument \code{prior.hyp.conf}.
 #' @param complement a logical specifying whether the complement should be added
 #' to the tested hypothesis under \code{hypothesis}.
 #' @param log a logical specifying whether the Bayes factors should be computed on a log scale.
@@ -89,7 +98,8 @@
 #' \item The eighth column `\code{BF=}' contains the posterior probabilities of the
 #' constrained hypotheses.
 #' }
-#' \item \code{prior.hyp}: The prior probabilities of the constrained hypotheses in a confirmatory test.
+#' \item \code{prior.hyp.explo}: The prior probabilities of the constrained hypotheses in the exploratory tests.
+#' \item \code{prior.hyp.conf}: The prior probabilities of the constrained hypotheses in the confirmatory test.
 #' \item \code{hypotheses}: The tested constrained hypotheses in a confirmatory test.
 #' \item \code{estimates}: The unconstrained estimates.
 #' \item \code{model}: The input model \code{x}.
@@ -187,6 +197,6 @@
 #' @export
 #' @useDynLib BFpack, .registration = TRUE
 #'
-BF <- function(x, hypothesis, prior.hyp, complement, log, ...) {
+BF <- function(x, hypothesis, prior.hyp.explo, prior.hyp.conf, prior.hyp, complement, log, ...) {
   UseMethod("BF", x)
 }

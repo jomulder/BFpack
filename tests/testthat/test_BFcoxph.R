@@ -7,7 +7,7 @@ coxph1 <- survival::coxph(survival::Surv(start, stop, event) ~ x, test2)
 BF1 <- BF(coxph1)
 test_that("BF.coxph exploratory hypotheses correctly evaluated", {
   expect_true(
-    all.equal(c(unname(BF1$PHP_exploratory)),c(0.569,0.220,0.211))
+    all.equal(round(c(unname(BF1$PHP_exploratory)),3),c(0.569,0.220,0.211))
 )})
 BF1log <- BF(coxph1,log = TRUE)
 test_that("BF.coxph exploratory hypotheses correctly evaluated", {

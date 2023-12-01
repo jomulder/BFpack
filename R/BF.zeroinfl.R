@@ -5,6 +5,8 @@
 #' @export
 BF.zeroinfl <- function(x,
                     hypothesis = NULL,
+                    prior.hyp.explo = NULL,
+                    prior.hyp.conf = NULL,
                     prior.hyp = NULL,
                     complement = TRUE,
                     log = FALSE,
@@ -18,6 +20,8 @@ BF.zeroinfl <- function(x,
   Args$n <- length(x$residuals)
   Args$hypothesis <- hypothesis
   Args$prior.hyp <- prior.hyp
+  Args$prior.hyp.explo <- prior.hyp.explo
+  Args$prior.hyp.conf <- prior.hyp.conf
   Args$complement <- complement
   Args$log <- log
   out <- do.call(BF, Args)

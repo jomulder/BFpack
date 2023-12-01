@@ -8,12 +8,20 @@
 #' @export
 BF.lmerMod <- function(x,
                        hypothesis = NULL,
+                       prior.hyp.explo = NULL,
+                       prior.hyp.conf = NULL,
                        prior.hyp = NULL,
                        complement = TRUE,
                        log = FALSE,
                        ...){
 
   logIN <- log
+
+  # check proper usage of argument 'prior.hyp.conf' and 'prior.hyp.explo'
+  if(!is.null(prior.hyp.conf)){
+    prior.hyp <- prior.hyp.conf
+  }
+  prior.hyp.explo <- process.prior.hyp.explo(prior_hyp_explo = prior.hyp.explo, model=x)
 
   numcat <- length(x@cnms)
   namescat <- unlist(lapply(1:numcat,function(ca){
@@ -156,8 +164,9 @@ BF.lmerMod <- function(x,
   colnames(BFtu_exploratory_icc) <- c("icc=0","icc<0","icc>0")
   row.names(BFtu_exploratory_icc) <- iccnames
   rowmax <- apply(BFtu_exploratory_icc,1,max)
-  PHP_exploratory_icc <- round(exp(BFtu_exploratory_icc - rowmax %*% t(rep(1,ncol(BFtu_exploratory_icc)))) /
-                            apply(exp(BFtu_exploratory_icc - rowmax %*% t(rep(1,ncol(BFtu_exploratory_icc)))),1,sum),3)
+  norm_BF_explo <- exp(BFtu_exploratory_icc - rowmax %*% t(rep(1,ncol(BFtu_exploratory_icc)))) *
+    (rep(1,nrow(BFtu_exploratory_icc)) %*% t(prior.hyp.explo[[1]]))
+  PHP_exploratory_icc <- norm_BF_explo / apply(norm_BF_explo,1,sum)
   if(logIN == FALSE){
     BFtu_exploratory_icc <- exp(BFtu_exploratory_icc)
   }

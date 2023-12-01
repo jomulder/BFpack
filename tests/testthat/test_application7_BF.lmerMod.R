@@ -19,6 +19,13 @@ test_that("lmerMod two hypotheses correctly evaluated", {
   expect_equivalent(
     round(BFicc$BFmatrix_confirmatory[,1],7),c(0,-.93,-3), tolerance = .2
   )
+  set.seed(123)
+  BFicc2 <- BF(outlme1,log=TRUE,prior.hyp.explo = 3:5)
+  expect_equivalent(
+    round(BFicc2$PHP_exploratory[1,],7),
+    round(exp(BFicc2$BFtu_exploratory[1,])*(3:5)/sum(exp(BFicc2$BFtu_exploratory[1,])*(3:5)),7),
+    tolerance = .2
+  )
 })
 
 

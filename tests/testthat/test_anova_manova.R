@@ -51,6 +51,7 @@ test_that("BF.manova exploratory MANOVA (2 factors)", {
 
 m7 <- aov(dv1 ~ 1 + group1 * group2, data.example)
 BF7 <- BF(m7)
+BF7a <- BF(m7,prior.hyp.explo = list(1:3,2:1,3:4))
 m8 <- aov(dv1 ~ -1 + group1 * group2, data.example)
 BF8 <- BF(m8)
 test_that("BF.aov exploratory ANOVA (2 factors w/ interaction) when including/excluding the intercept", {
@@ -59,6 +60,18 @@ test_that("BF.aov exploratory ANOVA (2 factors w/ interaction) when including/ex
   )
   expect_equivalent(
     BF7$PHP_interaction,BF8$PHP_interaction
+  )
+  expect_equivalent(
+    BF7a$PHP_exploratory[4,],
+    BF7$BFtu_exploratory[4,] * (1:3) / sum(BF7a$BFtu_exploratory[4,] * (1:3))
+  )
+  expect_equivalent(
+    unname(BF7a$PHP_main[2,]),
+    unname(BF7$BFtu_main[2,] * (2:1) / sum(BF7$BFtu_main[2,] * (2:1)))
+  )
+  expect_equivalent(
+    unname(BF7a$PHP_interaction[1,]),
+    unname(BF7$PHP_interaction[1,] * (3:4) / sum(BF7$PHP_interaction[1,] * (3:4)))
   )
 })
 

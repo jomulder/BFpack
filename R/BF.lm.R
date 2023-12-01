@@ -7,6 +7,8 @@
 #' @export
 BF.lm <- function(x,
                   hypothesis = NULL,
+                  prior.hyp.explo = NULL,
+                  prior.hyp.conf = NULL,
                   prior.hyp = NULL,
                   complement = TRUE,
                   log = FALSE,
@@ -28,6 +30,12 @@ BF.lm <- function(x,
   testedparameter <- "regression coefficients"
 
   logIN <- log
+
+  # check proper usage of argument 'prior.hyp.conf' and 'prior.hyp.explo'
+  if(!is.null(prior.hyp.conf)){
+    prior.hyp <- prior.hyp.conf
+  }
+  prior.hyp.explo <- process.prior.hyp.explo(prior_hyp_explo = prior.hyp.explo, model=x)
 
   # default BF on location parameters in a univarite normal linear model
   # Note that it is recommended that the fitten model is based on standardized covariates.
@@ -237,10 +245,11 @@ BF.lm <- function(x,
   row.names(relcomp) <- row.names(relfit) <- names_coef
 
   BFtu_exploratory <- relfit - relcomp
-  colnames(BFtu_exploratory) <- c("=0","<0",">0")
+  colnames(BFtu_exploratory) <- c("BF0u","BF1u","BF2u")
   maxrows <- apply(BFtu_exploratory,1,max)
-  PHP_exploratory <- exp(BFtu_exploratory - maxrows %*% t(rep(1,3))) /
-    apply(exp(BFtu_exploratory - maxrows %*% t(rep(1,3))),1,sum)
+  norm_BF_explo <- exp(BFtu_exploratory - maxrows %*% t(rep(1,3))) *
+    (rep(1,nrow(relcomp)) %*% t(prior.hyp.explo[[1]]))
+  PHP_exploratory <- norm_BF_explo / apply(norm_BF_explo,1,sum)
   colnames(PHP_exploratory) <- c("p(=0)","Pr(<0)","Pr(>0)")
 
   #compute estimates
@@ -335,11 +344,17 @@ BF.lm <- function(x,
       BFtu_main <- matrix(c(BFmain[(0:(length(BFmain)/3-1))*3+1],rep(log(1),length(BFmain)/3)),
                           nrow=length(BFmain)/3)
       row.names(BFtu_main) <- names_main
-      colnames(BFtu_main) <- c("BFtu","BFuu")
+      colnames(BFtu_main) <- c("BF0u","BFuu")
       maxBFtu <- apply(BFtu_main,1,max)
-      PHP_main <- exp(BFtu_main - maxBFtu %*% t(rep(1,ncol(BFtu_main)))) /
-        apply(exp(BFtu_main - maxBFtu %*% t(rep(1,ncol(BFtu_main)))),1,sum)
+      norm_BF_main_explo <- exp(BFtu_main - maxBFtu %*% t(rep(1,ncol(BFtu_main)))) *
+        (rep(1,nrow(BFtu_main)) %*% t(prior.hyp.explo[[2]]))
+      PHP_main <- norm_BF_main_explo / apply(norm_BF_main_explo,1,sum)
+      # PHP_main <- exp(BFtu_main - maxBFtu %*% t(rep(1,ncol(BFtu_main)))) /
+      #   apply(exp(BFtu_main - maxBFtu %*% t(rep(1,ncol(BFtu_main)))),1,sum)
       colnames(PHP_main) <- c("Pr(no effect)","Pr(full model)")
+      if(logIN == FALSE){
+        BFtu_main <- exp(BFtu_main)
+      }
     }else{ PHP_main <- BFtu_main <- NULL}
     #check whether interaction effects are present
     prednames <- names(attr(x$term,"dataClasses"))
@@ -393,10 +408,15 @@ BF.lm <- function(x,
       BFtu_interaction <- matrix(c(BFtu_interaction0[(0:(length(BFtu_interaction0)/3-1))*3+1],
                                    rep(log(1),length(BFtu_interaction0)/3)),nrow=length(BFtu_interaction0)/3)
       row.names(BFtu_interaction) <- names_interaction
-      colnames(BFtu_interaction) <- c("BFtu","BFuu")
+      colnames(BFtu_interaction) <- c("BF0u","BFuu")
       maxrows <- apply(BFtu_interaction,1,max)
-      PHP_interaction <- exp(BFtu_interaction - maxrows %*% t(rep(1,ncol(BFtu_interaction)))) /
-        apply(exp(BFtu_interaction - maxrows %*% t(rep(1,ncol(BFtu_interaction)))),1,sum)
+      norm_BF_inter_explo <- exp(BFtu_interaction - maxrows %*% t(rep(1,ncol(BFtu_interaction)))) *
+        (rep(1,nrow(BFtu_interaction)) %*% t(prior.hyp.explo[[3]]))
+      PHP_interaction <- norm_BF_inter_explo / apply(norm_BF_inter_explo,1,sum)
+      if(logIN == FALSE){
+        BFtu_interaction <- exp(BFtu_interaction)
+      }
+      # PHP_interaction <- norm_BF_inter_explo / apply(norm_BF_inter_explo,1,sum)
       colnames(PHP_interaction) <- c("Pr(no effect)","Pr(full model)")
     }else{ PHP_interaction <- BFtu_interaction <- NULL}
     #BFtu_exploratory <- rbind(BFtu_main,BFtu_interaction)
@@ -720,7 +740,8 @@ BF.lm <- function(x,
       PHP_confirmatory=PHP_confirmatory,
       BFmatrix_confirmatory=BFmatrix_confirmatory,
       BFtable_confirmatory=BFtable,
-      prior.hyp=priorprobs,
+      prior.hyp.conf=priorprobs,
+      prior.hyp.explo=prior.hyp.explo,
       hypotheses=hypotheses,
       estimates=postestimates,
       model=x,
@@ -738,7 +759,8 @@ BF.lm <- function(x,
       PHP_confirmatory=PHP_confirmatory,
       BFmatrix_confirmatory=BFmatrix_confirmatory,
       BFtable_confirmatory=BFtable,
-      prior.hyp=priorprobs,
+      prior.hyp.explo=prior.hyp.explo,
+      prior.hyp.conf=priorprobs,
       hypotheses=hypotheses,
       estimates=postestimates,
       model=x,

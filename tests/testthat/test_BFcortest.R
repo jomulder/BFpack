@@ -3,6 +3,7 @@
 set.seed(123)
 cor1 <- cor_test(mtcars[,4:6])
 BF1 <- BF(cor1)
+BF1a <- BF(cor1,prior.hyp.explo = 3:5)
 PHPexplo <- matrix(
   c(0.1,  0.9,  0.0,
     0.0,  0.0,  1.0,
@@ -10,7 +11,13 @@ PHPexplo <- matrix(
 test_that("BF.cor_test exploratory hypotheses on correlations correctly evaluated", {
   expect_equivalent(
     BF1$PHP_exploratory,PHPexplo, tolerance = .1
-  )})
+  )
+  expect_equivalent(
+    BF1a$PHP_exploratory[1,],
+    BF1$BFtu_exploratory[1,]*(3:5)/sum(BF1$BFtu_exploratory[1,]*(3:5)),
+    tolerance = .02
+  )
+})
 # confirmatory hypothesis test on the correlations
 BF2 <- BF(cor1,hypothesis="wt_with_drat<drat_with_hp<wt_with_hp;
    wt_with_drat=drat_with_hp<0<wt_with_hp")

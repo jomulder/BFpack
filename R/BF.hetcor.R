@@ -4,12 +4,20 @@
 #' @export
 BF.hetcor <- function(x,
                        hypothesis = NULL,
+                       prior.hyp.explo = NULL,
+                       prior.hyp.conf = NULL,
                        prior.hyp = NULL,
                        complement = TRUE,
                        log = FALSE,
                        ...){
 
   logIN <- log
+
+  # check proper usage of argument 'prior.hyp.conf' and 'prior.hyp.explo'
+  if(!is.null(prior.hyp.conf)){
+    prior.hyp <- prior.hyp.conf
+  }
+  prior.hyp.explo <- process.prior.hyp.explo(prior_hyp_explo = prior.hyp.explo, model=x)
 
   get_est <- get_estimates(x)
   P <- nrow(x$std.errors)
@@ -62,8 +70,9 @@ BF.hetcor <- function(x,
   BFtu_exploratory <- relfit - relcomp
   colnames(BFtu_exploratory) <- colnames(BFtu_exploratory) <-  c("Pr(=0)","Pr(<0)","Pr(>0)")
   maxrow <- apply(BFtu_exploratory,1,max)
-  PHP_exploratory <- exp(BFtu_exploratory - maxrow %*% t(rep(1,ncol(BFtu_exploratory)))) /
-    apply(exp(BFtu_exploratory - maxrow %*% t(rep(1,ncol(BFtu_exploratory)))),1,sum)
+  BFtu_explo_norm <- exp(BFtu_exploratory - maxrow %*% t(rep(1,ncol(BFtu_exploratory)))) *
+    rep(1,nrow(BFtu_exploratory)) %*% t(prior.hyp.explo[[1]])
+  PHP_exploratory <- BFtu_explo_norm / apply(BFtu_explo_norm,1,sum)
 
   if(logIN == FALSE){
     BFtu_exploratory <- exp(BFtu_exploratory)
@@ -204,7 +213,7 @@ BF.hetcor <- function(x,
     estimates=estimates,
     model=x,
     bayesfactor="Bayes factors based on joint uniform priors",
-    parameter="Correlations",
+    parameter="measures of association",
     log=logIN,
     call=match.call())
 

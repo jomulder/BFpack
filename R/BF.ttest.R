@@ -6,6 +6,8 @@
 BF.htest <-
   function(x,
            hypothesis = NULL,
+           prior.hyp.explo = NULL,
+           prior.hyp.conf = NULL,
            prior.hyp = NULL,
            ...) {
     stop("Please use the function t_test() from the 'bain' package for a t-test or bartlett_test() from the 'BFpack' package for a test on group variances.")
@@ -19,6 +21,8 @@ BF.htest <-
 #' @export
 BF.t_test <- function(x,
                       hypothesis = NULL,
+                      prior.hyp.explo = NULL,
+                      prior.hyp.conf = NULL,
                       prior.hyp = NULL,
                       complement = TRUE,
                       log = FALSE,
@@ -61,6 +65,8 @@ BF.t_test <- function(x,
     lm_conf <- lm(obs~mu-1,data=df.draws)
     BF_conf <- BF(lm_conf,
                   hypothesis=hypothesis,
+                  prior.hyp.explo = prior.hyp.explo,
+                  prior.hyp.conf = prior.hyp.conf,
                   prior.hyp=prior.hyp,
                   complement=complement,
                   BF.type=BF.type,
@@ -69,6 +75,8 @@ BF.t_test <- function(x,
     lm_explo <- lm(obs_explo~mu-1,data=df.draws)
     BF_explo <- BF(lm_explo,
                    hypothesis=NULL,
+                   prior.hyp.explo = prior.hyp.explo,
+                   prior.hyp.conf = prior.hyp.conf,
                    prior.hyp=prior.hyp,
                    complement=complement,
                    BF.type=BF.type,
@@ -76,9 +84,10 @@ BF.t_test <- function(x,
     BF_out <- BF_conf
     BF_out$BFtu_exploratory <- BF_explo$BFtu_exploratory
     BF_out$PHP_exploratory <- BF_explo$PHP_exploratory
-    colnames(BF_out$BFtu_exploratory) <- colnames(BF_out$PHP_exploratory) <-
+    colnames(BF_out$PHP_exploratory) <-
       c(paste0("Pr(=",as.character(mu0),")"),paste0("Pr(<",as.character(mu0),")"),
         paste0("Pr(>",as.character(mu0),")"))
+    colnames(BF_out$BFtu_exploratory) <- c("BF0u","BF1u","BF2u")
 
     # tvalue <- x$statistic
     # mu0 <- x$null.value
@@ -174,6 +183,8 @@ BF.t_test <- function(x,
       lm1 <- lm(out ~ differenc,df1)
       BF_out <- BF(lm1,
                    hypothesis=hypothesis,
+                   prior.hyp.explo=prior.hyp.explo,
+                   prior.hyp.conf=prior.hyp.conf,
                    prior.hyp=prior.hyp,
                    complement=complement,
                    BF.type=BF.type,
@@ -191,6 +202,13 @@ BF.t_test <- function(x,
       #   priorprobs <- BFlm1$prior
       # }
     }else{ #equal variances not assumed. BF.lm cannot be used
+
+      # check proper usage of argument 'prior.hyp.conf' and 'prior.hyp.explo'
+      if(!is.null(prior.hyp.conf)){
+        prior.hyp <- prior.hyp.conf
+      }
+      prior.hyp.explo <- process.prior.hyp.explo(prior_hyp_explo = prior.hyp.explo, model=x)
+
       diff.obs <- x$estimate[1] - x$estimate[2]
       nvec <- x$n
       bvec <- 2/nvec
@@ -226,7 +244,8 @@ BF.t_test <- function(x,
       names(logBFtu_exploratory) <- hypotheses_exploratory
       BFtu_exploratory <- logBFtu_exploratory
       maxBFtu <- max(BFtu_exploratory)
-      PHP_exploratory <- matrix(exp(BFtu_exploratory - maxBFtu)/sum(exp(BFtu_exploratory - maxBFtu)),nrow=1)
+      BFtu_explo_norm <- exp(BFtu_exploratory - maxBFtu) * prior.hyp.explo[[1]]
+      PHP_exploratory <- matrix(BFtu_explo_norm/sum(BFtu_explo_norm),nrow=1)
       colnames(PHP_exploratory) <- c("Pr(=0)","Pr(<0)","Pr(>0)")
       row.names(PHP_exploratory) <- "difference"
 
@@ -397,20 +416,21 @@ BF.t_test <- function(x,
         colnames(BFtable) <- c("complex=","complex>","fit=","fit>","BF=","BF>","BF","PHP")
         hypotheses <- row.names(relative_complexity)
 
-        if(logIN == FALSE){
-          BFtu_exploratory <- exp(BFtu_exploratory)
-          if(!is.null(hypothesis)){
-            BFtu_confirmatory <- exp(BFtu_confirmatory)
-            BFmatrix_confirmatory <- exp(BFmatrix_confirmatory)
-          }
-        }
-
-        if(is.null(hypothesis)){
-          BFtu_confirmatory <- PHP_confirmatory <- BFmatrix_confirmatory <- relative_fit <-
-            relative_complexity <- BFtable <- hypotheses <- priorprobs <- NULL
-        }
-
       }
+
+      if(logIN == FALSE){
+        BFtu_exploratory <- exp(BFtu_exploratory)
+        if(!is.null(hypothesis)){
+          BFtu_confirmatory <- exp(BFtu_confirmatory)
+          BFmatrix_confirmatory <- exp(BFmatrix_confirmatory)
+        }
+      }
+
+      if(is.null(hypothesis)){
+        BFtu_confirmatory <- PHP_confirmatory <- BFmatrix_confirmatory <- relative_fit <-
+          relative_complexity <- BFtable <- hypotheses <- priorprobs <- NULL
+      }
+
       rm(sigma2_1.draws);rm(sigma2_2.draws);rm(sigma2b_1.draws);rm(sigma2b_2.draws)
       parameter <- "mean difference"
 
@@ -421,7 +441,8 @@ BF.t_test <- function(x,
         PHP_confirmatory=PHP_confirmatory,
         BFmatrix_confirmatory=BFmatrix_confirmatory,
         BFtable_confirmatory=BFtable,
-        prior.hyp=priorprobs,
+        prior.hyp.explo=prior.hyp.explo,
+        prior.hyp.conf=priorprobs,
         hypotheses=hypotheses,
         estimates=x$coefficients,
         model=x,

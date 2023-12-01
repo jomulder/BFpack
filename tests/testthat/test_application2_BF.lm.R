@@ -25,3 +25,4 @@ test_that("log(BF.aov) confirmatory ANOVA test", {
   expect_equivalent(
   round(unname(BF2$BFtu_confirmatory),3),c(-40.2, -25.8, 0.043),tol=.1
 )})
+

@@ -8,6 +8,8 @@
 #' @export
 BF.ergm <- function(x,
                     hypothesis = NULL,
+                    prior.hyp.explo = NULL,
+                    prior.hyp.conf = NULL,
                     prior.hyp = NULL,
                     complement = TRUE,
                     log = FALSE,
@@ -66,6 +68,8 @@ BF.ergm <- function(x,
                      post.sigma = post.Sigma,
                      hypothesis = hypothesis,
                      prior.hyp = prior.hyp,
+                     prior.hyp.explo = prior.hyp.explo,
+                     prior.hyp.conf = prior.hyp.conf,
                      complement = complement,
                      log = logIN)
   }else{
@@ -78,6 +82,8 @@ BF.ergm <- function(x,
                                          post.sigma = post.Sigma[-which.edges,-which.edges],
                                          hypothesis = hypothesis,
                                          prior.hyp = prior.hyp,
+                                         prior.hyp.explo = prior.hyp.explo,
+                                         prior.hyp.conf = prior.hyp.conf,
                                          complement = complement,
                                          log = logIN)
   }
@@ -132,6 +138,8 @@ get_estimates.ergm <- function(x, ...){
 #' @export
 BF.bergm <- function(x,
                     hypothesis = NULL,
+                    prior.hyp.explo = NULL,
+                    prior.hyp.conf = NULL,
                     prior.hyp = NULL,
                     complement = TRUE,
                     log = FALSE,
@@ -201,6 +209,8 @@ BF.bergm <- function(x,
                                          post.sigma = post.Sigma,
                                          hypothesis = hypothesis,
                                          prior.hyp = prior.hyp,
+                                         prior.hyp.explo = prior.hyp.explo,
+                                         prior.hyp.conf = prior.hyp.conf,
                                          complement = complement,
                                          log = logIN)
   }else{
@@ -213,6 +223,8 @@ BF.bergm <- function(x,
                                          post.sigma = post.Sigma[-which.edges,-which.edges],
                                          hypothesis = hypothesis,
                                          prior.hyp = prior.hyp,
+                                         prior.hyp.explo = prior.hyp.explo,
+                                         prior.hyp.conf = prior.hyp.conf,
                                          complement = complement,
                                          log = logIN)
   }

@@ -18,7 +18,7 @@ BF2 <- BF(ttest1,hypothesis="mu=5;mu>5",prior.hyp=c(.5,.5,0))
 #check prior output
 test_that("bartlett_htest works for a multiple hypothesis test", {
 expect_equivalent(
-  BF2$prior,c(.5,.5,0)
+  BF2$prior.hyp.conf,c(.5,.5,0)
 )})
 #check posterior probabilities
 test_that("bartlett_htest works for a multiple hypothesis test", {
@@ -28,7 +28,7 @@ expect_equivalent(
 })
 
 test_that("t_test prior correct in output", {expect_equivalent(
-  BF2$prior.hyp,c(.5,.5,0)
+  BF2$prior.hyp.conf,c(.5,.5,0)
 )})
 #check posterior probabilities
 test_that("t_test PHP correct", {expect_equivalent(

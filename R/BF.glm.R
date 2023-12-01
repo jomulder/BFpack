@@ -5,6 +5,8 @@
 #' @export
 BF.glm <- function(x,
                    hypothesis = NULL,
+                   prior.hyp.explo = NULL,
+                   prior.hyp.conf = NULL,
                    prior.hyp = NULL,
                    complement = TRUE,
                    log = FALSE,
@@ -17,6 +19,8 @@ BF.glm <- function(x,
   Args$n <- nobs(x)
   Args$hypothesis <- hypothesis
   Args$prior.hyp <- prior.hyp
+  Args$prior.hyp.conf <- prior.hyp.conf
+  Args$prior.hyp.explo <- prior.hyp.explo
   Args$complement <- complement
   Args$log <- log
   out <- do.call(BF, Args)

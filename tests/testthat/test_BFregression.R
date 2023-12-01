@@ -2,6 +2,7 @@
 
 lm1 <-  lm(wt ~ disp + drat + hp, mtcars)
 BF1a <- BF(lm1,BF.type = 2)
+BF1aa <- BF(lm1,BF.type = 2,prior.hyp.explo = 1:3)
 #check exploratory test
 PHPexplo <- matrix(
   c(0.065,  0.003,  0.931,
@@ -11,7 +12,16 @@ PHPexplo <- matrix(
 test_that("BF.lm exploratory hypotheses correctly evaluated", {
   expect_equivalent(
     PHPexplo,round(BF1a$PHP_exploratory,3)
-)})
+  )
+  expect_equivalent(
+    unname(round(BF1aa$PHP_exploratory[3,],3)),
+           unname(round(BF1a$BFtu_exploratory[3,] * c(1:3) / sum(BF1a$BFtu_exploratory[3,] * c(1:3)),3))
+  )
+  expect_equivalent(
+    unname(round(BF1aa$PHP_exploratory[4,],3)),
+    unname(round(BF1a$BFtu_exploratory[4,] * c(1:3) / sum(BF1a$BFtu_exploratory[4,] * c(1:3)),3))
+  )
+})
 
 BF1b <- BF(lm1,BF.type = 1)
 PHPexplo <- matrix(

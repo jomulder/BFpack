@@ -95,6 +95,8 @@ bartlett_test.default <- function(x, g, ...){
 #' @export
 BF.bartlett_htest <- function(x,
                            hypothesis = NULL,
+                           prior.hyp.explo = NULL,
+                           prior.hyp.conf = NULL,
                            prior.hyp = NULL,
                            complement = TRUE,
                            log = FALSE,
@@ -109,6 +111,12 @@ BF.bartlett_htest <- function(x,
 
   logIN <- log
 
+  # check proper usage of argument 'prior.hyp.conf' and 'prior.hyp.explo'
+  if(!is.null(prior.hyp.conf)){
+    prior.hyp <- prior.hyp.conf
+  }
+  prior.hyp.explo <- process.prior.hyp.explo(prior_hyp_explo = prior.hyp.explo, model=x)
+
   # exploratory BF for equality of variances:
   logmx0 <- - 1 / 2 * sum((1 - b) * n) * log(pi) + 1 / 2 * log(prod(b)) +
     lgamma((sum(n) - J) / 2) - lgamma((sum(b * n) - J) / 2) -
@@ -122,8 +130,8 @@ BF.bartlett_htest <- function(x,
 
   BFtu_exploratory <- c(BF0u,log(1))
   names(BFtu_exploratory) <- c("homogeneity of variances","no homogeneity of variances")
-  PHP_exploratory <- exp(BFtu_exploratory - max(BFtu_exploratory)) /
-    sum(exp(BFtu_exploratory - max(BFtu_exploratory)))
+  norm_BF_explo <- exp(BFtu_exploratory - max(BFtu_exploratory)) * prior.hyp.explo
+  PHP_exploratory <- norm_BF_explo / sum(norm_BF_explo)
 
   if (!is.null(hypothesis)){
     parse_hyp <- parse_hypothesis(names_coef, hypothesis)
@@ -265,10 +273,13 @@ BF.bartlett_htest <- function(x,
     colnames(BFtable) <- c("complex=","complex>","fit=","fit>","BF=","BF>","BF","PHP")
 
     if(logIN == FALSE){
-      BFtu_exploratory <- exp(BFtu_exploratory)
       BFtu_confirmatory <- exp(BFtu_confirmatory)
       BFmatrix_confirmatory <- exp(BFmatrix_confirmatory)
     }
+  }
+
+  if(logIN == FALSE){
+    BFtu_exploratory <- exp(BFtu_exploratory)
   }
 
   BFlm_out <- list(
@@ -278,7 +289,8 @@ BF.bartlett_htest <- function(x,
     PHP_confirmatory=PHP_confirmatory,
     BFmatrix_confirmatory=BFmatrix_confirmatory,
     BFtable_confirmatory=BFtable,
-    prior.hyp=priorprobs,
+    prior.hyp.explo=prior.hyp.explo,
+    prior.hyp.conf=priorprobs,
     hypotheses=hypotheses,
     estimates=s2,
     model=x,

@@ -311,6 +311,8 @@ globalVariables(c("Fcor"))
 #' @export
 BF.cor_test <- function(x,
                         hypothesis = NULL,
+                        prior.hyp.explo = NULL,
+                        prior.hyp.conf = NULL,
                         prior.hyp = NULL,
                         complement = TRUE,
                         log = FALSE,
@@ -320,6 +322,12 @@ BF.cor_test <- function(x,
   testedparameter <- "correlation coefficients"
 
   logIN <- log
+
+  # check proper usage of argument 'prior.hyp.conf' and 'prior.hyp.explo'
+  if(!is.null(prior.hyp.conf)){
+    prior.hyp <- prior.hyp.conf
+  }
+  prior.hyp.explo <- process.prior.hyp.explo(prior_hyp_explo = prior.hyp.explo, model = x)
 
   P <- dim(x$corrdraws[[1]])[2]
   numG <- length(x$corrdraws)
@@ -361,10 +369,12 @@ BF.cor_test <- function(x,
   colnames(relcomp) <- colnames(relfit) <- c("p(=0)","Pr(<0)","Pr(>0)")
   BFtu_exploratory <- relfit - relcomp
   row.names(BFtu_exploratory) <- rownames(x$correstimates)
-  colnames(BFtu_exploratory) <- c("Pr(=0)","Pr(<0)","Pr(>0)")
+  colnames(BFtu_exploratory) <- c("BF0u","BF1u","BF2u")
   rowmax <- apply(BFtu_exploratory,1,max)
-  PHP_exploratory <- round(exp(BFtu_exploratory - rowmax %*% t(rep(1,ncol(BFtu_exploratory)))) /
-                             apply(exp(BFtu_exploratory - rowmax %*% t(rep(1,ncol(BFtu_exploratory)))),1,sum),3)
+  norm_BF_explo <- exp(BFtu_exploratory - rowmax %*% t(rep(1,ncol(BFtu_exploratory)))) *
+    (rep(1,nrow(BFtu_exploratory)) %*% t(prior.hyp.explo[[1]]))
+  PHP_exploratory <- norm_BF_explo / apply(norm_BF_explo,1,sum)
+  colnames(PHP_exploratory) <- c("P(=0)","P(<0)","P(>0)")
   # posterior estimates
   postestimates <- x$correstimates
 
@@ -489,14 +499,16 @@ BF.cor_test <- function(x,
     PHP_confirmatory=PHP_confirmatory,
     BFmatrix_confirmatory=BFmatrix_confirmatory,
     BFtable_confirmatory=BFtable,
-    prior.hyp=priorprobs,
+    prior.hyp.explo=prior.hyp.explo,
+    prior.hyp.conf=priorprobs,
     hypotheses=hypotheses,
     estimates=postestimates,
     model=x,
     bayesfactor=bayesfactor,
     parameter=testedparameter,
     log=logIN,
-    call=match.call())
+    call=match.call()
+  )
 
   class(BFcorr_out) <- "BF"
 

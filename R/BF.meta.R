@@ -9,8 +9,11 @@
 #' @export
 BF.rma.uni <- function(x,
                        hypothesis = NULL,
+                       prior.hyp.explo = NULL,
+                       prior.hyp.conf = NULL,
                        prior.hyp = NULL,
                        complement = TRUE,
+                       log = FALSE,
                        ...){
   # x should be of class rma.uni
   if(class(x)[1]!="rma.uni"){
@@ -22,6 +25,14 @@ BF.rma.uni <- function(x,
   if(!is.null(hypothesis)){
     message("Note that confirmatory testing via the 'hypothesis' argument is currently not supported for object of class 'rma.uni'.")
   }
+
+  logIN <- log
+
+  # check proper usage of argument 'prior.hyp.conf' and 'prior.hyp.explo'
+  if(!is.null(prior.hyp.conf)){
+    prior.hyp <- prior.hyp.conf
+  }
+  prior.hyp.explo <- process.prior.hyp.explo(prior_hyp_explo = prior.hyp.explo, model = x)
 
   ### Extract effect sizes and sampling variances from the metafor object
   yi <- x$yi
@@ -84,16 +95,21 @@ BF.rma.uni <- function(x,
     logmsu <- logmuu + log((1-postdeltapositive)/.5)
 
     ### Compute Bayes factors model vs. unconstrained mu and I^2
-    BF0rhoUnc <- exp(logmu0 - logmuu)
-    BF1rhoUnc <- exp(logmus - logmuu)
-    BF2rhoUnc <- exp(logmul - logmuu)
-    BF0deltaUnc <- exp(logm0u - logmuu)
-    BF1deltaUnc <- exp(logmsu - logmuu)
-    BF2deltaUnc <- exp(logmlu - logmuu)
+    BF0rhoUnc <- (logmu0 - logmuu)
+    BF1rhoUnc <- (logmus - logmuu)
+    BF2rhoUnc <- (logmul - logmuu)
+    BF0deltaUnc <- (logm0u - logmuu)
+    BF1deltaUnc <- (logmsu - logmuu)
+    BF2deltaUnc <- (logmlu - logmuu)
 
     BFtu_exploratory <- matrix(c(BF0rhoUnc,BF0deltaUnc,BF1rhoUnc,BF1deltaUnc,BF2rhoUnc,BF2deltaUnc),nrow=2)
-    PHP_exploratory <- BFtu_exploratory / apply(BFtu_exploratory,1,sum)
-    colnames(BFtu_exploratory) <- colnames(PHP_exploratory) <- c("Pr(=0)","Pr(<0)","Pr(>0)")
+    rowmax <- apply(BFtu_exploratory,1,max)
+    norm_BF_explo <- exp(BFtu_exploratory - rowmax %*% t(rep(1,ncol(BFtu_exploratory)))) *
+      (rep(1,nrow(BFtu_exploratory)) %*% t(prior.hyp.explo[[1]]))
+
+    PHP_exploratory <- norm_BF_explo / apply(norm_BF_explo,1,sum)
+    colnames(BFtu_exploratory) <- c("=0","<0",">0")
+    colnames(PHP_exploratory) <- c("Pr(=0)","Pr(<0)","Pr(>0)")
     row.names(BFtu_exploratory) <- row.names(PHP_exploratory) <- c("I^2","mu")
     BFtu_confirmatory <- PHP_confirmatory <- BFmatrix_confirmatory <- BFtable <-
       priorprobs <- hypotheses <- estimates <- NULL
@@ -151,17 +167,25 @@ BF.rma.uni <- function(x,
     logms <- logmu0 + log((1-postdeltapositive)/.5)
 
     ### Compute Bayes factors model vs. unconstrained mu
-    BF0delta <- exp(logmu - logmu0)
-    BF1delta <- exp(logms - logmu0)
-    BF2delta <- exp(logml - logmu0)
+    BF0delta <- (logmu - logmu0)
+    BF1delta <- (logms - logmu0)
+    BF2delta <- (logml - logmu0)
 
     BFtu_exploratory <- matrix(c(BF0delta,BF1delta,BF2delta),nrow=1)
-    PHP_exploratory <- BFtu_exploratory / apply(BFtu_exploratory,1,sum)
-    colnames(BFtu_exploratory) <- colnames(PHP_exploratory) <- c("Pr(=0)","Pr(<0)","Pr(>0)")
+    rowmax <- apply(BFtu_exploratory,1,max)
+    norm_BF_explo <- exp(BFtu_exploratory - rowmax %*% t(rep(1,ncol(BFtu_exploratory)))) *
+      (rep(1,nrow(BFtu_exploratory)) %*% t(prior.hyp.explo[[1]]))
+    PHP_exploratory <- norm_BF_explo / apply(norm_BF_explo,1,sum)
+    colnames(PHP_exploratory) <- c("Pr(=0)","Pr(<0)","Pr(>0)")
+    colnames(BFtu_exploratory) <- c("H(=0)","H(<0)","H(>0)")
     row.names(BFtu_exploratory) <- row.names(PHP_exploratory) <- "mu"
     BFtu_confirmatory <- PHP_confirmatory <- BFmatrix_confirmatory <- BFtable <-
       priorprobs <- hypotheses <- estimates <- NULL
 
+  }
+
+  if(logIN==FALSE){
+    BFtu_exploratory <- exp(BFtu_exploratory)
   }
 
   ############################
@@ -173,12 +197,14 @@ BF.rma.uni <- function(x,
     PHP_confirmatory=PHP_confirmatory,
     BFmatrix_confirmatory=BFmatrix_confirmatory,
     BFtable_confirmatory=BFtable,
-    prior.hyp=priorprobs,
+    prior.hyp.explo=prior.hyp.explo,
+    prior.hyp.conf=priorprobs,
     hypotheses=hypotheses,
     estimates=uncestimates,
     model=x,
     bayesfactor="Bayes factor using uniform prior for icc & unit information prior for effect",
     parameter="between-study heterogeneity & effect size",
+    log=logIN,
     call=match.call()
     #rhodraws = rhodraws,
     #deltadraws = deltadraws,

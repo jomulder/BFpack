@@ -46,3 +46,14 @@ test_that("BF.bartlett returns correct results,", {
   expect_equivalent(out2$BFmatrix_confirmatory[2,1], -5.452534, tolerance = .01)
 })
 
+set.seed(57)
+out2b <- BF(res, log = TRUE, prior.hyp.explo = c(1,2))
+test_that("BF.bartlett returns correct results with prior.hyp.explo,", {
+  expect_equivalent(out2b$PHP_exploratory,
+                    exp(out2$BFtu_exploratory) * c(1,2) / sum(exp(out2$BFtu_exploratory) * c(1,2)),
+                    tolerance = .01)
+})
+
+
+
+

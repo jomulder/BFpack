@@ -6,7 +6,7 @@ BF_glm <- BF(fit, hypothesis="ztrust > zfWHR > zAfro > 0;
 #check results exploratory test
 test_that("glm two hypotheses correctly evaluated via exploratory test", {
 expect_equivalent(
-  BF_glm$PHP_exploratory[,3],c(0.133,1.000,0.999,0.004,0.278,0.029,0.011,0.202)
+  round(BF_glm$PHP_exploratory[,3],3),c(0.133,1.000,0.999,0.004,0.278,0.029,0.011,0.202)
 )})
 #check results conformatory test
 test_that("glm two hypotheses correctly evaluated via confirmatory test", {
@@ -25,7 +25,7 @@ test_that("glm two hypotheses correctly evaluated via confirmatory test", {
 #check equal prior probabilities
 test_that("glm use correct prior probabilities", {
 expect_true(
-  all.equal(unname(BF_glm$prior.hyp),rep(1,3)/3)
+  all.equal(unname(BF_glm$prior.hyp.conf),rep(1,3)/3)
 )})
 
 #check that complement is not added the complete parameter space is covered by hypotheses

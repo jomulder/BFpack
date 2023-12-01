@@ -4,6 +4,8 @@
 #' @export
 BF.coeftest <- function(x,
                      hypothesis = NULL,
+                     prior.hyp.explo = NULL,
+                     prior.hyp.conf = NULL,
                      prior.hyp = NULL,
                      complement = TRUE,
                      log = FALSE,
