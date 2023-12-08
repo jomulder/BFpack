@@ -95,8 +95,7 @@
 #' against the unconstrained hypothesis.
 #' \item The seventh column `\code{BF}' contains the Bayes factor of the constrained hypothesis
 #' against the unconstrained hypothesis.
-#' \item The eighth column `\code{BF=}' contains the posterior probabilities of the
-#' constrained hypotheses.
+#' \item The eighth column `\code{PHP}' contains the posterior probabilities of the hypotheses.
 #' }
 #' \item \code{prior.hyp.explo}: The prior probabilities of the constrained hypotheses in the exploratory tests.
 #' \item \code{prior.hyp.conf}: The prior probabilities of the constrained hypotheses in the confirmatory test.
