@@ -4,11 +4,11 @@
 #' @description First step to performs a Bayesian multivariate one sample Student t test using the
 #' (adjusted) fractional Bayes factor using the \code{BF()} function.
 #'
-#'@details \code{Y} must be a data matrix and \code{nullvalue}
+#'@details \code{Y} must be a data matrix and \code{null}
 #'must be a vector of the assumed null values of the variables.
 #'
 #'@param Y a data matrix with different variables in the columns.
-#'@param nullvalue a vector of the null values of the variables.
+#'@param null a vector of the null values of the variables.
 #'@param ... further arguments to be passed to or from methods.
 #'
 #'@return An object that can be applied to the \code{BF()}.
@@ -19,38 +19,38 @@
 #'
 #'@examples
 #'
-#'mvt_fmri <- mvt_test(fmri[,1:2],nullvalue = c(0,0))
+#'mvt_fmri <- mvt_test(fmri[,1:2],null = c(0,0))
 #'BF(mvt_fmri)
 #'
-#'# the same test can be used via the lm() function
+#'# the same test can be executed via the lm() function
 #'intercept <- rep(1,nrow(fmri))
 #'lm1 <- lm(cbind(Face,Vehicle) ~ -1 + intercept, data=fmri)
 #'BF(lm1,hypothesis="intercept_on_Face=intercept_on_Vehicle=0")
 #'
 #' @rdname mvt_test
 #' @export
-mvt_test <- function(Y, nullvalue = NULL, ...){
+mvt_test <- function(Y, null = NULL, ...){
 
   Y <- as.data.frame(as.matrix(Y))
   p <- ncol(Y)
   n <- nrow(Y)
 
-  if(is.null(nullvalue)){
-    nullvalue <- rep(0,p)
+  if(is.null(null)){
+    null <- rep(0,p)
   }
 
-  if(length(nullvalue) != p){
-    stop("'nullvalue' must be a vector of length equal to the number of variables.")
+  if(length(null) != p){
+    stop("'null' must be a vector of length equal to the number of variables.")
   }
 
   if(p == 1){
-    out <- t_test(x=Y,mu=nullvalue)
+    out <- t_test(x=Y,mu=null)
   }else{
     intercept <- rep(1,n)
     varnames <- colnames(Y)
     formu <- as.formula(paste0("cbind(",paste0(varnames,collapse = ","),") ~ -1 + intercept"))
     out <- lm(formu,data=Y)
-    out$nullvalue <- nullvalue
+    out$null <- null
     class(out) <- "mvt_test"
     #
   }
@@ -82,7 +82,7 @@ BF.mvt_test <- function(x,
   names2 <- paste0("intercept_on_",names1)
 
   hypothesis.explo <- paste0(unlist(lapply(1:P,function(p){
-    paste0(names2[p],"=",x$nullvalue[p])
+    paste0(names2[p],"=",x$null[p])
   })),collapse = " & ")
   x1 <- x
   class(x1) <- "lm"
@@ -91,6 +91,11 @@ BF.mvt_test <- function(x,
                  prior.hyp.conf=prior.hyp.explo,
                  log=log,
                  BF.type=BF.type)
+  BF.explo$BFtu_confirmatory <- t(as.matrix(BF.explo$BFtu_confirmatory))
+  BF.explo$PHP_confirmatory <- t(as.matrix(BF.explo$PHP_confirmatory))
+  row.names(BF.explo$BFtu_confirmatory) <- row.names(BF.explo$PHP_confirmatory) <- "means"
+  colnames(BF.explo$BFtu_confirmatory) <- c("BF0u","BFuu")
+  colnames(BF.explo$PHP_confirmatory) <- c("Pr(=null)","Pr(not null)")
 
   BF.conf <- BF(x1,
                 hypothesis=hypothesis,

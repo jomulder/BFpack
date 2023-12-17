@@ -4,12 +4,12 @@
 \alias{mvt_test}
 \title{Multivariate Student t test}
 \usage{
-mvt_test(Y, nullvalue = NULL, ...)
+mvt_test(Y, null = NULL, ...)
 }
 \arguments{
 \item{Y}{a data matrix with different variables in the columns.}
 
-\item{nullvalue}{a vector of the null values of the variables.}
+\item{null}{a vector of the null values of the variables.}
 
 \item{...}{further arguments to be passed to or from methods.}
 }
@@ -21,15 +21,15 @@ First step to performs a Bayesian multivariate one sample Student t test using t
 (adjusted) fractional Bayes factor using the \code{BF()} function.
 }
 \details{
-\code{Y} must be a data matrix and \code{nullvalue}
+\code{Y} must be a data matrix and \code{null}
 must be a vector of the assumed null values of the variables.
 }
 \examples{
 
-mvt_fmri <- mvt_test(fmri[,1:2],nullvalue = c(0,0))
+mvt_fmri <- mvt_test(fmri[,1:2],null = c(0,0))
 BF(mvt_fmri)
 
-# the same test can be used via the lm() function
+# the same test can be executed via the lm() function
 intercept <- rep(1,nrow(fmri))
 lm1 <- lm(cbind(Face,Vehicle) ~ -1 + intercept, data=fmri)
 BF(lm1,hypothesis="intercept_on_Face=intercept_on_Vehicle=0")
