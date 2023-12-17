@@ -41,4 +41,14 @@ test_that("for mlm object multiple hypotheses on same DV", {
     BF_fmri3$PHP_confirmatory,c(0.05595577,0.38093401,0.56311022 )
   )})
 
+# test multivariate t test
+# the hypothesis argument does not allow that parameters start with a bracket (because it is also used
+# for other reasons), so the standard intercept, i.e., (intercept) is problematic to use.
+intercept <- rep(1,nrow(fmri))
+lm1 <- lm(cbind(Superficial,Middle,Deep) ~ -1 + intercept, data=fmri)
+# test the three means jointly against the null vector (1,1,1)
+BF1 <- BF(lm1,hypothesis="intercept_on_Superficial=1 & intercept_on_Middle=1 & intercept_on_Deep=1")
+mvt_test(fmri)
+
+
 

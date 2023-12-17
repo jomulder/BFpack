@@ -12,20 +12,41 @@ BF.glm <- function(x,
                    log = FALSE,
                    ...){
 
-  Args <- as.list(match.call()[-1])
-  get_est <- get_estimates(x)
-  Args$x <- get_est$estimate
-  Args$Sigma <- get_est$Sigma[[1]]
-  Args$n <- nobs(x)
-  Args$hypothesis <- hypothesis
-  Args$prior.hyp <- prior.hyp
-  Args$prior.hyp.conf <- prior.hyp.conf
-  Args$prior.hyp.explo <- prior.hyp.explo
-  Args$complement <- complement
-  Args$log <- log
-  out <- do.call(BF, Args)
-  out$model <- x
-  out$call <- match.call()
+  if(as.character(x$family)[1]=="gaussian"){
+
+    # then use BF.lm
+    class(x) <- "lm"
+    Args <- as.list(match.call()[-1])
+    Args$x <- x
+    Args$hypothesis <- hypothesis
+    Args$prior.hyp <- prior.hyp
+    Args$prior.hyp.conf <- prior.hyp.conf
+    Args$prior.hyp.explo <- prior.hyp.explo
+    Args$complement <- complement
+    Args$log <- log
+    out <- do.call(BF, Args)
+    out$model <- x
+    out$call <- match.call()
+
+  }else{
+
+    Args <- as.list(match.call()[-1])
+    get_est <- get_estimates(x)
+    Args$x <- get_est$estimate
+    Args$Sigma <- get_est$Sigma[[1]]
+    Args$n <- nobs(x)
+    Args$hypothesis <- hypothesis
+    Args$prior.hyp <- prior.hyp
+    Args$prior.hyp.conf <- prior.hyp.conf
+    Args$prior.hyp.explo <- prior.hyp.explo
+    Args$complement <- complement
+    Args$log <- log
+    out <- do.call(BF, Args)
+    out$model <- x
+    out$call <- match.call()
+
+  }
+
   out
 }
 

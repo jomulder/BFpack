@@ -257,7 +257,7 @@ BF.lm <- function(x,
                          t(matrix(unlist(lapply(1:length(meanN),function(coef){
                            ub <- qt(p=.975,df=dfN)*sqrt(ScaleN[coef,coef])+meanN[coef,1]
                            lb <- qt(p=.025,df=dfN)*sqrt(ScaleN[coef,coef])+meanN[coef,1]
-                           return(c(ub,lb))
+                           return(c(lb,ub))
                          })),nrow=2))
   )
   row.names(postestimates) <- names_coef

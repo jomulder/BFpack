@@ -91,6 +91,7 @@ bartlett_test.default <- function(x, g, ...){
 
 #' @importFrom stats rgamma
 #' @importFrom stats rchisq
+#' @importFrom extraDistr qinvgamma
 #' @method BF bartlett_htest
 #' @export
 BF.bartlett_htest <- function(x,
@@ -108,6 +109,15 @@ BF.bartlett_htest <- function(x,
   b <- 2/n
   J <- length(n)
   names_coef <- names(get_est$estimate)
+  scale.post_group <- s2*(n-1)/2
+  shape.post_group <- (n-1)/2
+  postestimates <- cbind(NA,qinvgamma(.5,alpha=shape.post_group,beta=scale.post_group),
+                         qinvgamma(.025,alpha=shape.post_group,beta=scale.post_group),
+                         qinvgamma(.975,alpha=shape.post_group,beta=scale.post_group))
+  which.means <- which(shape.post_group>1)
+  postestimates[which.means,1] <- scale.post_group[which.means]/(shape.post_group[which.means]-1)
+  row.names(postestimates) <- names_coef
+  colnames(postestimates) <- c("mean","median","2.5%","97.5%")
 
   logIN <- log
 
@@ -292,7 +302,7 @@ BF.bartlett_htest <- function(x,
     prior.hyp.explo=prior.hyp.explo,
     prior.hyp.conf=priorprobs,
     hypotheses=hypotheses,
-    estimates=s2,
+    estimates=postestimates,
     model=x,
     bayesfactor="generalized adjusted fractional Bayes factors",
     parameter="group variances",
@@ -339,7 +349,7 @@ inversegamma_prob_Hc <- function(shape1,scale1,relmeas,RrE1,RrO1,samsize1=1e5){
           names(relmeas)[numhyp+1] <- "complement"
         }else{ #the order constrained subspaces at least partly overlap
           randomDraws <- matrix(unlist(lapply(1:numpara,function(par){
-            1/rgamma(1e5,shape=shape1[par]/2,rate=scale1[par])
+            1/rgamma(1e5,shape=shape1[par],rate=scale1[par])
             #rinvgamma(1e5,shape=shape1[par]/2,scale=scale1[par])
           })),ncol=numpara)
           checksOCpost <- lapply(which(whichO),function(h){

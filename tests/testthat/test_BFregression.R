@@ -71,5 +71,13 @@ test_that("BF.lm one equal/order hypothesis correctly evaluated", {
     round(BF5b$PHP_confirmatory,5),c(0.44049,0.55951)
   )})
 
-
+test_that("BF.glm with family=gaussian is the same as BF.lm", {
+  glm1 <-  glm(wt ~ disp + drat + hp, data=mtcars, family="gaussian")
+  BF.glm1 <- BF(glm1)
+  lm1 <-  glm(wt ~ disp + drat + hp, data=mtcars)
+  BF.lm1 <- BF(lm1)
+  expect_equivalent(
+    round(BF.glm1$PHP_exploratory[,2],3),round(BF.lm1$PHP_exploratory[,2],3)
+  )
+})
 
