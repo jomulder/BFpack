@@ -498,7 +498,8 @@ BF.lm <- function(x,
           ScaleN <- S*tXXi[K1,K1]/(N-K-P+1) # off-diagonal elements have no meaning
           meanN <- as.matrix(c(BetaHat[K1,]))
           # exclude inactive rows
-          if(is.null(RrE[[h]])){RrE_h=NULL
+          if(is.null(RrE[[h]])){
+            RrE_h=NULL
           }else{
             if(nrow(RrE[[h]])==1){
               RrE_h <- t(as.matrix(RrE[[h]][,c((0:(P-1))*K+K1,P*K+1)]))
@@ -506,7 +507,8 @@ BF.lm <- function(x,
               RrE_h <- RrE[[h]][,c((0:(P-1))*K+K1,P*K+1)]
             }
           }
-          if(is.null(RrO[[h]])){RrO_h=NULL
+          if(is.null(RrO[[h]])){
+            RrO_h=NULL
           }else{
             if(nrow(RrO[[h]])==1){
               RrO_h <- t(as.matrix(RrO[[h]][,c((0:(P-1))*K+K1,P*K+1)]))
@@ -779,8 +781,6 @@ BF.lm <- function(x,
   return(BFlm_out)
 }
 
-
-
 # compute relative meausures (fit or complexity) under a multivariate Student t distribution
 MatrixStudent_measures <- function(Mean1,Scale1,tXXi1,df1,RrE1,RrO1,Names1=NULL,
                                    constraints1=NULL,MCdraws=1e4){
@@ -954,7 +954,7 @@ Student_measures <- function(mean1,Scale1,df1,RrE1,RrO1,names1=NULL,constraints1
       }
     }else{ #no linear transformation can be used; pmvt cannot be used. Use bain with a multivariate normal approximation
       #compute covariance matrix for multivariate normal distribution
-      row.names(mean1) <- names1
+      names(mean1) <- names1
       if(df1>2){ # we need posterior measures
         covm1 <- Scale1*df1/(df1-2)
       }else if(df1==2){
@@ -963,7 +963,7 @@ Student_measures <- function(mean1,Scale1,df1,RrE1,RrO1,names1=NULL,constraints1
         covm1 <- Scale1*5
       }
       mean1vec <- c(mean1)
-      names(mean1vec) <- row.names(mean1)
+      names(mean1vec) <- names(mean1)
       bain_res <- bain(x=mean1vec,hypothesis=constraints1,Sigma=covm1,n=999) #n not used in computation
       relO <- log(bain_res$fit[1,3])
     }
@@ -1041,7 +1041,7 @@ Student_measures <- function(mean1,Scale1,df1,RrE1,RrO1,names1=NULL,constraints1
 
     }else{ #use bain for the computation of the probability
       #compute covariance matrix for multivariate normal distribution
-      row.names(mean1) <- names1
+      names(mean1) <- names1
       if(df1>2){ # we need posterior measures
         covm1 <- Scale1*df1/(df1-2) # variance estimate used for Gaussian approximation
       }else if(df1==2){ # we need posterior measures (there is very little information)
@@ -1050,7 +1050,7 @@ Student_measures <- function(mean1,Scale1,df1,RrE1,RrO1,names1=NULL,constraints1
         covm1 <- Scale1*5 #for prior with df1==1, probability independent of common factor of scale1
       }
       mean1vec <- c(mean1)
-      names(mean1vec) <- row.names(mean1)
+      names(mean1vec) <- names(mean1)
       bain_res <- bain(x=mean1vec,hypothesis=constraints1,Sigma=covm1,n=999) #n not used
       relO <- log(bain_res$fit[1,3])
     }
@@ -1197,102 +1197,5 @@ Student_prob_Hc <- function(mean1,scale1,df1,relmeas1,constraints,RrO1=NULL){
   return(relmeas)
 }
 
-# from the output of the constraints in 'parse_hypothesis' create lists for the equality and order matrices
-make_RrList <- function(parse_hyp){
-  numhyp <- length(parse_hyp$hyp_mat)
-  RrE <- lapply(1:numhyp,function(h){
-    qE <- parse_hyp$n_constraints[h*2-1]
-    if(qE==1){
-      RrE_h <- t(as.matrix(parse_hyp$hyp_mat[[h]][1:qE,]))
-    }else if(qE>1){
-      RrE_h <- parse_hyp$hyp_mat[[h]][1:qE,]
-    }else {RrE_h=NULL}
-    RrE_h
-  })
-  RrO <- lapply(1:numhyp,function(h){
-    qE <- parse_hyp$n_constraints[h*2-1]
-    qO <- parse_hyp$n_constraints[h*2]
-    if(qO==1){
-      RrO_h <- t(as.matrix(parse_hyp$hyp_mat[[h]][qE+1:qO,]))
-    }else if(qO>1){
-      RrO_h <- parse_hyp$hyp_mat[[h]][qE+1:qO,]
-    }else {RrO_h=NULL}
-    RrO_h
-  })
-  return(list(RrE,RrO))
-}
-
-# from the output of the constraints in 'parse_hypothesis' create lists for the equality and order matrices
-# different format parse_hyp object
-make_RrList2 <- function(parse_hyp2){
-  numhyp <- length(parse_hyp2$original_hypothesis)
-  qE <- parse_hyp2$n_constraints[(0:(numhyp-1))*2+1]
-  qO <- parse_hyp2$n_constraints[(1:numhyp)*2]
-  RrE <- lapply(1:numhyp,function(h){
-    startcon <- sum(qE[1:h]+qO[1:h])-qE[h]-qO[h]
-    if(qE[h]==1){
-      RrE_h <- t(as.matrix(parse_hyp2$hyp_mat[startcon+1:qE[h],]))
-    }else if(qE[h]>1){
-      RrE_h <- parse_hyp2$hyp_mat[startcon+1:qE[h],]
-    }else {RrE_h=NULL}
-    RrE_h
-  })
-  RrO <- lapply(1:numhyp,function(h){
-    startcon <- sum(qE[1:h]+qO[1:h])-qE[h]-qO[h]
-    if(qO[h]==1){
-      RrO_h <- t(as.matrix(parse_hyp2$hyp_mat[startcon+qE[h]+1:qO[h],]))
-    }else if(qO[h]>1){
-      RrO_h <- parse_hyp2$hyp_mat[startcon+qE[h]+1:qO[h],]
-    }else {RrO_h=NULL}
-    RrO_h
-  })
-  return(list(RrE,RrO))
-}
-
-#for checking whether constraints are conflicting replace interval constraints by equality constraints
-interval_RrStack <- function(RrStack){
-  q1 <- nrow(RrStack)
-  q2 <- ncol(RrStack)
-  RrStack_out <- RrStack
-  if(q1 > 1){
-    row1 <- 1
-    while(row1 < q1){
-      for(row2 in (row1+1):q1){
-        #        print(row2)
-        if(sum(abs(RrStack_out[row1,-q2] + RrStack_out[row2,-q2]))==0){ # && RrStack_out[row1,q2]!=RrStack_out[row2,q2] ){
-          #together row1 and row2 imply an interval constraint
-          whichcol <- abs(RrStack_out[row1,-q2])!=0
-          whichcol1 <- which(whichcol)
-          if(sum(whichcol)==1){
-            welkpos <- ifelse(RrStack_out[row1,c(whichcol,F)]>0,row1,row2)
-            welkneg <- ifelse(RrStack_out[row1,c(whichcol,F)]<0,row1,row2)
-            lb <- RrStack_out[welkpos,q2]
-            ub <- -RrStack_out[welkneg,q2]
-            RrStack_out[row1,] <- RrStack_out[welkpos,]
-            RrStack_out[row1,q2] <- (ub+lb)/2
-            RrStack_out <- RrStack_out[-row2,]
-            q1 <- q1 - 1
-          }else{
-            RrStack_out[row1,q2] <- 0
-            RrStack_out <- RrStack_out[-row2,]
-            q1 <- q1 - 1
-          }
-          break
-        }
-      }
-      row1 <- row1 + 1
-    }
-  }
-  if(is.matrix(RrStack_out)==F){
-    RrStack_out <- t(RrStack_out)
-  }
-  return(RrStack_out)
-}
-
-params_in_hyp <- function(hyp){
-  params_in_hyp <- trimws(unique(strsplit(hyp, split = "[ =<>,\\(\\);&\\*+-]+", perl = TRUE)[[1]]))
-  params_in_hyp <- params_in_hyp[!sapply(params_in_hyp, grepl, pattern = "^[0-9]*\\.?[0-9]+$")]
-  params_in_hyp[grepl("^[a-zA-Z]", params_in_hyp)]
-}
 
 

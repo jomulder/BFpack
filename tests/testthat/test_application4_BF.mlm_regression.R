@@ -42,13 +42,15 @@ test_that("for mlm object multiple hypotheses on same DV", {
   )})
 
 # test multivariate t test
-# the hypothesis argument does not allow that parameters start with a bracket (because it is also used
-# for other reasons), so the standard intercept, i.e., (intercept) is problematic to use.
+# via lm object
 intercept <- rep(1,nrow(fmri))
 lm1 <- lm(cbind(Superficial,Middle,Deep) ~ -1 + intercept, data=fmri)
-# test the three means jointly against the null vector (1,1,1)
-BF1 <- BF(lm1,hypothesis="intercept_on_Superficial=1 & intercept_on_Middle=1 & intercept_on_Deep=1")
-mvt_test(fmri)
-
-
+BF1 <- BF(lm1,hypothesis="intercept_on_Superficial=1 & intercept_on_Middle=1.1 & intercept_on_Deep=1.36")
+# via mvt_test object
+mvt_fmri <- mvt_test(fmri[,3:5],nullvalue = c(1,1.1,1.36))
+BF2 <- BF(mvt_fmri)
+test_that("test multivariate Student t", {
+  expect_equivalent(
+    BF1$BFtu_confirmatory,BF2$BFtu_exploratory
+  )})
 

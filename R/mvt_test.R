@@ -1,8 +1,37 @@
 
+
+#' @title Multivariate Student t test
+#' @description First step to performs a Bayesian multivariate one sample Student t test using the
+#' (adjusted) fractional Bayes factor using the \code{BF()} function.
+#'
+#'@details \code{Y} must be a data matrix and \code{nullvalue}
+#'must be a vector of the assumed null values of the variables.
+#'
+#'@param Y a data matrix with different variables in the columns.
+#'@param nullvalue a vector of the null values of the variables.
+#'@param ... further arguments to be passed to or from methods.
+#'
+#'@return An object that can be applied to the \code{BF()}.
+#'
+#'@references Mulder, J. and Gu, X. (2023). Bayesian Testing of Scientific
+#'Expectations under Multivariate Normal Linear Models. Multivariate Behavioral
+#'Research, 57, 767-783. DOI: 10.1080/00273171.2021.1904809.
+#'
+#'@examples
+#'
+#'mvt_fmri <- mvt_test(fmri[,1:2],nullvalue = c(0,0))
+#'BF(mvt_fmri)
+#'
+#'# the same test can be used via the lm() function
+#'intercept <- rep(1,nrow(fmri))
+#'lm1 <- lm(cbind(Face,Vehicle) ~ -1 + intercept, data=fmri)
+#'BF(lm1,hypothesis="intercept_on_Face=intercept_on_Vehicle=0")
+#'
+#' @rdname mvt_test
 #' @export
 mvt_test <- function(Y, nullvalue = NULL, ...){
 
-  Y <- as.matrix(Y)
+  Y <- as.data.frame(as.matrix(Y))
   p <- ncol(Y)
   n <- nrow(Y)
 
@@ -10,29 +39,89 @@ mvt_test <- function(Y, nullvalue = NULL, ...){
     nullvalue <- rep(0,p)
   }
 
-  if(!missing(nullvalue[1]) && (length(nullvalue) != p || is.na(nullvalue[1])))
+  if(length(nullvalue) != p){
     stop("'nullvalue' must be a vector of length equal to the number of variables.")
+  }
 
   if(p == 1){
     out <- t_test(x=Y,mu=nullvalue)
   }else{
     intercept <- rep(1,n)
     varnames <- colnames(Y)
-    out <- lm(as.formula(paste0("cbind(",paste0(varnames,collapse = ","),") ~ -1 + intercept")),data=Y)
+    formu <- as.formula(paste0("cbind(",paste0(varnames,collapse = ","),") ~ -1 + intercept"))
+    out <- lm(formu,data=Y)
+    out$nullvalue <- nullvalue
+    class(out) <- "mvt_test"
     #
   }
-  class(out) <- "mvt_test"
 
   return(out)
 }
 
-#' @method get_estimates glm
+#' @method get_estimates mvt_test
 #' @export
 get_estimates.mvt_test <- function(x, ...){
-  out <- list()
-  out$estimate <- coef(x)
-  out$Sigma <- list(vcov(x))
-  class(out) <- "model_estimates"
-  attr(out, "analysisType") <- "glm"
-  out
+  class(x) <- "lm"
+  get_estimates(x)
 }
+
+#' @method BF mvt_test
+#' @export
+BF.mvt_test <- function(x,
+                        hypothesis = NULL,
+                        prior.hyp.explo = NULL,
+                        prior.hyp.conf = NULL,
+                        prior.hyp = NULL,
+                        complement = TRUE,
+                        log = FALSE,
+                        BF.type = 2,
+                        ...) {
+
+  P <- length(x$coefficients)
+  names1 <- colnames(x$coefficients)
+  names2 <- paste0("intercept_on_",names1)
+
+  hypothesis.explo <- paste0(unlist(lapply(1:P,function(p){
+    paste0(names2[p],"=",x$nullvalue[p])
+  })),collapse = " & ")
+  x1 <- x
+  class(x1) <- "lm"
+  BF.explo <- BF(x1,
+                 hypothesis=hypothesis.explo,
+                 prior.hyp.conf=prior.hyp.explo,
+                 log=log,
+                 BF.type=BF.type)
+
+  BF.conf <- BF(x1,
+                hypothesis=hypothesis,
+                prior.hyp.conf=prior.hyp.conf,
+                log=log,
+                complement=complement,
+                BF.type=BF.type)
+
+  BFlm_out <- list(
+    BFtu_exploratory=BF.explo$BFtu_confirmatory,
+    PHP_exploratory=BF.explo$PHP_confirmatory,
+    BFtu_confirmatory=BF.conf$BFtu_confirmatory,
+    PHP_confirmatory=BF.conf$PHP_confirmatory,
+    BFmatrix_confirmatory=BF.conf$BFmatrix_confirmatory,
+    BFtable_confirmatory=BF.conf$BFtable_confirmatory,
+    prior.hyp.explo=BF.explo$prior.hyp.conf,
+    prior.hyp.conf=BF.conf$prior.hyp.conf,
+    hypotheses=BF.conf$hypotheses,
+    estimates=BF.conf$estimates,
+    model=x1,
+    bayesfactor=BF.conf$bayesfactor,
+    parameter="means",
+    log = BF.conf$log,
+    fraction_number_groupIDs = BF.conf$fraction_number_groupIDs,
+    fraction_groupID_observations = BF.conf$fraction_groupID_observations,
+    call=match.call())
+
+  class(BFlm_out) <- "BF"
+
+  return(BFlm_out)
+
+}
+
+
