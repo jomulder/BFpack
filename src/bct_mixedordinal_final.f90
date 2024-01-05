@@ -67,11 +67,11 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                   !the parameterization in Remark 9 of Liu&Daniels seems a bit odd.
 !
     !define nugget matrix to avoid approximate nonpositive definite correlation matrices for candidates
-    Cnugget = .9990000000000
+    Cnugget = .99
     do p1=1,P
         Cnugget(p1,p1) = 1
     end do
-    write(*,*)Cnugget
+    !write(*,*)Cnugget
 !
     telft = 0
     telct = 0
@@ -118,12 +118,12 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
             !draw latent W's for the ordinal Y's
             !compute mean vector for
 
-            write(*,*)'burnin',s1,g1,0
-            print *,'burnin',s1,g1,0
+            !write(*,*)'burnin',s1,g1,0
+            !print *,'test'
 
             do p1=1,P
 
-                write(*,*)'burnin',s1,g1,p1
+                !write(*,*)'burnin',s1,g1,p1
 
                 if(ordinal(g1,p1)>0) then
                     do i1=1,Njs(g1)
@@ -194,60 +194,46 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                         do c1=3,Cat(g1,p1)
                             alphaMin = maxval(Wdummy(g1,p1,1:tellers(g1,c1-1,p1),c1-1))
                             alphaMax = minval(Wdummy(g1,p1,1:tellers(g1,c1,p1),c1))
-                            randraw = runiform(iseed) * .9999998 + .0000001
+                            randraw = runiform(iseed) * .999998 + .000001
                             alphaMat(g1,c1,p1) = randraw * (alphaMax-alphaMin) + alphaMin
                         end do
                     end if
                 end if
             end do
 
-            write(*,*)'burnin',s1,g1,1
+            !write(*,*)'burnin',s1,g1,1
 
             Bmean(1:K,1:P) = matmul(matmul(XtXi(g1,:,:),transpose(Xgroups(g1,1:Njs(g1),1:K))), &
                 Wgroups(g1,1:Njs(g1),1:P))
             call kronecker(K,P,XtXi(g1,:,:),SigmaMatDraw,covBeta)
 
-            write(*,*)'burnin Bmean',s1,g1,2
-            write(*,*)Bmean(1,1)
+            !write(*,*)'burnin Bmean',s1,g1,2
+            !write(*,*)Bmean(1,1)
 
             call setgmn(meanO,covBeta,P*K,para)
             call GENMN(para,betaDrawj(1,1:(P*K)),P*K,iseed)
             do p1 = 1,P
                 BDraws(g1,:,p1) = betaDrawj(1,((p1-1)*K+1):(p1*K)) + Bmean(1:K,p1)
             end do
-            write(*,*)'burnin BDraws',s1,g1,3
-            write(*,*)BDraws(g1,1,:)
+            !write(*,*)'burnin BDraws',s1,g1,3
+            !write(*,*)BDraws(g1,1,:)
 
             !draw R using method of Liu and Daniels (LD, 2006)
             !draw candidate R
-            write(*,*)'Wgroups'
-            write(*,*)Wgroups(1,1,:)
-            write(*,*)'Xgroups'
-            write(*,*)Xgroups(1,1,1:K)
-            write(*,*)'diffmat'
-            write(*,*)diffmat(1,:)
-            write(*,*)'sizes'
-            write(*,*)size(diffmat(1:Njs(g1),1:P))
-            write(*,*)size(Wgroups(g1,1:Njs(g1),1:P))
-            write(*,*)Njs(g1)
-            diffmat(1:Njs(g1),1:P) = Wgroups(g1,1:Njs(g1),1:P) - matmul(Xgroups(g1,1:Njs(g1),1:K), BDraws(g1,1:K,1:P))
-            diffmat(1:Njs(g1),1:P) = Wgroups(g1,1:Njs(g1),1:P)
-            diffmat(1,1) = Wgroups(1,1,1) - (Xgroups(1,1,1) * BDraws(1,1,1))
-            write(*,*)'diffmat'
-            write(*,*)diffmat(1,:)
+            diffmat(1:Njs(g1),1:P) = Wgroups(g1,1:Njs(g1),1:P) - matmul(Xgroups(g1,1:Njs(g1),1:K), &
+                BDraws(g1,1:K,1:P))
+            !write(*,*)'diffmat'
+            !write(*,*)diffmat(1,:)
             errorMatj = matmul(transpose(diffmat(1:Njs(g1),1:P)),diffmat(1:Njs(g1),1:P))
             Ds = diag(1/sqrt(diagonals(errorMatj,P)),P)
             diffmat(1:Njs(g1),1:P) = matmul(diffmat(1:Njs(g1),1:P),Ds) !diffmat is now epsilon in LD
             epsteps = matmul(transpose(diffmat(1:Njs(g1),1:P)),diffmat(1:Njs(g1),1:P))
-
-
             SS1 = matmul(matmul(diag(1/sigmaDraws(g1,:),P),epsteps),diag(1/sigmaDraws(g1,:),P))
             call FINDInv(SS1,SS1inv,P,errorflag)
-
             call gen_wish(SS1inv,Njs(g1),dummyPP,P,iseed)
             call FINDInv(dummyPP,dummyPPinv,P,errorflag)
-            write(*,*)'dummyPPinv'
-            write(*,*)dummyPPinv
+            !write(*,*)'dummyPPinv'
+            !write(*,*)dummyPPinv
             Ccan = matmul(matmul(diag(1/sqrt(diagonals(dummyPPinv,P)),P),dummyPPinv), &
                 diag(1/sqrt(diagonals(dummyPPinv,P)),P))
             Ccan = Ccan * Cnugget
@@ -259,8 +245,8 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
             R_MH = exp(logR_MH_part3)
             !write(*,*) s1, R_MH, logR_MH_part3
 
-            write(*,*)'burnin Ccan',s1,g1,4
-            write(*,*)Ccan(1,2)
+            !write(*,*)'burnin Ccan',s1,g1,4
+            !write(*,*)Ccan(1,2)
 
             !note that if Wp is not the identity matrix we have to
             !compute sum(diagonals(matmul(Wp,RcurrInv)))
@@ -272,8 +258,8 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
             else
                 Cinv = CcurrInv
             end if
-            write(*,*)'burnin CDraws',s1,g1,4.5
-            write(*,*)CDraws(1,1,2)
+            !write(*,*)'burnin CDraws',s1,g1,4.5
+            !write(*,*)CDraws(1,1,2)
 
             !draw sigma's
             do p1 = 1,P
@@ -295,8 +281,8 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                 end if
             end do
 
-            write(*,*)'burnin sigmaDraws',s1,g1,5
-            write(*,*)sigmaDraws(1,1)
+            !write(*,*)'burnin sigmaDraws',s1,g1,5
+            !write(*,*)sigmaDraws(1,1)
 
             !Draw parameter extended parameter by Liu and Sabatti (2001) via random walk
             SigmaInv = matmul(matmul(diag(1/sigmaDraws(g1,:),P),Cinv),diag(1/sigmaDraws(g1,:),P))
@@ -322,8 +308,8 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                 end if
             end do
 
-            write(*,*)'burnin gLiuSab_curr',s1,g1,6
-            write(*,*)gLiuSab_curr(1,1)
+            !write(*,*)'burnin gLiuSab_curr',s1,g1,6
+            !write(*,*)gLiuSab_curr(1,1)
 
         end do
 !
@@ -336,7 +322,7 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
 
         do g1 = 1,numG
 
-            write(*,*)'samsize0',s1,g1,1
+            !write(*,*)'samsize0',s1,g1,1
 
             !compute means of latent W's for all observations
             meanMat(1:Njs(g1),1:P) = matmul(Xgroups(g1,1:Njs(g1),1:K),BDraws(g1,1:K,1:P))
@@ -416,7 +402,7 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                         do c1=3,Cat(g1,p1)
                             alphaMin = maxval(Wdummy(g1,p1,1:tellers(g1,c1-1,p1),c1-1))
                             alphaMax = minval(Wdummy(g1,p1,1:tellers(g1,c1,p1),c1))
-                            randraw = runiform(iseed) * .9999998 + .0000001
+                            randraw = runiform(iseed) * .999998 + .000001
                             alphaMat(g1,c1,p1) = randraw * (alphaMax-alphaMin) + alphaMin
                         end do
                     end if
@@ -424,30 +410,28 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
 !
             end do
 
-            write(*,*)'samsize0',s1,g1,2
+            !write(*,*)'samsize0',s1,g1,2
 
             Bmean(1:K,1:P) = matmul(matmul(XtXi(g1,:,:),transpose(Xgroups(g1,1:Njs(g1),1:K))), &
                 Wgroups(g1,1:Njs(g1),1:P))
             call kronecker(K,P,XtXi(g1,:,:),SigmaMatDraw,covBeta)
-            write(*,*)Bmean(1,1)
-
-            write(*,*)'samsize0 Bmean',s1,g1,3
+            !write(*,*)Bmean(1,1)
+            !write(*,*)'samsize0 Bmean',s1,g1,3
 
             call setgmn(meanO,covBeta,P*K,para)
             call GENMN(para,betaDrawj(1,1:(P*K)),P*K,iseed)
             do p1 = 1,P
                 BDraws(g1,:,p1) = betaDrawj(1,((p1-1)*K+1):(p1*K)) + Bmean(1:K,p1)
             end do
-
-            write(*,*)'samsize0 BDraws',s1,g1,4
-            write(*,*) BDraws(1,1,1)
+            !write(*,*)'samsize0 BDraws',s1,g1,4
+            !write(*,*) BDraws(1,1,1)
 
             !draw R using method of Liu and Daniels (LD, 2006)
             !draw candidate R
             diffmat(1:Njs(g1),1:P) = Wgroups(g1,1:Njs(g1),1:P) - matmul(Xgroups(g1,1:Njs(g1),1:K), &
                 BDraws(g1,1:K,1:P))
-            write(*,*)'diffmat'
-            write(*,*)diffmat(1,:)
+            !write(*,*)'diffmat'
+            !write(*,*)diffmat(1,:)
             errorMatj = matmul(transpose(diffmat(1:Njs(g1),1:P)),diffmat(1:Njs(g1),1:P))
             Ds = diag(1/sqrt(diagonals(errorMatj,P)),P)
             diffmat(1:Njs(g1),1:P) = matmul(diffmat(1:Njs(g1),1:P),Ds) !diffmat is now epsilon in LD
@@ -466,8 +450,8 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
             logR_MH_part3 = (-.5*real(P+1))*(log(det(Ccurr,P,-1))-log(det(Ccan,P,-1)))
             R_MH = exp(logR_MH_part3)
 
-            write(*,*)'samsize0 Ccan',s1,g1,5
-            write(*,*) Ccan(1,2)
+            !write(*,*)'samsize0 Ccan',s1,g1,5
+            !write(*,*) Ccan(1,2)
 
             !note that if Wp is not the identity matrix we have to
             !compute sum(diagonals(matmul(Wp,RcurrInv)))
@@ -484,11 +468,11 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                     (1-CDraws(g1,(1+i1):P,i1)))
                 corrteller = corrteller + (P - i1)
             end do
-            write(*,*)'samsize0 CDraws',s1,g1
-            write(*,*)CDraws(g1,1,2)
+            !write(*,*)'samsize0 CDraws',s1,g1
+            !write(*,*)CDraws(g1,1,2)
 
-            write(*,*)'samsize0 Zcorr_sample',s1,g1,6
-            write(*,*) Zcorr_sample(s1,1)
+            !write(*,*)'samsize0 Zcorr_sample',s1,g1,6
+            !write(*,*) Zcorr_sample(s1,1)
 
             !draw sigma's
             do p1 = 1,P
@@ -510,8 +494,8 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                 end if
             end do
 
-            write(*,*)'samsize0 sigmaDraws',s1,g1,7
-            write(*,*) sigmaDraws(1,1)
+            !write(*,*)'samsize0 sigmaDraws',s1,g1,7
+            !write(*,*) sigmaDraws(1,1)
 
             !Draw parameter extended parameter by Liu and Sabatti (2001) via random walk
             SigmaInv = matmul(matmul(diag(1/sigmaDraws(g1,:),P),Cinv),diag(1/sigmaDraws(g1,:),P))
@@ -537,7 +521,7 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                 end if
             end do
 
-            write(*,*)'samsize0',s1,g1,8
+            !write(*,*)'samsize0',s1,g1,8
 
         end do
 
@@ -550,7 +534,7 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
 !
     end do
 
-    write(*,*)'compute posterior mean'
+    !write(*,*)'compute posterior mean'
 
     ! compute posterior mean
     do c1=1,numcorr
@@ -559,9 +543,9 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
         call piksrt(samsize0,dummy3)
         postZmean(c1,1) = dummy3(int(samsize0*.5))
     end do
-    write(*,*)postZmean(:,1)
+    !write(*,*)postZmean(:,1)
 
-    write(*,*)'compute posterior covariance matrix'
+    !write(*,*)'compute posterior covariance matrix'
 !
     ! compute posterior covariance matrix
     do c1=1,numcorr
@@ -572,9 +556,9 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
             postZcov(c2,c1) = postZcov(c1,c2)
         end do
     end do
-    write(*,*)postZcov(:,1)
+    !write(*,*)postZcov(:,1)
 
-    write(*,*)'compute posterior quantiles'
+    !write(*,*)'compute posterior quantiles'
 !
     ! compute posterior quantiles
     lower_int = int(samsize0*.025)
@@ -612,13 +596,11 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
         end do
     end do
 
-    write(*,*)C_quantiles(1,1,1,1:3)
-    write(*,*)B_quantiles(1,1,1,1:3)
-    write(*,*)sigma_quantiles(1,1,1:3)
+    !write(*,*)C_quantiles(1,1,1,1:3)
+    !write(*,*)B_quantiles(1,1,1,1:3)
+    !write(*,*)sigma_quantiles(1,1,1:3)
 
-    write(*,*)'end'
-
-
+    !write(*,*)'end'
 
 contains
 
