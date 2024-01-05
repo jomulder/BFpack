@@ -2,7 +2,7 @@
 
 
 subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, sdHat, CHat, XtXi, samsize0, &
-    burnin, Ntot, Njs_in, Xgroups, Ygroups, C_quantiles, sigma_quantiles, B_quantiles, BDrawsStore, &
+    burnin, Ntot, Njs, Xgroups, Ygroups, C_quantiles, sigma_quantiles, B_quantiles, BDrawsStore, &
     sigmaDrawsStore, CDrawsStore, sdMH, ordinal_in, Cat_in, maxCat, gLiuSab, seed)
 !
     implicit none
@@ -10,10 +10,9 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
     integer, parameter :: r15 = selected_real_kind(15)
     integer, parameter :: i6 = selected_int_kind(6)
 !
-    integer(i6), intent(in) ::P, numcorr, K, numG, samsize0, burnin, Ntot, maxCat, seed
+    integer(i6), intent(in) ::P, numcorr, K, numG, samsize0, burnin, Ntot, maxCat, seed, Njs(numG)
     real(r15), intent(in) ::  BHat(numG,K,P), sdHat(numG,P), CHat(numG,P,P), XtXi(numG,K,K), Cat_in(numG,P), &
-                              sdMH(numG,P), Xgroups(numG,Ntot,K), Ygroups(numG,Ntot,P), ordinal_in(numG,P), &
-                              Njs_in(numG)
+                              sdMH(numG,P), Xgroups(numG,Ntot,K), Ygroups(numG,Ntot,P), ordinal_in(numG,P)
     real(r15), intent(out)::  postZmean(numcorr,1), postZcov(numcorr,numcorr), B_quantiles(numG,K,P,3), &
                               C_quantiles(numG,P,P,3), sigma_quantiles(numG,P,3), BDrawsStore(samsize0,numG,K,P), &
                               sigmaDrawsStore(samsize0,numG,P), CDrawsStore(samsize0,numG,P,P), &
@@ -28,12 +27,13 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                   ones(samsize0,1), Zcorr_sample(samsize0,numcorr), dummy3(samsize0), dummy2(samsize0), &
                   diffmat(Ntot,P), meanO(P*K), para(((P*K)*((P*K)+3)/2 + 1)), randraw, gLiuSab_curr(numG,P)
     integer(i6) ::s1, g1, acceptC(numG), i1, nutarget, a0, corrteller, Cat(numG,P), ordinal(numG,P), &
-                  c1, c2, p1, Yi1Categorie, tellers(numG,maxCat,P), k1, p2, iseed, Njs(numG), errorflag, &
+                  c1, c2, p1, Yi1Categorie, tellers(numG,maxCat,P), k1, p2, iseed, errorflag, &
                   lower_int, median_int, upper_int
 !
 !   set seed
     iseed = seed
 !
+
     !initial posterior draws
     BDraws = BHat
     sigmaDraws = sdHat
@@ -47,7 +47,6 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
             ordinal(g1,p1) = int(ordinal_in(g1,p1))
             Cat(g1,p1) = int(Cat_in(g1,p1))
         end do
-        Njs(g1) = int(Njs_in(g1))
     end do
     !initial prior C
     nutarget = P + 1 !in the case of a marginally uniform prior
@@ -120,6 +119,7 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
             !compute mean vector for
 
             write(*,*)'burnin',s1,g1,0
+            print *,'burnin',s1,g1,0
 
             do p1=1,P
 
@@ -226,6 +226,10 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
             write(*,*)Xgroups(1,1,1:K)
             write(*,*)'diffmat'
             write(*,*)diffmat(1,:)
+            write(*,*)'sizes'
+            write(*,*)size(diffmat(1:Njs(g1),1:P))
+            write(*,*)size(Wgroups(g1,1:Njs(g1),1:P))
+            write(*,*)Njs(g1)
             diffmat(1:Njs(g1),1:P) = Wgroups(g1,1:Njs(g1),1:P) - matmul(Xgroups(g1,1:Njs(g1),1:K), BDraws(g1,1:K,1:P))
             diffmat(1:Njs(g1),1:P) = Wgroups(g1,1:Njs(g1),1:P)
             diffmat(1,1) = Wgroups(1,1,1) - (Xgroups(1,1,1) * BDraws(1,1,1))
@@ -614,7 +618,10 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
 
     write(*,*)'end'
 
+
+
 contains
+
 
 
 subroutine robust_covest(m, betas1, betas2, mn1, mn2, varb1, varb2, varb1b2Plus, varb1b2Min)
