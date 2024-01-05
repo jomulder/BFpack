@@ -101,9 +101,10 @@ BF.bartlett_htest <- function(x,
                            prior.hyp = NULL,
                            complement = TRUE,
                            log = FALSE,
+                           iter = 1e5,
                            ...) {
   get_est <- get_estimates(x)
-  nsim <- 1e5
+  nsim <- iter
   s2 <- get_est$estimate
   n <- c(x$n)
   b <- 2/n

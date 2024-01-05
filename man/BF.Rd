@@ -31,6 +31,7 @@ testing}
   complement = TRUE,
   log = FALSE,
   BF.type = 2,
+  iter = 10000,
   ...
 )
 
@@ -43,6 +44,7 @@ testing}
   complement = TRUE,
   log = FALSE,
   BF.type = 2,
+  iter = 1e+06,
   ...
 )
 }
@@ -93,6 +95,9 @@ is a named vector.}
 Currently, this argument is only used for models of class 'lm' and 't_test',
 where \code{BF.type=2} implies an adjusted fractional Bayes factor with a 'fractional prior mean' at the null value (Mulder, 2014),
 and \code{BF.type=1} implies a regular fractional Bayes factor (based on O'Hagan (1995)) with a 'fractional prior mean' at the MLE.}
+
+\item{iter}{Number of iterations that are used to compute the Monte Carlo estimates
+(only used for certain hypotheses under multivariate models and when testing group variances).}
 }
 \value{
 The output is an object of class \code{BF}. The object has elements:

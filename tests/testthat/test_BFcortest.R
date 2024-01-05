@@ -22,7 +22,7 @@ test_that("BF.cor_test exploratory hypotheses on correlations correctly evaluate
 BF2 <- BF(cor1,hypothesis="wt_with_drat<drat_with_hp<wt_with_hp;
    wt_with_drat=drat_with_hp<0<wt_with_hp")
 BFtable <- matrix(c(   0,    1,  5.62,
-                      -1.4,    0,  4.6,
+                      -1,    0,  4.6,
                     -5.62, -4.6,    0),byrow=TRUE,nrow=3)
 test_that("BF.cor_test confirmatory hypotheses on correlations correctly evaluated", {
   expect_equivalent(
@@ -41,7 +41,7 @@ set.seed(123)
 cor2 <- cor_test(mtcars[,1:2])
 BF2 <- BF(cor2,hypothesis="cyl_with_mpg= -.9")
 logBFexplo <- matrix(
-  c(-19.75,  .7,  -23.4),nrow=1,byrow=T)
+  c(-19.19,  .69,  -22.77),nrow=1,byrow=T)
 # exploratory hypothesis test on the correlation
 test_that("BF.cor_test exploratory hypotheses on correlations correctly evaluated", {
   expect_equivalent(

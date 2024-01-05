@@ -13,6 +13,7 @@ BF.lm <- function(x,
                   complement = TRUE,
                   log = FALSE,
                   BF.type = 2,
+                  iter = 1e4,
                   ...){
 
   if(is.null(BF.type)){
@@ -297,9 +298,9 @@ BF.lm <- function(x,
             RrE_f <- cbind(kronecker(diag(P),RrE_f),0)
             relcomp_f <- MatrixStudent_measures(Mean1=matrix(mean0,ncol=P),Scale1=S_b,tXXi1=tXXi_b,
                                                 df1=df0,RrE1=RrE_f,RrO1=NULL,Names1=NULL,constraints1=NULL,
-                                                MCdraws=1e4)
+                                                MCdraws=iter)
             relfit_f <- MatrixStudent_measures(Mean1=BetaHat,Scale1=S,tXXi1=tXXi,df1=dfN,RrE1=RrE_f,
-                                               RrO1=NULL,Names1=NULL,constraints1=NULL,MCdraws=1e4)
+                                               RrO1=NULL,Names1=NULL,constraints1=NULL,MCdraws=iter)
           }else{
             RrE_f <- matrix(0,nrow=sum(which0)-1,ncol=length(colnames(Xmat))+1)
             for(r1 in 1:(sum(which0)-1)){
@@ -321,9 +322,9 @@ BF.lm <- function(x,
             RrE_f <- cbind(kronecker(diag(P),RrE_f),rep(0,sum(which0)*P))
             relcomp_f <- MatrixStudent_measures(Mean1=matrix(mean0,ncol=P),Scale1=S_b,tXXi1=tXXi_b,
                                                 df1=df0,RrE1=RrE_f,RrO1=NULL,Names1=NULL,constraints1=NULL,
-                                                MCdraws=1e4)
+                                                MCdraws=iter)
             relfit_f <- MatrixStudent_measures(Mean1=BetaHat,Scale1=S,tXXi1=tXXi,df1=dfN,RrE1=RrE_f,
-                                               RrO1=NULL,Names1=NULL,constraints1=NULL,MCdraws=1e4)
+                                               RrO1=NULL,Names1=NULL,constraints1=NULL,MCdraws=iter)
           }else{
             RrE_f <- matrix(0,nrow=sum(which0),ncol=length(colnames(Xmat))+1)
             for(r1 in 1:sum(which0)){
@@ -382,9 +383,9 @@ BF.lm <- function(x,
             RrE_ia <- cbind(kronecker(diag(P),RrE_ia),rep(0,sum(whichx)*P))
             relcomp_ia <- MatrixStudent_measures(Mean1=matrix(mean0,ncol=P),Scale1=S_b,tXXi1=tXXi_b,
                                                  df1=df0,RrE1=RrE_ia,RrO1=NULL,Names1=NULL,
-                                                 constraints1=NULL,MCdraws=1e4)
+                                                 constraints1=NULL,MCdraws=iter)
             relfit_ia <- MatrixStudent_measures(Mean1=BetaHat,Scale1=S,tXXi1=tXXi,df1=dfN,RrE1=RrE_ia,
-                                                RrO1=NULL,Names1=NULL,constraints1=NULL,MCdraws=1e4)
+                                                RrO1=NULL,Names1=NULL,constraints1=NULL,MCdraws=iter)
           }else{
             RrE_ia <- matrix(0,nrow=sum(whichx),ncol=K+1)
             for(r1 in 1:sum(whichx)){RrE_ia[r1,which(whichx)[r1]]<-1}
@@ -566,10 +567,10 @@ BF.lm <- function(x,
           dfN <- N-K-P+1
           relfit_h <- MatrixStudent_measures(Mean1=BetaHat,Scale1=S,tXXi1=tXXi,df1=dfN,RrE1=RrE[[h]],RrO1=RrO[[h]],
                                              Names1=matrix(names_coef,ncol=P),constraints1=parse_hyp$original_hypothesis[h],
-                                             MCdraws=1e4)
+                                             MCdraws=iter)
           relcomp_h <- MatrixStudent_measures(Mean1=Mean0,Scale1=S_b,tXXi1=tXXi_b,df1=df0,RrE1=RrE[[h]],RrO1=RrO[[h]],
                                               Names1=matrix(names_coef,ncol=P),constraints1=parse_hyp$original_hypothesis[h],
-                                              MCdraws=1e4)
+                                              MCdraws=iter)
         }
         return(list(relfit_h,relcomp_h))
       }))

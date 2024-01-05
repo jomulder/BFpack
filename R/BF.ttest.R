@@ -27,6 +27,7 @@ BF.t_test <- function(x,
                       complement = TRUE,
                       log = FALSE,
                       BF.type = 2,
+                      iter = 1e6,
                       ...){
 
   numpop <- length(x$estimate)
@@ -214,10 +215,10 @@ BF.t_test <- function(x,
       bvec <- 2/nvec
       s2vec <- (x$v)*(x$n-1)
       #draws for Monte Carlo estimates
-      sigma2_1.draws <- rgamma(1e6,shape=(nvec[1]-1)/2,rate=s2vec[1]/2)
-      sigma2b_1.draws <- rgamma(1e6,shape=(nvec[1]*bvec[1]-1)/2,rate=s2vec[1]*bvec[1]/2)
-      sigma2_2.draws <- rgamma(1e6,shape=(nvec[2]-1)/2,rate=s2vec[2]/2)
-      sigma2b_2.draws <- rgamma(1e6,shape=(nvec[2]*bvec[2]-1)/2,rate=s2vec[2]*bvec[2]/2)
+      sigma2_1.draws <- rgamma(iter,shape=(nvec[1]-1)/2,rate=s2vec[1]/2)
+      sigma2b_1.draws <- rgamma(iter,shape=(nvec[1]*bvec[1]-1)/2,rate=s2vec[1]*bvec[1]/2)
+      sigma2_2.draws <- rgamma(iter,shape=(nvec[2]-1)/2,rate=s2vec[2]/2)
+      sigma2b_2.draws <- rgamma(iter,shape=(nvec[2]*bvec[2]-1)/2,rate=s2vec[2]*bvec[2]/2)
       relfit0 <- log(mean(dnorm(x$null.value,
                                 mean=diff.obs,
                                 sd=sqrt(1/sigma2_1.draws*1/nvec[1] + 1/sigma2_2.draws*1/nvec[2]))))
@@ -362,7 +363,7 @@ BF.t_test <- function(x,
           #add complement to analysis
           if(sum(relcomp[,1]==0)>0){ #then there are order hypotheses
             # check if one-sided hypotheses are (partly) overlapping
-            check.draws <- c(rnorm(1e5,sd=1),rnorm(1e5,sd=100))
+            check.draws <- c(rnorm(iter,sd=1),rnorm(iter,sd=100))
             which.O <- which(unlist(lapply(RrO,function(x) {!is.null(x)})))
             checks <- Reduce("+",lapply(which.O,function(h){
               apply(as.matrix(RrO[[h]][,1]) %*% t(check.draws) > RrO[[h]][,2] %*%

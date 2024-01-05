@@ -4,12 +4,16 @@
 \alias{mvt_test}
 \title{Multivariate Student t test}
 \usage{
-mvt_test(Y, null = NULL, ...)
+mvt_test(X, Y, null = NULL, paired = FALSE, ...)
 }
 \arguments{
-\item{Y}{a data matrix with different variables in the columns.}
+\item{X}{a data matrix with the variables in the columns.}
+
+\item{Y}{an optional data matrix with the variables in the columns.}
 
 \item{null}{a vector of the null values of the variables.}
+
+\item{paired}{a logical indicating whether you want a multivariate paired t-test.}
 
 \item{...}{further arguments to be passed to or from methods.}
 }
@@ -21,7 +25,7 @@ First step to performs a Bayesian multivariate one sample Student t test using t
 (adjusted) fractional Bayes factor using the \code{BF()} function.
 }
 \details{
-\code{Y} must be a data matrix and \code{null}
+\code{X} must be a data matrix and \code{null}
 must be a vector of the assumed null values of the variables.
 }
 \examples{
