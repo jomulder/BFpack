@@ -412,8 +412,17 @@ BF.cor_test <- function(x,
     RrList <- make_RrList2(parse_hyp)
     RrE <- RrList[[1]]
     RrO <- RrList[[2]]
-
     numhyp <- length(RrE)
+    #Fisher transform constants in constraints
+    for(h in 1:numhyp){
+      if(!is.null(RrE[[h]])){
+        RrE[[h]][,ncol(RrE[[h]])] <- FisherZ(RrE[[h]][,ncol(RrE[[h]])])
+      }
+      if(!is.null(RrO[[h]])){
+        RrO[[h]][,ncol(RrO[[h]])] <- FisherZ(RrO[[h]][,ncol(RrO[[h]])])
+      }
+    }
+
     relfit <- t(matrix(unlist(lapply(1:numhyp,function(h){
       Gaussian_measures(corrmeanN,corrcovmN,RrE1=RrE[[h]],RrO1=RrO[[h]])
     })),nrow=2))

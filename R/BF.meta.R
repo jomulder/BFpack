@@ -72,7 +72,7 @@ BF.rma.uni <- function(x,
     rhostats <- c(mean(rhodraws),median(rhodraws),quantile(rhodraws,.025),quantile(rhodraws,.975))
     tau2draws <- rhodraws/(1-rhodraws)*typ_vi # Compute tau2 based on generated I^2-statistic
     mean_prior_delta <- 0
-    sd_prior_delta <- length(yi)/sum(1/(vi+mean(tau2draws)))
+    sd_prior_delta <- sqrt(length(yi)/sum(1/(vi+mean(tau2draws))))
 
     mean_delta <- unlist(lapply(1:length(tau2draws), function(i){
       (mean_prior_delta/sd_prior_delta^2+sum(yi/(vi+tau2draws[i])))/
@@ -147,7 +147,7 @@ BF.rma.uni <- function(x,
                        typ_vi = typ_vi)
 
     mean_prior_delta <- 0
-    sd_prior_delta <- length(yi)/sum(1/vi)
+    sd_prior_delta <- sqrt(length(yi)/sum(1/vi))
 
     mean_delta <- (mean_prior_delta/sd_prior_delta^2+sum(yi/vi))/
       (1/sd_prior_delta^2+sum(1/vi))

@@ -17,8 +17,8 @@ subroutine estimate_postmeancov_fisherz(postZmean, postZcov, P, numcorr, K, numG
                                C_quantiles(numG,P,P,3), sigma_quantiles(numG,P,3), BDrawsStore(samsize0,numG,K,P), &
                                sigmaDrawsStore(samsize0,numG,P), CDrawsStore(samsize0,numG,P,P)
     real(r15)               :: BDraws(numG,K,P), sigmaDraws(numG,P), CDraws(numG,P,P), Ccan(P,P), Ds(P,P), dummyPP2(P,P), &
-                            CcanInv(P,P), Ccurr(P,P), CcurrInv(P,P), SS1(P,P), rnunif(1), sdMH(numG,P), errorMatj(P,P), &
-                            sigma_can(P), aa, bb, SigmaMat(P,P), R_MH, epsteps(P,P), logR_MH, diffmat(Ntot,P), &
+                            CcanInv(P,P), SS1(P,P), rnunif(1), sdMH(numG,P), errorMatj(P,P), & !Ccurr(P,P), CcurrInv(P,P),
+                            sigma_can(P), aa, bb, SigmaMat(P,P), R_MH, epsteps(P,P), diffmat(Ntot,P), & !logR_MH,
                             varz1, varz2, varz1z2Plus, varz1z2Min, Cinv(P,P), Zcorr_sample(samsize0,numcorr), &
                             acceptSigma(numG,P), acceptC(numG), covBeta(P*K,P*K), betaDrawj(1,P*K), dummyPP(P,P), &
                             dummy3(samsize0), dummy2(samsize0), meanO(P*K), para(((P*K)*((P*K)+3)/2 + 1)), SS2(P,P)
@@ -65,25 +65,27 @@ subroutine estimate_postmeancov_fisherz(postZmean, postZcov, P, numcorr, K, numG
             epsteps = matmul(transpose(diffmat(1:Njs(g1),1:P)),diffmat(1:Njs(g1),1:P))
             SS1 = matmul(matmul(diag(1/sigmaDraws(g1,:),P),epsteps),diag(1/sigmaDraws(g1,:),P))
             call FINDInv(SS1,SS2,P,errorflag)
-            call gen_wish(SS2,Njs(g1),dummyPP2,P,iseed)
+            call gen_wish(SS2,Njs(g1)-P-1,dummyPP2,P,iseed)
             call FINDInv(dummyPP2,dummyPP,P,errorflag)
             Ccan = matmul(matmul(diag(1/sqrt(diagonals(dummyPP,P)),P),dummyPP),diag(1/sqrt(diagonals(dummyPP,P)),P))
             call FINDInv(Ccan,CcanInv,P,errorflag)
-            Ccurr = CDraws(g1,:,:)
-            call FINDInv(Ccurr,CcurrInv,P,errorflag)
+            Cinv = CcanInv
+            CDraws(g1,:,:) = Ccan(:,:)
+!            Ccurr = CDraws(g1,:,:)
+!            call FINDInv(Ccurr,CcurrInv,P,errorflag)
 !
-            !Accept candidate correlation with probability R_MH (based on Liu & Daniels (2006))
-            logR_MH = (-.5*real(P+1))*(log(det(Ccurr,P,-1))-log(det(Ccan,P,-1))) !proposal prior
-            R_MH = exp(logR_MH)
-            !call random_number(rnunif)
-            rnunif = runiform ( iseed )
-            if(rnunif(1) < R_MH) then
-                CDraws(g1,:,:) = Ccan(:,:)
-                acceptC(g1) = acceptC(g1) + 1
-                Cinv = CcanInv
-            else
-                Cinv = CcurrInv
-            end if
+!            !Accept candidate correlation with probability R_MH (based on Liu & Daniels (2006))
+!            logR_MH = (-.5*real(P+1))*(log(det(Ccurr,P,-1))-log(det(Ccan,P,-1))) !proposal prior
+!            R_MH = exp(logR_MH)
+!            !call random_number(rnunif)
+!            rnunif = runiform ( iseed )
+!            if(rnunif(1) < R_MH) then
+!                CDraws(g1,:,:) = Ccan(:,:)
+!                acceptC(g1) = acceptC(g1) + 1
+!                Cinv = CcanInv
+!            else
+!                Cinv = CcurrInv
+!            end if
             do i1 = 1,P-1 !keep Fisher z transformed posterior draws of rho's
                 Zcorr_sample(s1,(corrteller+1):(corrteller+P-i1)) = .5*log((1+CDraws(g1,(1+i1):P,i1))/ &
                     (1-CDraws(g1,(1+i1):P,i1)))

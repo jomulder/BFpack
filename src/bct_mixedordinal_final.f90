@@ -19,11 +19,11 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                               gLiuSab(samsize0,numG,P)
     real(r15) ::  BDraws(numG,K,P), CDraws(numG,P,P), sigmaDraws(numG,P), meanMat(Ntot,P), SigmaMatDraw(P,P), &
                   R_MH, covBeta(K*P,K*P), Ds(P,P), Ccan(P,P), CcanInv(P,P), Ccurr(P,P), Wp(P,P), epsteps(P,P), &
-                  CcurrInv(P,P), SS1(P,P), SS1inv(P,P), rnunif(1), errorMatj(P,P), sigma_can(P), aa, bb, &
+                  SS1(P,P), SS1inv(P,P), rnunif(1), errorMatj(P,P), sigma_can(P), aa, bb, & ! CcurrInv(P,P),
                   telft, telct, betaDrawj(1,P*K), acceptSigma(numG,P), dummyPP(P,P), dummyPPinv(P,P), &
                   varz1, varz2, varz1z2Plus, varz1z2Min, Cnugget(P,P), SigmaInv(P,P), sdMHg(numG,P), gLiuSab_can, &
                   Wgroups(numG,Ntot,P), alphaMin, alphaMax, Cinv(P,P), Bmean(K,P), acceptLS(numG,P), &
-                  alphaMat(numG,maxCat+1,P), Wdummy(numG,P,Ntot,maxCat), condMean, condVar, logR_MH_part3, &
+                  alphaMat(numG,maxCat+1,P), Wdummy(numG,P,Ntot,maxCat), condMean, condVar, & ! logR_MH_part3,
                   ones(samsize0,1), Zcorr_sample(samsize0,numcorr), dummy3(samsize0), dummy2(samsize0), &
                   diffmat(Ntot,P), meanO(P*K), para(((P*K)*((P*K)+3)/2 + 1)), randraw, gLiuSab_curr(numG,P)
     integer(i6) ::s1, g1, acceptC(numG), i1, nutarget, a0, corrteller, Cat(numG,P), ordinal(numG,P), &
@@ -67,7 +67,7 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                   !the parameterization in Remark 9 of Liu&Daniels seems a bit odd.
 !
     !define nugget matrix to avoid approximate nonpositive definite correlation matrices for candidates
-    Cnugget = .99
+    Cnugget = .998
     do p1=1,P
         Cnugget(p1,p1) = 1
     end do
@@ -230,7 +230,7 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
             epsteps = matmul(transpose(diffmat(1:Njs(g1),1:P)),diffmat(1:Njs(g1),1:P))
             SS1 = matmul(matmul(diag(1/sigmaDraws(g1,:),P),epsteps),diag(1/sigmaDraws(g1,:),P))
             call FINDInv(SS1,SS1inv,P,errorflag)
-            call gen_wish(SS1inv,Njs(g1),dummyPP,P,iseed)
+            call gen_wish(SS1inv,Njs(g1)-P-1,dummyPP,P,iseed) !!!!!
             call FINDInv(dummyPP,dummyPPinv,P,errorflag)
             !write(*,*)'dummyPPinv'
             !write(*,*)dummyPPinv
@@ -238,28 +238,30 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                 diag(1/sqrt(diagonals(dummyPPinv,P)),P))
             Ccan = Ccan * Cnugget
             call FINDInv(Ccan,CcanInv,P,errorflag)
-            call FINDInv(Ccurr,CcurrInv,P,errorflag)
-            !target prior of Barnard et al. with nu = p + kappa0
-            !proposal prior
-            logR_MH_part3 = (-.5*real(P+1))*(log(det(Ccurr,P,-1))-log(det(Ccan,P,-1)))
-            R_MH = exp(logR_MH_part3)
-            !write(*,*) s1, R_MH, logR_MH_part3
+            CDraws(g1,:,:) = Ccan(:,:)
+            Cinv = CcanInv
 
-            !write(*,*)'burnin Ccan',s1,g1,4
-            !write(*,*)Ccan(1,2)
-
-            !note that if Wp is not the identity matrix we have to
-            !compute sum(diagonals(matmul(Wp,RcurrInv)))
-            rnunif = runiform(iseed)
-            if(rnunif(1) < R_MH) then
-                CDraws(g1,:,:) = Ccan(:,:)
-                acceptC(g1) = acceptC(g1) + 1
-                Cinv = CcanInv
-            else
-                Cinv = CcurrInv
-            end if
-            !write(*,*)'burnin CDraws',s1,g1,4.5
-            !write(*,*)CDraws(1,1,2)
+!            call FINDInv(Ccurr,CcurrInv,P,errorflag)
+!            !target prior of Barnard et al. with nu = p + kappa0
+!            !proposal prior
+!            logR_MH_part3 = (-.5*real(P+1))*(log(det(Ccurr,P,-1))-log(det(Ccan,P,-1)))
+!            R_MH = exp(logR_MH_part3)
+!            R_MH = 2 !!!!!
+!            !write(*,*) s1, R_MH, logR_MH_part3
+!
+!            !write(*,*)'burnin Ccan',s1,g1,4
+!            !write(*,*)Ccan(1,2)
+!
+!            !note that if Wp is not the identity matrix we have to
+!            !compute sum(diagonals(matmul(Wp,RcurrInv)))
+!            rnunif = runiform(iseed)
+!            if(rnunif(1) < R_MH) then
+!                CDraws(g1,:,:) = Ccan(:,:)
+!                acceptC(g1) = acceptC(g1) + 1
+!                Cinv = CcanInv
+!            else
+!                Cinv = CcurrInv
+!            end if
 
             !draw sigma's
             do p1 = 1,P
@@ -438,31 +440,34 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
             epsteps = matmul(transpose(diffmat(1:Njs(g1),1:P)),diffmat(1:Njs(g1),1:P))
             SS1 = matmul(matmul(diag(1/sigmaDraws(g1,:),P),epsteps),diag(1/sigmaDraws(g1,:),P))
             call FINDInv(SS1,SS1inv,P,errorflag)
-            call gen_wish(SS1inv,Njs(g1),dummyPP,P,iseed)
+            call gen_wish(SS1inv,Njs(g1)-P-1,dummyPP,P,iseed) !!!!!
             call FINDInv(dummyPP,dummyPPinv,P,errorflag)
             Ccan = matmul(matmul(diag(1/sqrt(diagonals(dummyPPinv,P)),P),dummyPPinv), &
                 diag(1/sqrt(diagonals(dummyPPinv,P)),P))
             Ccan = Ccan * Cnugget
             call FINDInv(Ccan,CcanInv,P,errorflag)
-            call FINDInv(Ccurr,CcurrInv,P,errorflag)
-            !target prior of Barnard et al. with nu = p + kappa0
-            !proposal prior
-            logR_MH_part3 = (-.5*real(P+1))*(log(det(Ccurr,P,-1))-log(det(Ccan,P,-1)))
-            R_MH = exp(logR_MH_part3)
+            CDraws(g1,:,:) = Ccan(:,:)
+            Cinv = CcanInv
 
-            !write(*,*)'samsize0 Ccan',s1,g1,5
-            !write(*,*) Ccan(1,2)
-
-            !note that if Wp is not the identity matrix we have to
-            !compute sum(diagonals(matmul(Wp,RcurrInv)))
-            rnunif = runiform(iseed)
-            if(rnunif(1) < R_MH) then
-                CDraws(g1,:,:) = Ccan(:,:)
-                acceptC(g1) = acceptC(g1) + 1
-                Cinv = CcanInv
-            else
-                Cinv = CcurrInv
-            end if
+!            call FINDInv(Ccurr,CcurrInv,P,errorflag)
+!            !target prior of Barnard et al. with nu = p + kappa0
+!            !proposal prior
+!            logR_MH_part3 = (-.5*real(P+1))*(log(det(Ccurr,P,-1))-log(det(Ccan,P,-1)))
+!            R_MH = exp(logR_MH_part3)
+!
+!            !write(*,*)'samsize0 Ccan',s1,g1,5
+!            !write(*,*) Ccan(1,2)
+!
+!            !note that if Wp is not the identity matrix we have to
+!            !compute sum(diagonals(matmul(Wp,RcurrInv)))
+!            rnunif = runiform(iseed)
+!            if(rnunif(1) < R_MH) then
+!                CDraws(g1,:,:) = Ccan(:,:)
+!                acceptC(g1) = acceptC(g1) + 1
+!                Cinv = CcanInv
+!            else
+!                Cinv = CcurrInv
+!            end if
             do i1 = 1,P-1 !keep Fisher z transformed posterior draws of rho's
                 Zcorr_sample(s1,(corrteller+1):(corrteller+P-i1)) = .5*log((1+CDraws(g1,(1+i1):P,i1))/ &
                     (1-CDraws(g1,(1+i1):P,i1)))

@@ -6,7 +6,7 @@
 
 # test if confirmatory test gives same result exploratory test
 ttest1 <- t_test(therapeutic,mu=5)
-BF1 <- BF(x=ttest1,hypothesis="mu=5;mu<5",prior.hyp.conf=c(1/4,3/4,0))
+BF1 <- BF(x=ttest1,hypothesis="mu=5;mu<5",prior.hyp.conf=c(1/3,1/3,1/3))
 test_that("1 sample t test of multiple hypotheses correctly evaluated", {
   expect_true(
     all.equal(unname(c(BF1$PHP_exploratory)),unname(BF1$PHP_confirmatory))

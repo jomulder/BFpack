@@ -2,6 +2,10 @@
 # exploratory testing correlations in multivariate normal model
 set.seed(123)
 cor1 <- cor_test(mtcars[,4:6])
+print(cor1)
+print(cor1$meanF)
+print(cor1$covmF)
+print(cor1$correstimates)
 BF1 <- BF(cor1)
 BF1a <- BF(cor1,prior.hyp.explo = 3:5)
 PHPexplo <- matrix(
@@ -21,8 +25,8 @@ test_that("BF.cor_test exploratory hypotheses on correlations correctly evaluate
 # confirmatory hypothesis test on the correlations
 BF2 <- BF(cor1,hypothesis="wt_with_drat<drat_with_hp<wt_with_hp;
    wt_with_drat=drat_with_hp<0<wt_with_hp")
-BFtable <- matrix(c(   0,    1,  5.62,
-                      -1,    0,  4.6,
+BFtable <- matrix(c(   0,    1.1,  5.62,
+                      -1.1,    0,  4.6,
                     -5.62, -4.6,    0),byrow=TRUE,nrow=3)
 test_that("BF.cor_test confirmatory hypotheses on correlations correctly evaluated", {
   expect_equivalent(
@@ -50,13 +54,14 @@ test_that("BF.cor_test exploratory hypotheses on correlations correctly evaluate
 # confirmatory hypothesis test on the correlation
 test_that("BF.cor_test confirmatory hypotheses on correlations correctly evaluated", {
   expect_equivalent(
-    log(BF2$BFmatrix_confirmatory[1,2]),.9, tolerance = .2
+    log(BF2$BFmatrix_confirmatory[1,2]),2.6, tolerance = .2
   )})
+
 
 # estimate correlations for unequal groups
 set.seed(123)
 cor2b <- cor_test(mtcars[1:10,2:4],mtcars[11:32,2:4])
-estimates_check <- c(.7,.63,.62,.85,.74,.68)
+estimates_check <- c(.85,.81,.8,.9,.81,.76)
 test_that("check estimate of polychoric correlation", {
   expect_equivalent(
     cor2b$correstimates[,1],estimates_check, tolerance = .1
@@ -69,7 +74,7 @@ test_that("BF.cor_test exploratory hypotheses on correlations correctly evaluate
   cor3 <- cor_test(mtcars[,3:4],mtcars[,5:6])
   BF3 <- BF(cor3,hypothesis="hp_with_disp_in_g1= -wt_with_drat_in_g2")
   expect_equivalent(
-    BF3$PHP_confirmatory,c(.78,.22), tolerance = .1
+    BF3$PHP_confirmatory,c(.77,.23), tolerance = .1
   )})
 
 # # test a single correlation on categorical outcomes
