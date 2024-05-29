@@ -1,8 +1,7 @@
 #' @method print cor_test
 #' @export
 print.cor_test <- function(x,
-                           digits = 3,
-                           na.print = "", ...){
+                           digits = 3, ...){
 
   estimates <- x$correstimates
   names <- x$corrnames
@@ -27,6 +26,9 @@ print.cor_test <- function(x,
     for(g in 1:groups){
       cat(paste0("Group g",as.character(g),":"),"\n", sep = "")
       cat("\n")
+      cat("correlation types","\n")
+      print(x$cor.type[[g]],na.print="",quote=FALSE)
+      cat("\n")
       cat("Posterior 2.5% lower bounds:","\n", sep = "")
       print(round(corrlist[[g]][[2]],digits), na.print = "")
       cat("\n")
@@ -38,6 +40,9 @@ print.cor_test <- function(x,
       cat("\n")
     }
   }else{
+    cat("correlation types","\n")
+    print(x$cor.type[[g]],na.print="",quote=FALSE)
+    cat("\n")
     cat("Posterior 2.5% lower bounds:","\n", sep = "")
     print(round(corrlist[[1]][[2]],digits), na.print = "")
     cat("\n")
@@ -48,5 +53,20 @@ print.cor_test <- function(x,
     print(round(corrlist[[1]][[3]],digits), na.print = "")
     cat("\n")
   }
+
+}
+
+
+#' @method summary cor_test
+#' @export
+summary.cor_test <- function(x,
+                           digits = 3, ...){
+
+  cor.df <- round(as.data.frame(x$correstimates),digits)
+  cor.df$cor.type <- unlist(lapply(1:length(x$cor.type),function(g){
+    x$cor.type[[g]][lower.tri(x$cor.type[[g]])]
+  }))
+
+  cor.df
 
 }

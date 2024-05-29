@@ -1,9 +1,10 @@
-# BFpack 1.2.4
+# BFpack 1.3.0
 
-* Date: 2023-11-24.
+* Date: 2024-05-28.
 * Package update for implementation step in JASP.
 * Changes to the identification of groups using factors.
 * Updates for aov and manova objects.
+* cor_test update to support 
 * Bug fixes.
 * Minor edits.
 

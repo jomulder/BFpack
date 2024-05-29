@@ -56,9 +56,15 @@ subroutine estimate_postmeancov_fisherz(postZmean, postZcov, P, numcorr, K, numG
                 BDraws(g1,:,p1) = betaDrawj(1,((p1-1)*K+1):(p1*K)) + BHat(g1,:,p1)
             end do
             !BDraws = BHat
+            !write(*,*)'burnin BHat',s1,g1,2
+            !write(*,*)BHat(1,1,1)
+            !write(*,*)'burnin BDraws',s1,g1,3
+            !write(*,*)BDraws(g1,1,:)
 
             !draw candidate draw for the correlation matrix
             diffmat(1:Njs(g1),1:P) = Ygroups(g1,1:Njs(g1),1:P) - matmul(Xgroups(g1,1:Njs(g1),1:K),BDraws(g1,1:K,1:P))
+            !write(*,*)'diffmat'
+            !write(*,*)diffmat(1,:)
             errorMatj = matmul(transpose(diffmat(1:Njs(g1),1:P)),diffmat(1:Njs(g1),1:P))
             Ds = diag(1/sqrt(diagonals(errorMatj,P)),P)
             diffmat(1:Njs(g1),1:P) = matmul(diffmat(1:Njs(g1),1:P),Ds) !diffmat is now epsilon in LD
@@ -68,24 +74,11 @@ subroutine estimate_postmeancov_fisherz(postZmean, postZcov, P, numcorr, K, numG
             call gen_wish(SS2,Njs(g1)-P-1,dummyPP2,P,iseed)
             call FINDInv(dummyPP2,dummyPP,P,errorflag)
             Ccan = matmul(matmul(diag(1/sqrt(diagonals(dummyPP,P)),P),dummyPP),diag(1/sqrt(diagonals(dummyPP,P)),P))
+            !write(*,*)'Ccan'
+            !write(*,*)Ccan
             call FINDInv(Ccan,CcanInv,P,errorflag)
             Cinv = CcanInv
             CDraws(g1,:,:) = Ccan(:,:)
-!            Ccurr = CDraws(g1,:,:)
-!            call FINDInv(Ccurr,CcurrInv,P,errorflag)
-!
-!            !Accept candidate correlation with probability R_MH (based on Liu & Daniels (2006))
-!            logR_MH = (-.5*real(P+1))*(log(det(Ccurr,P,-1))-log(det(Ccan,P,-1))) !proposal prior
-!            R_MH = exp(logR_MH)
-!            !call random_number(rnunif)
-!            rnunif = runiform ( iseed )
-!            if(rnunif(1) < R_MH) then
-!                CDraws(g1,:,:) = Ccan(:,:)
-!                acceptC(g1) = acceptC(g1) + 1
-!                Cinv = CcanInv
-!            else
-!                Cinv = CcurrInv
-!            end if
             do i1 = 1,P-1 !keep Fisher z transformed posterior draws of rho's
                 Zcorr_sample(s1,(corrteller+1):(corrteller+P-i1)) = .5*log((1+CDraws(g1,(1+i1):P,i1))/ &
                     (1-CDraws(g1,(1+i1):P,i1)))

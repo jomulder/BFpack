@@ -77,40 +77,40 @@ test_that("BF.cor_test exploratory hypotheses on correlations correctly evaluate
     BF3$PHP_confirmatory,c(.77,.23), tolerance = .1
   )})
 
-# # test a single correlation on categorical outcomes
-# set.seed(123)
-# mtcars_test <- mtcars[,8:9]
-# mtcars_test[,2] <- as.factor(mtcars_test[,2])
-# mtcars_test[,1] <- as.factor(mtcars_test[,1])
-# cor2 <- cor_test(mtcars_test)
-# test_that("check estimate of polychoric correlation", {
-#   expect_equivalent(
-#     cor2$correstimates[1,1],.24, tolerance = .1
-#   )})
-# BF2 <- BF(cor2,hypothesis="am_with_vs= .1")
-# PHPexplo <- matrix(
-#   c(.49,  .09,  .42),nrow=1,byrow=T)
-# # exploratory hypothesis test on the correlation
-# test_that("BF.cor_test exploratory hypotheses on correlations correctly evaluated", {
-#   expect_equivalent(
-#     BF2$PHP_exploratory,PHPexplo, tolerance = .1
-#   )})
-# # confirmatory hypothesis test on the correlation
-# test_that("BF.cor_test confirmatory hypotheses on correlations correctly evaluated", {
-#   expect_equivalent(
-#     log(BF2$BFmatrix_confirmatory[1,2]),.93, tolerance = .1
-#   )})
+# test a single correlation on categorical outcomes
+set.seed(123)
+mtcars_test <- mtcars[,8:9]
+mtcars_test[,2] <- as.factor(mtcars_test[,2])
+mtcars_test[,1] <- as.factor(mtcars_test[,1])
+cor2 <- cor_test(mtcars_test)
+test_that("check estimate of polychoric correlation", {
+  expect_equivalent(
+    cor2$correstimates[1,1],.24, tolerance = .1
+  )})
+BF2 <- BF(cor2,hypothesis="am_with_vs= .1")
+PHPexplo <- matrix(
+  c(.39,  .01,  .50),nrow=1,byrow=T)
+# exploratory hypothesis test on the correlation
+test_that("BF.cor_test exploratory hypotheses on correlations correctly evaluated", {
+  expect_equivalent(
+    BF2$PHP_exploratory,PHPexplo, tolerance = .1
+  )})
+# confirmatory hypothesis test on the correlation
+test_that("BF.cor_test confirmatory hypotheses on correlations correctly evaluated", {
+  expect_equivalent(
+    log(BF2$BFmatrix_confirmatory[1,2]),.5, tolerance = .1
+  )})
 
-# # test with combinations between continuous and ordinal (categorical) outcome variables
-# set.seed(187)
-# mtcars_test <- mtcars[,c(1,2,9,10)]
-# mtcars_test[,2] <- as.ordered(mtcars_test[,2])
-# mtcars_test[,3] <- as.factor(mtcars_test[,3])
-# mtcars_test[,4] <- as.integer(mtcars_test[,4])
-# cor4 <- cor_test(mtcars_test)
-# BF4 <- BF(cor4)
-# test_that("BF.cor_test exploratory hypotheses on correlations mixed measurement levels", {
-#   expect_equivalent(
-#     BF4$PHP_exploratory[,1],c(0,.074,.06,.075,.061,.00), tolerance = .1
-#   )})
+# test with combinations between continuous and ordinal (categorical) outcome variables
+set.seed(187)
+mtcars_test <- rbind(mtcars[,c(1,2,9,10)],mtcars[,c(1,2,9,10)])
+mtcars_test[,2] <- as.ordered(mtcars_test[,2])
+mtcars_test[,3] <- as.factor(mtcars_test[,3])
+mtcars_test[,4] <- as.integer(mtcars_test[,4])
+cor4 <- cor_test(mtcars_test)
+BF4 <- BF(cor4)
+test_that("BF.cor_test exploratory hypotheses on correlations mixed measurement levels", {
+  expect_equivalent(
+    BF4$PHP_exploratory[,1],c(0,.074,.06,.075,.061,.00), tolerance = .1
+  )})
 
