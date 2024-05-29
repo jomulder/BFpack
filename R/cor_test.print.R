@@ -41,7 +41,7 @@ print.cor_test <- function(x,
     }
   }else{
     cat("correlation types","\n")
-    print(x$cor.type[[g]],na.print="",quote=FALSE)
+    print(x$cor.type[[1]],na.print="",quote=FALSE)
     cat("\n")
     cat("Posterior 2.5% lower bounds:","\n", sep = "")
     print(round(corrlist[[1]][[2]],digits), na.print = "")
