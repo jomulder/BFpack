@@ -59,11 +59,11 @@ print.cor_test <- function(x,
 
 #' @method summary cor_test
 #' @export
-summary.cor_test <- function(x, ...){
+summary.cor_test <- function(object, digits = 3, ...){
 
-  cor.df <- round(as.data.frame(x$correstimates),3)
-  cor.df$cor.type <- unlist(lapply(1:length(x$cor.type),function(g){
-    x$cor.type[[g]][lower.tri(x$cor.type[[g]])]
+  cor.df <- round(as.data.frame(object$correstimates),digits)
+  cor.df$cor.type <- unlist(lapply(1:length(object$cor.type),function(g){
+    object$cor.type[[g]][lower.tri(object$cor.type[[g]])]
   }))
 
   cor.df

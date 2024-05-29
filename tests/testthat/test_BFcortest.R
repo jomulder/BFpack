@@ -2,10 +2,6 @@
 # exploratory testing correlations in multivariate normal model
 set.seed(123)
 cor1 <- cor_test(mtcars[,4:6])
-print(cor1)
-print(cor1$meanF)
-print(cor1$covmF)
-print(cor1$correstimates)
 BF1 <- BF(cor1)
 BF1a <- BF(cor1,prior.hyp.explo = 3:5)
 PHPexplo <- matrix(

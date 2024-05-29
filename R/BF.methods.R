@@ -146,6 +146,7 @@
 #' in R. Journal of Statistical Software. <https://doi.org/10.18637/jss.v100.i18>
 #'
 #' @examples
+#' \donttest{
 #' # EXAMPLE 1. One-sample t test
 #' ttest1 <- t_test(therapeutic, mu = 5)
 #' print(ttest1)
@@ -194,6 +195,7 @@
 #' BF1 <- BF(estimates, Sigma = covmatrix, n = samplesize, hypothesis =
 #' "woolB > tensionM > tensionH; woolB = tensionM = tensionH")
 #' summary(BF1)
+#' }
 #' @rdname BF
 #' @export
 #' @useDynLib BFpack, .registration = TRUE

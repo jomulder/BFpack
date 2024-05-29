@@ -239,6 +239,7 @@ BF1 <- BF(fit, hypothesis = "ztrust > zfWHR > 0;
                              ztrust > 0 & zfWHR = 0")
 summary(BF1)
 
+\dontshow{if () (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
 # EXAMPLE 5. Correlation analysis
 set.seed(123)
 cor1 <- cor_test(memory[1:20,1:3])
@@ -261,6 +262,7 @@ samplesize <- nobs(poisson1)
 BF1 <- BF(estimates, Sigma = covmatrix, n = samplesize, hypothesis =
 "woolB > tensionM > tensionH; woolB = tensionM = tensionH")
 summary(BF1)
+\dontshow{\}) # examplesIf}
 }
 \references{
 Mulder, J., D.R. Williams, Gu, X., A. Tomarken,
