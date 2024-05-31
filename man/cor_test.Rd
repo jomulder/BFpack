@@ -37,22 +37,22 @@ Estimate the unconstrained posterior for the correlations using a joint uniform 
 \donttest{
 # Bayesian correlation analysis of the 6 variables in 'memory' object
 # we consider a correlation analysis of the first three variable of the memory data.
-fit <- cor_test(BFpack::memory[,1:3])
+#fit <- cor_test(BFpack::memory[,1:3])
 
 # Bayesian correlation of variables in memory object in BFpack while controlling
 # for the Cat variable
-fit <- cor_test(BFpack::memory[,c(1:4)],formula = ~ Cat)
+#fit <- cor_test(BFpack::memory[,c(1:4)],formula = ~ Cat)
 
 # Example of Bayesian estimation of polyserial correlations
-memory_example <- memory[,c("Im","Rat")]
-memory_example$Rat <- as.ordered(memory_example$Rat)
-fit <- cor_test(memory_example)
+#memory_example <- memory[,c("Im","Rat")]
+#memory_example$Rat <- as.ordered(memory_example$Rat)
+#fit <- cor_test(memory_example)
 
 # Bayesian correlation analysis of first three variables in memory data
 # for two different groups
-HC <- subset(BFpack::memory[,c(1:3,7)], Group == "HC")[,-4]
-SZ <- subset(BFpack::memory[,c(1:3,7)], Group == "SZ")[,-4]
-fit <- cor_test(HC,SZ)
+#HC <- subset(BFpack::memory[,c(1:3,7)], Group == "HC")[,-4]
+#SZ <- subset(BFpack::memory[,c(1:3,7)], Group == "SZ")[,-4]
+#fit <- cor_test(HC,SZ)
 
 }
 }
