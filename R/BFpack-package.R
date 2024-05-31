@@ -68,4 +68,4 @@
 #'
 #' @name BFpack-package
 #'
-NULL
+"_PACKAGE"
