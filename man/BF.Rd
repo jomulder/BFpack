@@ -213,6 +213,7 @@ a classical Wald test.
 
 }}
 \examples{
+\donttest{
 # EXAMPLE 1. One-sample t test
 ttest1 <- t_test(therapeutic, mu = 5)
 print(ttest1)
@@ -239,15 +240,14 @@ BF1 <- BF(fit, hypothesis = "ztrust > zfWHR > 0;
                              ztrust > 0 & zfWHR = 0")
 summary(BF1)
 
-\dontshow{if () (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
 # EXAMPLE 5. Correlation analysis
-set.seed(123)
-cor1 <- cor_test(memory[1:20,1:3])
-BF1 <- BF(cor1)
-summary(BF1)
-BF2 <- BF(cor1, hypothesis = "Wmn_with_Im > Wmn_with_Del > 0;
-                              Wmn_with_Im = Wmn_with_Del = 0")
-summary(BF2)
+#set.seed(123)
+#cor1 <- cor_test(memory[1:20,1:3])
+#BF1 <- BF(cor1)
+#summary(BF1)
+#BF2 <- BF(cor1, hypothesis = "Wmn_with_Im > Wmn_with_Del > 0;
+#                             Wmn_with_Im = Wmn_with_Del = 0")
+#summary(BF2)
 
 # EXAMPLE 6. Bayes factor testing on a named vector
 # A Poisson regression model is used to illustrate the computation
@@ -262,7 +262,7 @@ samplesize <- nobs(poisson1)
 BF1 <- BF(estimates, Sigma = covmatrix, n = samplesize, hypothesis =
 "woolB > tensionM > tensionH; woolB = tensionM = tensionH")
 summary(BF1)
-\dontshow{\}) # examplesIf}
+}
 }
 \references{
 Mulder, J., D.R. Williams, Gu, X., A. Tomarken,

@@ -2,6 +2,7 @@
 % Please edit documentation in R/BFpack-package.R
 \docType{package}
 \name{BFpack-package}
+\alias{BFpack}
 \alias{BFpack-package}
 \title{BFpack: Flexible Bayes factor testing of scientific expectations}
 \description{
@@ -66,4 +67,46 @@ in R. \url{https://arxiv.org/abs/1911.07728}
 Mulder, J., van Lissa, C., Gu, X., Olsson-Collentine, A., Boeing-Messing, F., Williams,
 D. R., Fox, J.-P., Menke, J., et al. (2019). BFpack: Flexible Bayes Factor Testing of
 Scientific Expectations. (Version 0.2.1) \url{https://CRAN.R-project.org/package=BFpack}
+}
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://github.com/jomulder/BFpack}
+  \item Report bugs at \url{https://github.com/jomulder/BFpack/issues}
+}
+
+}
+\author{
+\strong{Maintainer}: Joris Mulder \email{j.mulder3@tilburguniversity.edu}
+
+Authors:
+\itemize{
+  \item Caspar van Lissa \email{c.j.vanlissa@uu.nl} [contributor]
+  \item Donald R. Williams \email{drwwilliams@ucdavis.edu} [contributor]
+  \item Xin Gu \email{guxin57@hotmail.com} [contributor]
+  \item Anton Olsson-Collentine \email{J.A.E.OlssonCollentine@tilburguniversity.edu} [contributor]
+  \item Florian Boeing-Messing \email{F.Boeing-Messing@uvt.nl} [contributor]
+  \item Jean-Paul Fox \email{g.j.a.fox@utwente.nl} [contributor]
+}
+
+Other contributors:
+\itemize{
+  \item Janosch Menke \email{janosch.menke@uni-muenster.de} [contributor]
+  \item Robbie van Aert \email{R.C.M.vanAert@tilburguniversity.edu} [contributor]
+  \item Barry Brown [contributor]
+  \item James Lovato [contributor]
+  \item Kathy Russell [contributor]
+  \item Lapack 3.8 [contributor]
+  \item Jack Dongarra [contributor]
+  \item Jim Bunch [contributor]
+  \item Cleve Moler [contributor]
+  \item Gilbert Stewart [contributor]
+  \item John Burkandt [contributor]
+  \item Ashwith Rego [contributor]
+  \item Alexander Godunov [contributor]
+  \item Alan Miller [contributor]
+  \item Jean-Pierre Moreau [contributor]
+  \item The R Core Team [copyright holder]
+}
+
 }
