@@ -109,37 +109,6 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
 
 
 
-
-            Bmean(1:K,1:P) = matmul(matmul(XtXi(g1,:,:),transpose(Xgroups(g1,1:Njs(g1),1:K))), &
-                Wgroups(g1,1:Njs(g1),1:P))
-            call kronecker(K,P,XtXi(g1,:,:),SigmaMatDraw,covBeta)
-
-            call setgmn(meanO,covBeta,P*K,para)
-            call GENMN(para,betaDrawj(1,1:(P*K)),P*K,iseed)
-            do p1 = 1,P
-                BDraws(g1,:,p1) = betaDrawj(1,((p1-1)*K+1):(p1*K)) + Bmean(1:K,p1)
-            end do
-!
-            !draw R using method of Liu and Daniels (LD, 2006)
-            !draw candidate R
-            diffmat(1:Njs(g1),1:P) = Wgroups(g1,1:Njs(g1),1:P) - matmul(Xgroups(g1,1:Njs(g1),1:K), &
-                BDraws(g1,1:K,1:P))
-            errorMatj = matmul(transpose(diffmat(1:Njs(g1),1:P)),diffmat(1:Njs(g1),1:P))
-            Ds = diag(1/sqrt(diagonals(errorMatj,P)),P)
-            diffmat(1:Njs(g1),1:P) = matmul(diffmat(1:Njs(g1),1:P),Ds) !diffmat is now epsilon in LD
-            epsteps = matmul(transpose(diffmat(1:Njs(g1),1:P)),diffmat(1:Njs(g1),1:P))
-            SS1 = matmul(matmul(diag(1/sigmaDraws(g1,:),P),epsteps),diag(1/sigmaDraws(g1,:),P))
-            call FINDInv(SS1,SS1inv,P,errorflag)
-            call gen_wish(SS1inv,Njs(g1)-P-1,dummyPP,P,iseed) !!!!!
-            call FINDInv(dummyPP,dummyPPinv,P,errorflag)
-            Ccan = matmul(matmul(diag(1/sqrt(diagonals(dummyPPinv,P)),P),dummyPPinv), &
-                diag(1/sqrt(diagonals(dummyPPinv,P)),P))
-            Ccan = Ccan * Cnugget
-            call FINDInv(Ccan,CcanInv,P,errorflag)
-            CDraws(g1,:,:) = Ccan(:,:)
-            Cinv = CcanInv
-
-
         end do
 !
     end do
