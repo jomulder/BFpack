@@ -4,7 +4,10 @@ set.seed(123)
 qwe <- draw_ju_r(3, samsize=5000, Fisher=1)
 print(head(qwe))
 cat(head(qwe))
-#cor1 <- cor_test(mtcars[,4:6])
+cor1 <- cor_test(mtcars[,4:6])
+print(cor1$covmF)
+cat(cor1$covmF)
+
 # BF1 <- BF(cor1)
 # BF1a <- BF(cor1,prior.hyp.explo = 3:5)
 # PHPexplo <- matrix(
