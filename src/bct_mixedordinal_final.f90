@@ -90,20 +90,7 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
         end do
     end do
 !
-!    write(*,*)'sampling for burn-in period'
-    !start Gibbs sampler
-    do s1 = 1,burnin
-        corrteller = 0
-        tellers = 0
-        do g1 = 1,numG
 
-
-
-
-
-        end do
-!
-    end do
 
     !write(*,*)'Cmedians'
     !write(*,*)C_quantiles(1,1:3,1:3,2)
