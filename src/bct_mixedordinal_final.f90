@@ -39,7 +39,64 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                   c1, c2, p1, Yi1Categorie, tellers(numG,maxCat,P), k1, p2, iseed, errorflag, &
                   lower_int, median_int, upper_int
 !
-
+!   set seed
+    iseed = seed
+!
+    !initial posterior draws
+    BDraws = BHat
+    sigmaDraws = sdHat
+    CDraws = CHat
+    meanO = 0.0
+    gLiuSab_curr = 1.0
+    iseed = seed
+!
+    do g1=1,numG
+        do p1=1,P
+            ordinal(g1,p1) = int(ordinal_in(g1,p1))
+            Cat(g1,p1) = int(Cat_in(g1,p1))
+        end do
+    end do
+    do p1=1,P
+        do g1=1,numG
+            !initial values
+            if(ordinal(g1,p1)==1.0) then
+                sigmaDraws(g1,p1) = 1.0
+                sigma_quantiles(g1,p1,1) = 1.0
+                sigma_quantiles(g1,p1,2) = 1.0
+                sigma_quantiles(g1,p1,3) = 1.0
+            end if
+        end do
+    end do
+!
+    !define nugget matrix to avoid approximate nonpositive definite correlation matrices for candidates
+    Cnugget = nuggetscale
+    do p1=1,P
+        Cnugget(p1,p1) = 1.0
+    end do
+!
+    !count number of accepted draws for R (over all groups)
+    acceptSigma = 0.0
+    acceptLS = 0.0
+    sdMHg = .1 !for gLiuBanhatti parameter
+!
+    !initial values for latent W's corresponding to ordinal DVs
+    Wgroups = Ygroups
+    Wdummy = 0.0
+!
+    !initial values of boundary values alpha to link between ordinal Y and continuous latent W
+    alphaMat = 0.0
+    alphaMat(:,1,:) = -1e10  !alpha0
+    alphaMat(:,2,:) = 0.0      !alpha1
+    do p1=1,P
+        do g1=1,numG
+            if(ordinal(g1,p1)>0) then
+                do c1=3,Cat(g1,p1)
+                    alphaMat(g1,c1,p1) = .3*(real(c1)-2.0)
+                end do
+                alphaMat(g1,Cat(g1,p1)+1,p1) = 1e10
+            end if
+        end do
+    end do
 
     !test write
     Ccan = 1
