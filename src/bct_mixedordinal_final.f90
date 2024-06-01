@@ -90,7 +90,101 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
         end do
     end do
 !
+!    write(*,*)'sampling for burn-in period'
+    !start Gibbs sampler
+    do s1 = 1,burnin
+        corrteller = 0
+        tellers = 0
+        do g1 = 1,numG
 
+            !compute means of latent W's for all observations
+            meanMat(1:Njs(g1),1:P) = matmul(Xgroups(g1,1:Njs(g1),1:K),BDraws(g1,1:K,1:P))
+            Ccurr = CDraws(g1,:,:)
+            SigmaMatDraw = matmul(matmul(diag(sigmaDraws(g1,:),P),Ccurr),diag(sigmaDraws(g1,:),P))
+!
+            !draw latent W's for the ordinal Y's
+            !compute mean vector for
+
+
+
+
+
+
+            Bmean(1:K,1:P) = matmul(matmul(XtXi(g1,:,:),transpose(Xgroups(g1,1:Njs(g1),1:K))), &
+                Wgroups(g1,1:Njs(g1),1:P))
+            call kronecker(K,P,XtXi(g1,:,:),SigmaMatDraw,covBeta)
+
+            call setgmn(meanO,covBeta,P*K,para)
+            call GENMN(para,betaDrawj(1,1:(P*K)),P*K,iseed)
+            do p1 = 1,P
+                BDraws(g1,:,p1) = betaDrawj(1,((p1-1)*K+1):(p1*K)) + Bmean(1:K,p1)
+            end do
+!
+            !draw R using method of Liu and Daniels (LD, 2006)
+            !draw candidate R
+            diffmat(1:Njs(g1),1:P) = Wgroups(g1,1:Njs(g1),1:P) - matmul(Xgroups(g1,1:Njs(g1),1:K), &
+                BDraws(g1,1:K,1:P))
+            errorMatj = matmul(transpose(diffmat(1:Njs(g1),1:P)),diffmat(1:Njs(g1),1:P))
+            Ds = diag(1/sqrt(diagonals(errorMatj,P)),P)
+            diffmat(1:Njs(g1),1:P) = matmul(diffmat(1:Njs(g1),1:P),Ds) !diffmat is now epsilon in LD
+            epsteps = matmul(transpose(diffmat(1:Njs(g1),1:P)),diffmat(1:Njs(g1),1:P))
+            SS1 = matmul(matmul(diag(1/sigmaDraws(g1,:),P),epsteps),diag(1/sigmaDraws(g1,:),P))
+            call FINDInv(SS1,SS1inv,P,errorflag)
+            call gen_wish(SS1inv,Njs(g1)-P-1,dummyPP,P,iseed) !!!!!
+            call FINDInv(dummyPP,dummyPPinv,P,errorflag)
+            Ccan = matmul(matmul(diag(1/sqrt(diagonals(dummyPPinv,P)),P),dummyPPinv), &
+                diag(1/sqrt(diagonals(dummyPPinv,P)),P))
+            Ccan = Ccan * Cnugget
+            call FINDInv(Ccan,CcanInv,P,errorflag)
+            CDraws(g1,:,:) = Ccan(:,:)
+            Cinv = CcanInv
+
+            !draw sigma's
+            do p1 = 1,P
+                if(ordinal(g1,p1)==0) then
+                    bb = sum(errorMatj(p1,:)*Cinv(p1,:)/sigmaDraws(g1,:)) - &
+                        errorMatj(p1,p1)*Cinv(p1,p1)/sigmaDraws(g1,p1)
+                    aa = Cinv(p1,p1)*errorMatj(p1,p1)
+                    sigma_can(:) = sigmaDraws(g1,:)
+                    sigma_can(p1) = rnormal(iseed)
+                    sigma_can(p1) = sigma_can(p1)*sdMH(g1,p1) + sigmaDraws(g1,p1) !random walk
+                    R_MH = exp((-real(Njs(g1))+1.0)*(log(sigma_can(p1))-log(sigmaDraws(g1,p1)) ) &
+                           -.5*aa*(sigma_can(p1)**(-2) - sigmaDraws(g1,p1)**(-2)) &
+                           -bb*(sigma_can(p1)**(-1) - sigmaDraws(g1,p1)**(-1)) )
+                    rnunif = runiform ( iseed )
+                    if(rnunif(1) < R_MH .and. sigma_can(p1)>0.0) then
+                        sigmaDraws(g1,p1) = sigma_can(p1)
+                        acceptSigma(g1,p1) = acceptSigma(g1,p1) + 1.0
+                    end if
+                end if
+            end do
+
+            !Draw parameter extended parameter by Liu and Sabatti (2001) via random walk
+            SigmaInv = matmul(matmul(diag(1/sigmaDraws(g1,:),P),Cinv),diag(1/sigmaDraws(g1,:),P))
+            do p1 = 1,P
+                if(ordinal(g1,p1)>0) then !draw gLiuSab_curr(g1,p1)
+                    aa = errorMatj(p1,p1)*SigmaInv(p1,p1)/2.0
+                    bb = sum(errorMatj(p1,:)*SigmaInv(p1,:)*gLiuSab_curr(g1,:)) - errorMatj(p1,p1) * &
+                        SigmaInv(p1,p1)*gLiuSab_curr(g1,p1)
+                    gLiuSab_can = rnormal(iseed)
+                    gLiuSab_can = gLiuSab_can * sdMHg(g1,p1) + gLiuSab_curr(g1,p1) ! random (moon) walk
+                    R_MH = exp((K + Cat(g1,p1) - 2.0 + Njs(g1) - 1)*(log(gLiuSab_can) - log(gLiuSab_curr(g1,p1))) &
+                                -aa*(gLiuSab_can**2 - gLiuSab_curr(g1,p1)**2) - bb*(gLiuSab_can - gLiuSab_curr(g1,p1)))
+                    rnunif = runiform ( iseed )
+                    if(rnunif(1) < R_MH .and. gLiuSab_can>0) then
+                        gLiuSab_curr(g1,p1) = gLiuSab_can
+                        acceptLS(g1,p1) = acceptLS(g1,p1) + 1.0
+                        !update the other parameter through the parameter transformation g(x) = g * x
+                        BDraws(g1,1:K,p1) = BDraws(g1,1:K,p1)*gLiuSab_curr(g1,p1)
+                        alphaMat(g1,3:Cat(g1,p1),p1) = alphaMat(g1,3:Cat(g1,p1),p1)*gLiuSab_curr(g1,p1)
+                        Wgroups(g1,1:Njs(g1),p1) = Wgroups(g1,1:Njs(g1),p1)*gLiuSab_curr(g1,p1)
+                    end if
+                end if
+            end do
+
+        end do
+!
+    end do
 
     !write(*,*)'Cmedians'
     !write(*,*)C_quantiles(1,1:3,1:3,2)

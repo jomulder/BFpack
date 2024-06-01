@@ -1,9 +1,6 @@
 #
 # # exploratory testing correlations in multivariate normal model
 set.seed(123)
-qwe <- draw_ju_r(3, samsize=5000, Fisher=1)
-print(head(qwe))
-cat(head(qwe))
 cor1 <- cor_test(mtcars[,4:6])
 print(cor1$covmF)
 cat(cor1$covmF)
