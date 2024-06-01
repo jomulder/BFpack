@@ -1,7 +1,7 @@
 #
 # # exploratory testing correlations in multivariate normal model
 set.seed(123)
-cor1 <- cor_test(mtcars[,4:6])
+cor1 <- cor_test(mtcars[,4:6],iter=10,burnin=10)
 print(cor1$covmF)
 cat(cor1$covmF)
 
