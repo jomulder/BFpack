@@ -98,9 +98,10 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
     end do
 
     !test write
-    Ccan = 1
+    Ccan = 0
     CDrawsStore(1,1,:,:) = 1
     CDrawsStore = 1
+    CDrawsStore(1,1,:,:) - Ccan(:,:)
 
 contains
 
