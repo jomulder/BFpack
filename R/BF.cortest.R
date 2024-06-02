@@ -15,8 +15,6 @@
 #'
 #' @param burnin number of iterations for burnin (default is 3000).
 #'
-#' @param nugget.scale a scalar which serves to avoid violations of positive definite correlation matrices.
-#' It should be very close to 1 (the default is .995).
 #'
 #' @return list of class \code{cor_test}:
 #' \itemize{
