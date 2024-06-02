@@ -6,7 +6,7 @@ cor1 <- cor_test_continuous(mtcars[,4:6],iter = 100)
 print(cor1$covmF)
 cat(cor1$covmF)
 
-cor1 <- cor_test_continuous(mtcars[,4:6],iter = 100)
+cor1 <- cor_test(mtcars[,4:6],iter = 100)
 print(cor1$covmF)
 cat(cor1$covmF)
 
