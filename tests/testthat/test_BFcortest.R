@@ -6,6 +6,10 @@ cor1 <- cor_test_continuous(mtcars[,4:6],iter = 100)
 print(cor1$covmF)
 cat(cor1$covmF)
 
+cor1 <- cor_test_continuous(mtcars[,4:6],iter = 100)
+print(cor1$covmF)
+cat(cor1$covmF)
+
 # BF1 <- BF(cor1)
 # BF1a <- BF(cor1,prior.hyp.explo = 3:5)
 # PHPexplo <- matrix(
