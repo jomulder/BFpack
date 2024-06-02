@@ -18,7 +18,7 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
 !    integer, parameter :: r15 = selected_real_kind(15)
 !    integer, parameter :: i6 = selected_int_kind(6)
 !
-    integer(rint), intent(in) ::P, numcorr, K, numG, samsize0, burnin, Ntot, maxCat, seed, Njs(numG)
+    integer(rint), intent(in) :: P, numcorr, K, numG, samsize0, burnin, Ntot, maxCat, seed, Njs(numG)
     real(rdp), intent(in) ::  BHat(numG,K,P), sdHat(numG,P), CHat(numG,P,P), XtXi(numG,K,K), Cat_in(numG,P), &
                               sdMH(numG,P), Xgroups(numG,Ntot,K), Ygroups(numG,Ntot,P), ordinal_in(numG,P), &
                               nuggetscale
@@ -100,6 +100,7 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
     !test write
     Ccan = 1
     CDrawsStore(1,1,:,:) = Ccan(:,:)
+    CDrawsStore = 1
 
 contains
 
