@@ -16,9 +16,6 @@ control variables in the model (e.g., \code{~ education}).}
 \item{iter}{number of iterations from posterior (default is 5000).}
 
 \item{burnin}{number of iterations for burnin (default is 3000).}
-
-\item{nugget.scale}{a scalar which serves to avoid violations of positive definite correlation matrices.
-It should be very close to 1 (the default is .995).}
 }
 \value{
 list of class \code{cor_test}:
