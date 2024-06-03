@@ -6,15 +6,18 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
 !
     implicit none
 !
-    integer, intent(in) :: P, numcorr, K, numG, samsize0, burnin, Ntot, maxCat, seed
-    double precision, intent(in) ::  BHat(numG,K,P), sdHat(numG,P), CHat(numG,P,P), XtXi(numG,K,K), Cat_in(numG,P), &
+    integer, parameter :: r15 = selected_real_kind(15)
+    integer, parameter :: i6 = selected_int_kind(6)
+!
+    integer(i6), intent(in) ::P, numcorr, K, numG, samsize0, burnin, Ntot, maxCat, seed
+    real(r15), intent(in) ::  BHat(numG,K,P), sdHat(numG,P), CHat(numG,P,P), XtXi(numG,K,K), Cat_in(numG,P), &
                               sdMH(numG,P), Xgroups(numG,Ntot,K), Ygroups(numG,Ntot,P), ordinal_in(numG,P), &
                               nuggetscale, Njs_in(numG,1)
-    double precision, intent(inout)::  postZmean(numcorr,1), postZcov(numcorr,numcorr), B_quantiles(numG,K,P,3), &
+    real(r15), intent(inout)::postZmean(numcorr,1), postZcov(numcorr,numcorr), B_quantiles(numG,K,P,3), &
                               C_quantiles(numG,P,P,3), sigma_quantiles(numG,P,3), BDrawsStore(samsize0,numG,K,P), &
                               sigmaDrawsStore(samsize0,numG,P), CDrawsStore(samsize0,numG,P,P), &
                               gLiuSab(samsize0,numG,P)
-    double precision ::  BDraws(numG,K,P), CDraws(numG,P,P), sigmaDraws(numG,P), meanMat(Ntot,P), SigmaMatDraw(P,P), &
+    real(r15) ::  BDraws(numG,K,P), CDraws(numG,P,P), sigmaDraws(numG,P), meanMat(Ntot,P), SigmaMatDraw(P,P), &
                   R_MH, covBeta(K*P,K*P), Ds(P,P), Ccan(P,P), CcanInv(P,P), Ccurr(P,P), epsteps(P,P), &
                   SS1(P,P), SS1inv(P,P), rnunif(1), errorMatj(P,P), sigma_can(P), aa, bb, &
                   betaDrawj(1,P*K), acceptSigma(numG,P), dummyPP(P,P), dummyPPinv(P,P), &
@@ -23,7 +26,7 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                   alphaMat(numG,maxCat+1,P), Wdummy(numG,P,Ntot,maxCat), condMean, condVar, &
                   Zcorr_sample(samsize0,numcorr), dummy3(samsize0), dummy2(samsize0), &
                   diffmat(Ntot,P), meanO(P*K), para((P*K)*((P*K)+3)/2 + 1), randraw, gLiuSab_curr(numG,P)
-    integer     ::s1, g1, i1, corrteller, Cat(numG,P), ordinal(numG,P), Njs(numG), &
+    integer(i6) ::s1, g1, i1, corrteller, Cat(numG,P), ordinal(numG,P), Njs(numG), &
                   c1, c2, p1, Yi1Categorie, tellers(numG,maxCat,P), k1, p2, iseed, errorflag, &
                   lower_int, median_int, upper_int
 !
@@ -86,11 +89,34 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
         end do
     end do
 
-    !
-    !
-    ! removed part
-    !
-    !
+    !start Gibbs sampler
+    do s1 = 1,samsize0
+
+        corrteller = 0
+
+        do g1 = 1,numG
+
+            diffmat(1:Njs(g1),1:P) = Wgroups(g1,1:Njs(g1),1:P) - matmul(Xgroups(g1,1:Njs(g1),1:K), &
+                BDraws(g1,1:K,1:P))
+            errorMatj = matmul(transpose(diffmat(1:Njs(g1),1:P)),diffmat(1:Njs(g1),1:P))
+            Ds = diag(1/sqrt(diagonals(errorMatj,P)),P)
+            diffmat(1:Njs(g1),1:P) = matmul(diffmat(1:Njs(g1),1:P),Ds) !diffmat is now epsilon in LD
+            epsteps = matmul(transpose(diffmat(1:Njs(g1),1:P)),diffmat(1:Njs(g1),1:P))
+            SS1 = matmul(matmul(diag(1/sigmaDraws(g1,:),P),epsteps),diag(1/sigmaDraws(g1,:),P))
+            call FINDInv(SS1,SS1inv,P,errorflag)
+            call gen_wish(SS1inv,Njs(g1)-P-1,dummyPP,P,iseed) !!!!!
+            call FINDInv(dummyPP,dummyPPinv,P,errorflag)
+            Ccan = matmul(matmul(diag(1/sqrt(diagonals(dummyPPinv,P)),P),dummyPPinv), &
+                diag(1/sqrt(diagonals(dummyPPinv,P)),P))
+            Ccan = Ccan * Cnugget
+            call FINDInv(Ccan,CcanInv,P,errorflag)
+            CDraws(g1,:,:) = Ccan(:,:)
+            write(*,*)
+            write(*,*)Ccan
+
+        end do
+
+    end do
 
     !test write
     write(*,*)
