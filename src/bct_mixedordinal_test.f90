@@ -126,8 +126,94 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
 contains
 
 
+subroutine robust_covest(m, betas1, betas2, mn1, mn2, varb1, varb2, varb1b2Plus, varb1b2Min)
+
+    implicit none
+!
+    integer, parameter :: r15 = selected_real_kind(15)
+    integer, parameter :: i6 = selected_int_kind(6)
+
+    !Declare local variables
+    integer(i6), intent(in)  :: m
+    real(r15), intent(in)    :: betas1(m), betas2(m), mn1, mn2
+    real(r15), intent(out)   :: varb1, varb2, varb1b2Plus, varb1b2Min
+
+    real(r15)                :: dummy1(m), dummy2(m), Phi075, xxx
+    integer(i6)              :: mmin, i
+!
+    xxx=0.75
+    Phi075 = dinvnr(xxx)
+    mmin = 0
+!
+    !robust variance estimators of beta1 and beta2
+
+    dummy1=abs(betas1 - mn1)
+    call piksrt(m,dummy1)
+    do i=1,m
+        if(dummy1(i)>0) then
+            mmin = i
+            exit
+        end if
+    end do
+    varb1 = ((dummy1(int(mmin+(m-mmin)*.5)) + dummy1(int(mmin+(m-mmin)*.5+1)))*.5/Phi075)**2.0
+    dummy1=abs(betas2 - mn2)
+    call piksrt(m,dummy1)
+    do i=1,m
+        if(dummy1(i)>0) then
+            mmin = i
+            exit
+        end if
+    end do
+    varb2 = ((dummy1(int(mmin+(m-mmin)*.5)) + dummy1(int(mmin+(m-mmin)*.5+1)))*.5/Phi075)**2.0
+!
+    !robust variance estimators of beta1 + beta2
+    dummy2 = betas1 + betas2
+    dummy1=abs(dummy2 - mn1 - mn2)
+    call piksrt (m,dummy1)
+    do i=1,m
+        if(dummy1(i)>0) then
+            mmin = i
+            exit
+        end if
+    end do
+    varb1b2Plus = ((dummy1(int(mmin+(m-mmin)*.5)) + dummy1(int(mmin+(m-mmin)*.5+1)))*.5/Phi075)**2.0
+!
+    !robust variance estimators of beta1 - beta2
+    dummy2 = betas1 - betas2
+    dummy1= abs(dummy2 - mn1 + mn2)
+    call piksrt(m,dummy1)
+    do i=1,m
+        if(dummy1(i)>0) then
+            mmin = i
+            exit
+        end if
+    end do
+    varb1b2Min = ((dummy1(int(mmin+(m-mmin)*.5)) + dummy1(int(mmin+(m-mmin)*.5+1)))*.5/Phi075)**2.0
+!
+end subroutine
 
 
+SUBROUTINE piksrt(n,arr)
+
+  implicit none
+
+  integer, parameter :: r15 = selected_real_kind(15)
+  integer, parameter :: i6 = selected_int_kind(6)
+
+  integer(i6) :: n, i,j
+  real(r15)   :: arr(n), a
+
+  do j=2, n
+    a=arr(j)
+    do i=j-1,1,-1
+      if (arr(i)<=a) goto 10
+      arr(i+1)=arr(i)
+    end do
+  i=0
+10  arr(i+1)=a
+  end do
+  return
+END SUBROUTINE
 
 
 function eye(n)
@@ -150,6 +236,28 @@ function eye(n)
     return
 
 end function eye
+
+
+
+subroutine kronecker(dimA,dimB,A,B,AB)
+!
+    implicit none
+!
+    integer, parameter :: r15 = selected_real_kind(15)
+    integer, parameter :: i6 = selected_int_kind(6)
+!
+    integer(i6), intent(in) :: dimA, dimB
+    real(r15), intent(in)   :: A(dimA,dimA), B(dimB,dimB) !dummy arguments
+    real(r15), intent(out)  :: AB(dimA*dimB,dimA*dimB) !output matrix of the kronecker product
+    integer(i6)             :: i,j !loop counters
+!
+    do i=1,dimA
+        do j=1,dimA
+            AB((1+dimB*(i-1)):(dimB+dimB*(i-1)),(1+dimB*(j-1)):(dimB+dimB*(j-1))) = A(i,j)*B(:,:)
+        end do
+    end do
+!
+end subroutine kronecker
 
 
 function diag(A, n)
@@ -357,6 +465,34 @@ return
 end function runiform
 
 
+recursive function det(a,n,permanent) result(accumulation)
+    ! setting permanent to 1 computes the permanent.
+    ! setting permanent to -1 computes the determinant.
+
+    implicit none
+!
+    integer, parameter :: r15 = selected_real_kind(15)
+    integer, parameter :: i6 = selected_int_kind(6)
+
+    integer(i6), intent(in) :: n, permanent
+    real(r15), dimension(n,n), intent(in) :: a
+    real(r15), dimension(n-1, n-1) :: b
+    real(r15) :: accumulation
+    integer(i6) :: i, sgn
+
+    if (n .eq. 1) then
+      accumulation = a(1,1)
+    else
+      accumulation = 0
+      sgn = 1
+      do i=1, n
+        b(:, :(i-1)) = a(2:, :i-1)
+        b(:, i:) = a(2:, i+1:)
+        accumulation = accumulation + sgn * a(1, i) * det(b, n-1, permanent)
+        sgn = sgn * permanent
+      enddo
+    endif
+end function det
 
 
 subroutine gen_wish(A,nu,B,P,iseed)
