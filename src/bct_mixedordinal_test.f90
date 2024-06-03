@@ -143,8 +143,7 @@ subroutine estimate_bct_ordinal_test(postZmean, postZcov, P, numcorr, K, numG, B
     end do
 !
 !    CDrawsStore(1,1,1,1:2) = (/1.0,2.0/)
-
-
+!
 !    write(*,*)'sampling for burn-in period'
     !start Gibbs sampler
     do s1 = 1,burnin
