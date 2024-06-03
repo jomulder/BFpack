@@ -1,29 +1,29 @@
 
-module rkinds
-   use, intrinsic :: iso_c_binding
-   private
-   integer, parameter, public :: rint = c_int
-   integer, parameter, public :: rdp = c_double
-end module
+!module rkinds
+!   use, intrinsic :: iso_c_binding
+!   private
+!   integer, parameter, public :: rint = c_int
+!   integer, parameter, public :: rdp = c_double
+!end module
 
 
 subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, sdHat, CHat, XtXi, samsize0, &
     burnin, Ntot, Njs_in, Xgroups, Ygroups, C_quantiles, sigma_quantiles, B_quantiles, BDrawsStore, &
     sigmaDrawsStore, CDrawsStore, sdMH, ordinal_in, Cat_in, maxCat, gLiuSab, seed, nuggetscale)
 !
-    use rkinds, only: rint, rdp
+!    use rkinds, only: rint, rdp
 !
     implicit none
 !
-    integer(rint), intent(in) :: P, numcorr, K, numG, samsize0, burnin, Ntot, maxCat, seed
-    real(rdp), intent(in) ::  BHat(numG,K,P), sdHat(numG,P), CHat(numG,P,P), XtXi(numG,K,K), Cat_in(numG,P), &
+    integer, intent(in) :: P, numcorr, K, numG, samsize0, burnin, Ntot, maxCat, seed
+    double precision, intent(in) ::  BHat(numG,K,P), sdHat(numG,P), CHat(numG,P,P), XtXi(numG,K,K), Cat_in(numG,P), &
                               sdMH(numG,P), Xgroups(numG,Ntot,K), Ygroups(numG,Ntot,P), ordinal_in(numG,P), &
                               nuggetscale, Njs_in(numG,1)
-    real(rdp), intent(inout)::  postZmean(numcorr,1), postZcov(numcorr,numcorr), B_quantiles(numG,K,P,3), &
+    double precision, intent(inout)::  postZmean(numcorr,1), postZcov(numcorr,numcorr), B_quantiles(numG,K,P,3), &
                               C_quantiles(numG,P,P,3), sigma_quantiles(numG,P,3), BDrawsStore(samsize0,numG,K,P), &
                               sigmaDrawsStore(samsize0,numG,P), CDrawsStore(samsize0,numG,P,P), &
                               gLiuSab(samsize0,numG,P)
-    real(rdp) ::  BDraws(numG,K,P), CDraws(numG,P,P), sigmaDraws(numG,P), meanMat(Ntot,P), SigmaMatDraw(P,P), &
+    double precision ::  BDraws(numG,K,P), CDraws(numG,P,P), sigmaDraws(numG,P), meanMat(Ntot,P), SigmaMatDraw(P,P), &
                   R_MH, covBeta(K*P,K*P), Ds(P,P), Ccan(P,P), CcanInv(P,P), Ccurr(P,P), epsteps(P,P), &
                   SS1(P,P), SS1inv(P,P), rnunif(1), errorMatj(P,P), sigma_can(P), aa, bb, &
                   betaDrawj(1,P*K), acceptSigma(numG,P), dummyPP(P,P), dummyPPinv(P,P), &
@@ -32,7 +32,7 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                   alphaMat(numG,maxCat+1,P), Wdummy(numG,P,Ntot,maxCat), condMean, condVar, &
                   Zcorr_sample(samsize0,numcorr), dummy3(samsize0), dummy2(samsize0), &
                   diffmat(Ntot,P), meanO(P*K), para((P*K)*((P*K)+3)/2 + 1), randraw, gLiuSab_curr(numG,P)
-    integer(rint) ::s1, g1, i1, corrteller, Cat(numG,P), ordinal(numG,P), Njs(numG), &
+    integer     ::s1, g1, i1, corrteller, Cat(numG,P), ordinal(numG,P), Njs(numG), &
                   c1, c2, p1, Yi1Categorie, tellers(numG,maxCat,P), k1, p2, iseed, errorflag, &
                   lower_int, median_int, upper_int
 !
