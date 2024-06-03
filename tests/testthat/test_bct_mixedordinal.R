@@ -66,8 +66,10 @@ res <- .Fortran("estimate_bct_ordinal",
                 nuggetscale = as.double(.995))
 print(res$CDrawsStore[1,1,,])
 cat(res$CDrawsStore[1:2,1,,])
-plot(res$CDrawsStore[,1,1,2])
+plot(res$CDrawsStore[,1,1,3])
 
 res <- cor_test_continuous(as.data.frame(data))
 print(res$corrdraws[[1]][1,1:3,1:3])
 cat(res$corrdraws[[1]][1,1:3,1:3])
+
+

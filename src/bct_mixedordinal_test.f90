@@ -31,6 +31,57 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                   c1, c2, p1, Yi1Categorie, tellers(numG,maxCat,P), k1, p2, iseed, errorflag, &
                   lower_int, median_int, upper_int
 !
+!    write(*,*)'postZmean'
+!    write(*,*)postZmean
+!    write(*,*)'postZcov'
+!    write(*,*)postZcov
+!    write(*,*)'P'
+!    write(*,*)P
+!    write(*,*)'numcorr'
+!    write(*,*)numcorr
+!    write(*,*)'K'
+!    write(*,*)K
+!    write(*,*)'numG'
+!    write(*,*)numG
+!    write(*,*)'BHat'
+!    write(*,*)BHat
+!    write(*,*)'sdHat'
+!    write(*,*)sdHat
+!    write(*,*)'CHat'
+!    write(*,*)CHat
+!    write(*,*)'XtXi'
+!    write(*,*)XtXi
+!    write(*,*)'samsize0'
+!    write(*,*)samsize0
+!    write(*,*)'burnin'
+!    write(*,*)burnin
+!    write(*,*)'Ntot'
+!    write(*,*)Ntot
+!    write(*,*)'Njs_in'
+!    write(*,*)Njs_in
+!    write(*,*)'Xgroups'
+!    write(*,*)Xgroups
+!    write(*,*)'Ygroups'
+!    write(*,*)Ygroups
+!    write(*,*)'C_quantiles'
+!    write(*,*)C_quantiles
+!    write(*,*)'sigma_quantiles'
+!    write(*,*)sigma_quantiles
+!    write(*,*)'B_quantiles'
+!    write(*,*)B_quantiles
+!    write(*,*)'sdMH'
+!    write(*,*)sdMH
+!    write(*,*)'ordinal_in'
+!    write(*,*)ordinal_in
+!    write(*,*)'Cat_in'
+!    write(*,*)Cat_in
+!    write(*,*)'maxCat'
+!    write(*,*)maxCat
+!    write(*,*)'seed'
+!    write(*,*)seed
+!    write(*,*)'nuggetscale'
+!    write(*,*)nuggetscale
+
 !   set seed
     iseed = seed
 !
@@ -188,7 +239,7 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
             Bmean(1:K,1:P) = matmul(matmul(XtXi(g1,:,:),transpose(Xgroups(g1,1:Njs(g1),1:K))), &
                 Wgroups(g1,1:Njs(g1),1:P))
             call kronecker(K,P,XtXi(g1,:,:),SigmaMatDraw,covBeta)
-
+!
             call setgmn(meanO,covBeta,P*K,para)
             call GENMN(para,betaDrawj(1,1:(P*K)),P*K,iseed)
             do p1 = 1,P
@@ -204,11 +255,15 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
             diffmat(1:Njs(g1),1:P) = matmul(diffmat(1:Njs(g1),1:P),Ds) !diffmat is now epsilon in LD
             epsteps = matmul(transpose(diffmat(1:Njs(g1),1:P)),diffmat(1:Njs(g1),1:P))
             SS1 = matmul(matmul(diag(1/sigmaDraws(g1,:),P),epsteps),diag(1/sigmaDraws(g1,:),P))
+!            write(*,*)
+!            write(*,*)SS1
             call FINDInv(SS1,SS1inv,P,errorflag)
             call gen_wish(SS1inv,Njs(g1)-P-1,dummyPP,P,iseed) !!!!!
             call FINDInv(dummyPP,dummyPPinv,P,errorflag)
             Ccan = matmul(matmul(diag(1/sqrt(diagonals(dummyPPinv,P)),P),dummyPPinv), &
                 diag(1/sqrt(diagonals(dummyPPinv,P)),P))
+!            write(*,*)
+!            write(*,*)Ccan
             Ccan = Ccan * Cnugget
             call FINDInv(Ccan,CcanInv,P,errorflag)
             CDraws(g1,:,:) = Ccan(:,:)

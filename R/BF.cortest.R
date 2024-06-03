@@ -620,7 +620,7 @@ cor_test <- function(..., formula = NULL, iter = 5e3, burnin = 3e3, nugget.scale
     }
   }
 
-  #check measurement level of dependent variables, and convert to numericals
+  #check measurement level of dependent variables, and convert to numericals (whichDV)
   P <- sum(whichDV[[1]])
   ordi <- numcats <- matrix(0,nrow=numG,ncol=P)
   Ylevel <- matrix(0,nrow=numG,ncol=P)
@@ -754,7 +754,7 @@ cor_test <- function(..., formula = NULL, iter = 5e3, burnin = 3e3, nugget.scale
   }
   samsize0 <- iter
   gLiuSab <- array(0,dim=c(samsize0,numG,P))
-  Njs <- matrix(ngroups,nrow=numG,ncol=1)
+  Njs <- matrix(as.double(ngroups),nrow=numG,ncol=1)
 
   # call Fortran subroutine for Gibbs sampling using noninformative improper priors
   # for regression coefficients, Jeffreys priors for standard deviations, and a proper
