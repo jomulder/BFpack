@@ -10,5 +10,6 @@ cran-comments.md
 src/*.o
 src/*.so
 src/*.dll
+bct_mixedordinal_final_full.f90
 ^CRAN-SUBMISSION$
 ^data-raw$

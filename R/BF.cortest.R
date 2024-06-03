@@ -754,13 +754,14 @@ cor_test <- function(..., formula = NULL, iter = 5e3, burnin = 3e3, nugget.scale
   }
   samsize0 <- iter
   gLiuSab <- array(0,dim=c(samsize0,numG,P))
+  Njs <- matrix(ngroups,nrow=numG,ncol=1)
 
   # call Fortran subroutine for Gibbs sampling using noninformative improper priors
   # for regression coefficients, Jeffreys priors for standard deviations, and a proper
   # joint uniform prior for the correlation matrices.
   res <- .Fortran("estimate_bct_ordinal",
-                  postZmean=matrix(0,numcorr,1),
-                  postZcov=matrix(0,numcorr,numcorr),
+                  postZmean=matrix(0,nrow=numcorr,ncol=1),
+                  postZcov=matrix(0,nrow=numcorr,ncol=numcorr),
                   P=as.integer(P),
                   numcorr=as.integer(numcorr),
                   K=as.integer(K),
@@ -772,7 +773,7 @@ cor_test <- function(..., formula = NULL, iter = 5e3, burnin = 3e3, nugget.scale
                   samsize0=as.integer(samsize0),
                   burnin=as.integer(burnin),
                   Ntot=as.integer(Ntot),
-                  Njs=as.integer(ngroups),
+                  Njs_in=Njs,
                   Xgroups=Xgroups,
                   Ygroups=Ygroups,
                   C_quantiles=array(0,dim=c(numG,P,P,3)),
