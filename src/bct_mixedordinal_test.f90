@@ -142,7 +142,7 @@ subroutine estimate_bct_ordinal_test(postZmean, postZcov, P, numcorr, K, numG, B
         end do
     end do
 !
-
+    CDrawsStore(1,1,1,1:2) = (/1.0,2.0/)
 
 
 
