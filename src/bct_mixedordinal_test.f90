@@ -1,17 +1,8 @@
 
-!module rkinds
-!   use, intrinsic :: iso_c_binding
-!   private
-!   integer, parameter, public :: rint = c_int
-!   integer, parameter, public :: rdp = c_double
-!end module
-
 
 subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, sdHat, CHat, XtXi, samsize0, &
     burnin, Ntot, Njs_in, Xgroups, Ygroups, C_quantiles, sigma_quantiles, B_quantiles, BDrawsStore, &
     sigmaDrawsStore, CDrawsStore, sdMH, ordinal_in, Cat_in, maxCat, gLiuSab, seed, nuggetscale)
-!
-!    use rkinds, only: rint, rdp
 !
     implicit none
 !
