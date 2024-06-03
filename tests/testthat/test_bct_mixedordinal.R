@@ -34,7 +34,7 @@ ordi <- Cat <- matrix(as.double(c(0,0,0)),nrow=numG,ncol=P)
 gLiuSab <- array(as.double(rep(0,samsize0*numG*P)),dim=c(samsize0,numG,P))
 Njs <- matrix(as.double(Ntot),nrow=numG,ncol=1)
 
-res <- .Fortran("estimate_bct_ordinal",
+res <- .Fortran("estimate_bct_ordinal_test",
                 postZmean=matrix(as.double(rep(0,numcorr)),nrow=numcorr,ncol=1),
                 postZcov=matrix(as.double(rep(0,numcorr^2)),nrow=numcorr,ncol=numcorr),
                 P=as.integer(P),
