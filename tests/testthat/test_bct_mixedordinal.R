@@ -23,8 +23,8 @@ sdHat <- array(as.double(apply(data[,1:3],2,sd)),dim=c(numG,P))
 SigmaHat <- t(data[,1:3] - rep(1,Ntot)%*%t(BHat[1,1,]))%*%(data[,1:3] - rep(1,Ntot)%*%t(BHat[1,1,]))/(Ntot-1)
 CHat <- array(as.double(diag(1/sdHat[1,]) %*% SigmaHat %*% diag(1/sdHat[1,])),dim=c(numG,P,P))
 XtXi <- array(as.double(1/Ntot),dim=c(numG,K,K))
-burnin <- 1e1
-samsize0 <- 1e1
+burnin <- 1e2
+samsize0 <- 1e3
 Ygroups <- array(0,dim=c(numG,Ntot,P))
 Ygroups[1,,] <- as.double(data[,1:3])
 Xgroups <- array(as.double(1),dim=c(numG,Ntot,K))
@@ -66,7 +66,7 @@ res <- .Fortran("estimate_bct_ordinal",
                 nuggetscale = as.double(.995))
 print(res$CDrawsStore[1,1,,])
 cat(res$CDrawsStore[1:2,1,,])
-
+plot(res$CDrawsStore[,1,1,2])
 
 res <- cor_test_continuous(as.data.frame(data))
 print(res$corrdraws[[1]][1,1:3,1:3])
