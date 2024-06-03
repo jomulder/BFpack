@@ -660,6 +660,8 @@ cor_test <- function(..., formula = NULL, iter = 5e3, burnin = 3e3, nugget.scale
         }
       }
     }
+    ordi[gg,] <- as.double(ordi[gg,])
+    numcats[gg,] <- as.double(numcats[gg,])
   }
   #because ordinal variables are not yet supported we set these indicators to '0'
   #ordi <- numcats <- matrix(0,nrow=numG,ncol=P)
@@ -729,7 +731,7 @@ cor_test <- function(..., formula = NULL, iter = 5e3, burnin = 3e3, nugget.scale
       }
     }
     X_g <- YXlist[[g]][[2]]
-    Ygroups[g,1:ngroups[g],] <- Y_g
+    Ygroups[g,1:ngroups[g],] <- as.double(Y_g)
     #standardize data to get a more stable sampler for the correlations.
     tableX <- apply(X_g,2,table)
     catX <- unlist(lapply(1:length(tableX),function(xcol){
@@ -738,30 +740,30 @@ cor_test <- function(..., formula = NULL, iter = 5e3, burnin = 3e3, nugget.scale
     if(sum(catX>1)){
       X_g[1:ngroups[g],which(catX>1)] <- apply(as.matrix(X_g[1:ngroups[g],which(catX>1)]),2,scale)
     }
-    Xgroups[g,1:ngroups[g],] <- X_g
-    XtXi[g,,] <- solve(t(X_g)%*%X_g)
-    BHat[g,,] <- XtXi[g,,]%*%t(X_g)%*%Y_g
+    Xgroups[g,1:ngroups[g],] <- as.double(X_g)
+    XtXi[g,,] <- as.double(solve(t(X_g)%*%X_g))
+    BHat[g,,] <- as.double(XtXi[g,,]%*%t(X_g)%*%Y_g)
     SumSq[g,,] <- t(Y_g - X_g%*%BHat[g,,])%*%(Y_g - X_g%*%BHat[g,,])
     SumSqInv[g,,] <- solve(SumSq[g,,])
     Sigma_g <- SumSq[g,,]/ngroups[g]
-    sdHat[g,] <- sqrt(diag(Sigma_g))
-    CHat[g,,] <- diag(1/sdHat[g,])%*%Sigma_g%*%diag(1/sdHat[g,])
+    sdHat[g,] <- as.double(sqrt(diag(Sigma_g)))
+    CHat[g,,] <- as.double(diag(1/sdHat[g,])%*%Sigma_g%*%diag(1/sdHat[g,]))
     #get rough estimate of posterior sd of the standard deviations (used for random walk sd)
     drawsSigma_g <- rWishart(1e2,df=ngroups[g],Sigma=SumSqInv[g,,])
     sdsd[g,] <- unlist(lapply(1:P,function(p){
-      sd(sqrt(drawsSigma_g[p,p,]))
+      as.double(sd(sqrt(drawsSigma_g[p,p,])))
     }))
   }
   samsize0 <- iter
-  gLiuSab <- array(0,dim=c(samsize0,numG,P))
+  gLiuSab <- array(as.double(0),dim=c(samsize0,numG,P))
   Njs <- matrix(as.double(ngroups),nrow=numG,ncol=1)
 
   # call Fortran subroutine for Gibbs sampling using noninformative improper priors
   # for regression coefficients, Jeffreys priors for standard deviations, and a proper
   # joint uniform prior for the correlation matrices.
   res <- .Fortran("estimate_bct_ordinal",
-                  postZmean=matrix(0,nrow=numcorr,ncol=1),
-                  postZcov=matrix(0,nrow=numcorr,ncol=numcorr),
+                  postZmean=matrix(as.double(0),nrow=numcorr,ncol=1),
+                  postZcov=matrix(as.double(0),nrow=numcorr,ncol=numcorr),
                   P=as.integer(P),
                   numcorr=as.integer(numcorr),
                   K=as.integer(K),
@@ -776,19 +778,19 @@ cor_test <- function(..., formula = NULL, iter = 5e3, burnin = 3e3, nugget.scale
                   Njs_in=Njs,
                   Xgroups=Xgroups,
                   Ygroups=Ygroups,
-                  C_quantiles=array(0,dim=c(numG,P,P,3)),
-                  sigma_quantiles=array(0,dim=c(numG,P,3)),
-                  B_quantiles=array(0,dim=c(numG,K,P,3)),
-                  BDrawsStore=array(0,dim=c(samsize0,numG,K,P)),
-                  sigmaDrawsStore=array(0,dim=c(samsize0,numG,P)),
-                  CDrawsStore=array(0,dim=c(samsize0,numG,P,P)),
+                  C_quantiles=array(as.double(0),dim=c(numG,P,P,3)),
+                  sigma_quantiles=array(as.double(0),dim=c(numG,P,3)),
+                  B_quantiles=array(as.double(0),dim=c(numG,K,P,3)),
+                  BDrawsStore=array(as.double(0),dim=c(samsize0,numG,K,P)),
+                  sigmaDrawsStore=array(as.double(0),dim=c(samsize0,numG,P)),
+                  CDrawsStore=array(as.double(0),dim=c(samsize0,numG,P,P)),
                   sdMH=sdsd,
                   ordinal_in=ordi,
                   Cat_in=numcats,
                   maxCat=as.integer(max(numcats)),
                   gLiuSab=gLiuSab,
                   seed=as.integer(sample.int(1e6,1)),
-                  nuggetscale=nugget.scale)
+                  nuggetscale=as.double(nugget.scale))
 
   varnames <- lapply(1:numG,function(g){
     names(correlate[[g]])
