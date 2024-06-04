@@ -13,12 +13,12 @@ subroutine estimate_bct_ordinal_test(postZmean, postZcov, P, numcorr, K, numG, B
 !
     integer, intent(in) ::P, numcorr, K, numG, samsize0, burnin, Ntot, maxCat, seed
     double precision, intent(in) ::  BHat(numG,K,P), sdHat(numG,P), CHat(numG,P,P), XtXi(numG,K,K), Cat_in(numG,P), &
-                              sdMH(numG,P), Xgroups(numG,Ntot,K), Ygroups(numG,Ntot,P), ordinal_in(numG,P), &
+                              sdMH(numG,P), Ygroups(numG,Ntot,P), ordinal_in(numG,P), &
                               nuggetscale, Njs_in(numG,1)
     double precision, intent(inout)::  postZmean(numcorr,1), postZcov(numcorr,numcorr), B_quantiles(numG,K,P,3), &
                               C_quantiles(numG,P,P,3), sigma_quantiles(numG,P,3), BDrawsStore(samsize0,numG,K,P), &
                               sigmaDrawsStore(samsize0,numG,P), CDrawsStore(samsize0,numG,P,P), &
-                              gLiuSab(samsize0,numG,P)
+                              gLiuSab(samsize0,numG,P), Xgroups(numG,Ntot,K)
     double precision ::  BDraws(numG,K,P), CDraws(numG,P,P), sigmaDraws(numG,P), meanMat(Ntot,P), SigmaMatDraw(P,P), &
                   R_MH, covBeta(K*P,K*P), Ds(P,P), Ccan(P,P), CcanInv(P,P), Ccurr(P,P), epsteps(P,P), &
                   SS1(P,P), SS1inv(P,P), rnunif(1), errorMatj(P,P), sigma_can(P), aa, bb, &
@@ -106,10 +106,14 @@ subroutine estimate_bct_ordinal_test(postZmean, postZcov, P, numcorr, K, numG, B
         end do
         Njs(g1) = int(Njs_in(g1,1))
     end do
+    write(*,*)'Njs'
+    write(*,*)Njs
+    write(*,*)'Njs_in'
+    write(*,*)Njs_in
     do p1=1,P
         do g1=1,numG
             !initial values
-            if(ordinal(g1,p1)==1.0) then
+            if(ordinal(g1,p1)==1) then
                 sigmaDraws(g1,p1) = 1.0
                 sigma_quantiles(g1,p1,1) = 1.0
                 sigma_quantiles(g1,p1,2) = 1.0
@@ -119,7 +123,7 @@ subroutine estimate_bct_ordinal_test(postZmean, postZcov, P, numcorr, K, numG, B
     end do
 !
     !define nugget matrix to avoid approximate nonpositive definite correlation matrices for candidates
-    Cnugget = nuggetscale
+    Cnugget(1:P,1:P) = nuggetscale
     do p1=1,P
         Cnugget(p1,p1) = 1.0
     end do
@@ -156,11 +160,12 @@ subroutine estimate_bct_ordinal_test(postZmean, postZcov, P, numcorr, K, numG, B
         do g1 = 1,numG
 
             !compute means of latent W's for all observations
-            dummy_N_K(1:Njs(g1),1:K) = Xgroups(g1,1:Njs(g1),1:K)
-            dummy_K_P(1:K,1:P) = BDraws(g1,1:K,1:P)
+            !dummy_N_K(1:Njs(g1),1:K) = Xgroups(g1,1:Njs(g1),1:K)
+            !dummy_K_P(1:K,1:P) = BDraws(g1,1:K,1:P)
             !meanMat(1:Njs(g1),1:P) = matmul(dummy_N_K(1:Njs(g1),1:K),dummy_K_P)
-            meanMat(1:Njs(g1),1:P) = matmul(reshape(Xgroups(g1,1:Njs(g1),1:K),(/Njs(g1),K/)), &
-                reshape(BDraws(g1,1:K,1:P),(/K,P/)))
+            !meanMat(1:Njs(g1),1:P) = matmul(reshape(Xgroups(g1,1:Njs(g1),1:K),(/Njs(g1),K/)), &
+            !    reshape(BDraws(g1,1:K,1:P),(/K,P/)))
+            !meanMat(1:Njs(g1),1:P) = matmul(Xgroups(g1,1:Njs(g1),1:K), BDraws(g1,1:K,1:P))
             !Ccurr = CDraws(g1,:,:)
 
 
@@ -169,9 +174,17 @@ subroutine estimate_bct_ordinal_test(postZmean, postZcov, P, numcorr, K, numG, B
 !
     end do
 
-
+    write(*,*)'BDraws'
+    write(*,*)BDraws
+    write(*,*)'g1'
+    write(*,*)g1
+    write(*,*)'Njs'
+    write(*,*)Njs
 
     CDrawsStore(1,1,1,1:2) = (/1.0,2.0/)
+    BDrawsStore(1,1,1,1:P) = BDraws(1,1,1:P)
+    postZmean(1,1) = Xgroups(1,Njs(1),1)
+    postZmean(2,1) = Xgroups(1,1,1)
     !write(*,*)'Cmedians'
     !write(*,*)C_quantiles(1,1:3,1:3,2)
     !write(*,*)B_quantiles(1,1,1,1:3)

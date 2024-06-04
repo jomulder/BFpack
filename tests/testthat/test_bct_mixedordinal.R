@@ -64,6 +64,9 @@ res <- .Fortran("estimate_bct_ordinal_test",
                 gLiuSab=gLiuSab,
                 seed=as.integer( 121 ),
                 nuggetscale = as.double(.995))
+print(res$BDrawsStore[1,1,,])
+print(res$Xgroups)
+print(res$postZmean)
 print(res$CDrawsStore[1,1,,])
 cat(res$CDrawsStore[1:2,1,,])
 plot(res$CDrawsStore[,1,1,3])
