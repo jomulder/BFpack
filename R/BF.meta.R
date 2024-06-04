@@ -97,8 +97,11 @@ BF.rma.uni <- function(x,
     deltadraws_studies <- do.call(cbind,lapply(1:length(vi),function(s){
       var_s <- 1/(1/vi[s] + 1/tau2draws_trunc)
       mean_s <- (yi[s]/vi[s] + deltadraws_trunc/tau2draws_trunc) * var_s
-      c(rnorm(length(deltadraws),mean=mean_s,sd=sqrt(var_s)),rnorm(numzerotau2,mean=yi[s],sd=sqrt(vi[s])))
+      draws_s <- c(rnorm(length(deltadraws_trunc),mean=mean_s,sd=sqrt(var_s)),rnorm(numzerotau2,mean=yi[s],sd=sqrt(vi[s])))
+      c(draws_s,mean(draws_s),median(draws_s),quantile(draws_s,.025),quantile(draws_s,.975))
     }))
+    uncestimates <- rbind(uncestimates,t(deltadraws_studies[length(deltadraws)+1:4,]))
+    row.names(uncestimates)[-(1:2)] <- paste0("mu_",1:ncol(deltadraws_studies))
 
     ### Compute posterior probability of mu > 0 and mu < 0
     postdeltapositive <- mean(deltadraws>0)
