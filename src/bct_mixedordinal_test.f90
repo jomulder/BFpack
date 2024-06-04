@@ -155,6 +155,19 @@ subroutine estimate_bct_ordinal_test(postZmean, postZcov, P, numcorr, K, numG, B
             Ccurr = CDraws(g1,:,:)
             SigmaMatDraw = matmul(matmul(diag(sigmaDraws(g1,:),P),Ccurr),diag(sigmaDraws(g1,:),P))
 !
+            !
+            !sample W
+            !
+!
+            Bmean(1:K,1:P) = matmul(matmul(XtXi(g1,:,:),transpose(Xgroups(g1,1:Njs(g1),1:K))), &
+                Wgroups(g1,1:Njs(g1),1:P))
+            call kronecker(K,P,XtXi(g1,:,:),SigmaMatDraw,covBeta)
+
+            call setgmn(meanO,covBeta,P*K,para)
+            call GENMN(para,betaDrawj(1,1:(P*K)),P*K,iseed)
+            do p1 = 1,P
+                BDraws(g1,:,p1) = betaDrawj(1,((p1-1)*K+1):(p1*K)) + Bmean(1:K,p1)
+            end do
 
 
         end do
