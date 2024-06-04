@@ -7,8 +7,9 @@ subroutine estimate_bct_ordinal_test(postZmean, postZcov, P, numcorr, K, numG, B
 !
     implicit none
 !
-!    integer, parameter :: r15 = selected_real_kind(15)
-!    integer, parameter :: i6 = selected_int_kind(6)
+    integer, parameter :: r15 = selected_real_kind(15)
+    integer, parameter :: i6 = selected_int_kind(6)
+    !real(r15)
 !
     integer, intent(in) ::P, numcorr, K, numG, samsize0, burnin, Ntot, maxCat, seed
     double precision, intent(in) ::  BHat(numG,K,P), sdHat(numG,P), CHat(numG,P,P), XtXi(numG,K,K), Cat_in(numG,P), &
@@ -571,10 +572,10 @@ subroutine robust_covest(m, betas1, betas2, mn1, mn2, varb1, varb2, varb1b2Plus,
 
     !Declare local variables
     integer(i6), intent(in)  :: m
-    real(r15), intent(in)    :: betas1(m), betas2(m), mn1, mn2
-    real(r15), intent(out)   :: varb1, varb2, varb1b2Plus, varb1b2Min
+    double precision, intent(in)    :: betas1(m), betas2(m), mn1, mn2
+    double precision, intent(out)   :: varb1, varb2, varb1b2Plus, varb1b2Min
 
-    real(r15)                :: dummy1(m), dummy2(m), Phi075, xxx
+    double precision                :: dummy1(m), dummy2(m), Phi075, xxx
     integer(i6)              :: mmin, i
 !
     xxx=0.75
@@ -637,7 +638,7 @@ SUBROUTINE piksrt(n,arr)
   integer, parameter :: i6 = selected_int_kind(6)
 
   integer(i6) :: n, i,j
-  real(r15)   :: arr(n), a
+  double precision   :: arr(n), a
 
   do j=2, n
     a=arr(j)
@@ -660,8 +661,8 @@ function eye(n)
     integer, parameter :: i6 = selected_int_kind(6)
 
     integer(i6):: i,n
-    real(r15):: eye(n,n)
-    real(r15):: check(n,n)
+    double precision:: eye(n,n)
+    double precision:: check(n,n)
 
     check=0
     do i=1,n
@@ -683,8 +684,8 @@ subroutine kronecker(dimA,dimB,A,B,AB)
     integer, parameter :: i6 = selected_int_kind(6)
 !
     integer(i6), intent(in) :: dimA, dimB
-    real(r15), intent(in)   :: A(dimA,dimA), B(dimB,dimB) !dummy arguments
-    real(r15), intent(out)  :: AB(dimA*dimB,dimA*dimB) !output matrix of the kronecker product
+    double precision, intent(in)   :: A(dimA,dimA), B(dimB,dimB) !dummy arguments
+    double precision, intent(out)  :: AB(dimA*dimB,dimA*dimB) !output matrix of the kronecker product
     integer(i6)             :: i,j !loop counters
 !
     do i=1,dimA
@@ -704,8 +705,8 @@ function diag(A, n)
     integer, parameter :: i6 = selected_int_kind(6)
 
     integer(i6) :: n,i
-    real(r15)   :: A(n), check(n,n)
-    real(r15)   :: diag(n,n)
+    double precision   :: A(n), check(n,n)
+    double precision   :: diag(n,n)
 
     check = 0
     do i=1,n
@@ -726,7 +727,7 @@ function diagonals(A, n)
     integer, parameter :: i6 = selected_int_kind(6)
 
     integer(i6) :: n,i
-    real(r15)   :: A(n,n), diagonals(n), check(n)
+    double precision   :: A(n,n), diagonals(n), check(n)
 
     do i=1,n
         check(i)= A(i,i)
@@ -911,9 +912,9 @@ recursive function det(a,n,permanent) result(accumulation)
     integer, parameter :: i6 = selected_int_kind(6)
 
     integer(i6), intent(in) :: n, permanent
-    real(r15), dimension(n,n), intent(in) :: a
-    real(r15), dimension(n-1, n-1) :: b
-    real(r15) :: accumulation
+    double precision, dimension(n,n), intent(in) :: a
+    double precision, dimension(n-1, n-1) :: b
+    double precision :: accumulation
     integer(i6) :: i, sgn
 
     if (n .eq. 1) then
@@ -941,9 +942,9 @@ subroutine gen_wish(A,nu,B,P,iseed)
     !Declare local variables
 
     integer(i6), intent (in)    :: nu,P,iseed
-    real(r15), intent (in)    :: A(P,P)
-    real(r15), intent (out)   :: B(P,P)
-    real(r15)                 :: RNmat(nu,P),para((P*(P+3)/2) + 1),m0(P)
+    double precision, intent (in)    :: A(P,P)
+    double precision, intent (out)   :: B(P,P)
+    double precision                 :: RNmat(nu,P),para((P*(P+3)/2) + 1),m0(P)
     integer(i6)                 :: i
 !
     !sample from Wishart distribution as in Press (2005, p. 109)
@@ -1008,7 +1009,7 @@ SUBROUTINE setgmn(meanv,covm,p,parm)
       INTEGER(i6) p
 !     ..
 !     .. Array Arguments ..
-      REAL(r15) covm(p,p),meanv(p),parm(p*(p+3)/2+1)
+      double precision covm(p,p),meanv(p),parm(p*(p+3)/2+1)
 !     ..
 !     .. Local Scalars ..
       INTEGER(i6) i,icount,info,j
@@ -1106,12 +1107,12 @@ SUBROUTINE genmn(parm,x,p,iseed)
         integer, parameter :: i6 = selected_int_kind(6)
 
         integer(i6), intent(in) :: p, iseed
-        real(r15), intent(in) :: parm(p*(p+3)/2 + 1)
-        real(r15)             :: work(p)
-        real(r15), intent(out):: x(p)
+        double precision, intent(in) :: parm(p*(p+3)/2 + 1)
+        double precision             :: work(p)
+        double precision, intent(out):: x(p)
   !     ..
   !     .. Local Scalars ..
-        real(r15) ae
+        double precision ae
         integer(i6) :: i,icount,j
   !    ..
   !     .. External Functions ..
@@ -1157,7 +1158,7 @@ subroutine spofa(a,lda,n,info)
       integer, parameter :: i6 = selected_int_kind(6)
 
       integer(i6) ::lda,n,info
-      real(r15) :: a(lda,n)
+      double precision :: a(lda,n)
 
 !     spofa factors a real symmetric positive definite matrix.
 !
@@ -1199,8 +1200,8 @@ subroutine spofa(a,lda,n,info)
 !
 !     internal variables
 !
-      real(r15) t
-      real(r15) s
+      double precision t
+      double precision s
       integer(i6) :: j,jm1,k
 !     begin block with ...exits to 40
 !
@@ -1247,14 +1248,14 @@ FUNCTION sdot(N,SX,INCX,SY,INCY)
     INTEGER(i6) :: INCX,INCY,N
  !     ..
   !    .. Array Arguments ..
-    REAL(r15) :: SX(*),SY(*)
+    double precision :: SX(*),SY(*)
     real ( kind = r15 ) sdot
  !    ..
  !
  !  =====================================================================
  !
  !     .. Local Scalars ..
-    REAL(r15) :: STEMP
+    double precision :: STEMP
     INTEGER(i6) :: I,IX,IY,M,MP1
  !     ..
  !     .. Intrinsic Functions ..
@@ -1934,14 +1935,14 @@ SUBROUTINE FINDinv(matrix, inverse, n, errorflag)
 
     !Declarations
     INTEGER(i6), INTENT(IN) :: n
-    REAL(r15), INTENT(IN) :: matrix(n,n)  !Input matrix
+    double precision, INTENT(IN) :: matrix(n,n)  !Input matrix
     INTEGER(i6), INTENT(OUT) :: errorflag  !Return error status. -1 for error, 0 for normal
-    REAL(r15), INTENT(OUT) :: inverse(n,n) !Inverted matrix
+    double precision, INTENT(OUT) :: inverse(n,n) !Inverted matrix
 
     LOGICAL :: FLAG = .TRUE.
     INTEGER(i6) :: i, j, k
-    REAL(r15) :: m
-    REAL(r15), DIMENSION(n,2*n) :: augmatrix !augmented matrix
+    double precision :: m
+    double precision, DIMENSION(n,2*n) :: augmatrix !augmented matrix
 
     inverse = eye(n)
     !Augment input matrix with an identity matrix
