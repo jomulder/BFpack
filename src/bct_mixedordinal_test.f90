@@ -182,8 +182,8 @@ subroutine estimate_bct_ordinal_test(postZmean, postZcov, P, numcorr, K, numG, B
     write(*,*)Njs
 
     CDrawsStore(1,1,1,1:2) = (/1.0,2.0/)
-    BDrawsStore(1,1,1,1:P) = BDraws(1,1,1:P)
-    postZmean(1,1) = Xgroups(1,Njs(1),1)
+    BDrawsStore(1,1,1,1) = BDraws(1,1,1)
+    postZmean(1,1) = Xgroups(1,1,1)
     postZmean(2,1) = Xgroups(1,1,1)
     !write(*,*)'Cmedians'
     !write(*,*)C_quantiles(1,1:3,1:3,2)
