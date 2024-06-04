@@ -61,8 +61,8 @@ subroutine estimate_bct_ordinal_test(postZmean, postZcov, P, numcorr, K, numG, B
 !    write(*,*)Ntot
 !    write(*,*)'Njs_in'
 !    write(*,*)Njs_in
-!    write(*,*)'Xgroups'
-!    write(*,*)Xgroups
+    write(*,*)'Xgroups'
+    write(*,*)Xgroups
 !    write(*,*)'Ygroups'
 !    write(*,*)Ygroups
 !    write(*,*)'C_quantiles'
@@ -89,6 +89,10 @@ subroutine estimate_bct_ordinal_test(postZmean, postZcov, P, numcorr, K, numG, B
 !
     !initial posterior draws
     BDraws = BHat
+    write(*,*)'BHat'
+    write(*,*)BHat
+    write(*,*)'BDraws'
+    write(*,*)BDraws
     sigmaDraws = sdHat
     CDraws = CHat
     meanO = 0.0
@@ -154,7 +158,7 @@ subroutine estimate_bct_ordinal_test(postZmean, postZcov, P, numcorr, K, numG, B
             !compute means of latent W's for all observations
             dummy_N_K(1:Njs(g1),1:K) = Xgroups(g1,1:Njs(g1),1:K)
             dummy_K_P(1:K,1:P) = BDraws(g1,1:K,1:P)
-            meanMat(1:Njs(g1),1:P) = matmul(dummy_N_K(1:Njs(g1),1:K),dummy_K_P)
+            !meanMat(1:Njs(g1),1:P) = matmul(dummy_N_K(1:Njs(g1),1:K),dummy_K_P)
             !meanMat(1:Njs(g1),1:P) = matmul(Xgroups(g1,1:Njs(g1),1:K),BDraws(g1,1:K,1:P))
             !Ccurr = CDraws(g1,:,:)
 
