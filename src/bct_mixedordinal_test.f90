@@ -27,7 +27,8 @@ subroutine estimate_bct_ordinal_test(postZmean, postZcov, P, numcorr, K, numG, B
                   Wgroups(numG,Ntot,P), alphaMin, alphaMax, Cinv(P,P), Bmean(K,P), acceptLS(numG,P), &
                   alphaMat(numG,maxCat+1,P), Wdummy(numG,P,Ntot,maxCat), condMean, condVar, &
                   Zcorr_sample(samsize0,numcorr), dummy3(samsize0), dummy2(samsize0), &
-                  diffmat(Ntot,P), meanO(P*K), para((P*K)*((P*K)+3)/2 + 1), randraw, gLiuSab_curr(numG,P)
+                  diffmat(Ntot,P), meanO(P*K), para((P*K)*((P*K)+3)/2 + 1), randraw, gLiuSab_curr(numG,P), &
+                  dummy_N_K(Ntot,K), dummy_K_P(K,P)
     integer ::s1, g1, i1, corrteller, Cat(numG,P), ordinal(numG,P), Njs(numG), &
                   c1, c2, p1, Yi1Categorie, tellers(numG,maxCat,P), k1, p2, iseed, errorflag, &
                   lower_int, median_int, upper_int
@@ -151,6 +152,8 @@ subroutine estimate_bct_ordinal_test(postZmean, postZcov, P, numcorr, K, numG, B
         do g1 = 1,numG
 
             !compute means of latent W's for all observations
+            dummy_N_K(1:Njs(g1),1:K) = Xgroups(g1,1:Njs(g1),1:K)
+            dummy_K_P(1:K,1:P) = BDraws(g1,1:K,1:P)
             !meanMat(1:Njs(g1),1:P) = matmul(Xgroups(g1,1:Njs(g1),1:K),BDraws(g1,1:K,1:P))
             !Ccurr = CDraws(g1,:,:)
 
