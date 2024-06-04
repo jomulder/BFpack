@@ -150,7 +150,13 @@ subroutine estimate_bct_ordinal_test(postZmean, postZcov, P, numcorr, K, numG, B
         tellers = 0
         do g1 = 1,numG
 
-
+            !compute means of latent W's for all observations
+            meanMat(1:Njs(g1),1:P) = matmul(Xgroups(g1,1:Njs(g1),1:K),BDraws(g1,1:K,1:P))
+            Ccurr = CDraws(g1,:,:)
+            SigmaMatDraw = matmul(matmul(diag(sigmaDraws(g1,:),P),Ccurr),diag(sigmaDraws(g1,:),P))
+!
+            !draw latent W's for the ordinal Y's
+            !compute mean vector for
 
 
         end do
