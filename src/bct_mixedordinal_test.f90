@@ -40,7 +40,12 @@ subroutine estimate_bct_ordinal_test(postZmean, postZcov, P, numcorr, K, numG, B
     sigmaDrawsStore = 0
     gLiuSab_curr = 1.0
     !
-
+    do g1=1,numG
+        do p1=1,P
+            ordinal(g1,p1) = int(ordinal_in(g1,p1))
+            Cat(g1,p1) = int(Cat_in(g1,p1))
+        end do
+    end do
 !
 !
     !start Gibbs sampler
