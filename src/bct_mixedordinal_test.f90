@@ -46,6 +46,17 @@ subroutine estimate_bct_ordinal_test(postZmean, postZcov, P, numcorr, K, numG, B
             Cat(g1,p1) = int(Cat_in(g1,p1))
         end do
     end do
+    do p1=1,P
+        do g1=1,numG
+            !initial values
+            if(ordinal(g1,p1)==1) then
+                sigmaDraws(g1,p1) = 1.0
+                sigma_quantiles(g1,p1,1) = 1.0
+                sigma_quantiles(g1,p1,2) = 1.0
+                sigma_quantiles(g1,p1,3) = 1.0
+            end if
+        end do
+    end do
 !
 !
     !start Gibbs sampler
