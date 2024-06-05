@@ -91,7 +91,6 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
     CDraws = CHat
     meanO = 0.0
     gLiuSab_curr = 1.0
-    iseed = seed
 !
     do g1=1,numG
         do p1=1,P
@@ -103,7 +102,7 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
     do p1=1,P
         do g1=1,numG
             !initial values
-            if(ordinal(g1,p1)==1.0) then
+            if(ordinal(g1,p1)==1) then
                 sigmaDraws(g1,p1) = 1.0
                 sigma_quantiles(g1,p1,1) = 1.0
                 sigma_quantiles(g1,p1,2) = 1.0

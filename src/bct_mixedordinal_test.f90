@@ -21,10 +21,11 @@ subroutine estimate_bct_ordinal_test(postZmean, postZcov, P, numcorr, K, numG, B
                             CcanInv(P,P), SS1(P,P), rnunif(1), errorMatj(P,P), & !Ccurr(P,P), CcurrInv(P,P),
                             sigma_can(P), aa, bb, SigmaMat(P,P), R_MH, epsteps(P,P), diffmat(Ntot,P), & !logR_MH,
                             varz1, varz2, varz1z2Plus, varz1z2Min, Cinv(P,P), Zcorr_sample(samsize0,numcorr), &
-                            acceptSigma(numG,P), acceptC(numG), covBeta(P*K,P*K), betaDrawj(1,P*K), dummyPP(P,P), &
-                            dummy3(samsize0), dummy2(samsize0), meanO(P*K), para(((P*K)*((P*K)+3)/2 + 1)), SS2(P,P)
+                            acceptSigma(numG,P), covBeta(P*K,P*K), betaDrawj(1,P*K), dummyPP(P,P), &
+                            dummy3(samsize0), dummy2(samsize0), meanO(P*K), para(((P*K)*((P*K)+3)/2 + 1)), SS2(P,P), &
+                            gLiuSab_curr(numG,P), Cnugget(P,P), acceptSigma(numG,P), acceptLS(numG,P), sdMHg(numG,P)
     integer(i6)             :: s1, g1, i1, corrteller, c1, c2, p1, p2, k1, errorflag, lower_int, median_int, upper_int, &
-                               iseed
+                               iseed, ordinal(numG,P), Cat(numG,P)
 !
     !set seed
     iseed = seed
@@ -36,10 +37,36 @@ subroutine estimate_bct_ordinal_test(postZmean, postZcov, P, numcorr, K, numG, B
     meanO = 0
     gLiuSab = 0
     sigmaDrawsStore = 0
+    gLiuSab_curr = 1.0
+    !
+    do g1=1,numG
+        do p1=1,P
+            ordinal(g1,p1) = int(ordinal_in(g1,p1))
+            Cat(g1,p1) = int(Cat_in(g1,p1))
+        end do
+    end do
+    do p1=1,P
+        do g1=1,numG
+            !initial values
+            if(ordinal(g1,p1)==1) then
+                sigmaDraws(g1,p1) = 1.0
+                sigma_quantiles(g1,p1,1) = 1.0
+                sigma_quantiles(g1,p1,2) = 1.0
+                sigma_quantiles(g1,p1,3) = 1.0
+            end if
+        end do
+    end do
+!
+    !define nugget matrix to avoid approximate nonpositive definite correlation matrices for candidates
+    Cnugget = nuggetscale
+    do p1=1,P
+        Cnugget(p1,p1) = 1.0
+    end do
 !
     ! keep track of number of accepted draws in Metropolis-Hastings step
-    acceptC = 0
-    acceptSigma = 0
+    acceptSigma = 0.0
+    acceptLS = 0.0
+    sdMHg = .1 !for gLiuBanhatti parameter
 !
     !start Gibbs sampler
     do s1 = 1,samsize0
