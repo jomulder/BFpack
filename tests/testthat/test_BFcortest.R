@@ -23,7 +23,7 @@ BF2 <- BF(cor1,hypothesis="wt_with_drat<drat_with_hp<wt_with_hp;
    wt_with_drat=drat_with_hp<0<wt_with_hp")
 BFtable <- matrix(c(   0,    1.1,  5.62,
                       -1.1,    0,  4.6,
-                    -5.62, -4.6,  0),byrow=TRUE,nrow=3)
+                    -5.62, -4.6, 0),byrow=TRUE,nrow=3)
 test_that("BF.cor_test confirmatory hypotheses on correlations correctly evaluated", {
   expect_equivalent(
     log(BF2$BFmatrix_confirmatory),BFtable, tolerance = .5
