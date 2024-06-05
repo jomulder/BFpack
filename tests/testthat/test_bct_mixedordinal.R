@@ -26,44 +26,45 @@ XtXi <- array(as.double(1/Ntot),dim=c(numG,K,K))
 burnin <- 1e2
 samsize0 <- 1e3
 Ygroups <- array(0,dim=c(numG,Ntot,P))
-Ygroups[1,,] <- as.double(data[,1:3])
-Xgroups <- array(as.double(1),dim=c(numG,Ntot,K))
+Ygroups[1,,] <- round(data[,1:3],3)
+Xgroups <- array(1,dim=c(numG,Ntot,K))
 Njs <- as.double(Ntot)
 sdMH <- array(as.double(apply(Ygroups[1,,],2,sd)/sqrt(nrow(Ygroups[1,,]))),dim=c(numG,P))
-ordi <- Cat <- matrix(as.double(c(0,0,0)),nrow=numG,ncol=P)
-gLiuSab <- array(as.double(rep(0,samsize0*numG*P)),dim=c(samsize0,numG,P))
+ordi <- Cat <- matrix(0,nrow=numG,ncol=P)
+gLiuSab <- array(0,dim=c(samsize0,numG,P))
 Njs <- matrix(as.double(Ntot),nrow=numG,ncol=1)
 
 res <- .Fortran("estimate_bct_ordinal_test",
-                postZmean=matrix(as.double(rep(0,numcorr)),nrow=numcorr,ncol=1),
-                postZcov=matrix(as.double(rep(0,numcorr^2)),nrow=numcorr,ncol=numcorr),
+                postZmean=matrix(0,nrow=numcorr,ncol=1),
+                postZcov=matrix(0,nrow=numcorr,ncol=numcorr),
                 P=as.integer(P),
                 numcorr=as.integer(numcorr),
                 K=as.integer(K),
                 numG=as.integer(numG),
-                BHat=BHat,
-                sdHat=sdHat,
-                CHat=CHat,
+                BHat=round(BHat,3),
+                sdHat=round(sdHat,3),
+                CHat=round(CHat,3),
                 XtXi=XtXi,
                 samsize0=as.integer(samsize0),
                 burnin=as.integer(burnin),
                 Ntot=as.integer(Ntot),
-                Njs_in=Njs,
+                Njs=as.integer(Njs),
                 Xgroups=Xgroups,
                 Ygroups=Ygroups,
-                C_quantiles=array(as.double(rep(0,numG*P*P*3)),dim=c(numG,P,P,3)),
-                sigma_quantiles=array(as.double(rep(0,numG*P*3)),dim=c(numG,P,3)),
-                B_quantiles=array(as.double(rep(0,numG*K*P*3)),dim=c(numG,K,P,3)),
-                BDrawsStore=array(as.double(rep(0,samsize0*numG*K*P)),dim=c(samsize0,numG,K,P)),
-                sigmaDrawsStore=array(as.double(rep(0,samsize0*numG*P)),dim=c(samsize0,numG,P)),
-                CDrawsStore=array(as.double(rep(0,samsize0*numG*P*P)),dim=c(samsize0,numG,P,P)),
+                C_quantiles=array(0,dim=c(numG,P,P,3)),
+                sigma_quantiles=array(0,dim=c(numG,P,3)),
+                B_quantiles=array(0,dim=c(numG,K,P,3)),
+                BDrawsStore=array(0,dim=c(samsize0,numG,K,P)),
+                sigmaDrawsStore=array(0,dim=c(samsize0,numG,P)),
+                CDrawsStore=array(0,dim=c(samsize0,numG,P,P)),
                 sdMH=sdMH,
                 ordinal_in=ordi,
                 Cat_in=Cat,
                 maxCat=as.integer(max(Cat)),
                 gLiuSab=gLiuSab,
                 seed=as.integer( 121 ),
-                nuggetscale = as.double(.995))
+                nuggetscale = round(.995,3)
+)
 print(res$BDrawsStore[1,1,,])
 print(res$Xgroups)
 print(res$postZmean)

@@ -2,435 +2,170 @@
 
 
 subroutine estimate_bct_ordinal_test(postZmean, postZcov, P, numcorr, K, numG, BHat, sdHat, CHat, XtXi, samsize0, &
-    burnin, Ntot, Njs_in, Xgroups, Ygroups, C_quantiles, sigma_quantiles, B_quantiles, BDrawsStore, &
+    burnin, Ntot, Njs, Xgroups, Ygroups, C_quantiles, sigma_quantiles, B_quantiles, BDrawsStore, &
     sigmaDrawsStore, CDrawsStore, sdMH, ordinal_in, Cat_in, maxCat, gLiuSab, seed, nuggetscale)
 !
     implicit none
-!
+
     integer, parameter :: r15 = selected_real_kind(15)
     integer, parameter :: i6 = selected_int_kind(6)
-    !real(r15)
-!
-    integer, intent(in) ::P, numcorr, K, numG, samsize0, burnin, Ntot, maxCat, seed
-    double precision, intent(in) ::  BHat(numG,K,P), sdHat(numG,P), CHat(numG,P,P), XtXi(numG,K,K), Cat_in(numG,P), &
-                              sdMH(numG,P), Ygroups(numG,Ntot,P), ordinal_in(numG,P), &
-                              nuggetscale, Njs_in(numG,1)
-    double precision, intent(inout)::  postZmean(numcorr,1), postZcov(numcorr,numcorr), B_quantiles(numG,K,P,3), &
-                              C_quantiles(numG,P,P,3), sigma_quantiles(numG,P,3), BDrawsStore(samsize0,numG,K,P), &
-                              sigmaDrawsStore(samsize0,numG,P), CDrawsStore(samsize0,numG,P,P), &
-                              gLiuSab(samsize0,numG,P), Xgroups(numG,Ntot,K)
-    double precision ::  BDraws(numG,K,P), CDraws(numG,P,P), sigmaDraws(numG,P), meanMat(Ntot,P), SigmaMatDraw(P,P), &
-                  R_MH, covBeta(K*P,K*P), Ds(P,P), Ccan(P,P), CcanInv(P,P), Ccurr(P,P), epsteps(P,P), &
-                  SS1(P,P), SS1inv(P,P), rnunif(1), errorMatj(P,P), sigma_can(P), aa, bb, &
-                  betaDrawj(1,P*K), acceptSigma(numG,P), dummyPP(P,P), dummyPPinv(P,P), &
-                  varz1, varz2, varz1z2Plus, varz1z2Min, Cnugget(P,P), SigmaInv(P,P), sdMHg(numG,P), gLiuSab_can, &
-                  Wgroups(numG,Ntot,P), alphaMin, alphaMax, Cinv(P,P), Bmean(K,P), acceptLS(numG,P), &
-                  alphaMat(numG,maxCat+1,P), Wdummy(numG,P,Ntot,maxCat), condMean, condVar, &
-                  Zcorr_sample(samsize0,numcorr), dummy3(samsize0), dummy2(samsize0), &
-                  diffmat(Ntot,P), meanO(P*K), para((P*K)*((P*K)+3)/2 + 1), randraw, gLiuSab_curr(numG,P), &
-                  dummy_N_K(Ntot,K), dummy_K_P(K,P)
-    integer ::s1, g1, i1, corrteller, Cat(numG,P), ordinal(numG,P), Njs(numG), &
-                  c1, c2, p1, Yi1Categorie, tellers(numG,maxCat,P), k1, p2, iseed, errorflag, &
-                  lower_int, median_int, upper_int
-!
-!    write(*,*)'postZmean'
-!    write(*,*)postZmean
-!    write(*,*)'postZcov'
-!    write(*,*)postZcov
-!    write(*,*)'P'
-!    write(*,*)P
-!    write(*,*)'numcorr'
-!    write(*,*)numcorr
-!    write(*,*)'K'
-!    write(*,*)K
-!    write(*,*)'numG'
-!    write(*,*)numG
-!    write(*,*)'BHat'
-!    write(*,*)BHat
-!    write(*,*)'sdHat'
-!    write(*,*)sdHat
-!    write(*,*)'CHat'
-!    write(*,*)CHat
-!    write(*,*)'XtXi'
-!    write(*,*)XtXi
-!    write(*,*)'samsize0'
-!    write(*,*)samsize0
-!    write(*,*)'burnin'
-!    write(*,*)burnin
-!    write(*,*)'Ntot'
-!    write(*,*)Ntot
-!    write(*,*)'Njs_in'
-!    write(*,*)Njs_in
-    write(*,*)'Xgroups'
-    write(*,*)Xgroups
-!    write(*,*)'Ygroups'
-!    write(*,*)Ygroups
-!    write(*,*)'C_quantiles'
-!    write(*,*)C_quantiles
-!    write(*,*)'sigma_quantiles'
-!    write(*,*)sigma_quantiles
-!    write(*,*)'B_quantiles'
-!    write(*,*)B_quantiles
-!    write(*,*)'sdMH'
-!    write(*,*)sdMH
-!    write(*,*)'ordinal_in'
-!    write(*,*)ordinal_in
-!    write(*,*)'Cat_in'
-!    write(*,*)Cat_in
-!    write(*,*)'maxCat'
-!    write(*,*)maxCat
-!    write(*,*)'seed'
-!    write(*,*)seed
-!    write(*,*)'nuggetscale'
-!    write(*,*)nuggetscale
 
-!   set seed
+    integer(i6), intent(in) :: P, numcorr, K, numG, samsize0, Ntot, seed, maxCat, Njs(numG), burnin
+    real(r15), intent(in)   :: BHat(numG,K,P), sdHat(numG,P), CHat(numG,P,P), XtXi(numG,K,K), Ygroups(numG,Ntot,P), &
+                               Xgroups(numG,Ntot,K), sdMH(numG,P), ordinal_in(numG,P), nuggetscale, &
+                               Cat_in(numG,P)
+    real(r15), intent(out)  :: postZmean(numcorr,1), postZcov(numcorr,numcorr), B_quantiles(numG,K,P,3), &
+                               C_quantiles(numG,P,P,3), sigma_quantiles(numG,P,3), BDrawsStore(samsize0,numG,K,P), &
+                               sigmaDrawsStore(samsize0,numG,P), CDrawsStore(samsize0,numG,P,P), gLiuSab(samsize0,numG,P)
+    real(r15)               :: BDraws(numG,K,P), sigmaDraws(numG,P), CDraws(numG,P,P), Ccan(P,P), Ds(P,P), dummyPP2(P,P), &
+                            CcanInv(P,P), SS1(P,P), rnunif(1), errorMatj(P,P), & !Ccurr(P,P), CcurrInv(P,P),
+                            sigma_can(P), aa, bb, SigmaMat(P,P), R_MH, epsteps(P,P), diffmat(Ntot,P), & !logR_MH,
+                            varz1, varz2, varz1z2Plus, varz1z2Min, Cinv(P,P), Zcorr_sample(samsize0,numcorr), &
+                            acceptSigma(numG,P), acceptC(numG), covBeta(P*K,P*K), betaDrawj(1,P*K), dummyPP(P,P), &
+                            dummy3(samsize0), dummy2(samsize0), meanO(P*K), para(((P*K)*((P*K)+3)/2 + 1)), SS2(P,P)
+    integer(i6)             :: s1, g1, i1, corrteller, c1, c2, p1, p2, k1, errorflag, lower_int, median_int, upper_int, &
+                               iseed
+!
+    !set seed
     iseed = seed
 !
-    !initial posterior draws
+    !initial posterior draws start at MLEs
     BDraws = BHat
-    write(*,*)'BHat'
-    write(*,*)BHat
-    write(*,*)'BDraws'
-    write(*,*)BDraws
-    sigmaDraws = sdHat
+    sigmaDraws = sdHat(1:numG,:)
     CDraws = CHat
-    meanO = 0.0
-    gLiuSab_curr = 1.0
-    iseed = seed
+    meanO = 0
+    gLiuSab = 0
+    sigmaDrawsStore = 0
 !
-    do g1=1,numG
-        do p1=1,P
-            ordinal(g1,p1) = int(ordinal_in(g1,p1))
-            Cat(g1,p1) = int(Cat_in(g1,p1))
-        end do
-        Njs(g1) = int(Njs_in(g1,1))
-    end do
-    write(*,*)'Njs'
-    write(*,*)Njs
-    write(*,*)'Njs_in'
-    write(*,*)Njs_in
-    do p1=1,P
-        do g1=1,numG
-            !initial values
-            if(ordinal(g1,p1)==1) then
-                sigmaDraws(g1,p1) = 1.0
-                sigma_quantiles(g1,p1,1) = 1.0
-                sigma_quantiles(g1,p1,2) = 1.0
-                sigma_quantiles(g1,p1,3) = 1.0
-            end if
-        end do
-    end do
+    ! keep track of number of accepted draws in Metropolis-Hastings step
+    acceptC = 0
+    acceptSigma = 0
 !
-    !define nugget matrix to avoid approximate nonpositive definite correlation matrices for candidates
-    Cnugget(1:P,1:P) = nuggetscale
-    do p1=1,P
-        Cnugget(p1,p1) = 1.0
-    end do
-!
-    !count number of accepted draws for R (over all groups)
-    acceptSigma = 0.0
-    acceptLS = 0.0
-    sdMHg = .1 !for gLiuBanhatti parameter
-!
-    !initial values for latent W's corresponding to ordinal DVs
-    Wgroups = Ygroups
-    Wdummy = 0.0
-!
-    !initial values of boundary values alpha to link between ordinal Y and continuous latent W
-    alphaMat = 0.0
-    alphaMat(:,1,:) = -1e10  !alpha0
-    alphaMat(:,2,:) = 0.0      !alpha1
-    do p1=1,P
-        do g1=1,numG
-            if(ordinal(g1,p1)>0) then
-                do c1=3,Cat(g1,p1)
-                    alphaMat(g1,c1,p1) = .3*(real(c1)-2.0)
-                end do
-                alphaMat(g1,Cat(g1,p1)+1,p1) = 1e10
-            end if
-        end do
-    end do
-!
-!    write(*,*)'sampling for burn-in period'
     !start Gibbs sampler
-    do s1 = 1,burnin
+    do s1 = 1,samsize0
+
         corrteller = 0
-        tellers = 0
+
         do g1 = 1,numG
 
-            !compute means of latent W's for all observations
-            !dummy_N_K(1:Njs(g1),1:K) = Xgroups(g1,1:Njs(g1),1:K)
-            !dummy_K_P(1:K,1:P) = BDraws(g1,1:K,1:P)
-            !meanMat(1:Njs(g1),1:P) = matmul(dummy_N_K(1:Njs(g1),1:K),dummy_K_P)
-            !meanMat(1:Njs(g1),1:P) = matmul(reshape(Xgroups(g1,1:Njs(g1),1:K),(/Njs(g1),K/)), &
-            !    reshape(BDraws(g1,1:K,1:P),(/K,P/)))
-            !meanMat(1:Njs(g1),1:P) = matmul(Xgroups(g1,1:Njs(g1),1:K), BDraws(g1,1:K,1:P))
-            !Ccurr = CDraws(g1,:,:)
+            !draw B
+            SigmaMat = matmul(matmul(diag(sigmaDraws(g1,:),P),CDraws(g1,:,:)),diag(sigmaDraws(g1,:),P))
+            call kronecker(K,P,XtXi(g1,:,:),SigmaMat,covBeta)
 
+            call setgmn(meanO,covBeta,P*K,para)
+            call GENMN(para,betaDrawj(1,1:(P*K)),P*K,iseed)
+            do p1 = 1,P
+                BDraws(g1,:,p1) = betaDrawj(1,((p1-1)*K+1):(p1*K)) + BHat(g1,:,p1)
+            end do
+            !BDraws = BHat
+            !write(*,*)'burnin BHat',s1,g1,2
+            !write(*,*)BHat(1,1,1)
+            !write(*,*)'burnin BDraws',s1,g1,3
+            !write(*,*)BDraws(g1,1,:)
 
-
+            !draw candidate draw for the correlation matrix
+            diffmat(1:Njs(g1),1:P) = Ygroups(g1,1:Njs(g1),1:P) - matmul(Xgroups(g1,1:Njs(g1),1:K),BDraws(g1,1:K,1:P))
+            !write(*,*)'diffmat'
+            !write(*,*)diffmat(1,:)
+            errorMatj = matmul(transpose(diffmat(1:Njs(g1),1:P)),diffmat(1:Njs(g1),1:P))
+            Ds = diag(1/sqrt(diagonals(errorMatj,P)),P)
+            diffmat(1:Njs(g1),1:P) = matmul(diffmat(1:Njs(g1),1:P),Ds) !diffmat is now epsilon in LD
+            epsteps = matmul(transpose(diffmat(1:Njs(g1),1:P)),diffmat(1:Njs(g1),1:P))
+            SS1 = matmul(matmul(diag(1/sigmaDraws(g1,:),P),epsteps),diag(1/sigmaDraws(g1,:),P))
+            call FINDInv(SS1,SS2,P,errorflag)
+            call gen_wish(SS2,Njs(g1)-P-1,dummyPP2,P,iseed)
+            call FINDInv(dummyPP2,dummyPP,P,errorflag)
+            Ccan = matmul(matmul(diag(1/sqrt(diagonals(dummyPP,P)),P),dummyPP),diag(1/sqrt(diagonals(dummyPP,P)),P))
+            !write(*,*)'Ccan'
+            !write(*,*)Ccan
+            call FINDInv(Ccan,CcanInv,P,errorflag)
+            Cinv = CcanInv
+            CDraws(g1,:,:) = Ccan(:,:)
+            do i1 = 1,P-1 !keep Fisher z transformed posterior draws of rho's
+                Zcorr_sample(s1,(corrteller+1):(corrteller+P-i1)) = .5*log((1+CDraws(g1,(1+i1):P,i1))/ &
+                    (1-CDraws(g1,(1+i1):P,i1)))
+                corrteller = corrteller + (P - i1)
+            end do
+!
+            do p1 = 1,P
+                bb = sum(errorMatj(p1,:)*Cinv(p1,:)/sigmaDraws(g1,:)) - errorMatj(p1,p1)*Cinv(p1,p1)/sigmaDraws(g1,p1)
+                aa = Cinv(p1,p1)*errorMatj(p1,p1)
+                sigma_can(p1) = rnormal(iseed)
+                sigma_can(p1) = sigma_can(p1)*sdMH(g1,p1) + sigmaDraws(g1,p1) !random walk
+                R_MH = exp((-real(Njs(g1))+1.0)*(log(sigma_can(p1))-log(sigmaDraws(g1,p1)) ) &
+                       -.5*aa*(1.0/sigma_can(p1)**2 - 1.0/sigmaDraws(g1,p1)**2) &
+                       -bb*(1.0/sigma_can(p1) - 1.0/sigmaDraws(g1,p1)))
+                !call random_number(rnunif)
+                rnunif = runiform ( iseed )
+                if(rnunif(1) < R_MH .and. sigma_can(p1)>0) then
+                    sigmaDraws(g1,p1) = sigma_can(p1)
+                    acceptSigma(g1,p1) = acceptSigma(g1,p1) + 1
+                end if
+            end do
         end do
 !
+        !store posterior draws
+        BDrawsStore(s1,1:numG,1:K,1:P) = BDraws(1:numG,1:K,1:P)
+        sigmaDrawsStore(s1,1:numG,1:P) = sigmaDraws(1:numG,1:P)
+        CDrawsStore(s1,1:numG,1:P,1:P) = CDraws(1:numG,1:P,1:P)
+    end do
+!
+    ! compute posterior mean
+    do c1=1,numcorr
+        dummy2(:) = Zcorr_sample(:,c1)
+        dummy3 = dummy2
+        call piksrt(samsize0,dummy3)
+        postZmean(c1,1) = dummy3(int(samsize0*.5))
+    end do
+!
+    ! compute posterior covariance matrix
+    do c1=1,numcorr
+        do c2=c1,numcorr
+            call robust_covest(samsize0, Zcorr_sample(1:samsize0,c1), Zcorr_sample(1:samsize0,c2), postZmean(c1,1), &
+                postZmean(c2,1), varz1, varz2, varz1z2Plus, varz1z2Min)
+            postZcov(c1,c2) = (varz1*varz2)**.5 * (varz1z2Plus - varz1z2Min)/(varz1z2Plus + varz1z2Min)
+            postZcov(c2,c1) = postZcov(c1,c2)
+        end do
+    end do
+!
+    ! compute posterior quantiles
+    lower_int = int(samsize0*.025)
+    median_int = int(samsize0*.5)
+    upper_int = int(samsize0*.975)
+    C_quantiles = 0
+    do g1=1,numG
+        do p1=1,P
+            !for the sigma's
+            dummy2(:) = sigmaDrawsStore(:,g1,p1)
+            dummy3=dummy2
+            call piksrt(samsize0,dummy3)
+            sigma_quantiles(g1,p1,1) = dummy3(lower_int)
+            sigma_quantiles(g1,p1,2) = dummy3(median_int)
+            sigma_quantiles(g1,p1,3) = dummy3(upper_int)
+            !for the beta coefficients
+            do k1=1,K
+                dummy2(:) = BDrawsStore(:,g1,k1,p1)
+                dummy3 = dummy2
+                call piksrt(samsize0,dummy3)
+                B_quantiles(g1,k1,p1,1) = dummy3(lower_int)
+                B_quantiles(g1,k1,p1,2) = dummy3(median_int)
+                B_quantiles(g1,k1,p1,3) = dummy3(upper_int)
+            end do
+            if(p1>1)then
+                do p2=1,p1-1
+                    dummy2(:) = CDrawsStore(:,g1,p1,p2)
+                    dummy3 = dummy2
+                    call piksrt(samsize0,dummy3)
+                    C_quantiles(g1,p1,p2,1) = dummy3(lower_int)
+                    C_quantiles(g1,p1,p2,2) = dummy3(median_int)
+                    C_quantiles(g1,p1,p2,3) = dummy3(upper_int)
+                end do
+            end if
+        end do
     end do
 
-    write(*,*)'BDraws'
-    write(*,*)BDraws
-    write(*,*)'g1'
-    write(*,*)g1
-    write(*,*)'Njs'
-    write(*,*)Njs
-
-    !CDrawsStore(1,1,1,1:2) = (/1.0,2.0/)
-    !BDrawsStore(1,1,1,1) = BDraws(1,1,1)
-    !postZmean(1,1) = Xgroups(1,1,1)
-    !postZmean(2,1) = Xgroups(1,1,1)
-    !write(*,*)'Cmedians'
-    !write(*,*)C_quantiles(1,1:3,1:3,2)
-    !write(*,*)B_quantiles(1,1,1,1:3)
-    !write(*,*)sigma_quantiles(1,1,1:3)
-
-    !write(*,*)'end'
 
 contains
-
-
-
-subroutine robust_covest(m, betas1, betas2, mn1, mn2, varb1, varb2, varb1b2Plus, varb1b2Min)
-
-    implicit none
-!
-    integer, parameter :: r15 = selected_real_kind(15)
-    integer, parameter :: i6 = selected_int_kind(6)
-
-    !Declare local variables
-    integer, intent(in)  :: m
-    double precision, intent(in)    :: betas1(m), betas2(m), mn1, mn2
-    double precision, intent(out)   :: varb1, varb2, varb1b2Plus, varb1b2Min
-
-    double precision                :: dummy1(m), dummy2(m), Phi075, xxx
-    integer              :: mmin, i
-!
-    xxx=0.75
-    Phi075 = dinvnr(xxx)
-    mmin = 0
-!
-    !robust variance estimators of beta1 and beta2
-
-    dummy1=abs(betas1 - mn1)
-    call piksrt(m,dummy1)
-    do i=1,m
-        if(dummy1(i)>0) then
-            mmin = i
-            exit
-        end if
-    end do
-    varb1 = ((dummy1(int(mmin+(m-mmin)*.5)) + dummy1(int(mmin+(m-mmin)*.5+1)))*.5/Phi075)**2.0
-    dummy1=abs(betas2 - mn2)
-    call piksrt(m,dummy1)
-    do i=1,m
-        if(dummy1(i)>0) then
-            mmin = i
-            exit
-        end if
-    end do
-    varb2 = ((dummy1(int(mmin+(m-mmin)*.5)) + dummy1(int(mmin+(m-mmin)*.5+1)))*.5/Phi075)**2.0
-!
-    !robust variance estimators of beta1 + beta2
-    dummy2 = betas1 + betas2
-    dummy1=abs(dummy2 - mn1 - mn2)
-    call piksrt (m,dummy1)
-    do i=1,m
-        if(dummy1(i)>0) then
-            mmin = i
-            exit
-        end if
-    end do
-    varb1b2Plus = ((dummy1(int(mmin+(m-mmin)*.5)) + dummy1(int(mmin+(m-mmin)*.5+1)))*.5/Phi075)**2.0
-!
-    !robust variance estimators of beta1 - beta2
-    dummy2 = betas1 - betas2
-    dummy1= abs(dummy2 - mn1 + mn2)
-    call piksrt(m,dummy1)
-    do i=1,m
-        if(dummy1(i)>0) then
-            mmin = i
-            exit
-        end if
-    end do
-    varb1b2Min = ((dummy1(int(mmin+(m-mmin)*.5)) + dummy1(int(mmin+(m-mmin)*.5+1)))*.5/Phi075)**2.0
-!
-end subroutine
-
-
-SUBROUTINE piksrt(n,arr)
-
-  implicit none
-
-  integer, parameter :: r15 = selected_real_kind(15)
-  integer, parameter :: i6 = selected_int_kind(6)
-
-  integer :: n, i,j
-  double precision   :: arr(n), a
-
-  do j=2, n
-    a=arr(j)
-    do i=j-1,1,-1
-      if (arr(i)<=a) goto 10
-      arr(i+1)=arr(i)
-    end do
-  i=0
-10  arr(i+1)=a
-  end do
-  return
-END SUBROUTINE
-
-
-function eye(n)
-
-    implicit none
-
-    integer, parameter :: r15 = selected_real_kind(15)
-    integer, parameter :: i6 = selected_int_kind(6)
-
-    integer:: i,n
-    double precision:: eye(n,n)
-    double precision:: check(n,n)
-
-    check=0
-    do i=1,n
-        check(i,i)= 1
-    enddo
-
-    eye(:,:)=check(:,:)
-    return
-
-end function eye
-
-
-
-subroutine kronecker(dimA,dimB,A,B,AB)
-!
-    implicit none
-!
-    integer, parameter :: r15 = selected_real_kind(15)
-    integer, parameter :: i6 = selected_int_kind(6)
-!
-    integer, intent(in) :: dimA, dimB
-    double precision, intent(in)   :: A(dimA,dimA), B(dimB,dimB) !dummy arguments
-    double precision, intent(out)  :: AB(dimA*dimB,dimA*dimB) !output matrix of the kronecker product
-    integer             :: i,j !loop counters
-!
-    do i=1,dimA
-        do j=1,dimA
-            AB((1+dimB*(i-1)):(dimB+dimB*(i-1)),(1+dimB*(j-1)):(dimB+dimB*(j-1))) = A(i,j)*B(:,:)
-        end do
-    end do
-!
-end subroutine kronecker
-
-
-function diag(A, n)
-
-    implicit none
-!
-    integer, parameter :: r15 = selected_real_kind(15)
-    integer, parameter :: i6 = selected_int_kind(6)
-
-    integer :: n,i
-    double precision   :: A(n), check(n,n)
-    double precision   :: diag(n,n)
-
-    check = 0
-    do i=1,n
-        check(i,i)=A(i)
-    end do
-    diag(:,:)=check(:,:)
-
-    return
-
-end function diag
-
-
-function diagonals(A, n)
-
-    implicit none
-!
-    integer, parameter :: r15 = selected_real_kind(15)
-    integer, parameter :: i6 = selected_int_kind(6)
-
-    integer :: n,i
-    double precision   :: A(n,n), diagonals(n), check(n)
-
-    do i=1,n
-        check(i)= A(i,i)
-    enddo
-    diagonals(:)=check(:)
-
-    return
-
-end function diagonals
-
-
-
-function rnormal (iseed)
-
-!*****************************************************************************80
-!
-!! RNORMAL returns a unit pseudonormal R8.
-!
-!  Discussion:
-!
-!    The standard normal probability distribution function (PDF) has
-!    mean 0 and standard deviation 1.
-!
-!  Licensing:
-!
-!    This code is distributed under the GNU LGPL license.
-!
-!  Modified:
-!
-!    06 August 2013
-!
-!  Author:
-!
-!    John Burkardt
-!
-!  Parameters:
-!
-!
-!    Output, real ( kind = 8 ) RNORMAL, a normally distributed
-!    random value.
-!
-  implicit none
-!
-  integer, parameter :: r15 = selected_real_kind(15)
-  integer, parameter :: i6 = selected_int_kind(6)
-
-  real ( kind = r15 ) r1
-  real ( kind = r15 ) r2
-  real ( kind = r15 ) r3
-  real ( kind = r15 ) rnormal
-  real ( kind = r15 ), parameter :: pi = 3.141592653589793D+00
-  !real ( kind = r15 ) GG
-  real ( kind = r15 ) x
-  integer ( kind = i6 ) iseed
-
-  !nseed = 1344
-  r1 = runiform(iseed)
-  r2 = runiform(iseed)
-  r3 = runiform(iseed)
-  !PRINT*, iseed, r1, r2, r3
-  !call random_number(GG)
-  !r1 = GG
-  !call random_number(GG)
-  !r2 = GG
-  x = sqrt ( - 2.0D+00 * log ( r3 ) ) * cos ( 2.0D+00 * pi * r2 )
-
-  rnormal = x
-
-  return
-end function rnormal
 
 
 function runiform ( iseed )
@@ -512,7 +247,7 @@ function runiform ( iseed )
 !    strictly between 0 and 1.
 !
   implicit none
-!
+
   integer, parameter :: r15 = selected_real_kind(15)
   integer, parameter :: i6 = selected_int_kind(6)
 
@@ -532,705 +267,7 @@ function runiform ( iseed )
   runiform = real ( iseed, kind = r15 ) * 4.656612875D-10
 
 return
-end function runiform
-
-
-recursive function det(a,n,permanent) result(accumulation)
-    ! setting permanent to 1 computes the permanent.
-    ! setting permanent to -1 computes the determinant.
-
-    implicit none
-!
-    integer, parameter :: r15 = selected_real_kind(15)
-    integer, parameter :: i6 = selected_int_kind(6)
-
-    integer, intent(in) :: n, permanent
-    double precision, dimension(n,n), intent(in) :: a
-    double precision, dimension(n-1, n-1) :: b
-    double precision :: accumulation
-    integer :: i, sgn
-
-    if (n .eq. 1) then
-      accumulation = a(1,1)
-    else
-      accumulation = 0
-      sgn = 1
-      do i=1, n
-        b(:, :(i-1)) = a(2:, :i-1)
-        b(:, i:) = a(2:, i+1:)
-        accumulation = accumulation + sgn * a(1, i) * det(b, n-1, permanent)
-        sgn = sgn * permanent
-      enddo
-    endif
-end function det
-
-
-subroutine gen_wish(A,nu,B,P,iseed)
-!
-    implicit none
-!
-    integer, parameter :: r15 = selected_real_kind(15)
-    integer, parameter :: i6 = selected_int_kind(6)
-!
-    !Declare local variables
-
-    integer, intent (in)    :: nu,P,iseed
-    double precision, intent (in)    :: A(P,P)
-    double precision, intent (out)   :: B(P,P)
-    double precision                 :: RNmat(nu,P),para((P*(P+3)/2) + 1),m0(P)
-    integer                 :: i
-!
-    !sample from Wishart distribution as in Press (2005, p. 109)
-    m0=0
-
-    call setgmn(m0,A,P,para)
-
-    do i=1,nu
-
-        call GENMN(para,RNmat(i,:),P,iseed)
-
-    end do
-
-    B = matmul(transpose(RNmat),RNmat)
-!
-end subroutine gen_wish
-
-
-SUBROUTINE setgmn(meanv,covm,p,parm)
-!**********************************************************************
-!
-!     SUBROUTINE SETGMN( MEANV, COVM, P, PARM)
-!            SET Generate Multivariate Normal random deviate
-!
-!
-!                              Function
-!
-!
-!      Places P, MEANV, and the Cholesky factoriztion of COVM
-!      in GENMN.
-!
-!
-!                              Arguments
-!
-!
-!     MEANV --> Mean vector of multivariate normal distribution.
-!                                        REAL MEANV(P)
-!
-!     COVM   <--> (Input) Covariance   matrix    of  the  multivariate
-!                 normal distribution
-!                 (Output) Destroyed on output
-!                                        REAL !OVM(P,P)
-!
-!     P     --> Dimension of the normal, or length of MEANV.
-!                                        INTEGER P
-!
-!     PARM <-- Array of parameters needed to generate multivariate norma
-!                deviates (P, MEANV and !holesky decomposition of
-!                !OVM).
-!                1 : 1                - P
-!                2 : P + 1            - MEANV
-!                P+2 : P*(P+3)/2 + 1  - !holesky decomposition of !OVM
-!                                             REAL PARM(P*(P+3)/2 + 1)
-!
-!**********************************************************************
-!     .. Scalar Arguments ..
-      implicit none
-!
-      integer, parameter :: r15 = selected_real_kind(15)
-      integer, parameter :: i6 = selected_int_kind(6)
-
-      INTEGER p
-!     ..
-!     .. Array Arguments ..
-      double precision covm(p,p),meanv(p),parm(p*(p+3)/2+1)
-!     ..
-!     .. Local Scalars ..
-      INTEGER i,icount,info,j
-!     ..
-!     .. External Subroutines ..
-
-!     ..
-!     .. Executable Statements ..
-!
-!
-!     TEST THE INPUT
-!
-      IF (.NOT. (p.LE.0)) GO TO 10
-!      WRITE (*,*) 'P nonpositive in SETGMN'
-!      WRITE (*,*) 'Value of P: ',p
-!      STOP 'P nonpositive in SETGMN'
-
-   10 parm(1) = p
-!
-!     PUT P AND MEANV INTO PARM
-!
-      DO 20,i = 2,p + 1
-          parm(i) = meanv(i-1)
-   20 CONTINUE
-!
-!      Cholesky decomposition to find A s.t. trans(A)*(A) = COVM
-!
-      CALL spofa(covm,p,p,info)
-      IF (.NOT. (info.NE.0)) GO TO 30
-!      WRITE (*,*) ' !OVM not positive definite in SETGMN'
-!      STOP ' COVM not positive definite in SETGMN'
-
-   30 icount = p + 1
-!
-!     PUT UPPER HALF OF A, WHICH IS NOW THE !HOLESKY FA!TOR, INTO PARM
-!          !OVM(1,1) = PARM(P+2)
-!          !OVM(1,2) = PARM(P+3)
-!                    :
-!          !OVM(1,P) = PARM(2P+1)
-!          !OVM(2,2) = PARM(2P+2)  ...
-!
-      DO 50,i = 1,p
-          DO 40,j = i,p
-              icount = icount + 1
-              parm(icount) = covm(i,j)
-   40     CONTINUE
-   50 CONTINUE
-      RETURN
-!
-END SUBROUTINE setgmn
-
-
-
-SUBROUTINE genmn(parm,x,p,iseed)
-  !**********************************************************************
-  !
-  !     SUBROUTINE GENMN(PARM,X,WORK)
-  !              GENerate Multivariate Normal random deviate
-   !
-   !
-   !                              Arguments
-   !
-  !
-  !     PARM --> Parameters needed to generate multivariate normal
-  !               deviates (MEANV and Cholesky decomposition of
-  !               COVM). Set by a previous call to SETGMN.
-  !               1 : 1                - size of deviate, P
-  !               2 : P + 1            - mean vector
-  !               P+2 : P*(P+3)/2 + 1  - upper half of cholesky
-  !                                       decomposition of cov matrix
-  !                                             DOUBLE PRECISION PARM(*)
-  !
-  !     X    <-- Vector deviate generated.
-  !                                             DOUBLE PRECISION X(P)
-  !
-  !     WORK <--> Scratch array
-  !                                             DOUBLE PRECISION WORK(P)
-  !
-  !
-  !                              Method
-  !
-  !
-  !     1) Generate P independent standard normal deviates - Ei ~ N(0,1)
-  !
-  !     2) Using Cholesky decomposition find A s.t. trans(A)*A = COVM
-  !
-  !     3) trans(A)E + MEANV ~ N(MEANV,!OVM)
-  !
-  !**********************************************************************
-  !     .. Array Arguments ..
-
-        implicit none
-!
-        integer, parameter :: r15 = selected_real_kind(15)
-        integer, parameter :: i6 = selected_int_kind(6)
-
-        integer, intent(in) :: p, iseed
-        double precision, intent(in) :: parm(p*(p+3)/2 + 1)
-        double precision             :: work(p)
-        double precision, intent(out):: x(p)
-  !     ..
-  !     .. Local Scalars ..
-        double precision ae
-        integer :: i,icount,j
-  !    ..
-  !     .. External Functions ..
-  !     ..
-  !     .. Executable Statements ..
-  !
-  !     Generate P independent normal deviates - WORK ~ N(0,1)
-  !
-        DO 10,i = 1,p
-            work(i) = rnormal(iseed)
-     10 CONTINUE
-        DO 30,i = 1,p
-  !
-  !     PARM (P+2 : P*(P+3)/2 + 1) contains A, the Cholesky
-  !      decomposition of the desired covariance matrix.
-  !          trans(A)(1,1) = PARM(P+2)
-  !          trans(A)(2,1) = PARM(P+3)
-  !          trans(A)(2,2) = PARM(P+2+P)
-  !          trans(A)(3,1) = PARM(P+4)
-  !          trans(A)(3,2) = PARM(P+3+P)
-  !          trans(A)(3,3) = PARM(P+2-1+2P)  ...
-  !
-  !     trans(A)*WORK + MEANV ~ N(MEANV,COVM)
-  !
-            icount = 0
-            ae = 0.0
-            DO 20,j = 1,i
-                icount = icount + j - 1
-                ae = ae + parm(i+ (j-1)*p-icount+p+1)*work(j)
-     20     CONTINUE
-            x(i) = ae + parm(i+1)
-     30 CONTINUE
-        RETURN
-  !
-END SUBROUTINE genmn
-
-
-subroutine spofa(a,lda,n,info)
-
-      implicit none
-!
-      integer, parameter :: r15 = selected_real_kind(15)
-      integer, parameter :: i6 = selected_int_kind(6)
-
-      integer ::lda,n,info
-      double precision :: a(lda,n)
-
-!     spofa factors a real symmetric positive definite matrix.
-!
-!     spofa is usually called by spoco, but it can be called
-!     directly with a saving in time if  rcond  is not needed.
-!     (time for spo!o) = (1 + 18/n)*(time for spofa) .
-!
-!     on entry
-!
-!        a       real(lda, n)
-!                the symmetric matrix to be factored.  only the
-!                diagonal and upper triangle are used.
-!
-!        lda     integer
-!                the leading dimension of the array  a .
-!
-!        n       integer
-!                the order of the matrix  a .
-!
-!     on return
-!
-!        a       an upper triangular matrix  r  so that  a = trans(r)*r
-!                where  trans(r)  is the transpose.
-!                the stri!t lower triangle is unaltered.
-!                if  info .ne. 0 , the fa!torization is not !omplete.
-!
-!        info    integer
-!                = 0  for normal return.
-!                = k  signals an error !ondition.  the leading minor
-!                     of order  k  is not positive definite.
-!
-!     linpa!k.  this version dated 08/14/78 .
-!     !leve moler, university of new mexi!o, argonne national lab.
-!
-!     subroutines and functions
-!
-!     blas sdot
-!     fortran sqrt
-!
-!     internal variables
-!
-      double precision t
-      double precision s
-      integer :: j,jm1,k
-!     begin block with ...exits to 40
-!
-!
-         do 30 j = 1, n
-            info = j
-            s = 0.0e0
-            jm1 = j - 1
-            if (jm1 .lt. 1) go to 20
-            do 10 k = 1, jm1
-               t = a(k,j) - sdot(k-1,a(1,k),1,a(1,j),1)
-               t = t/a(k,k)
-               a(k,j) = t
-               s = s + t*t
-   10       continue
-   20       continue
-            s = a(j,j) - s
-!     ......exit
-            if (s .le. 0.0e0) go to 40
-            a(j,j) = sqrt(s)
-   30    continue
-         info = 0
-   40 continue
-      return
-
-end SUBROUTINE spofa
-
-
-
-FUNCTION sdot(N,SX,INCX,SY,INCY)
- !
- !  -- Reference BLAS level1 routine (version 3.8.0) --
- !  -- Reference BLAS is a software package provided by Univ. of Tennessee,    --
- !  -- Univ. of California Berkeley, Univ. of Colorado Denver and NAG Ltd..--
- !     November 2017
- !
- !     .. Scalar Arguments ..
-
-    implicit none
-!
-    integer, parameter :: r15 = selected_real_kind(15)
-    integer, parameter :: i6 = selected_int_kind(6)
-
-    INTEGER :: INCX,INCY,N
- !     ..
-  !    .. Array Arguments ..
-    double precision :: SX(*),SY(*)
-    real ( kind = r15 ) sdot
- !    ..
- !
- !  =====================================================================
- !
- !     .. Local Scalars ..
-    double precision :: STEMP
-    INTEGER :: I,IX,IY,M,MP1
- !     ..
- !     .. Intrinsic Functions ..
-    INTRINSIC mod
- !     ..
-    stemp = 0.0e0
-    sdot = 0.0e0
-    IF (n.LE.0) RETURN
-        IF (incx.EQ.1 .AND. incy.EQ.1) THEN
- !
- !        code for both increments equal to 1
- !
- !
- !        clean-up loop
- !
-        m = mod(n,5)
-        IF (m.NE.0) THEN
-            DO i = 1,m
-                stemp = stemp + sx(i)*sy(i)
-            END DO
-            IF (n.LT.5) THEN
-                sdot = stemp
-                RETURN
-            END IF
-        END IF
-        mp1 = m + 1
-        DO i = mp1,n,5
-            stemp = stemp + sx(i)*sy(i) + sx(i+1)*sy(i+1) + sx(i+2)*sy(i+2) + sx(i+3)*sy(i+3) + sx(i+4)*sy(i+4)
-        END DO
-    ELSE
- !
- !        code for unequal increments or equal increments
- !          not equal to 1
- !
-        ix = 1
-        iy = 1
-        IF (incx.LT.0) ix = (-n+1)*incx + 1
-            IF (incy.LT.0) iy = (-n+1)*incy + 1
-                DO i = 1,n
-                    stemp = stemp + sx(ix)*sy(iy)
-                    ix = ix + incx
-                    iy = iy + incy
-                END DO
-            END IF
-            sdot = stemp
-        RETURN
-END FUNCTION sdot
-
-
-
-subroutine compute_condMeanVar(welke,dimIn,meanIn,covmIn,obsIn,condMean,condVar)
-
-    implicit none
-!
-    integer, parameter :: r15 = selected_real_kind(15)
-    integer, parameter :: i6 = selected_int_kind(6)
-
-    integer, intent(in)         :: welke, dimIn
-    real (kind = r15), intent(in)   :: meanIn(dimIn), covmIn(dimIn,dimIn), obsIn(dimIn)
-    real (kind = r15), intent(out)  :: condMean, condVar
-    real (kind = r15)               :: dummy3(1,1), dummy2(dimIn-1,1), S12(1,dimIn-1), S22(dimIn-1,dimIn-1), &
-                                       S22inv(dimIn-1,dimIn-1), meanLocal(dimIn,1)
-    integer                         :: errorflag
-!
-    meanLocal(1:dimIn,1) = meanIn(1:dimIn)
-!
-    S12(1,1:(welke-1)) = covmIn(welke,1:(welke-1))
-    S12(1,welke:(dimIn-1)) = covmIn(welke,(welke+1):dimIn)
-    S22(1:(welke-1),1:(welke-1)) = covmIn(1:(welke-1),1:(welke-1))
-    S22(1:(welke-1),welke:(dimIn-1)) = covmIn(1:(welke-1),(welke+1):dimIn)
-    S22(welke:(dimIn-1),1:(welke-1)) = covmIn((welke+1):dimIn,1:(welke-1))
-    S22(welke:(dimIn-1),welke:(dimIn-1)) = covmIn((welke+1):dimIn,(welke+1):dimIn)
-    call FINDInv(S22,S22inv,dimIn-1,errorflag)
-    dummy2(1:(welke-1),1) = obsIn(1:(welke-1)) - meanLocal(1:(welke-1),1)
-    dummy2(welke:(dimIn-1),1) = obsIn((welke+1):dimIn) - meanLocal((welke+1):dimIn,1)
-    dummy3 = matmul(matmul(S12,S22inv),dummy2)
-    condMean = meanLocal(welke,1) + dummy3(1,1) !conditional mean
-    dummy3 = matmul(matmul(S12,S22inv),transpose(S12))
-    condVar = covmIn(welke,welke) - dummy3(1,1) !conditional variance
-!
-end subroutine compute_condMeanVar
-
-
-subroutine inverse_prob_sampling(condMean,condVar,LBtrue,UBtrue,LB,UB,condDraw,iseed)
-
-    implicit none
-!
-    integer, parameter :: r15 = selected_real_kind(15)
-    integer, parameter :: i6 = selected_int_kind(6)
-
-    integer, intent(in)           :: LBtrue, UBtrue, iseed
-    real ( kind = r15 ), intent(in)   :: condMean, condVar, LB, UB
-    real ( kind = r15 ), intent(out)  :: condDraw
-    real ( kind = r15 )               :: xdraw
-    real ( kind = r15 )               :: LBstand, UBstand, yUB, yLB, rnIPS, &
-                                         pi, machPres, rrand
-    integer                          teller
-    logical                           :: uppie
-
-    parameter(pi=3.141592653)
-    uppie = .false.
-!
-    machPres = 1e-6
-    !normalize bounds
-    UBstand = (UB - condMean)/sqrt(condVar)
-    LBstand = (LB - condMean)/sqrt(condVar)
-    !yUB = anordf (UBstand)
-    yUB = alnorm ( UBstand, uppie )
-    !yLB = anordf (LBstand)
-    yLB = alnorm ( LBstand, uppie )
-    teller = 0
-601    rrand = runiform(iseed)
-    rnIPS = rrand*(yUB - yLB) + yLB
-    if(LBtrue+UBtrue==0) then !unconstrained sampling
-        rrand = rnormal(iseed)
-        condDraw = rrand*sqrt(condVar) + condMean
-    else if(abs(rnIPS) > machPres .and. abs(rnIPS-1) > machPres) then
-        !inverse probability sampling
-        xdraw = dinvnr ( rnIPS )
-        condDraw = xdraw * sqrt(condVar) + condMean
-    else if(UBstand>-4.0 .and. LBstand<4.0) then !IPS must be redone
-        teller = teller + 1
-        go to 601
-    else
-        if(condMean > UB) then
-            condDraw = UB
-        else if(condMean < LB) then
-            condDraw = LB
-        end if
-    end if
-!
-end subroutine inverse_prob_sampling
-
-
-
-function alnorm ( x, upper )
-
-!*****************************************************************************80
-!
-!! ALNORM computes the cumulative density of the standard normal distribution.
-!
-!  Licensing:
-!
-!    This code is distributed under the GNU LGPL license.
-!
-!  Modified:
-!
-!    13 January 2008
-!
-!  Author:
-!
-!    Original FORTRAN77 version by David Hill.
-!    FORTRAN90 version by John Burkardt.
-!
-!  Reference:
-!
-!    David Hill,
-!    Algorithm AS 66:
-!    The Normal Integral,
-!    Applied Statistics,
-!    Volume 22, Number 3, 1973, pages 424-427.
-!
-!  Parameters:
-!
-!    Input, real ( kind = 8 ) X, is one endpoint of the semi-infinite interval
-!    over which the integration takes place.
-!
-!    Input, logical UPPER, determines whether the upper or lower
-!    interval is to be integrated:
-!    .TRUE.  => integrate from X to + Infinity;
-!    .FALSE. => integrate from - Infinity to X.
-!
-!    Output, real ( kind = 8 ) ALNORM, the integral of the standard normal
-!    distribution over the desired interval.
-!
-  implicit none
-!
-  integer, parameter :: r15 = selected_real_kind(15)
-  integer, parameter :: i6 = selected_int_kind(6)
-
-  real ( kind = r15 ), parameter :: a1 = 5.75885480458D+00
-  real ( kind = r15 ), parameter :: a2 = 2.62433121679D+00
-  real ( kind = r15 ), parameter :: a3 = 5.92885724438D+00
-  real ( kind = r15 ) alnorm
-  real ( kind = r15 ), parameter :: b1 = -29.8213557807D+00
-  real ( kind = r15 ), parameter :: b2 = 48.6959930692D+00
-  real ( kind = r15 ), parameter :: c1 = -0.000000038052D+00
-  real ( kind = r15 ), parameter :: c2 = 0.000398064794D+00
-  real ( kind = r15 ), parameter :: c3 = -0.151679116635D+00
-  real ( kind = r15 ), parameter :: c4 = 4.8385912808D+00
-  real ( kind = r15 ), parameter :: c5 = 0.742380924027D+00
-  real ( kind = r15 ), parameter :: c6 = 3.99019417011D+00
-  real ( kind = r15 ), parameter :: con = 1.28D+00
-  real ( kind = r15 ), parameter :: d1 = 1.00000615302D+00
-  real ( kind = r15 ), parameter :: d2 = 1.98615381364D+00
-  real ( kind = r15 ), parameter :: d3 = 5.29330324926D+00
-  real ( kind = r15 ), parameter :: d4 = -15.1508972451D+00
-  real ( kind = r15 ), parameter :: d5 = 30.789933034D+00
-  real ( kind = r15 ), parameter :: ltone = 7.0D+00
-  real ( kind = r15 ), parameter :: p = 0.398942280444D+00
-  real ( kind = r15 ), parameter :: q = 0.39990348504D+00
-  real ( kind = r15 ), parameter :: r = 0.398942280385D+00
-  logical up
-  logical upper
-  real ( kind = r15 ), parameter :: utzero = 18.66D+00
-  real ( kind = r15 ) x
-  real ( kind = r15 ) y
-  real ( kind = r15 ) z
-
-  up = upper
-  z = x
-
-  if ( z < 0.0D+00 ) then
-    up = .not. up
-    z = - z
-  end if
-
-  if ( ltone < z .and. ( ( .not. up ) .or. utzero < z ) ) then
-
-    if ( up ) then
-      alnorm = 0.0D+00
-    else
-      alnorm = 1.0D+00
-    end if
-
-    return
-
-  end if
-
-  y = 0.5D+00 * z * z
-
-  if ( z <= con ) then
-
-    alnorm = 0.5D+00 - z * ( p - q * y &
-      / ( y + a1 + b1 &
-      / ( y + a2 + b2 &
-      / ( y + a3 ))))
-
-  else
-
-    alnorm = r * exp ( - y ) &
-      / ( z + c1 + d1 &
-      / ( z + c2 + d2 &
-      / ( z + c3 + d3 &
-      / ( z + c4 + d4 &
-      / ( z + c5 + d5 &
-      / ( z + c6 ))))))
-
-  end if
-
-  if ( .not. up ) then
-    alnorm = 1.0D+00 - alnorm
-  end if
-
-  return
-end function alnorm
-
-
-
-function dinvnr ( p )
-
-!*****************************************************************************80
-!
-!! DINVNR computes the inverse of the normal distribution.
-!
-!  Discussion:
-!
-!    This routine returns X such that
-!
-!      CUMNOR(X) = P,
-!
-!    that is, so that
-!
-!      P = integral ( -oo <= T <= X ) exp(-U*U/2)/sqrt(2*PI) dU
-!
-!    The rational function is used as a
-!    starting value for the Newton method of finding roots.
-!
-!  Reference:
-!
-!    William Kennedy, James Gentle,
-!    Statistical Computing,
-!    Marcel Dekker, NY, 1980,
-!    QA276.4 K46
-!
-!  Parameters:
-!
-!    Input, real ( kind = 8 ) P.
-!
-!    Output, real ( kind = 8 ) DINVNR, the argument X for which the
-!    Normal CDF has the value P.
-!
-  implicit none
-!
-  integer, parameter :: r15 = selected_real_kind(15)
-  integer, parameter :: i6 = selected_int_kind(6)
-
-  real ( kind = r15 ) cum
-  real ( kind = r15 ) dinvnr
-  real ( kind = r15 ) dx
-  real ( kind = r15 ), parameter :: eps = 1.0D-13
-  integer ( kind = i6 ) i
-  integer ( kind = i6 ), parameter :: maxit = 100
-  real ( kind = r15 ) p
-  real ( kind = r15 ) pp
-  real ( kind = r15 ), parameter :: r2pi = 0.3989422804014326D+00
-  real ( kind = r15 ) strtx
-  !real ( kind = r15 ) stvaln
-  real ( kind = r15 ) xcur
-
-  pp = min ( p, 1-p )
-  strtx = stvaln(pp)
-  xcur = strtx
-!
-!  Newton iterations.
-!
-  do i = 1, maxit
-
-    cum = cumnor(xcur)
-    dx = ( cum - pp ) / ( r2pi * exp ( -0.5D+00 * xcur * xcur ) )
-    xcur = xcur - dx
-
-    if ( abs ( dx / xcur ) < eps ) then
-      if ( p <= 1-p ) then
-        dinvnr = xcur
-      else
-        dinvnr = -xcur
-      end if
-      return
-    end if
-
-  end do
-
-  if ( p <= 1-p ) then
-    dinvnr = strtx
-  else
-    dinvnr = -strtx
-  end if
-
-  return
-end function dinvnr
-
+end function
 
 
 function stvaln ( p )
@@ -1262,11 +299,11 @@ function stvaln ( p )
 !    is approximately P.
 !
   implicit none
-!
+
   integer, parameter :: r15 = selected_real_kind(15)
   integer, parameter :: i6 = selected_int_kind(6)
 
-  !real ( kind = r15 ) eval_pol
+  !real ( kind = 8 ) eval_pol
   real ( kind = r15 ) p
   real ( kind = r15 ) sgn
   real ( kind = r15 ) stvaln
@@ -1302,7 +339,7 @@ function stvaln ( p )
   stvaln = sgn * stvaln
 
   return
-end function stvaln
+end function
 
 
 function eval_pol ( a, n, x )
@@ -1331,7 +368,7 @@ function eval_pol ( a, n, x )
 !    Output, real ( kind = 8 ) EVAL_POL, the value of the polynomial at X.
 !
   implicit none
-!
+
   integer, parameter :: r15 = selected_real_kind(15)
   integer, parameter :: i6 = selected_int_kind(6)
 
@@ -1352,6 +389,7 @@ function eval_pol ( a, n, x )
 
   return
 end function eval_pol
+
 
 
 function cumnor ( arg )
@@ -1414,7 +452,7 @@ function cumnor ( arg )
 !    such that   1.0D+00 + X = 1.0D+00   to machine precision.
 !
   implicit none
-!
+
   integer, parameter :: r15 = selected_real_kind(15)
   integer, parameter :: i6 = selected_int_kind(6)
 
@@ -1552,7 +590,228 @@ function cumnor ( arg )
   end if
 
   return
- end function cumnor
+ end function
+
+
+
+ function dinvnr ( p )
+
+!*****************************************************************************80
+!
+!! DINVNR computes the inverse of the normal distribution.
+!
+!  Discussion:
+!
+!    This routine returns X such that
+!
+!      CUMNOR(X) = P,
+!
+!    that is, so that
+!
+!      P = integral ( -oo <= T <= X ) exp(-U*U/2)/sqrt(2*PI) dU
+!
+!    The rational function is used as a
+!    starting value for the Newton method of finding roots.
+!
+!  Reference:
+!
+!    William Kennedy, James Gentle,
+!    Statistical Computing,
+!    Marcel Dekker, NY, 1980,
+!    QA276.4 K46
+!
+!  Parameters:
+!
+!    Input, real ( kind = 8 ) P.
+!
+!    Output, real ( kind = 8 ) DINVNR, the argument X for which the
+!    Normal CDF has the value P.
+!
+  implicit none
+
+  integer, parameter :: r15 = selected_real_kind(15)
+  integer, parameter :: i6 = selected_int_kind(6)
+
+  real ( kind = r15 ) cum
+  real ( kind = r15 ) dinvnr
+  real ( kind = r15 ) dx
+  real ( kind = r15 ), parameter :: eps = 1.0D-13
+  integer ( kind = i6 ) i
+  integer ( kind = i6 ), parameter :: maxit = 100
+  real ( kind = r15 ) p
+  real ( kind = r15 ) pp
+  real ( kind = r15 ), parameter :: r2pi = 0.3989422804014326D+00
+  real ( kind = r15 ) strtx
+  !real ( kind = r15 ) stvaln
+  real ( kind = r15 ) xcur
+
+  pp = min ( p, 1-p )
+  strtx = stvaln(pp)
+  xcur = strtx
+!
+!  Newton iterations.
+!
+  do i = 1, maxit
+
+    cum = cumnor(xcur)
+    dx = ( cum - pp ) / ( r2pi * exp ( -0.5D+00 * xcur * xcur ) )
+    xcur = xcur - dx
+
+    if ( abs ( dx / xcur ) < eps ) then
+      if ( p <= 1-p ) then
+        dinvnr = xcur
+      else
+        dinvnr = -xcur
+      end if
+      return
+    end if
+
+  end do
+
+  if ( p <= 1-p ) then
+    dinvnr = strtx
+  else
+    dinvnr = -strtx
+  end if
+
+  return
+end function dinvnr
+
+
+
+subroutine kronecker(dimA,dimB,A,B,AB)
+!
+    implicit none
+!
+    integer, parameter :: r15 = selected_real_kind(15)
+    integer, parameter :: i6 = selected_int_kind(6)
+!
+    integer(i6), intent(in)  :: dimA, dimB
+    real(r15), intent(in)    :: A(dimA,dimA), B(dimB,dimB) !dummy arguments
+    real(r15), intent(out)   :: AB(dimA*dimB,dimA*dimB) !output matrix of the kronecker product
+    integer(i6)              :: i,j !loop counters
+!
+    do i=1,dimA
+        do j=1,dimA
+            AB((1+dimB*(i-1)):(dimB+dimB*(i-1)),(1+dimB*(j-1)):(dimB+dimB*(j-1))) = A(i,j)*B(:,:)
+        end do
+    end do
+!
+end subroutine kronecker
+
+
+
+FUNCTION sdot(N,SX,INCX,SY,INCY)
+ !
+ !  -- Reference BLAS level1 routine (version 3.8.0) --
+ !  -- Reference BLAS is a software package provided by Univ. of Tennessee,    --
+ !  -- Univ. of California Berkeley, Univ. of Colorado Denver and NAG Ltd..--
+ !     November 2017
+ !
+    implicit none
+ !
+    integer, parameter :: r15 = selected_real_kind(15)
+    integer, parameter :: i6 = selected_int_kind(6)
+ !
+ !     .. Scalar Arguments ..
+    INTEGER(i6) INCX,INCY,N
+ !     ..
+ !     .. Array Arguments ..
+    REAL(r15) SX(*),SY(*)
+ !    ..
+ !
+ !  =====================================================================
+ !
+ !     .. Local Scalars ..
+    REAL(r15) STEMP, sdot
+    INTEGER(i6) I,IX,IY,M,MP1
+ !     ..
+ !     .. Intrinsic Functions ..
+    INTRINSIC mod
+ !     ..
+    stemp = 0.0e0
+    sdot = 0.0e0
+    IF (n.LE.0) RETURN
+        IF (incx.EQ.1 .AND. incy.EQ.1) THEN
+ !
+ !        code for both increments equal to 1
+ !
+ !
+ !        clean-up loop
+ !
+        m = mod(n,5)
+        IF (m.NE.0) THEN
+            DO i = 1,m
+                stemp = stemp + sx(i)*sy(i)
+            END DO
+            IF (n.LT.5) THEN
+                sdot = stemp
+                RETURN
+            END IF
+        END IF
+        mp1 = m + 1
+        DO i = mp1,n,5
+            stemp = stemp + sx(i)*sy(i) + sx(i+1)*sy(i+1) + sx(i+2)*sy(i+2) + sx(i+3)*sy(i+3) + sx(i+4)*sy(i+4)
+        END DO
+    ELSE
+ !
+ !        code for unequal increments or equal increments
+ !          not equal to 1
+ !
+        ix = 1
+        iy = 1
+        IF (incx.LT.0) ix = (-n+1)*incx + 1
+            IF (incy.LT.0) iy = (-n+1)*incy + 1
+                DO i = 1,n
+                    stemp = stemp + sx(ix)*sy(iy)
+                    ix = ix + incx
+                    iy = iy + incy
+                END DO
+            END IF
+            sdot = stemp
+        RETURN
+END FUNCTION sdot
+
+
+function diag(A, n)
+
+    implicit none
+!
+    integer, parameter :: r15 = selected_real_kind(15)
+    integer, parameter :: i6 = selected_int_kind(6)
+!
+    integer(i6) n,i
+    real(r15) A(n), check(n,n)
+    real(r15) diag(n,n)
+
+    check = 0
+    do i=1,n
+        check(i,i)=A(i)
+    end do
+    diag(:,:)=check(:,:)
+
+    return
+
+end function diag
+
+
+function diagonals(A, n)
+
+    implicit none
+!
+    integer, parameter :: r15 = selected_real_kind(15)
+    integer, parameter :: i6 = selected_int_kind(6)
+
+    integer(i6) n,i
+    real(r15) A(n,n), diagonals(n), check(n)
+
+    do i=1,n
+        check(i)= A(i,i)
+    enddo
+    diagonals(:)=check(:)
+     return
+end function diagonals
+
 
 
 !Subroutine to find the inverse of a square matrix
@@ -1560,22 +819,22 @@ function cumnor ( arg )
 !Reference : Algorithm has been well explained in:
 !http://math.uww.edu/~mcfarlat/inverse.htm
 !http://www.tutor.ms.unimelb.edu.au/matrix/matrix_inverse.html
-SUBROUTINE FINDinv(matrix, inverse, n, errorflag)
-    implicit none
-!
+SUBROUTINE FINDInv(matrix, inverse, n, errorflag)
+    IMPLICIT NONE
+
     integer, parameter :: r15 = selected_real_kind(15)
     integer, parameter :: i6 = selected_int_kind(6)
 
     !Declarations
-    INTEGER, INTENT(IN) :: n
-    double precision, INTENT(IN) :: matrix(n,n)  !Input matrix
-    INTEGER, INTENT(OUT) :: errorflag  !Return error status. -1 for error, 0 for normal
-    double precision, INTENT(OUT) :: inverse(n,n) !Inverted matrix
+    INTEGER(i6), INTENT(IN)  :: n
+    REAL(r15), INTENT(IN)    :: matrix(n,n)  !Input matrix
+    INTEGER(i6), INTENT(OUT) :: errorflag  !Return error status. -1 for error, 0 for normal
+    REAL(r15), INTENT(OUT)   :: inverse(n,n) !Inverted matrix
 
     LOGICAL :: FLAG = .TRUE.
-    INTEGER :: i, j, k
-    double precision :: m
-    double precision, DIMENSION(n,2*n) :: augmatrix !augmented matrix
+    INTEGER(i6) :: i, j, k
+    REAL(r15) :: m
+    REAL(r15), DIMENSION(n,2*n) :: augmatrix !augmented matrix
 
     inverse = eye(n)
     !Augment input matrix with an identity matrix
@@ -1657,5 +916,520 @@ SUBROUTINE FINDinv(matrix, inverse, n, errorflag)
 END SUBROUTINE FINDinv
 
 
-end subroutine estimate_bct_ordinal_test
+
+recursive function det(a,n,permanent) result(accumulation)
+    ! setting permanent to 1 computes the permanent.
+    ! setting permanent to -1 computes the determinant.
+
+    IMPLICIT NONE
+
+    integer, parameter :: r15 = selected_real_kind(15)
+    integer, parameter :: i6 = selected_int_kind(6)
+
+    integer(i6), intent(in) :: n, permanent
+    real(r15), dimension(n,n), intent(in) :: a
+    real(r15), dimension(n-1, n-1) :: b
+    real(r15) :: accumulation
+    integer(i6) :: i, sgn
+
+    if (n .eq. 1) then
+      accumulation = a(1,1)
+    else
+      accumulation = 0
+      sgn = 1
+      do i=1, n
+        b(:, :(i-1)) = a(2:, :i-1)
+        b(:, i:) = a(2:, i+1:)
+        accumulation = accumulation + sgn * a(1, i) * det(b, n-1, permanent)
+        sgn = sgn * permanent
+      enddo
+    endif
+
+end function det
+
+
+
+function rnormal (iseed)
+
+!*****************************************************************************80
+!
+!! RNORMAL returns a unit pseudonormal R8.
+!
+!  Discussion:
+!
+!    The standard normal probability distribution function (PDF) has
+!    mean 0 and standard deviation 1.
+!
+!  Licensing:
+!
+!    This code is distributed under the GNU LGPL license.
+!
+!  Modified:
+!
+!    06 August 2013
+!
+!  Author:
+!
+!    John Burkardt
+!
+!  Parameters:
+!
+!
+!    Output, real ( kind = 8 ) RNORMAL, a normally distributed
+!    random value.
+!
+  implicit none
+
+  integer, parameter :: r15 = selected_real_kind(15)
+  integer, parameter :: i6 = selected_int_kind(6)
+
+  real ( kind = r15 ) r1
+  real ( kind = r15 ) r2
+  real ( kind = r15 ) r3
+  real ( kind = r15 ) rnormal
+  real ( kind = r15 ), parameter :: pi = 3.141592653589793D+00
+  !real ( kind = r15 ) GG
+  real ( kind = r15 ) x
+  integer ( kind = i6 ) iseed
+
+  !nseed = 1344
+  r1 = runiform(iseed)
+  r2 = runiform(iseed)
+  r3 = runiform(iseed)
+  !PRINT*, iseed, r1, r2, r3
+  !call random_number(GG)
+  !r1 = GG
+  !call random_number(GG)
+  !r2 = GG
+  x = sqrt ( - 2.0D+00 * log ( r3 ) ) * cos ( 2.0D+00 * pi * r2 )
+
+  rnormal = x
+
+  return
+end function rnormal
+
+
+
+function eye(n)
+
+    implicit none
+
+    integer, parameter :: r15 = selected_real_kind(15)
+    integer, parameter :: i6 = selected_int_kind(6)
+
+    integer(i6) i,n
+    real(r15) eye(n,n)
+    real(r15) check(n,n)
+
+    check=0
+    do i=1,n
+        check(i,i)= 1
+    enddo
+
+    eye(:,:)=check(:,:)
+    return
+
+end function eye
+
+
+
+subroutine gen_wish(A,nu,B,P,iseed)
+!
+    implicit none
+!
+    integer, parameter :: r15 = selected_real_kind(15)
+    integer, parameter :: i6 = selected_int_kind(6)
+!
+    !Declare local variables
+
+    integer(i6), intent (in)  :: nu,P,iseed
+    real(r15), intent (in)    :: A(P,P)
+    real(r15), intent (out)   :: B(P,P)
+    real(r15)                 :: RNmat(nu,P),para((P*(P+3)/2) + 1),m0(P)
+    integer(i6)               :: i
+!
+    !sample from Wishart distribution as in Press (2005, p. 109)
+    m0=0
+
+    call setgmn(m0,A,P,para)
+
+    do i=1,nu
+
+        call GENMN(para,RNmat(i,:),P,iseed)
+
+    end do
+
+    B = matmul(transpose(RNmat),RNmat)
+!
+end subroutine gen_wish
+
+
+!
+subroutine robust_covest(m, betas1, betas2, mn1, mn2, varb1, varb2, varb1b2Plus, varb1b2Min)
+
+    implicit none
+!
+    integer, parameter :: r15 = selected_real_kind(15)
+    integer, parameter :: i6 = selected_int_kind(6)
+!
+    !Declare local variables
+    integer(i6), intent(in)  :: m
+    real(r15), intent(in)    :: betas1(m), betas2(m), mn1, mn2
+    real(r15), intent(out)   :: varb1, varb2, varb1b2Plus, varb1b2Min
+
+    real(r15)                :: dummy1(m), dummy2(m), Phi075, xxx
+    integer(i6)              :: mmin, i
+!
+    xxx=0.75
+    Phi075 = dinvnr(xxx)
+    mmin = 0
+!
+    !robust variance estimators of beta1 and beta2
+
+    dummy1=abs(betas1 - mn1)
+    call piksrt(m,dummy1)
+    do i=1,m
+        if(dummy1(i)>0) then
+            mmin = i
+            exit
+        end if
+    end do
+    varb1 = ((dummy1(int(mmin+(m-mmin)*.5)) + dummy1(int(mmin+(m-mmin)*.5+1)))*.5/Phi075)**2.0
+    dummy1=abs(betas2 - mn2)
+    call piksrt(m,dummy1)
+    do i=1,m
+        if(dummy1(i)>0) then
+            mmin = i
+            exit
+        end if
+    end do
+    varb2 = ((dummy1(int(mmin+(m-mmin)*.5)) + dummy1(int(mmin+(m-mmin)*.5+1)))*.5/Phi075)**2.0
+!
+    !robust variance estimators of beta1 + beta2
+    dummy2 = betas1 + betas2
+    dummy1=abs(dummy2 - mn1 - mn2)
+    call piksrt (m,dummy1)
+    do i=1,m
+        if(dummy1(i)>0) then
+            mmin = i
+            exit
+        end if
+    end do
+    varb1b2Plus = ((dummy1(int(mmin+(m-mmin)*.5)) + dummy1(int(mmin+(m-mmin)*.5+1)))*.5/Phi075)**2.0
+!
+    !robust variance estimators of beta1 - beta2
+    dummy2 = betas1 - betas2
+    dummy1= abs(dummy2 - mn1 + mn2)
+    call piksrt(m,dummy1)
+    do i=1,m
+        if(dummy1(i)>0) then
+            mmin = i
+            exit
+        end if
+    end do
+    varb1b2Min = ((dummy1(int(mmin+(m-mmin)*.5)) + dummy1(int(mmin+(m-mmin)*.5+1)))*.5/Phi075)**2.0
+!
+end subroutine
+
+
+
+SUBROUTINE piksrt(n,arr)
+
+  implicit none
+!
+  integer, parameter :: r15 = selected_real_kind(15)
+  integer, parameter :: i6 = selected_int_kind(6)
+
+  integer(i6):: n, i,j
+  real(r15):: arr(n), a
+
+  do j=2, n
+    a=arr(j)
+    do i=j-1,1,-1
+      if (arr(i)<=a) goto 10
+      arr(i+1)=arr(i)
+    end do
+  i=0
+10  arr(i+1)=a
+  end do
+
+  return
+
+END SUBROUTINE
+
+
+
+SUBROUTINE setgmn(meanv,covm,p,parm)
+!**********************************************************************
+!
+!     SUBROUTINE SETGMN( MEANV, COVM, P, PARM)
+!            SET Generate Multivariate Normal random deviate
+!
+!
+!                              Function
+!
+!
+!      Places P, MEANV, and the Cholesky factoriztion of COVM
+!      in GENMN.
+!
+!
+!                              Arguments
+!
+!
+!     MEANV --> Mean vector of multivariate normal distribution.
+!                                        REAL MEANV(P)
+!
+!     COVM   <--> (Input) Covariance   matrix    of  the  multivariate
+!                 normal distribution
+!                 (Output) Destroyed on output
+!                                        REAL !OVM(P,P)
+!
+!     P     --> Dimension of the normal, or length of MEANV.
+!                                        INTEGER P
+!
+!     PARM <-- Array of parameters needed to generate multivariate norma
+!                deviates (P, MEANV and !holesky decomposition of
+!                !OVM).
+!                1 : 1                - P
+!                2 : P + 1            - MEANV
+!                P+2 : P*(P+3)/2 + 1  - !holesky decomposition of !OVM
+!                                             REAL PARM(P*(P+3)/2 + 1)
+!
+!**********************************************************************
+
+      implicit none
+!
+      integer, parameter :: r15 = selected_real_kind(15)
+      integer, parameter :: i6 = selected_int_kind(6)
+
+!     .. Scalar Arguments ..
+      INTEGER(i6) p
+!     ..
+!     .. Array Arguments ..
+      REAL(r15) covm(p,p),meanv(p),parm(p*(p+3)/2+1)
+!     ..
+!     .. Local Scalars ..
+      INTEGER(i6) i,icount,info,j
+!     ..
+!     .. External Subroutines ..
+
+!     ..
+!     .. Executable Statements ..
+!
+!
+!     TEST THE INPUT
+!
+      IF (.NOT. (p.LE.0)) GO TO 10
+!      WRITE (*,*) 'P nonpositive in SETGMN'
+!      WRITE (*,*) 'Value of P: ',p
+!      STOP 'P nonpositive in SETGMN'
+
+   10 parm(1) = p
+!
+!     PUT P AND MEANV INTO PARM
+!
+      DO 20,i = 2,p + 1
+          parm(i) = meanv(i-1)
+   20 CONTINUE
+!
+!      Cholesky decomposition to find A s.t. trans(A)*(A) = COVM
+!
+      CALL spofa(covm,p,p,info)
+      IF (.NOT. (info.NE.0)) GO TO 30
+!      WRITE (*,*) ' !OVM not positive definite in SETGMN'
+!      STOP ' COVM not positive definite in SETGMN'
+
+   30 icount = p + 1
+!
+!     PUT UPPER HALF OF A, WHICH IS NOW THE !HOLESKY FA!TOR, INTO PARM
+!          !OVM(1,1) = PARM(P+2)
+!          !OVM(1,2) = PARM(P+3)
+!                    :
+!          !OVM(1,P) = PARM(2P+1)
+!          !OVM(2,2) = PARM(2P+2)  ...
+!
+      DO 50,i = 1,p
+          DO 40,j = i,p
+              icount = icount + 1
+              parm(icount) = covm(i,j)
+   40     CONTINUE
+   50 CONTINUE
+      RETURN
+!
+END SUBROUTINE
+
+
+
+SUBROUTINE genmn(parm,x,p,iseed)
+  !**********************************************************************
+  !
+  !     SUBROUTINE GENMN(PARM,X,WORK)
+  !              GENerate Multivariate Normal random deviate
+   !
+   !
+   !                              Arguments
+   !
+  !
+  !     PARM --> Parameters needed to generate multivariate normal
+  !               deviates (MEANV and Cholesky decomposition of
+  !               COVM). Set by a previous call to SETGMN.
+  !               1 : 1                - size of deviate, P
+  !               2 : P + 1            - mean vector
+  !               P+2 : P*(P+3)/2 + 1  - upper half of cholesky
+  !                                       decomposition of cov matrix
+  !                                             DOUBLE PRECISION PARM(*)
+  !
+  !     X    <-- Vector deviate generated.
+  !                                             DOUBLE PRECISION X(P)
+  !
+  !     WORK <--> Scratch array
+  !                                             DOUBLE PRECISION WORK(P)
+  !
+  !
+  !                              Method
+  !
+  !
+  !     1) Generate P independent standard normal deviates - Ei ~ N(0,1)
+  !
+  !     2) Using Cholesky decomposition find A s.t. trans(A)*A = COVM
+  !
+  !     3) trans(A)E + MEANV ~ N(MEANV,!OVM)
+  !
+  !**********************************************************************
+  !
+        implicit none
+  !
+        integer, parameter :: r15 = selected_real_kind(15)
+        integer, parameter :: i6 = selected_int_kind(6)
+  !
+  !     .. Array Arguments ..
+        integer(i6), intent(in) :: p, iseed
+        real(r15), intent(in)   :: parm(p*(p+3)/2 + 1)
+        real(r15)               :: work(p)
+        real(r15), intent(out)  :: x(p)
+  !     ..
+  !     .. Local Scalars ..
+        real(r15) ae
+        INTEGER(i6) i,icount,j
+  !    ..
+  !     .. External Functions ..
+  !     ..
+  !     .. Executable Statements ..
+  !
+  !     Generate P independent normal deviates - WORK ~ N(0,1)
+  !
+        DO 10,i = 1,p
+            work(i) = rnormal(iseed)
+     10 CONTINUE
+        DO 30,i = 1,p
+  !
+  !     PARM (P+2 : P*(P+3)/2 + 1) contains A, the Cholesky
+  !      decomposition of the desired covariance matrix.
+  !          trans(A)(1,1) = PARM(P+2)
+  !          trans(A)(2,1) = PARM(P+3)
+  !          trans(A)(2,2) = PARM(P+2+P)
+  !          trans(A)(3,1) = PARM(P+4)
+  !          trans(A)(3,2) = PARM(P+3+P)
+  !          trans(A)(3,3) = PARM(P+2-1+2P)  ...
+  !
+  !     trans(A)*WORK + MEANV ~ N(MEANV,COVM)
+  !
+            icount = 0
+            ae = 0.0
+            DO 20,j = 1,i
+                icount = icount + j - 1
+                ae = ae + parm(i+ (j-1)*p-icount+p+1)*work(j)
+     20     CONTINUE
+            x(i) = ae + parm(i+1)
+     30 CONTINUE
+        RETURN
+  !
+END SUBROUTINE
+
+
+
+
+subroutine spofa(a,lda,n,info)
+
+      implicit none
+!
+      integer, parameter :: r15 = selected_real_kind(15)
+      integer, parameter :: i6 = selected_int_kind(6)
+!
+      integer(i6) lda,n,info
+      real(r15) a(lda,n)
+!
+!     spofa factors a real symmetric positive definite matrix.
+!
+!     spofa is usually called by spoco, but it can be called
+!     directly with a saving in time if  rcond  is not needed.
+!     (time for spo!o) = (1 + 18/n)*(time for spofa) .
+!
+!     on entry
+!
+!        a       real(lda, n)
+!                the symmetric matrix to be factored.  only the
+!                diagonal and upper triangle are used.
+!
+!        lda     integer
+!                the leading dimension of the array  a .
+!
+!        n       integer
+!                the order of the matrix  a .
+!
+!     on return
+!
+!        a       an upper triangular matrix  r  so that  a = trans(r)*r
+!                where  trans(r)  is the transpose.
+!                the stri!t lower triangle is unaltered.
+!                if  info .ne. 0 , the fa!torization is not !omplete.
+!
+!        info    integer
+!                = 0  for normal return.
+!                = k  signals an error !ondition.  the leading minor
+!                     of order  k  is not positive definite.
+!
+!     linpa!k.  this version dated 08/14/78 .
+!     !leve moler, university of new mexi!o, argonne national lab.
+!
+!     subroutines and functions
+!
+!     blas sdot
+!     fortran sqrt
+!
+!     internal variables
+!
+      real(r15) t
+      real(r15) s
+      integer(i6) j,jm1,k
+!     begin block with ...exits to 40
+!
+         do 30 j = 1, n
+            info = j
+            s = 0.0e0
+            jm1 = j - 1
+            if (jm1 .lt. 1) go to 20
+            do 10 k = 1, jm1
+               t = a(k,j) - sdot(k-1,a(1,k),1,a(1,j),1)
+               t = t/a(k,k)
+               a(k,j) = t
+               s = s + t*t
+   10       continue
+   20       continue
+            s = a(j,j) - s
+!     ......exit
+            if (s .le. 0.0e0) go to 40
+            a(j,j) = sqrt(s)
+   30    continue
+         info = 0
+   40 continue
+      return
+end SUBROUTINE spofa
+
+
+  end subroutine estimate_bct_ordinal_test
+
+
+
+
 
