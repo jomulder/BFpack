@@ -23,7 +23,8 @@ subroutine estimate_bct_ordinal_test(postZmean, postZcov, P, numcorr, K, numG, B
                             varz1, varz2, varz1z2Plus, varz1z2Min, Cinv(P,P), Zcorr_sample(samsize0,numcorr), &
                             acceptSigma(numG,P), covBeta(P*K,P*K), betaDrawj(1,P*K), dummyPP(P,P), &
                             dummy3(samsize0), dummy2(samsize0), meanO(P*K), para(((P*K)*((P*K)+3)/2 + 1)), SS2(P,P), &
-                            gLiuSab_curr(numG,P), Cnugget(P,P), acceptSigma(numG,P), acceptLS(numG,P), sdMHg(numG,P)
+                            gLiuSab_curr(numG,P), Cnugget(P,P), acceptLS(numG,P), sdMHg(numG,P), Wgroups(numG,Ntot,P), &
+                            Wdummy(numG,P,Ntot,maxCat), alphaMat(numG,maxCat+1,P)
     integer(i6)             :: s1, g1, i1, corrteller, c1, c2, p1, p2, k1, errorflag, lower_int, median_int, upper_int, &
                                iseed, ordinal(numG,P), Cat(numG,P)
 !
@@ -39,6 +40,8 @@ subroutine estimate_bct_ordinal_test(postZmean, postZcov, P, numcorr, K, numG, B
     sigmaDrawsStore = 0
     gLiuSab_curr = 1.0
     !
+
+!
 !
     !start Gibbs sampler
     do s1 = 1,samsize0
