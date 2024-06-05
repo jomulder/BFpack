@@ -57,6 +57,11 @@ subroutine estimate_bct_ordinal_test(postZmean, postZcov, P, numcorr, K, numG, B
             end if
         end do
     end do
+    !define nugget matrix to avoid approximate nonpositive definite correlation matrices for candidates
+    Cnugget = nuggetscale
+    do p1=1,P
+        Cnugget(p1,p1) = 1.0
+    end do
 !
 !
     !start Gibbs sampler
