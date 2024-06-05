@@ -71,6 +71,23 @@ subroutine estimate_bct_ordinal_test(postZmean, postZcov, P, numcorr, K, numG, B
     !initial values for latent W's corresponding to ordinal DVs
     Wgroups = Ygroups
     Wdummy = 0.0
+
+    !initial values of boundary values alpha to link between ordinal Y and continuous latent W
+    if(maxCat>1) then
+        alphaMat = 0.0
+        alphaMat(:,1,:) = -1e10  !alpha0
+        alphaMat(:,2,:) = 0.0      !alpha1
+        do p1=1,P
+            do g1=1,numG
+                if(ordinal(g1,p1)>0) then
+                    do c1=3,Cat(g1,p1)
+                        alphaMat(g1,c1,p1) = .3*(real(c1)-2.0)
+                    end do
+                    alphaMat(g1,Cat(g1,p1)+1,p1) = 1e10
+                end if
+            end do
+        end do
+    end if
 !
 !
     !start Gibbs sampler

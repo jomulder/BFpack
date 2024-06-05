@@ -663,6 +663,9 @@ cor_test <- function(..., formula = NULL, iter = 5e3, burnin = 3e3, nugget.scale
     ordi[gg,] <- as.double(ordi[gg,])
     numcats[gg,] <- as.double(numcats[gg,])
   }
+  if(max(numcats) == 1){
+    stop("One categorical variable is constant.")
+  }
   #because ordinal variables are not yet supported we set these indicators to '0'
   #ordi <- numcats <- matrix(0,nrow=numG,ncol=P)
   cor.type <- lapply(1:numG,function(g){matrix(NA,ncol=P,nrow=P)})
