@@ -74,7 +74,7 @@ subroutine estimate_bct_ordinal_test(postZmean, postZcov, P, numcorr, K, numG, B
 !
     !initial values of boundary values alpha to link between ordinal Y and continuous latent W
     alphaMat = 0.0
-    alphaMat(:,1,:) = -1.000  !alpha0
+    alphaMat(:,1,:) = -1.0  !alpha0
     alphaMat(:,2,:) = 0.0      !alpha1
 !
 !
