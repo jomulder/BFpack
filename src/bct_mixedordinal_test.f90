@@ -62,6 +62,20 @@ subroutine estimate_bct_ordinal_test(postZmean, postZcov, P, numcorr, K, numG, B
     do p1=1,P
         Cnugget(p1,p1) = 1.0
     end do
+    !
+    !count number of accepted draws for R (over all groups)
+    acceptSigma = 0.0
+    acceptLS = 0.0
+    sdMHg = .1 !for gLiuBanhatti parameter
+!
+    !initial values for latent W's corresponding to ordinal DVs
+    Wgroups = Ygroups
+    Wdummy = 0.0
+!
+    !initial values of boundary values alpha to link between ordinal Y and continuous latent W
+    alphaMat = 0.0
+    alphaMat(:,1,:) = -1e10  !alpha0
+    alphaMat(:,2,:) = 0.0      !alpha1
 !
 !
     !start Gibbs sampler
