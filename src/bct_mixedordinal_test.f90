@@ -39,34 +39,6 @@ subroutine estimate_bct_ordinal_test(postZmean, postZcov, P, numcorr, K, numG, B
     sigmaDrawsStore = 0
     gLiuSab_curr = 1.0
     !
-    do g1=1,numG
-        do p1=1,P
-            ordinal(g1,p1) = int(ordinal_in(g1,p1))
-            Cat(g1,p1) = int(Cat_in(g1,p1))
-        end do
-    end do
-    do p1=1,P
-        do g1=1,numG
-            !initial values
-            if(ordinal(g1,p1)==1) then
-                sigmaDraws(g1,p1) = 1.0
-                sigma_quantiles(g1,p1,1) = 1.0
-                sigma_quantiles(g1,p1,2) = 1.0
-                sigma_quantiles(g1,p1,3) = 1.0
-            end if
-        end do
-    end do
-!
-    !define nugget matrix to avoid approximate nonpositive definite correlation matrices for candidates
-    Cnugget = nuggetscale
-    do p1=1,P
-        Cnugget(p1,p1) = 1.0
-    end do
-!
-    ! keep track of number of accepted draws in Metropolis-Hastings step
-    acceptSigma = 0.0
-    acceptLS = 0.0
-    sdMHg = .1 !for gLiuBanhatti parameter
 !
     !start Gibbs sampler
     do s1 = 1,samsize0
