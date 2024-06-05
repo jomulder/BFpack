@@ -18,7 +18,7 @@ test_that("BF.cor_test exploratory hypotheses on correlations correctly evaluate
     tolerance = .02
   )
 })
-# confirmatory hypothesis test on the correlations
+# confirmatory hypothesis test on the  correlations
 BF2 <- BF(cor1,hypothesis="wt_with_drat<drat_with_hp<wt_with_hp;
    wt_with_drat=drat_with_hp<0<wt_with_hp")
 BFtable <- matrix(c(   0,    1.1,  5.62,
