@@ -75,8 +75,8 @@ test_that("BF.cor_test exploratory hypotheses on correlations correctly evaluate
 # test a single correlation on categorical outcomes
 set.seed(123)
 mtcars_test <- mtcars[,8:9]
-mtcars_test[,2] <- as.factor(mtcars_test[,2])
-mtcars_test[,1] <- as.factor(mtcars_test[,1])
+mtcars_test[,2] <- (mtcars_test[,2])
+mtcars_test[,1] <- (mtcars_test[,1])
 cor2 <- cor_test(mtcars_test,burnin = 0)
 print(cor2$meanF)
 print(cor2$covmF)
