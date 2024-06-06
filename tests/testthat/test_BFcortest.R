@@ -57,7 +57,7 @@ test_that("BF.cor_test confirmatory hypotheses on correlations correctly evaluat
 set.seed(123)
 cor2b <- cor_test(mtcars[1:10,2:4],mtcars[11:32,2:4])
 estimates_check <- c(.85,.81,.8,.9,.81,.76)
-test_that("check estimate of polychoric correlation", {
+test_that("check estimates of correlations of multiple groups", {
   expect_equivalent(
     cor2b$correstimates[,1],estimates_check, tolerance = .1
   )})
@@ -78,6 +78,15 @@ mtcars_test <- mtcars[,8:9]
 mtcars_test[,2] <- as.factor(mtcars_test[,2])
 mtcars_test[,1] <- as.factor(mtcars_test[,1])
 cor2 <- cor_test(mtcars_test)
+print(cor2$meanF)
+print(cor2$covmF)
+print(cor2$correstimates)
+print(head(cor2$corrdraws[[1]][,2,1]))
+print(tail(cor2$corrdraws[[1]][,2,1]))
+head(cor2$B.draws[,1,1,])
+tail(cor2$B.draws[,1,1,])
+head(cor2$sigma.draws[,1,])
+tail(cor2$sigma.draws[,1,])
 test_that("check estimate of polychoric correlation", {
   expect_equivalent(
     cor2$correstimates[1,1],.3, tolerance = .1
