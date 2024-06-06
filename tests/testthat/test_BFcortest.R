@@ -83,10 +83,10 @@ print(cor2$covmF)
 print(cor2$correstimates)
 print(head(cor2$corrdraws[[1]][,2,1]))
 print(tail(cor2$corrdraws[[1]][,2,1]))
-head(cor2$B.draws[,1,1,])
-tail(cor2$B.draws[,1,1,])
-head(cor2$sigma.draws[,1,])
-tail(cor2$sigma.draws[,1,])
+print(head(cor2$B.draws[,1,1,]))
+print(tail(cor2$B.draws[,1,1,]))
+print(head(cor2$sigma.draws[,1,]))
+print(tail(cor2$sigma.draws[,1,]))
 test_that("check estimate of polychoric correlation", {
   expect_equivalent(
     cor2$correstimates[1,1],.3, tolerance = .1
