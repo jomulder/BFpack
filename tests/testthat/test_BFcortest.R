@@ -99,6 +99,10 @@ print(head(cor2$res$CheckStore[2,1,,1,],2))
 print(head(cor2$res$CheckStore[2,1,,2,],2))
 print(head(cor2$res$CheckStore[3,1,,1,],2))
 print(head(cor2$res$CheckStore[3,1,,2,],2))
+# drawn W's in the last column are not present as current W in next iteration which should be the case I think...
+# oh nee toch niet want dat doet die Liu Sabatti correctie...
+# dus zit hem in inverse prob sampling...
+# alnorm vervangen door cumnor
 
 test_that("check estimate of polychoric correlation", {
   expect_equivalent(

@@ -351,7 +351,7 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                         CheckStore(s1,g1,i1,p1,(P+P+P+1):(P+P+P+2)) = (/condMean,condVar/)
                         select case (Yi1Categorie)
                             case(1)
-                                call inverse_prob_sampling(condMean,condVar,0,1,alphaMat(g1,1,p1), &
+                                call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,1,p1), &
                                     alphaMat(g1,2,p1),Wgroups(g1,i1,p1),iseed)
                                 tellers(g1,1,p1) = tellers(g1,1,p1) + 1
                                 Wdummy(g1,p1,tellers(g1,1,p1),1) = Wgroups(g1,i1,p1)
@@ -405,7 +405,7 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                                 tellers(g1,10,p1) = tellers(g1,10,p1) + 1
                                 Wdummy(g1,p1,tellers(g1,10,p1),10) = Wgroups(g1,i1,p1)
                             case(11)
-                                call inverse_prob_sampling(condMean,condVar,1,0,alphaMat(g1,11,p1), &
+                                call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,11,p1), &
                                     alphaMat(g1,12,p1),Wgroups(g1,i1,p1),iseed)
                                 tellers(g1,11,p1) = tellers(g1,11,p1) + 1
                                 Wdummy(g1,p1,tellers(g1,11,p1),11) = Wgroups(g1,i1,p1)
@@ -1396,16 +1396,15 @@ subroutine inverse_prob_sampling(condMean,condVar,LBtrue,UBtrue,LB,UB,condDraw,i
     UBstand = (UB - condMean)/sqrt(condVar)
     LBstand = (LB - condMean)/sqrt(condVar)
     !yUB = anordf (UBstand)
-    yUB = alnorm ( UBstand, uppie )
+    !yUB = alnorm ( UBstand, uppie )
+    yUB = cumnor(UBstand)
     !yLB = anordf (LBstand)
-    yLB = alnorm ( LBstand, uppie )
+    !yLB = alnorm ( LBstand, uppie )
+    yLB = cumnor (LBstand)
     teller = 0
 601    rrand = runiform(iseed) * .999998 + .000001
     rnIPS = rrand*(yUB - yLB) + yLB
-    if(LBtrue+UBtrue==0) then !unconstrained sampling
-        rrand = rnormal(iseed)
-        condDraw = rrand*sqrt(condVar) + condMean
-    else if(abs(rnIPS) > machPres .and. abs(rnIPS-1) > machPres) then
+    if(abs(rnIPS) > machPres .and. abs(rnIPS-1) > machPres) then
         !inverse probability sampling
         xdraw = dinvnr ( rnIPS )
         condDraw = xdraw * sqrt(condVar) + condMean
