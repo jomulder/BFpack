@@ -1402,22 +1402,31 @@ subroutine inverse_prob_sampling(condMean,condVar,LBtrue,UBtrue,LB,UB,condDraw,i
     !yLB = alnorm ( LBstand, uppie )
     yLB = cumnor (LBstand)
     teller = 0
-601    rrand = runiform(iseed) * .999998 + .000001
+    rrand = runiform(iseed) * .999998 + .000001
     rnIPS = rrand*(yUB - yLB) + yLB
-    if(abs(rnIPS) > machPres .and. abs(rnIPS-1) > machPres) then
-        !inverse probability sampling
-        xdraw = dinvnr ( rnIPS )
-        condDraw = xdraw * sqrt(condVar) + condMean
-    else if(UBstand>-4.0 .and. LBstand<4.0) then !IPS must be redone
-        teller = teller + 1
-        go to 601
-    else
-        if(condMean > UB) then
-            condDraw = UB
-        else if(condMean < LB) then
-            condDraw = LB
-        end if
+    if(rnIPS .le. machPres) then
+        rnIPS = machPres
     end if
+    if(rnIPS .ge. (1.0 - machPres)) then
+        rnIPS = 1.0 - machPres
+    end if
+    xdraw = dinvnr ( rnIPS )
+    condDraw = xdraw * sqrt(condVar) + condMean
+
+!    if(abs(rnIPS) > machPres .and. abs(rnIPS-1) > machPres) then
+!        !inverse probability sampling
+!        xdraw = dinvnr ( rnIPS )
+!        condDraw = xdraw * sqrt(condVar) + condMean
+!    else if(UBstand>-4.0 .and. LBstand<4.0) then !IPS must be redone
+!        teller = teller + 1
+!        go to 601
+!    else
+!        if(condMean > UB) then
+!            condDraw = UB
+!        else if(condMean < LB) then
+!            condDraw = LB
+!        end if
+!    end if
 !
 end subroutine inverse_prob_sampling
 

@@ -132,6 +132,6 @@ cor4 <- cor_test(mtcars_test,iter = 3e3,burnin = 1e3)
 BF4 <- BF(cor4,log = TRUE)
 test_that("BF.cor_test exploratory hypotheses on correlations mixed measurement levels", {
   expect_equivalent(
-    BF4$BFtu_exploratory[,2],c(0.7,-7.4,-9.2,.7,.7,-7), tolerance = .1
+    BF4$BFtu_exploratory[,2],c(0.7,-8.1,-9.7,.7,.7,-9.8), tolerance = .1
   )})
 
