@@ -91,6 +91,8 @@ print(head(cor2$gLiuSab[,1,]))
 print(tail(cor2$gLiuSab[,1,]))
 print((cor2$WgroupsStore[2,1,,]))
 print((cor2$WgroupsStore[3,1,,]))
+print((cor2$meanMatMeanStore[2,,]))
+print((cor2$meanMatMeanStore[3,,]))
 
 test_that("check estimate of polychoric correlation", {
   expect_equivalent(
