@@ -416,10 +416,9 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                         end do
                     end if
                 end if
-
-                WgroupsStore(s1,g1,:,:) = Wgroups(g1,:,:)
 !
             end do
+            WgroupsStore(s1,g1,:,:) = Wgroups(g1,:,:)
 !
             Bmean(1:K,1:P) = matmul(matmul(XtXi(g1,:,:),transpose(Xgroups(g1,1:Njs(g1),1:K))), &
                 Wgroups(g1,1:Njs(g1),1:P))
@@ -1328,7 +1327,7 @@ subroutine compute_condMeanVar(welke,dimIn,meanIn,covmIn,obsIn,condMean,condVar)
     real (kind = r15), intent(out)  :: condMean, condVar
     real (kind = r15)               :: dummy3(1,1), dummy2(dimIn-1,1), S12(1,dimIn-1), S22(dimIn-1,dimIn-1), &
                                        S22inv(dimIn-1,dimIn-1), meanLocal(dimIn,1)
-    integer                         :: errorflag
+    integer(i6)                     :: errorflag
 !
     meanLocal(1:dimIn,1) = meanIn(1:dimIn)
 !
