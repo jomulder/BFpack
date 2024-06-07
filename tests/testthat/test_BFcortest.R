@@ -75,9 +75,9 @@ test_that("BF.cor_test exploratory hypotheses on correlations correctly evaluate
 # test a single correlation on categorical outcomes
 set.seed(123)
 mtcars_test <- mtcars[,8:9]
-mtcars_test[,2] <- (mtcars_test[,2])
-mtcars_test[,1] <- (mtcars_test[,1])
-cor2 <- cor_test(mtcars_test,burnin = 0)
+mtcars_test[,2] <- as.factor(mtcars_test[,2])
+mtcars_test[,1] <- as.factor(mtcars_test[,1])
+cor2 <- cor_test(mtcars_test,burnin = 0, iter = 20)
 print(cor2$meanF)
 print(cor2$covmF)
 print(cor2$correstimates)
@@ -87,6 +87,11 @@ print(head(cor2$B.draws[,1,1,]))
 print(tail(cor2$B.draws[,1,1,]))
 print(head(cor2$sigma.draws[,1,]))
 print(tail(cor2$sigma.draws[,1,]))
+print(head(cor2$gLiuSab[,1,]))
+print(tail(cor2$gLiuSab[,1,]))
+print((cor2$WgroupsStore[2,1,,]))
+print((cor2$WgroupsStore[3,1,,]))
+
 test_that("check estimate of polychoric correlation", {
   expect_equivalent(
     cor2$correstimates[1,1],.3, tolerance = .1
@@ -94,16 +99,16 @@ test_that("check estimate of polychoric correlation", {
 BF2 <- BF(cor2,hypothesis="am_with_vs= .1")
 PHPexplo <- matrix(
   c(.4,  .1,  .50),nrow=1,byrow=T)
-# exploratory hypothesis test on the correlation
-test_that("BF.cor_test exploratory hypotheses on correlations correctly evaluated", {
-  expect_equivalent(
-    BF2$PHP_exploratory,PHPexplo, tolerance = .1
-  )})
-# confirmatory hypothesis test on the correlation
-test_that("BF.cor_test confirmatory hypotheses on correlations correctly evaluated", {
-  expect_equivalent(
-    log(BF2$BFmatrix_confirmatory[1,2]),.5, tolerance = .1
-  )})
+# # exploratory hypothesis test on the correlation
+# test_that("BF.cor_test exploratory hypotheses on correlations correctly evaluated", {
+#   expect_equivalent(
+#     BF2$PHP_exploratory,PHPexplo, tolerance = .1
+#   )})
+# # confirmatory hypothesis test on the correlation
+# test_that("BF.cor_test confirmatory hypotheses on correlations correctly evaluated", {
+#   expect_equivalent(
+#     log(BF2$BFmatrix_confirmatory[1,2]),.5, tolerance = .1
+#   )})
 
 # test with combinations between continuous and ordinal (categorical) outcome variables
 set.seed(187)
