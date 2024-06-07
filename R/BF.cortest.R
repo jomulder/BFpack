@@ -796,7 +796,8 @@ cor_test <- function(..., formula = NULL, iter = 5e3, burnin = 3e3, nugget.scale
                   nuggetscale=as.double(nugget.scale),
                   WgroupsStore=array(as.double(0),dim=c(samsize0,numG,Ntot,P)),
                   meanMatMeanStore = array(as.double(0),dim=c(samsize0,Ntot,P)),
-                  SigmaMatDrawStore = array(as.double(0),dim=c(samsize0,P,P))
+                  SigmaMatDrawStore = array(as.double(0),dim=c(samsize0,P,P)),
+                  WcondStore = array(as.double(0),dim=c(samsize0,numG,Ntot,P,2))
   )
 
   varnames <- lapply(1:numG,function(g){
@@ -867,9 +868,7 @@ cor_test <- function(..., formula = NULL, iter = 5e3, burnin = 3e3, nugget.scale
 
   cor_out <- list(meanF=meanN,covmF=covmN,correstimates=postestimates_correlations,
                   corrdraws=corrdraws,corrnames=corrnames,variables=varnames,
-                  cor.type=cor.type,B.draws=res$BDrawsStore,sigma.draws=res$sigmaDrawsStore,
-                  gLiuSab=res$gLiuSab,WgroupsStore=res$WgroupsStore,meanMatMeanStore=res$meanMatMeanStore,
-                  SigmaMatDrawStore=res$SigmaMatDrawStore)
+                  cor.type=cor.type,res=res)
   class(cor_out) <- "cor_test"
 
   return(cor_out)
