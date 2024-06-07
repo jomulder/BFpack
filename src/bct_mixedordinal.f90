@@ -20,7 +20,7 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                               sigmaDrawsStore(samsize0,numG,P), CDrawsStore(samsize0,numG,P,P), &
                               gLiuSab(samsize0,numG,P), WgroupsStore(samsize0,numG,Ntot,P), &
                               meanMatMeanStore(samsize0,Ntot,P), SigmaMatDrawStore(samsize0,P,P), &
-                              CheckStore(samsize0,numG,Ntot,P,3*P+2)
+                              CheckStore(samsize0,numG,Ntot,P,3*P+2+3)
     real(r15) ::  BDraws(numG,K,P), CDraws(numG,P,P), sigmaDraws(numG,P), meanMat(Ntot,P), SigmaMatDraw(P,P), &
                   R_MH, covBeta(K*P,K*P), Ds(P,P), Ccan(P,P), CcanInv(P,P), Ccurr(P,P), epsteps(P,P), &
                   SS1(P,P), SS1inv(P,P), rnunif(1), errorMatj(P,P), sigma_can(P), aa, bb, &
@@ -355,11 +355,15 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                                     alphaMat(g1,2,p1),Wgroups(g1,i1,p1),iseed)
                                 tellers(g1,1,p1) = tellers(g1,1,p1) + 1
                                 Wdummy(g1,p1,tellers(g1,1,p1),1) = Wgroups(g1,i1,p1)
+                                CheckStore(s1,g1,i1,p1,(P+P+P+3):(P+P+P+5)) = (/alphaMat(g1,1,p1), &
+                                    alphaMat(g1,2,p1),Wgroups(g1,i1,p1)/)
                             case(2)
                                 call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,2,p1), &
                                     alphaMat(g1,3,p1),Wgroups(g1,i1,p1),iseed)
                                 tellers(g1,2,p1) = tellers(g1,2,p1) + 1
                                 Wdummy(g1,p1,tellers(g1,2,p1),2) = Wgroups(g1,i1,p1)
+                                CheckStore(s1,g1,i1,p1,(P+P+P+3):(P+P+P+5)) = (/alphaMat(g1,2,p1), &
+                                    alphaMat(g1,3,p1),Wgroups(g1,i1,p1)/)
                             case(3)
                                 call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,3,p1), &
                                     alphaMat(g1,4,p1),Wgroups(g1,i1,p1),iseed)
@@ -1396,7 +1400,7 @@ subroutine inverse_prob_sampling(condMean,condVar,LBtrue,UBtrue,LB,UB,condDraw,i
     !yLB = anordf (LBstand)
     yLB = alnorm ( LBstand, uppie )
     teller = 0
-601    rrand = runiform(iseed)
+601    rrand = runiform(iseed) * .999998 + .000001
     rnIPS = rrand*(yUB - yLB) + yLB
     if(LBtrue+UBtrue==0) then !unconstrained sampling
         rrand = rnormal(iseed)

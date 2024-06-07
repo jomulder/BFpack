@@ -93,30 +93,30 @@ print("W2")
 print(head(cor2$res$WgroupsStore[2,1,,]))
 print("W3")
 print(head(cor2$res$WgroupsStore[3,1,,]))
-print(head(cor2$res$CheckStore[1,1,,1,]))
-print(head(cor2$res$CheckStore[1,1,,2,]))
-print(head(cor2$res$CheckStore[2,1,,1,]))
-print(head(cor2$res$CheckStore[2,1,,2,]))
-print(head(cor2$res$CheckStore[3,1,,1,]))
-print(head(cor2$res$CheckStore[3,1,,2,]))
+print(head(cor2$res$CheckStore[1,1,,1,],2))
+print(head(cor2$res$CheckStore[1,1,,2,],2))
+print(head(cor2$res$CheckStore[2,1,,1,],2))
+print(head(cor2$res$CheckStore[2,1,,2,],2))
+print(head(cor2$res$CheckStore[3,1,,1,],2))
+print(head(cor2$res$CheckStore[3,1,,2,],2))
 
 test_that("check estimate of polychoric correlation", {
   expect_equivalent(
-    cor2$correstimates[1,1],.3, tolerance = .1
+    cor2$correstimates[1,1],.2, tolerance = .1
   )})
 BF2 <- BF(cor2,hypothesis="am_with_vs= .1")
 PHPexplo <- matrix(
-  c(.4,  .1,  .50),nrow=1,byrow=T)
-# # exploratory hypothesis test on the correlation
-# test_that("BF.cor_test exploratory hypotheses on correlations correctly evaluated", {
-#   expect_equivalent(
-#     BF2$PHP_exploratory,PHPexplo, tolerance = .1
-#   )})
-# # confirmatory hypothesis test on the correlation
-# test_that("BF.cor_test confirmatory hypotheses on correlations correctly evaluated", {
-#   expect_equivalent(
-#     log(BF2$BFmatrix_confirmatory[1,2]),.5, tolerance = .1
-#   )})
+  c(.51,  .046,  .45),nrow=1,byrow=T)
+# exploratory hypothesis test on the correlation
+test_that("BF.cor_test exploratory hypotheses on correlations correctly evaluated", {
+  expect_equivalent(
+    BF2$PHP_exploratory,PHPexplo, tolerance = .1
+  )})
+# confirmatory hypothesis test on the correlation
+test_that("BF.cor_test confirmatory hypotheses on correlations correctly evaluated", {
+  expect_equivalent(
+    log(BF2$BFmatrix_confirmatory[1,2]),1.35, tolerance = .1
+  )})
 
 # test with combinations between continuous and ordinal (categorical) outcome variables
 set.seed(187)
