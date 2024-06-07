@@ -338,7 +338,6 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
             !draw latent W's for the ordinal Y's
             !compute mean vector for
 !
-
 !compute_condMeanVar(welke,dimIn,meanIn,covmIn,obsIn,condMean,condVar)
 
             do p1=1,P
@@ -1329,7 +1328,7 @@ subroutine compute_condMeanVar(welke,dimIn,meanIn,covmIn,obsIn,condMean,condVar)
     real (kind = r15), intent(out)  :: condMean, condVar
     real (kind = r15)               :: dummy3(1,1), dummy2(dimIn-1,1), S12(1,dimIn-1), S22(dimIn-1,dimIn-1), &
                                        S22inv(dimIn-1,dimIn-1), meanLocal(dimIn,1)
-!    integer                         :: errorflag
+    integer                         :: errorflag
 !
     meanLocal(1:dimIn,1) = meanIn(1:dimIn)
 !
