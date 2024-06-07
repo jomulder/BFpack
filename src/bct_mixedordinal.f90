@@ -4,7 +4,7 @@
 subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, sdHat, CHat, XtXi, samsize0, &
     burnin, Ntot, Njs_in, Xgroups, Ygroups, C_quantiles, sigma_quantiles, B_quantiles, BDrawsStore, &
     sigmaDrawsStore, CDrawsStore, sdMH, ordinal_in, Cat_in, maxCat, gLiuSab, seed, nuggetscale, WgroupsStore, &
-    meanMatMeanStore)
+    meanMatMeanStore,SigmaMatDrawStore)
 !
     implicit none
 !
@@ -19,7 +19,7 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                               C_quantiles(numG,P,P,3), sigma_quantiles(numG,P,3), BDrawsStore(samsize0,numG,K,P), &
                               sigmaDrawsStore(samsize0,numG,P), CDrawsStore(samsize0,numG,P,P), &
                               gLiuSab(samsize0,numG,P), WgroupsStore(samsize0,numG,Ntot,P), &
-                              meanMatMeanStore(samsize0,Ntot,P)
+                              meanMatMeanStore(samsize0,Ntot,P), SigmaMatDrawStore(samsize0,P,P)
     real(r15) ::  BDraws(numG,K,P), CDraws(numG,P,P), sigmaDraws(numG,P), meanMat(Ntot,P), SigmaMatDraw(P,P), &
                   R_MH, covBeta(K*P,K*P), Ds(P,P), Ccan(P,P), CcanInv(P,P), Ccurr(P,P), epsteps(P,P), &
                   SS1(P,P), SS1inv(P,P), rnunif(1), errorMatj(P,P), sigma_can(P), aa, bb, &
@@ -332,6 +332,7 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
             meanMatMeanStore(s1,1:Njs(g1),1:P) = meanMat(1:Njs(g1),1:P)
             Ccurr = CDraws(g1,:,:)
             SigmaMatDraw = matmul(matmul(diag(sigmaDraws(g1,:),P),Ccurr),diag(sigmaDraws(g1,:),P))
+            SigmaMatDrawStore(s1,:,:) = SigmaMatDraw(:,:)
 !
             !draw latent W's for the ordinal Y's
             !compute mean vector for
