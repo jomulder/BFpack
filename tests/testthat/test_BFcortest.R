@@ -95,10 +95,8 @@ print(head(cor2$res$meanMatMeanStore[2,,]))
 print(head(cor2$res$meanMatMeanStore[3,,]))
 print(head(cor2$res$SigmaMatDrawStore[2,,]))
 print(head(cor2$res$SigmaMatDrawStore[3,,]))
-print(head(cor2$res$WcondStore[2,1,,1,]))
-print(head(cor2$res$WcondStore[2,1,,2,]))
-print(head(cor2$res$WcondStore[3,1,,1,]))
-print(head(cor2$res$WcondStore[3,1,,2,]))
+print(head(cor2$res$CheckStore[3,1,,1,]))
+print(head(cor2$res$CheckStore[3,1,,2,]))
 
 test_that("check estimate of polychoric correlation", {
   expect_equivalent(
