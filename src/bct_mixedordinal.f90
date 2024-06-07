@@ -338,6 +338,9 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
             !draw latent W's for the ordinal Y's
             !compute mean vector for
 !
+
+!compute_condMeanVar(welke,dimIn,meanIn,covmIn,obsIn,condMean,condVar)
+
             do p1=1,P
                 if(ordinal(g1,p1)>0) then
                     do i1=1,Njs(g1)
@@ -1326,19 +1329,37 @@ subroutine compute_condMeanVar(welke,dimIn,meanIn,covmIn,obsIn,condMean,condVar)
     real (kind = r15), intent(out)  :: condMean, condVar
     real (kind = r15)               :: dummy3(1,1), dummy2(dimIn-1,1), S12(1,dimIn-1), S22(dimIn-1,dimIn-1), &
                                        S22inv(dimIn-1,dimIn-1), meanLocal(dimIn,1)
-    integer                         :: errorflag
+!    integer                         :: errorflag
 !
     meanLocal(1:dimIn,1) = meanIn(1:dimIn)
 !
-    S12(1,1:(welke-1)) = covmIn(welke,1:(welke-1))
-    S12(1,welke:(dimIn-1)) = covmIn(welke,(welke+1):dimIn)
-    S22(1:(welke-1),1:(welke-1)) = covmIn(1:(welke-1),1:(welke-1))
-    S22(1:(welke-1),welke:(dimIn-1)) = covmIn(1:(welke-1),(welke+1):dimIn)
-    S22(welke:(dimIn-1),1:(welke-1)) = covmIn((welke+1):dimIn,1:(welke-1))
-    S22(welke:(dimIn-1),welke:(dimIn-1)) = covmIn((welke+1):dimIn,(welke+1):dimIn)
+    if(welke > 1 .and. welke < dimIn) then
+
+        S12(1,1:(welke-1)) = covmIn(welke,1:(welke-1))
+        S12(1,welke:(dimIn-1)) = covmIn(welke,(welke+1):dimIn)
+        S22(1:(welke-1),1:(welke-1)) = covmIn(1:(welke-1),1:(welke-1))
+        S22(1:(welke-1),welke:(dimIn-1)) = covmIn(1:(welke-1),(welke+1):dimIn)
+        S22(welke:(dimIn-1),1:(welke-1)) = covmIn((welke+1):dimIn,1:(welke-1))
+        S22(welke:(dimIn-1),welke:(dimIn-1)) = covmIn((welke+1):dimIn,(welke+1):dimIn)
+        call FINDInv(S22,S22inv,dimIn-1,errorflag)
+        dummy2(1:(welke-1),1) = obsIn(1:(welke-1)) - meanLocal(1:(welke-1),1)
+        dummy2(welke:(dimIn-1),1) = obsIn((welke+1):dimIn) - meanLocal((welke+1):dimIn,1)
+
+    else if(welke == 1) then
+
+        S12(1,welke:(dimIn-1)) = covmIn(welke,(welke+1):dimIn)
+        S22(welke:(dimIn-1),welke:(dimIn-1)) = covmIn((welke+1):dimIn,(welke+1):dimIn)
+        dummy2(welke:(dimIn-1),1) = obsIn((welke+1):dimIn) - meanLocal((welke+1):dimIn,1)
+
+    else !welke == dimIn
+
+        S12(1,1:(welke-1)) = covmIn(welke,1:(welke-1))
+        S22(1:(welke-1),1:(welke-1)) = covmIn(1:(welke-1),1:(welke-1))
+        dummy2(1:(welke-1),1) = obsIn(1:(welke-1)) - meanLocal(1:(welke-1),1)
+
+    end if
+
     call FINDInv(S22,S22inv,dimIn-1,errorflag)
-    dummy2(1:(welke-1),1) = obsIn(1:(welke-1)) - meanLocal(1:(welke-1),1)
-    dummy2(welke:(dimIn-1),1) = obsIn((welke+1):dimIn) - meanLocal((welke+1):dimIn,1)
     dummy3 = matmul(matmul(S12,S22inv),dummy2)
     condMean = meanLocal(welke,1) + dummy3(1,1) !conditional mean
     dummy3 = matmul(matmul(S12,S22inv),transpose(S12))
