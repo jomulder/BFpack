@@ -36,26 +36,14 @@ Njs <- matrix(as.double(Ntot),nrow=numG,ncol=1)
 
 res <- .Fortran("estimate_bct_ordinal_test",
                 P=as.integer(P),
-                numcorr=as.integer(numcorr),
                 numG=as.integer(numG),
                 Ntot=as.integer(Ntot),
-                Njs=as.integer(Njs),
-                samsize0=as.integer(samsize0),
                 Ygroups=Ygroups,
-                seed=as.integer( 121 ),
-                ordinal=ordi,
-                Cat=Cat,
-                CheckStore=array(0,dim=c(samsize0,numG,P)),
-                postZmean=matrix(0,nrow=numcorr,ncol=1),
-                postZcov=matrix(0,nrow=numcorr,ncol=numcorr),
-                sigma_quantiles=array(0,dim=c(numG,P,3)),
-                nuggetscale = round(.995,3),
-                Cnugget=array(0,dim=c(P,P)),
-                maxCat=as.integer(max(Cat))
+                Cnugget=array(0,dim=c(P,P))
 )
 
 print(res$Cnugget)
-print(res$Njs)
-print(res$postZmean)
+print(res$Ygroups)
+print(res$Ntot)
 
 
