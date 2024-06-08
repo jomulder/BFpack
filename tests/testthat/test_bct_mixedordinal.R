@@ -47,3 +47,20 @@ print(res$Ygroups)
 print(res$Ntot)
 
 
+set.seed(123)
+P <- 3
+samsize <- 5000
+Fisher <- 1
+testm <- matrix(0,ncol=.5*P*(P-1),nrow=samsize)
+res <-.Fortran("draw_ju",P = as.integer(P),
+               drawscorr=testm,
+               samsize=as.integer(samsize),
+               numcorrgroup=as.integer(.5*P*(P-1)),
+               Fisher=as.integer(Fisher),
+               seed=as.integer( sample.int(1e6,1) )
+)
+print(head(res$drawscorr))
+print(tail(res$drawscorr))
+
+
+
