@@ -77,7 +77,7 @@ set.seed(123)
 mtcars_test <- mtcars[,8:9]
 mtcars_test[,2] <- as.factor(mtcars_test[,2])
 mtcars_test[,1] <- as.factor(mtcars_test[,1])
-cor2 <- cor_test(mtcars_test,burnin = 0, iter = 20)
+cor2 <- cor_test(mtcars_test,burnin = 100, iter = 3000)
 print(cor2$meanF)
 print(cor2$covmF)
 print(cor2$correstimates)
@@ -106,11 +106,11 @@ print(head(cor2$res$CheckStore[3,1,,2,],2))
 
 test_that("check estimate of polychoric correlation", {
   expect_equivalent(
-    cor2$correstimates[1,1],.2, tolerance = .1
+    cor2$correstimates[1,1],.32, tolerance = .1
   )})
 BF2 <- BF(cor2,hypothesis="am_with_vs= .1")
 PHPexplo <- matrix(
-  c(.51,  .046,  .45),nrow=1,byrow=T)
+  c(.388,  .095,  .517),nrow=1,byrow=T)
 # exploratory hypothesis test on the correlation
 test_that("BF.cor_test exploratory hypotheses on correlations correctly evaluated", {
   expect_equivalent(
@@ -119,7 +119,7 @@ test_that("BF.cor_test exploratory hypotheses on correlations correctly evaluate
 # confirmatory hypothesis test on the correlation
 test_that("BF.cor_test confirmatory hypotheses on correlations correctly evaluated", {
   expect_equivalent(
-    log(BF2$BFmatrix_confirmatory[1,2]),1.35, tolerance = .1
+    log(BF2$BFmatrix_confirmatory[1,2]),.47, tolerance = .1
   )})
 
 # test with combinations between continuous and ordinal (categorical) outcome variables
