@@ -6,6 +6,7 @@ module rkinds
    integer, parameter, public :: rdp = c_double
 end module
 
+
 subroutine draw_ju(P,drawscorr,samsize,numcorrgroup,Fisher,seed)
     ! Fortran implementation of the algorithm proposed by Joe (2006)
 
@@ -389,9 +390,9 @@ FUNCTION random_beta(aa, bb, first, iseed) RESULT(fn_val)
 !  integer, parameter :: i6 = selected_int_kind(6)
 
   integer ( kind = rint ), parameter :: i4_huge = 2147483647
-  integer ( kind = rint ) k
-  real ( kind = rdp ) runiform
-  integer ( kind = rint ) iseed
+  integer ( kind = rint ) :: k
+  real ( kind = rdp ) :: runiform
+  integer ( kind = rint ) :: iseed
 
   k = iseed / 127773
 
@@ -401,7 +402,8 @@ FUNCTION random_beta(aa, bb, first, iseed) RESULT(fn_val)
     iseed = iseed + i4_huge
   end if
 
-  runiform = real ( iseed, kind = rdp ) * 4.656612875D-10
+  !runiform = real ( iseed, kind = rdp ) * 4.656612875D-10
+  runiform = dble ( iseed ) * 4.656612875D-10
 
 return
 end function
