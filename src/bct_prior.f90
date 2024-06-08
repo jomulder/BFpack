@@ -1,21 +1,30 @@
 
+module rkinds
+   use, intrinsic :: iso_c_binding
+   private
+   integer, parameter, public :: rint = c_int
+   integer, parameter, public :: rdp = c_double
+end module
+
 subroutine draw_ju(P,drawscorr,samsize,numcorrgroup,Fisher,seed)
     ! Fortran implementation of the algorithm proposed by Joe (2006)
 
+    use rkinds, only: rint, rdp
+
     implicit none
 
-    integer, parameter :: r15 = selected_real_kind(15)
-    integer, parameter :: i6 = selected_int_kind(6)
+!    integer, parameter :: r15 = selected_real_kind(15)
+!    integer, parameter :: i6 = selected_int_kind(6)
 
-    integer(i6), intent(in) :: P, samsize, numcorrgroup, Fisher, seed
-    integer(i6)             :: s1,r1, r2, i1, i2, k1, corrIndex(P,P), teldummy,&
+    integer(rint), intent(in) :: P, samsize, numcorrgroup, Fisher, seed
+    integer(rint)             :: s1,r1, r2, i1, i2, k1, corrIndex(P,P), teldummy,&
                                t1, t2, iseed, error1
-    real (r15)              :: corrMat(P,P),draw1(1),&
+    real (rdp)              :: corrMat(P,P),draw1(1),&
                                R2inv(P,P), vec1(P,1), vec2(P,1),&
                                dummy11(1,1), dummy12(1,1), dummy22(1,1),&
                                Di1i2, preinv(P,P)
-    real(r15), intent (out) :: drawscorr(samsize,numcorrgroup)
-    real(r15)               :: alpha
+    real(rdp), intent (out) :: drawscorr(samsize,numcorrgroup)
+    real(rdp)               :: alpha
 
 !========================================================================================!
 
