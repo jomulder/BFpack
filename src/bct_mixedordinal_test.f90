@@ -11,7 +11,7 @@ subroutine estimate_bct_ordinal_test(P, numcorr, numG, Ntot, Njs, samsize0, Ygro
     CheckStore, postZmean, postZcov, sigma_quantiles, nuggetscale, Cnugget, maxCat)
 !
 !    use rkinds, only: rint, rdp
-    use, intrinsic :: iso_c_binding
+    use, intrinsic ::  iso_c_binding
 !
     implicit none
 
