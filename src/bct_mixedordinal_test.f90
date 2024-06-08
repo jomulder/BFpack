@@ -6,22 +6,24 @@
  !  integer, parameter, public :: rdp = c_double
 !end module
 
+
 subroutine estimate_bct_ordinal_test(P, numcorr, numG, Ntot, Njs, samsize0, Ygroups, seed, ordinal, Cat, &
     CheckStore, postZmean, postZcov, sigma_quantiles, nuggetscale, Cnugget, maxCat)
 !
-    use rkinds, only: rint, rdp
+!    use rkinds, only: rint, rdp
+    use, intrinsic :: iso_c_binding
 !
     implicit none
 
-    integer, parameter :: r15 = selected_real_kind(15)
-    integer, parameter :: i6 = selected_int_kind(6)
+!    integer, parameter :: r15 = selected_real_kind(15)
+!    integer, parameter :: i6 = selected_int_kind(6)
 
-    integer(rint), intent(in) :: P, numcorr, numG, Ntot, samsize0, seed, maxCat
-    integer(rint), intent(inout) :: Njs(numG), ordinal(numG,P), Cat(numG,P)
-    real(rdp), intent(inout)   :: Ygroups(numG,Ntot,P), sigma_quantiles(numG,P,3), nuggetscale
-    real(rdp), intent(inout)  :: postZmean(numcorr,1), postZcov(numcorr,numcorr), CheckStore(samsize0,numG,P), &
+    integer(c_int), intent(in) :: P, numcorr, numG, Ntot, samsize0, seed, maxCat
+    integer(c_int), intent(inout) :: Njs(numG), ordinal(numG,P), Cat(numG,P)
+    real(c_double), intent(inout)   :: Ygroups(numG,Ntot,P), sigma_quantiles(numG,P,3), nuggetscale
+    real(c_double), intent(inout)  :: postZmean(numcorr,1), postZcov(numcorr,numcorr), CheckStore(samsize0,numG,P), &
                             Cnugget(P,P)
-    real(rdp)               :: alphaMat(numG,maxCat+1,P), sigmaDraws(numG,P), Wgroups(numG,Ntot,P), &
+    real(c_double)               :: alphaMat(numG,maxCat+1,P), sigmaDraws(numG,P), Wgroups(numG,Ntot,P), &
                             Wdummy(numG,P,Ntot,maxCat), &
                             CDraws(numG,P,P), Ccan(P,P), Ds(P,P), dummyPP2(P,P), &
                             CcanInv(P,P), SS1(P,P), rnunif(1), errorMatj(P,P), &
@@ -30,7 +32,7 @@ subroutine estimate_bct_ordinal_test(P, numcorr, numG, Ntot, Njs, samsize0, Ygro
                             acceptSigma(numG,P), dummyPP(P,P), &
                             dummy3(samsize0), dummy2(samsize0), SS2(P,P), &
                             gLiuSab_curr(numG,P), acceptLS(numG,P), sdMHg(numG,P)
-    integer(rint)           :: c1, p1, s1, g1, i1, corrteller, iseed
+    integer(c_int)           :: c1, p1, s1, g1, i1, corrteller, iseed
 !
 !   set seed
     iseed = seed
