@@ -112,21 +112,23 @@ contains
 !http://www.tutor.ms.unimelb.edu.au/matrix/matrix_inverse.html
 SUBROUTINE FINDinv(matrix, inverse, n, errorflag)
 
+    use rkinds, only: rint, rdp
+
     implicit none
 !
-    integer, parameter :: r15 = selected_real_kind(15)
-    integer, parameter :: i6 = selected_int_kind(6)
+!    integer, parameter :: r15 = selected_real_kind(15)
+!    integer, parameter :: i6 = selected_int_kind(6)
 
     !Declarations
-    INTEGER(i6), INTENT(IN) :: n
-    REAL(r15), INTENT(IN) :: matrix(n,n)  !Input matrix
-    INTEGER(i6), INTENT(OUT) :: errorflag  !Return error status. -1 for error, 0 for normal
-    REAL(r15), INTENT(OUT) :: inverse(n,n) !Inverted matrix
+    INTEGER(rint), INTENT(IN) :: n
+    REAL(rdp), INTENT(IN) :: matrix(n,n)  !Input matrix
+    INTEGER(rint), INTENT(OUT) :: errorflag  !Return error status. -1 for error, 0 for normal
+    REAL(rdp), INTENT(OUT) :: inverse(n,n) !Inverted matrix
 
     LOGICAL :: FLAG = .TRUE.
-    INTEGER(i6) :: i, j, k
-    REAL(r15) :: m
-    REAL(r15), DIMENSION(n,2*n) :: augmatrix !augmented matrix
+    INTEGER(rint) :: i, j, k
+    REAL(rdp) :: m
+    REAL(rdp), DIMENSION(n,2*n) :: augmatrix !augmented matrix
 
     inverse = eye(n)
     !Augment input matrix with an identity matrix
@@ -230,21 +232,23 @@ FUNCTION random_beta(aa, bb, first, iseed) RESULT(fn_val)
 !     AA = SHAPE PARAMETER FROM DISTRIBUTION (0 < REAL)
 !     BB = SHAPE PARAMETER FROM DISTRIBUTION (0 < REAL)
 
+    use rkinds, only: rint, rdp
+
     implicit none
 
-    integer, parameter :: r15 = selected_real_kind(15)
-    integer, parameter :: i6 = selected_int_kind(6)
+!    integer, parameter :: r15 = selected_real_kind(15)
+!    integer, parameter :: i6 = selected_int_kind(6)
 
-    REAL(r15), INTENT(IN)    :: aa, bb
+    REAL(rdp), INTENT(IN)    :: aa, bb
     LOGICAL, INTENT(IN) :: first
-    INTEGER(i6), INTENT(IN) :: iseed
-    REAL ( kind = r15 )   :: fn_val
+    INTEGER(rint), INTENT(IN) :: iseed
+    REAL ( kind = rdp )   :: fn_val
 
     !     Local variables
-    REAL(r15), PARAMETER  :: aln4 = 1.3862944, one=1.0, two=2.0, &
+    REAL(rdp), PARAMETER  :: aln4 = 1.3862944, one=1.0, two=2.0, &
                              vlarge = HUGE(1.0), vsmall = TINY(1.0), zero = 0.0
-    REAL ( kind = r15 ) :: a, b, g, r, s, x, y, z
-    REAL ( kind = r15 ), SAVE        :: d, f, h, t, c
+    REAL ( kind = rdp ) :: a, b, g, r, s, x, y, z
+    REAL ( kind = rdp ), SAVE        :: d, f, h, t, c
     LOGICAL, SAVE     :: swap
 
 
@@ -377,15 +381,17 @@ FUNCTION random_beta(aa, bb, first, iseed) RESULT(fn_val)
 !    Output, real ( kind = 8 ) RUNIFORM, a new pseudorandom variate,
 !    strictly between 0 and 1.
 !
+  use rkinds, only: rint, rdp
+
   implicit none
 
-  integer, parameter :: r15 = selected_real_kind(15)
-  integer, parameter :: i6 = selected_int_kind(6)
+!  integer, parameter :: r15 = selected_real_kind(15)
+!  integer, parameter :: i6 = selected_int_kind(6)
 
-  integer ( kind = i6 ), parameter :: i4_huge = 2147483647
-  integer ( kind = i6 ) k
-  real ( kind = r15 ) runiform
-  integer ( kind = i6 ) iseed
+  integer ( kind = rint ), parameter :: i4_huge = 2147483647
+  integer ( kind = rint ) k
+  real ( kind = rdp ) runiform
+  integer ( kind = rint ) iseed
 
   k = iseed / 127773
 
@@ -395,7 +401,7 @@ FUNCTION random_beta(aa, bb, first, iseed) RESULT(fn_val)
     iseed = iseed + i4_huge
   end if
 
-  runiform = real ( iseed, kind = r15 ) * 4.656612875D-10
+  runiform = real ( iseed, kind = rdp ) * 4.656612875D-10
 
 return
 end function
@@ -403,25 +409,26 @@ end function
 
 function eye(n)
 
+    use rkinds, only: rint, rdp
+
     implicit none
 
-    integer, parameter :: r15 = selected_real_kind(15)
-    integer, parameter :: i6 = selected_int_kind(6)
+!    integer, parameter :: r15 = selected_real_kind(15)
+!    integer, parameter :: i6 = selected_int_kind(6)
 
-    integer(i6):: i,n
-    real(r15):: eye(n,n)
-    real(r15):: check(n,n)
+    integer(rint):: i,n
+    real(rdp):: eye(n,n)
+    real(rdp):: check(n,n)
 
     check=0
     do i=1,n
         check(i,i)= 1
     enddo
 
-    eye(:,:)=check(:,:)
+    eye(:,:) = check(:,:)
     return
 
 end function eye
-
 
 
 end subroutine draw_ju
