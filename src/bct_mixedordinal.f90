@@ -1,6 +1,7 @@
 
+
 module rkinds3
-   use, intrinsic :: iso_c_binding
+   use, intrinsic :: iso_c_binding !c_int c_double
    use, intrinsic :: iso_fortran_env
    private
    integer, parameter, public :: rint = int32   ! Using int32 from iso_fortran_env
@@ -12,7 +13,7 @@ end module
 subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, sdHat, CHat, XtXi, samsize0, &
     burnin, Ntot, Njs_in, Xgroups, Ygroups, C_quantiles, sigma_quantiles, B_quantiles, BDrawsStore, &
     sigmaDrawsStore, CDrawsStore, sdMH, ordinal_in, Cat_in, maxCat, gLiuSab, seed, nuggetscale, WgroupsStore, &
-    meanMatMeanStore,SigmaMatDrawStore,CheckStore)
+    meanMatMeanStore, SigmaMatDrawStore, CheckStore)
 !
     use rkinds3, only: rint, rdp
 !
@@ -44,57 +45,6 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                   c1, c2, p1, Yi1Categorie, tellers(numG,maxCat,P), k1, p2, iseed, errorflag, &
                   lower_int, median_int, upper_int
 !
-!    write(*,*)'postZmean'
-!    write(*,*)postZmean
-!    write(*,*)'postZcov'
-!    write(*,*)postZcov
-!    write(*,*)'P'
-!    write(*,*)P
-!    write(*,*)'numcorr'
-!    write(*,*)numcorr
-!    write(*,*)'K'
-!    write(*,*)K
-!    write(*,*)'numG'
-!    write(*,*)numG
-!    write(*,*)'BHat'
-!    write(*,*)BHat
-!    write(*,*)'sdHat'
-!    write(*,*)sdHat
-!    write(*,*)'CHat'
-!    write(*,*)CHat
-!    write(*,*)'XtXi'
-!    write(*,*)XtXi
-!    write(*,*)'samsize0'
-!    write(*,*)samsize0
-!    write(*,*)'burnin'
-!    write(*,*)burnin
-!    write(*,*)'Ntot'
-!    write(*,*)Ntot
-!    write(*,*)'Njs_in'
-!    write(*,*)Njs_in
-!    write(*,*)'Xgroups'
-!    write(*,*)Xgroups
-!    write(*,*)'Ygroups'
-!    write(*,*)Ygroups
-!    write(*,*)'C_quantiles'
-!    write(*,*)C_quantiles
-!    write(*,*)'sigma_quantiles'
-!    write(*,*)sigma_quantiles
-!    write(*,*)'B_quantiles'
-!    write(*,*)B_quantiles
-!    write(*,*)'sdMH'
-!    write(*,*)sdMH
-!    write(*,*)'ordinal_in'
-!    write(*,*)ordinal_in
-!    write(*,*)'Cat_in'
-!    write(*,*)Cat_in
-!    write(*,*)'maxCat'
-!    write(*,*)maxCat
-!    write(*,*)'seed'
-!    write(*,*)seed
-!    write(*,*)'nuggetscale'
-!    write(*,*)nuggetscale
-
 !   set seed
     iseed = seed
 !
@@ -102,25 +52,24 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
     BDraws = BHat
     sigmaDraws = sdHat
     CDraws = CHat
-    meanO = 0.0
-    gLiuSab_curr = 1.0
-    iseed = seed
+    meanO = 0.0_rdp
+    gLiuSab_curr = 1.0_rdp
 !
     do g1=1,numG
         do p1=1,P
-            ordinal(g1,p1) = int(ordinal_in(g1,p1))
-            Cat(g1,p1) = int(Cat_in(g1,p1))
+            ordinal(g1,p1) = int(ordinal_in(g1,p1),kind=rint)
+            Cat(g1,p1) = int(Cat_in(g1,p1),kind=rint)
         end do
         Njs(g1) = int(Njs_in(g1,1))
     end do
     do p1=1,P
         do g1=1,numG
             !initial values
-            if(ordinal(g1,p1)==1.0) then
-                sigmaDraws(g1,p1) = 1.0
-                sigma_quantiles(g1,p1,1) = 1.0
-                sigma_quantiles(g1,p1,2) = 1.0
-                sigma_quantiles(g1,p1,3) = 1.0
+            if(ordinal(g1,p1)==1) then
+                sigmaDraws(g1,p1) = 1.0_rdp
+                sigma_quantiles(g1,p1,1) = 1.0_rdp
+                sigma_quantiles(g1,p1,2) = 1.0_rdp
+                sigma_quantiles(g1,p1,3) = 1.0_rdp
             end if
         end do
     end do
@@ -128,30 +77,30 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
     !define nugget matrix to avoid approximate nonpositive definite correlation matrices for candidates
     Cnugget = nuggetscale
     do p1=1,P
-        Cnugget(p1,p1) = 1.0
+        Cnugget(p1,p1) = 1.0_rdp
     end do
 !
     !count number of accepted draws for R (over all groups)
-    acceptSigma = 0.0
-    acceptLS = 0.0
-    sdMHg = .1 !for gLiuBanhatti parameter
+    acceptSigma = 0.0_rdp
+    acceptLS = 0.0_rdp
+    sdMHg = .1_rdp !for gLiuBanhatti parameter
 !
     !initial values for latent W's corresponding to ordinal DVs
     Wgroups = Ygroups
-    Wdummy = 0.0
+    Wdummy = 0.0_rdp
 !
     !initial values of boundary values alpha to link between ordinal Y and continuous latent W
     if(maxCat>1) then
-        alphaMat = 0.0
-        alphaMat(:,1,:) = -1e10  !alpha0
-        alphaMat(:,2,:) = 0.0      !alpha1
+        alphaMat = 0.0_rdp
+        alphaMat(:,1,:) = -1e10_rdp    !alpha0
+        alphaMat(:,2,:) = 0.0_rdp      !alpha1
         do p1=1,P
             do g1=1,numG
                 if(ordinal(g1,p1)>0) then
                     do c1=3,Cat(g1,p1)
-                        alphaMat(g1,c1,p1) = .3*(real(c1)-2.0)
+                        alphaMat(g1,c1,p1) = .3_rdp*(real(c1,kind=rdp)-2.0_rdp)
                     end do
-                    alphaMat(g1,Cat(g1,p1)+1,p1) = 1e10
+                    alphaMat(g1,Cat(g1,p1)+1,p1) = 1e10_rdp
                 end if
             end do
         end do
@@ -160,8 +109,8 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
 !    write(*,*)'sampling for burn-in period'
     !start Gibbs sampler
     do s1 = 1,burnin
-        corrteller = 0
-        tellers = 0
+        corrteller = 0_rint
+        tellers = 0_rint
         do g1 = 1,numG
 
             !compute means of latent W's for all observations
@@ -184,57 +133,57 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                             case(1)
                                 call inverse_prob_sampling(condMean,condVar,0,1,alphaMat(g1,1,p1), &
                                     alphaMat(g1,2,p1),Wgroups(g1,i1,p1),iseed)
-                                tellers(g1,1,p1) = tellers(g1,1,p1) + 1
+                                tellers(g1,1,p1) = tellers(g1,1,p1) + 1_rint
                                 Wdummy(g1,p1,tellers(g1,1,p1),1) = Wgroups(g1,i1,p1)
                             case(2)
                                 call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,2,p1), &
                                     alphaMat(g1,3,p1),Wgroups(g1,i1,p1),iseed)
-                                tellers(g1,2,p1) = tellers(g1,2,p1) + 1
+                                tellers(g1,2,p1) = tellers(g1,2,p1) + 1_rint
                                 Wdummy(g1,p1,tellers(g1,2,p1),2) = Wgroups(g1,i1,p1)
                             case(3)
                                 call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,3,p1), &
                                     alphaMat(g1,4,p1),Wgroups(g1,i1,p1),iseed)
-                                tellers(g1,3,p1) = tellers(g1,3,p1) + 1
+                                tellers(g1,3,p1) = tellers(g1,3,p1) + 1_rint
                                 Wdummy(g1,p1,tellers(g1,3,p1),3) = Wgroups(g1,i1,p1)
                             case(4)
                                 call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,4,p1), &
                                     alphaMat(g1,5,p1),Wgroups(g1,i1,p1),iseed)
-                                tellers(g1,4,p1) = tellers(g1,4,p1) + 1
+                                tellers(g1,4,p1) = tellers(g1,4,p1) + 1_rint
                                 Wdummy(g1,p1,tellers(g1,4,p1),4) = Wgroups(g1,i1,p1)
                             case(5)
                                 call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,5,p1), &
                                     alphaMat(g1,6,p1),Wgroups(g1,i1,p1),iseed)
-                                tellers(g1,5,p1) = tellers(g1,5,p1) + 1
+                                tellers(g1,5,p1) = tellers(g1,5,p1) + 1_rint
                                 Wdummy(g1,p1,tellers(g1,5,p1),5) = Wgroups(g1,i1,p1)
                             case(6)
                                 call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,6,p1), &
                                     alphaMat(g1,7,p1),Wgroups(g1,i1,p1),iseed)
-                                tellers(g1,6,p1) = tellers(g1,6,p1) + 1
+                                tellers(g1,6,p1) = tellers(g1,6,p1) + 1_rint
                                 Wdummy(g1,p1,tellers(g1,6,p1),6) = Wgroups(g1,i1,p1)
                             case(7)
                                 call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,7,p1), &
                                     alphaMat(g1,8,p1),Wgroups(g1,i1,p1),iseed)
-                                tellers(g1,7,p1) = tellers(g1,7,p1) + 1
+                                tellers(g1,7,p1) = tellers(g1,7,p1) + 1_rint
                                 Wdummy(g1,p1,tellers(g1,7,p1),7) = Wgroups(g1,i1,p1)
                             case(8)
                                 call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,8,p1), &
                                     alphaMat(g1,9,p1),Wgroups(g1,i1,p1),iseed)
-                                tellers(g1,8,p1) = tellers(g1,8,p1) + 1
+                                tellers(g1,8,p1) = tellers(g1,8,p1) + 1_rint
                                 Wdummy(g1,p1,tellers(g1,8,p1),8) = Wgroups(g1,i1,p1)
                             case(9)
                                 call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,9,p1), &
                                     alphaMat(g1,10,p1),Wgroups(g1,i1,p1),iseed)
-                                tellers(g1,9,p1) = tellers(g1,9,p1) + 1
+                                tellers(g1,9,p1) = tellers(g1,9,p1) + 1_rint
                                 Wdummy(g1,p1,tellers(g1,9,p1),9) = Wgroups(g1,i1,p1)
                             case(10)
                                 call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,10,p1), &
                                     alphaMat(g1,11,p1),Wgroups(g1,i1,p1),iseed)
-                                tellers(g1,10,p1) = tellers(g1,10,p1) + 1
+                                tellers(g1,10,p1) = tellers(g1,10,p1) + 1_rint
                                 Wdummy(g1,p1,tellers(g1,10,p1),10) = Wgroups(g1,i1,p1)
                             case(11)
                                 call inverse_prob_sampling(condMean,condVar,1,0,alphaMat(g1,11,p1), &
                                     alphaMat(g1,12,p1),Wgroups(g1,i1,p1),iseed)
-                                tellers(g1,11,p1) = tellers(g1,11,p1) + 1
+                                tellers(g1,11,p1) = tellers(g1,11,p1) + 1_rint
                                 Wdummy(g1,p1,tellers(g1,11,p1),11) = Wgroups(g1,i1,p1)
                          end select
                     end do
@@ -332,8 +281,8 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
     end do
 
     do s1 = 1,samsize0
-        corrteller = 0
-        tellers = 0
+        corrteller = 0_rint
+        tellers = 0_rint
 
         do g1 = 1,numG
 !
@@ -363,67 +312,67 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                             case(1)
                                 call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,1,p1), &
                                     alphaMat(g1,2,p1),Wgroups(g1,i1,p1),iseed)
-                                tellers(g1,1,p1) = tellers(g1,1,p1) + 1
+                                tellers(g1,1,p1) = tellers(g1,1,p1) + 1_rint
                                 Wdummy(g1,p1,tellers(g1,1,p1),1) = Wgroups(g1,i1,p1)
                                 CheckStore(s1,g1,i1,p1,(P+P+P+3):(P+P+P+5)) = (/alphaMat(g1,1,p1), &
                                     alphaMat(g1,2,p1),Wgroups(g1,i1,p1)/)
                             case(2)
                                 call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,2,p1), &
                                     alphaMat(g1,3,p1),Wgroups(g1,i1,p1),iseed)
-                                tellers(g1,2,p1) = tellers(g1,2,p1) + 1
+                                tellers(g1,2,p1) = tellers(g1,2,p1) + 1_rint
                                 Wdummy(g1,p1,tellers(g1,2,p1),2) = Wgroups(g1,i1,p1)
                                 CheckStore(s1,g1,i1,p1,(P+P+P+3):(P+P+P+5)) = (/alphaMat(g1,2,p1), &
                                     alphaMat(g1,3,p1),Wgroups(g1,i1,p1)/)
                             case(3)
                                 call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,3,p1), &
                                     alphaMat(g1,4,p1),Wgroups(g1,i1,p1),iseed)
-                                tellers(g1,3,p1) = tellers(g1,3,p1) + 1
+                                tellers(g1,3,p1) = tellers(g1,3,p1) + 1_rint
                                 Wdummy(g1,p1,tellers(g1,3,p1),3) = Wgroups(g1,i1,p1)
                             case(4)
                                 call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,4,p1), &
                                     alphaMat(g1,5,p1),Wgroups(g1,i1,p1),iseed)
-                                tellers(g1,4,p1) = tellers(g1,4,p1) + 1
+                                tellers(g1,4,p1) = tellers(g1,4,p1) + 1_rint
                                 Wdummy(g1,p1,tellers(g1,4,p1),4) = Wgroups(g1,i1,p1)
                             case(5)
                                 call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,5,p1), &
                                     alphaMat(g1,6,p1),Wgroups(g1,i1,p1),iseed)
-                                tellers(g1,5,p1) = tellers(g1,5,p1) + 1
+                                tellers(g1,5,p1) = tellers(g1,5,p1) + 1_rint
                                 Wdummy(g1,p1,tellers(g1,5,p1),5) = Wgroups(g1,i1,p1)
                             case(6)
                                 call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,6,p1), &
                                     alphaMat(g1,7,p1),Wgroups(g1,i1,p1),iseed)
-                                tellers(g1,6,p1) = tellers(g1,6,p1) + 1
+                                tellers(g1,6,p1) = tellers(g1,6,p1) + 1_rint
                                 Wdummy(g1,p1,tellers(g1,6,p1),6) = Wgroups(g1,i1,p1)
                             case(7)
                                 call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,7,p1), &
                                     alphaMat(g1,8,p1),Wgroups(g1,i1,p1),iseed)
-                                tellers(g1,7,p1) = tellers(g1,7,p1) + 1
+                                tellers(g1,7,p1) = tellers(g1,7,p1) + 1_rint
                                 Wdummy(g1,p1,tellers(g1,7,p1),7) = Wgroups(g1,i1,p1)
                             case(8)
                                 call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,8,p1), &
                                     alphaMat(g1,9,p1),Wgroups(g1,i1,p1),iseed)
-                                tellers(g1,8,p1) = tellers(g1,8,p1) + 1
+                                tellers(g1,8,p1) = tellers(g1,8,p1) + 1_rint
                                 Wdummy(g1,p1,tellers(g1,8,p1),8) = Wgroups(g1,i1,p1)
                             case(9)
                                 call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,9,p1), &
                                     alphaMat(g1,10,p1),Wgroups(g1,i1,p1),iseed)
-                                tellers(g1,9,p1) = tellers(g1,9,p1) + 1
+                                tellers(g1,9,p1) = tellers(g1,9,p1) + 1_rint
                                 Wdummy(g1,p1,tellers(g1,9,p1),9) = Wgroups(g1,i1,p1)
                             case(10)
                                 call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,10,p1), &
                                     alphaMat(g1,11,p1),Wgroups(g1,i1,p1),iseed)
-                                tellers(g1,10,p1) = tellers(g1,10,p1) + 1
+                                tellers(g1,10,p1) = tellers(g1,10,p1) + 1_rint
                                 Wdummy(g1,p1,tellers(g1,10,p1),10) = Wgroups(g1,i1,p1)
                             case(11)
                                 call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,11,p1), &
                                     alphaMat(g1,12,p1),Wgroups(g1,i1,p1),iseed)
-                                tellers(g1,11,p1) = tellers(g1,11,p1) + 1
+                                tellers(g1,11,p1) = tellers(g1,11,p1) + 1_rint
                                 Wdummy(g1,p1,tellers(g1,11,p1),11) = Wgroups(g1,i1,p1)
                          end select
                     end do
 !
                     !draw boundary's in alphaMat
-                    if(Cat(g1,p1)>2) then
+                    if(Cat(g1,p1)>2_rint) then
                         do c1=3,Cat(g1,p1)
                             alphaMin = maxval(Wdummy(g1,p1,1:tellers(g1,c1-1,p1),c1-1))
                             alphaMax = minval(Wdummy(g1,p1,1:tellers(g1,c1,p1),c1))
@@ -480,13 +429,13 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                     sigma_can(:) = sigmaDraws(g1,:)
                     sigma_can(p1) = rnormal(iseed)
                     sigma_can(p1) = sigma_can(p1)*sdMH(g1,p1) + sigmaDraws(g1,p1) !random walk
-                    R_MH = exp((-real(Njs(g1))+1.0)*(log(sigma_can(p1))-log(sigmaDraws(g1,p1)) ) &
-                           -.5*aa*(sigma_can(p1)**(-2) - sigmaDraws(g1,p1)**(-2)) &
-                           -bb*(sigma_can(p1)**(-1) - sigmaDraws(g1,p1)**(-1)) )
+                    R_MH = exp((-real(Njs(g1))+1.0_rdp)*(log(sigma_can(p1))-log(sigmaDraws(g1,p1)) ) &
+                           -.5_rdp*aa*(sigma_can(p1)**(-2.0_rdp) - sigmaDraws(g1,p1)**(-2.0_rdp)) &
+                           -bb*(sigma_can(p1)**(-1.0_rdp) - sigmaDraws(g1,p1)**(-1.0_rdp)) )
                     rnunif = runiform ( iseed )
-                    if(rnunif(1) < R_MH .and. sigma_can(p1)>0.0) then
+                    if(rnunif(1) < R_MH .and. sigma_can(p1)>0.0_rdp) then
                         sigmaDraws(g1,p1) = sigma_can(p1)
-                        acceptSigma(g1,p1) = acceptSigma(g1,p1) + 1.0
+                        acceptSigma(g1,p1) = acceptSigma(g1,p1) + 1.0_rdp
                     end if
                 end if
             end do
@@ -495,17 +444,18 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
             SigmaInv = matmul(matmul(diag(1/sigmaDraws(g1,:),P),Cinv),diag(1/sigmaDraws(g1,:),P))
             do p1 = 1,P
                 if(ordinal(g1,p1)>0) then !draw gLiuSab_curr(g1,p1)
-                    aa = errorMatj(p1,p1)*SigmaInv(p1,p1)/2.0
+                    aa = errorMatj(p1,p1)*SigmaInv(p1,p1)/2.0_rdp
                     bb = sum(errorMatj(p1,:)*SigmaInv(p1,:)*gLiuSab_curr(g1,:)) - errorMatj(p1,p1) * &
                         SigmaInv(p1,p1)*gLiuSab_curr(g1,p1)
                     gLiuSab_can = rnormal(iseed)
                     gLiuSab_can = gLiuSab_can*sdMHg(g1,p1) + gLiuSab_curr(g1,p1) ! random (moon) walk
-                    R_MH = exp((K + Cat(g1,p1) - 2.0 + Njs(g1) - 1)*(log(gLiuSab_can) - log(gLiuSab_curr(g1,p1))) &
-                                -aa*(gLiuSab_can**2 - gLiuSab_curr(g1,p1)**2) - bb*(gLiuSab_can - gLiuSab_curr(g1,p1)))
+                    R_MH = exp((K + Cat(g1,p1) - 2.0_rdp + real(Njs(g1),kind=rdp) - 1)*(log(gLiuSab_can) - &
+                                log(gLiuSab_curr(g1,p1))) -aa*(gLiuSab_can**2.0_rdp - gLiuSab_curr(g1,p1)**2.0_rdp) &
+                                - bb*(gLiuSab_can - gLiuSab_curr(g1,p1)))
                     rnunif = runiform ( iseed )
-                    if(rnunif(1) < R_MH .and. gLiuSab_can>0) then
+                    if(rnunif(1) < R_MH .and. gLiuSab_can>0.0_rdp) then
                         gLiuSab_curr(g1,p1) = gLiuSab_can
-                        acceptLS(g1,p1) = acceptLS(g1,p1) + 1.0
+                        acceptLS(g1,p1) = acceptLS(g1,p1) + 1.0_rdp
                         !update the other parameter through the parameter transformation g(x) = g * x
                         BDraws(g1,1:K,p1) = BDraws(g1,1:K,p1)*gLiuSab_curr(g1,p1)
                         alphaMat(g1,3:Cat(g1,p1),p1) = alphaMat(g1,3:Cat(g1,p1),p1)*gLiuSab_curr(g1,p1)
@@ -542,9 +492,9 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
     end do
 !
     ! compute posterior quantiles
-    lower_int = int(samsize0*.025)
-    median_int = int(samsize0*.5)
-    upper_int = int(samsize0*.975)
+    lower_int = int(samsize0*.025_rdp,kind=rint)
+    median_int = int(samsize0*.5_rdp,kind=rint)
+    upper_int = int(samsize0*.975_rdp,kind=rint)
     C_quantiles = 0
     do g1=1,numG
         do p1=1,P
@@ -603,9 +553,9 @@ subroutine robust_covest(m, betas1, betas2, mn1, mn2, varb1, varb2, varb1b2Plus,
     real(rdp)                :: dummy1(m), dummy2(m), Phi075, xxx
     integer(rint)              :: mmin, i
 !
-    xxx=0.75
+    xxx=0.75_rdp
     Phi075 = dinvnr(xxx)
-    mmin = 0
+    mmin = 0_rint
 !
     !robust variance estimators of beta1 and beta2
 

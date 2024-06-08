@@ -1,9 +1,16 @@
 
 # exploratory testing correlations in multivariate normal model
+print("test2")
 set.seed(123)
-cor1 <- cor_test(mtcars[,4:6],iter = 3e3,burnin = 1e3)
+cor1 <- cor_test(mtcars[,4:6],iter = 3e3,burnin = 0)
 print(head(cor1$corrdraws[[1]][,1,2]))
 print(tail(cor1$corrdraws[[1]][,1,2]))
+print(head(cor1$res$meanMatMeanStore[1,,],2))
+print(head(cor1$res$meanMatMeanStore[2,,],2))
+print(head(cor1$res$meanMatMeanStore[3,,],2))
+print(tail(cor1$res$meanMatMeanStore[3,,],2))
+print(head(cor1$res$SigmaMatDrawStore[,1,]))
+print(tail(cor1$res$SigmaMatDrawStore[,1,]))
 # BF1 <- BF(cor1)
 # BF1a <- BF(cor1,prior.hyp.explo = 3:5)
 # PHPexplo <- matrix(
@@ -79,7 +86,7 @@ set.seed(123)
 mtcars_test <- mtcars[,8:9]
 mtcars_test[,2] <- as.factor(mtcars_test[,2])
 mtcars_test[,1] <- as.factor(mtcars_test[,1])
-cor2 <- cor_test(mtcars_test,burnin = 100, iter = 3000)
+cor2 <- cor_test(mtcars_test,burnin = 0, iter = 3000)
 print(head(cor2$corrdraws[[1]][,1,2]))
 print(tail(cor2$corrdraws[[1]][,1,2]))
 # print(cor2$meanF)
