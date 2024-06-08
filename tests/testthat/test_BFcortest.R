@@ -1,7 +1,9 @@
-#
-# # exploratory testing correlations in multivariate normal model
-# set.seed(123)
-# cor1 <- cor_test(mtcars[,4:6],iter = 3e3,burnin = 1e3)
+
+# exploratory testing correlations in multivariate normal model
+set.seed(123)
+cor1 <- cor_test(mtcars[,4:6],iter = 3e3,burnin = 1e3)
+print(head(cor1$corrdraws[[1]][,1,2]))
+print(tail(cor1$corrdraws[[1]][,1,2]))
 # BF1 <- BF(cor1)
 # BF1a <- BF(cor1,prior.hyp.explo = 3:5)
 # PHPexplo <- matrix(
@@ -72,12 +74,14 @@
 #     BF3$PHP_confirmatory,c(.77,.23), tolerance = .1
 #   )})
 #
-# # test a single correlation on categorical outcomes
-# set.seed(123)
-# mtcars_test <- mtcars[,8:9]
-# mtcars_test[,2] <- as.factor(mtcars_test[,2])
-# mtcars_test[,1] <- as.factor(mtcars_test[,1])
-# cor2 <- cor_test(mtcars_test,burnin = 100, iter = 3000)
+# test a single correlation on categorical outcomes
+set.seed(123)
+mtcars_test <- mtcars[,8:9]
+mtcars_test[,2] <- as.factor(mtcars_test[,2])
+mtcars_test[,1] <- as.factor(mtcars_test[,1])
+cor2 <- cor_test(mtcars_test,burnin = 100, iter = 3000)
+print(head(cor2$corrdraws[[1]][,1,2]))
+print(tail(cor2$corrdraws[[1]][,1,2]))
 # print(cor2$meanF)
 # print(cor2$covmF)
 # print(cor2$correstimates)

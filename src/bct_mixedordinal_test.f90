@@ -23,11 +23,11 @@ subroutine estimate_bct_ordinal_test(P, numG, Ntot, Ygroups, Cnugget)
     integer(rint)                :: p1
 !
     !define nugget matrix to avoid approximate nonpositive definite correlation matrices for candidates
-    nuggetscale = 0.995_rdp
-    Cnugget = nuggetscale
-    do p1=1,P
-        Cnugget(p1,p1) = 1.0_rdp
-    end do
+    !nuggetscale = 0.995_rdp
+    !Cnugget = nuggetscale
+    !do p1=1,P
+    !    Cnugget(p1,p1) = 1.0_rdp
+    !end do
 
 end subroutine estimate_bct_ordinal_test
 
