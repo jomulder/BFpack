@@ -12,8 +12,9 @@ print(tail(cor1$res$meanMatMeanStore[3,,],2))
 print(head(cor1$res$SigmaMatDrawStore[,1,]))
 print(tail(cor1$res$SigmaMatDrawStore[,1,]))
 print("CheckStore")
-print(head(round(cor1$res$CheckStore[,1,1,1,1:11],4),3))
-print(tail(round(cor1$res$CheckStore[,1,1,1,1:11],4),3))
+print(round(cor1$res$CheckStore[1,1,1,,],4))
+print(round(cor1$res$CheckStore[2,1,1,,],4))
+
 # BF1 <- BF(cor1)
 # BF1a <- BF(cor1,prior.hyp.explo = 3:5)
 # PHPexplo <- matrix(
