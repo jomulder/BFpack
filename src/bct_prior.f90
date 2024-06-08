@@ -1,16 +1,18 @@
 
-module rkinds
+module rkinds2
    use, intrinsic :: iso_c_binding
+   use, intrinsic :: iso_fortran_env
    private
-   integer, parameter, public :: rint = c_int
-   integer, parameter, public :: rdp = c_double
+   integer, parameter, public :: rint = int32   ! Using int32 from iso_fortran_env
+   integer, parameter, public :: rdp = real64   ! Using real64 from iso_fortran_env
+   ! Using real64 from iso_fortran_env
 end module
 
 
 subroutine draw_ju(P,drawscorr,samsize,numcorrgroup,Fisher,seed)
     ! Fortran implementation of the algorithm proposed by Joe (2006)
 
-    use rkinds, only: rint, rdp
+    use rkinds2, only: rint, rdp
 
     implicit none
 
@@ -112,8 +114,6 @@ contains
 !http://math.uww.edu/~mcfarlat/inverse.htm
 !http://www.tutor.ms.unimelb.edu.au/matrix/matrix_inverse.html
 SUBROUTINE FINDinv(matrix, inverse, n, errorflag)
-
-    use rkinds, only: rint, rdp
 
     implicit none
 !
@@ -232,8 +232,6 @@ FUNCTION random_beta(aa, bb, first, iseed) RESULT(fn_val)
 
 !     AA = SHAPE PARAMETER FROM DISTRIBUTION (0 < REAL)
 !     BB = SHAPE PARAMETER FROM DISTRIBUTION (0 < REAL)
-
-    use rkinds, only: rint, rdp
 
     implicit none
 
@@ -382,7 +380,6 @@ FUNCTION random_beta(aa, bb, first, iseed) RESULT(fn_val)
 !    Output, real ( kind = 8 ) RUNIFORM, a new pseudorandom variate,
 !    strictly between 0 and 1.
 !
-  use rkinds, only: rint, rdp
 
   implicit none
 
@@ -402,16 +399,13 @@ FUNCTION random_beta(aa, bb, first, iseed) RESULT(fn_val)
     iseed = iseed + i4_huge
   end if
 
-  !runiform = real ( iseed, kind = rdp ) * 4.656612875D-10
-  runiform = dble ( iseed ) * 4.656612875D-10
+  runiform = real ( iseed, kind = rdp ) * 4.656612875D-10
 
 return
 end function
 
 
 function eye(n)
-
-    use rkinds, only: rint, rdp
 
     implicit none
 

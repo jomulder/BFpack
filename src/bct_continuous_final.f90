@@ -1,28 +1,38 @@
 
 
+module rkinds1
+   use, intrinsic :: iso_c_binding
+   use, intrinsic :: iso_fortran_env
+   private
+   integer, parameter, public :: rint = int32   ! Using int32 from iso_fortran_env
+   integer, parameter, public :: rdp = real64   ! Using real64 from iso_fortran_env
+   ! Using real64 from iso_fortran_env
+end module
 
 
 subroutine estimate_postmeancov_fisherz(postZmean, postZcov, P, numcorr, K, numG, BHat, sdHat, CHat, XtXi, samsize0, Njs, &
     Ygroups, Xgroups, Ntot, C_quantiles, sigma_quantiles, B_quantiles, BDrawsStore, sigmaDrawsStore, CDrawsStore, seed)
 !
+    use rkinds1, only: rint, rdp
+!
     implicit none
 
-    integer, parameter :: r15 = selected_real_kind(15)
-    integer, parameter :: i6 = selected_int_kind(6)
+!    integer, parameter :: rdp = selected_real_kind(15)
+!    integer, parameter :: rint = selected_int_kind(6)
 
-    integer(i6), intent(in) :: P, numcorr, K, numG, samsize0, Njs(numG), Ntot, seed
-    real(r15), intent(in)   :: BHat(numG,K,P), sdHat(2*numG,P), CHat(numG,P,P), XtXi(numG,K,K), Ygroups(numG,Ntot,P), &
+    integer(rint), intent(in) :: P, numcorr, K, numG, samsize0, Njs(numG), Ntot, seed
+    real(rdp), intent(in)   :: BHat(numG,K,P), sdHat(2*numG,P), CHat(numG,P,P), XtXi(numG,K,K), Ygroups(numG,Ntot,P), &
                                Xgroups(numG,Ntot,K)
-    real(r15), intent(out)  :: postZmean(numcorr,1), postZcov(numcorr,numcorr), B_quantiles(numG,K,P,3), &
+    real(rdp), intent(out)  :: postZmean(numcorr,1), postZcov(numcorr,numcorr), B_quantiles(numG,K,P,3), &
                                C_quantiles(numG,P,P,3), sigma_quantiles(numG,P,3), BDrawsStore(samsize0,numG,K,P), &
                                sigmaDrawsStore(samsize0,numG,P), CDrawsStore(samsize0,numG,P,P)
-    real(r15)               :: BDraws(numG,K,P), sigmaDraws(numG,P), CDraws(numG,P,P), Ccan(P,P), Ds(P,P), dummyPP2(P,P), &
+    real(rdp)               :: BDraws(numG,K,P), sigmaDraws(numG,P), CDraws(numG,P,P), Ccan(P,P), Ds(P,P), dummyPP2(P,P), &
                             CcanInv(P,P), SS1(P,P), rnunif(1), sdMH(numG,P), errorMatj(P,P), & !Ccurr(P,P), CcurrInv(P,P),
                             sigma_can(P), aa, bb, SigmaMat(P,P), R_MH, epsteps(P,P), diffmat(Ntot,P), & !logR_MH,
                             varz1, varz2, varz1z2Plus, varz1z2Min, Cinv(P,P), Zcorr_sample(samsize0,numcorr), &
                             acceptSigma(numG,P), acceptC(numG), covBeta(P*K,P*K), betaDrawj(1,P*K), dummyPP(P,P), &
                             dummy3(samsize0), dummy2(samsize0), meanO(P*K), para(((P*K)*((P*K)+3)/2 + 1)), SS2(P,P)
-    integer(i6)             :: s1, g1, i1, corrteller, c1, c2, p1, p2, k1, errorflag, lower_int, median_int, upper_int, &
+    integer(rint)             :: s1, g1, i1, corrteller, c1, c2, p1, p2, k1, errorflag, lower_int, median_int, upper_int, &
                                iseed
 !
     !set seed
@@ -246,13 +256,13 @@ function runiform ( iseed )
 !
   implicit none
 
-  integer, parameter :: r15 = selected_real_kind(15)
-  integer, parameter :: i6 = selected_int_kind(6)
+  integer, parameter :: rdp = selected_real_kind(15)
+  integer, parameter :: rint = selected_int_kind(6)
 
-  integer ( kind = i6 ), parameter :: i4_huge = 2147483647
-  integer ( kind = i6 ) k
-  real ( kind = r15 ) runiform
-  integer ( kind = i6 ) iseed
+  integer ( kind = rint ), parameter :: i4_huge = 2147483647
+  integer ( kind = rint ) k
+  real ( kind = rdp ) runiform
+  integer ( kind = rint ) iseed
 
   k = iseed / 127773
 
@@ -262,7 +272,7 @@ function runiform ( iseed )
     iseed = iseed + i4_huge
   end if
 
-  runiform = real ( iseed, kind = r15 ) * 4.656612875D-10
+  runiform = real ( iseed, kind = rdp ) * 4.656612875D-10
 
 return
 end function
@@ -298,27 +308,27 @@ function stvaln ( p )
 !
   implicit none
 
-  integer, parameter :: r15 = selected_real_kind(15)
-  integer, parameter :: i6 = selected_int_kind(6)
+  integer, parameter :: rdp = selected_real_kind(15)
+  integer, parameter :: rint = selected_int_kind(6)
 
   !real ( kind = 8 ) eval_pol
-  real ( kind = r15 ) p
-  real ( kind = r15 ) sgn
-  real ( kind = r15 ) stvaln
-  real ( kind = r15 ), parameter, dimension(0:4) :: xden = (/ &
+  real ( kind = rdp ) p
+  real ( kind = rdp ) sgn
+  real ( kind = rdp ) stvaln
+  real ( kind = rdp ), parameter, dimension(0:4) :: xden = (/ &
     0.993484626060D-01, &
     0.588581570495D+00, &
     0.531103462366D+00, &
     0.103537752850D+00, &
     0.38560700634D-02 /)
-  real ( kind = r15 ), parameter, dimension(0:4) :: xnum = (/ &
+  real ( kind = rdp ), parameter, dimension(0:4) :: xnum = (/ &
     -0.322232431088D+00, &
     -1.000000000000D+00, &
     -0.342242088547D+00, &
     -0.204231210245D-01, &
     -0.453642210148D-04 /)
-  real ( kind = r15 ) y
-  real ( kind = r15 ) z
+  real ( kind = rdp ) y
+  real ( kind = rdp ) z
 
   if ( p <= 0.5D+00 ) then
 
@@ -367,16 +377,16 @@ function eval_pol ( a, n, x )
 !
   implicit none
 
-  integer, parameter :: r15 = selected_real_kind(15)
-  integer, parameter :: i6 = selected_int_kind(6)
+  integer, parameter :: rdp = selected_real_kind(15)
+  integer, parameter :: rint = selected_int_kind(6)
 
-  integer ( kind = i6 ) n
+  integer ( kind = rint ) n
 
-  real ( kind = r15 ) a(0:n)
-  real ( kind = r15 ) eval_pol
-  integer ( kind = i6 ) i
-  real ( kind = r15 ) term
-  real ( kind = r15 ) x
+  real ( kind = rdp ) a(0:n)
+  real ( kind = rdp ) eval_pol
+  integer ( kind = rint ) i
+  real ( kind = rdp ) term
+  real ( kind = rdp ) x
 
   term = a(n)
   do i = n - 1, 0, -1
@@ -451,22 +461,22 @@ function cumnor ( arg )
 !
   implicit none
 
-  integer, parameter :: r15 = selected_real_kind(15)
-  integer, parameter :: i6 = selected_int_kind(6)
+  integer, parameter :: rdp = selected_real_kind(15)
+  integer, parameter :: rint = selected_int_kind(6)
 
-  real ( kind = r15 ), parameter, dimension ( 5 ) :: a = (/ &
+  real ( kind = rdp ), parameter, dimension ( 5 ) :: a = (/ &
     2.2352520354606839287D+00, &
     1.6102823106855587881D+02, &
     1.0676894854603709582D+03, &
     1.8154981253343561249D+04, &
     6.5682337918207449113D-02 /)
-  real ( kind = r15 ) arg
-  real ( kind = r15 ), parameter, dimension ( 4 ) :: b = (/ &
+  real ( kind = rdp ) arg
+  real ( kind = rdp ), parameter, dimension ( 4 ) :: b = (/ &
     4.7202581904688241870D+01, &
     9.7609855173777669322D+02, &
     1.0260932208618978205D+04, &
     4.5507789335026729956D+04 /)
-  real ( kind = r15 ), parameter, dimension ( 9 ) :: c = (/ &
+  real ( kind = rdp ), parameter, dimension ( 9 ) :: c = (/ &
     3.9894151208813466764D-01, &
     8.8831497943883759412D+00, &
     9.3506656132177855979D+01, &
@@ -476,8 +486,8 @@ function cumnor ( arg )
     1.1602651437647350124D+04, &
     9.8427148383839780218D+03, &
     1.0765576773720192317D-08 /)
-  real ( kind = r15 ) cumnor
-  real ( kind = r15 ), parameter, dimension ( 8 ) :: d = (/ &
+  real ( kind = rdp ) cumnor
+  real ( kind = rdp ), parameter, dimension ( 8 ) :: d = (/ &
     2.2266688044328115691D+01, &
     2.3538790178262499861D+02, &
     1.5193775994075548050D+03, &
@@ -486,31 +496,31 @@ function cumnor ( arg )
     3.4900952721145977266D+04, &
     3.8912003286093271411D+04, &
     1.9685429676859990727D+04 /)
-  real ( kind = r15 ) del
-  real ( kind = r15 ) eps
-  integer ( kind = i6 ) i
-  real ( kind = r15 ), parameter, dimension ( 6 ) :: p = (/ &
+  real ( kind = rdp ) del
+  real ( kind = rdp ) eps
+  integer ( kind = rint ) i
+  real ( kind = rdp ), parameter, dimension ( 6 ) :: p = (/ &
     2.1589853405795699D-01, &
     1.274011611602473639D-01, &
     2.2235277870649807D-02, &
     1.421619193227893466D-03, &
     2.9112874951168792D-05, &
     2.307344176494017303D-02 /)
-  real ( kind = r15 ), parameter, dimension ( 5 ) :: q = (/ &
+  real ( kind = rdp ), parameter, dimension ( 5 ) :: q = (/ &
     1.28426009614491121D+00, &
     4.68238212480865118D-01, &
     6.59881378689285515D-02, &
     3.78239633202758244D-03, &
     7.29751555083966205D-05 /)
-  real ( kind = r15 ), parameter :: root32 = 5.656854248D+00
-  real ( kind = r15 ), parameter :: sixten = 16.0D+00
-  real ( kind = r15 ), parameter :: sqrpi = 3.9894228040143267794D-01
-  real ( kind = r15 ), parameter :: thrsh = 0.66291D+00
-  real ( kind = r15 ) x
-  real ( kind = r15 ) xden
-  real ( kind = r15 ) xnum
-  real ( kind = r15 ) y
-  real ( kind = r15 ) xsq
+  real ( kind = rdp ), parameter :: root32 = 5.656854248D+00
+  real ( kind = rdp ), parameter :: sixten = 16.0D+00
+  real ( kind = rdp ), parameter :: sqrpi = 3.9894228040143267794D-01
+  real ( kind = rdp ), parameter :: thrsh = 0.66291D+00
+  real ( kind = rdp ) x
+  real ( kind = rdp ) xden
+  real ( kind = rdp ) xnum
+  real ( kind = rdp ) y
+  real ( kind = rdp ) xsq
 !
 !  Machine dependent constants
 !
@@ -627,21 +637,21 @@ function cumnor ( arg )
 !
   implicit none
 
-  integer, parameter :: r15 = selected_real_kind(15)
-  integer, parameter :: i6 = selected_int_kind(6)
+  integer, parameter :: rdp = selected_real_kind(15)
+  integer, parameter :: rint = selected_int_kind(6)
 
-  real ( kind = r15 ) cum
-  real ( kind = r15 ) dinvnr
-  real ( kind = r15 ) dx
-  real ( kind = r15 ), parameter :: eps = 1.0D-13
-  integer ( kind = i6 ) i
-  integer ( kind = i6 ), parameter :: maxit = 100
-  real ( kind = r15 ) p
-  real ( kind = r15 ) pp
-  real ( kind = r15 ), parameter :: r2pi = 0.3989422804014326D+00
-  real ( kind = r15 ) strtx
-  !real ( kind = r15 ) stvaln
-  real ( kind = r15 ) xcur
+  real ( kind = rdp ) cum
+  real ( kind = rdp ) dinvnr
+  real ( kind = rdp ) dx
+  real ( kind = rdp ), parameter :: eps = 1.0D-13
+  integer ( kind = rint ) i
+  integer ( kind = rint ), parameter :: maxit = 100
+  real ( kind = rdp ) p
+  real ( kind = rdp ) pp
+  real ( kind = rdp ), parameter :: r2pi = 0.3989422804014326D+00
+  real ( kind = rdp ) strtx
+  !real ( kind = rdp ) stvaln
+  real ( kind = rdp ) xcur
 
   pp = min ( p, 1-p )
   strtx = stvaln(pp)
@@ -681,13 +691,13 @@ subroutine kronecker(dimA,dimB,A,B,AB)
 !
     implicit none
 !
-    integer, parameter :: r15 = selected_real_kind(15)
-    integer, parameter :: i6 = selected_int_kind(6)
+    integer, parameter :: rdp = selected_real_kind(15)
+    integer, parameter :: rint = selected_int_kind(6)
 !
-    integer(i6), intent(in)  :: dimA, dimB
-    real(r15), intent(in)    :: A(dimA,dimA), B(dimB,dimB) !dummy arguments
-    real(r15), intent(out)   :: AB(dimA*dimB,dimA*dimB) !output matrix of the kronecker product
-    integer(i6)              :: i,j !loop counters
+    integer(rint), intent(in)  :: dimA, dimB
+    real(rdp), intent(in)    :: A(dimA,dimA), B(dimB,dimB) !dummy arguments
+    real(rdp), intent(out)   :: AB(dimA*dimB,dimA*dimB) !output matrix of the kronecker product
+    integer(rint)              :: i,j !loop counters
 !
     do i=1,dimA
         do j=1,dimA
@@ -708,21 +718,21 @@ FUNCTION sdot(N,SX,INCX,SY,INCY)
  !
     implicit none
  !
-    integer, parameter :: r15 = selected_real_kind(15)
-    integer, parameter :: i6 = selected_int_kind(6)
+    integer, parameter :: rdp = selected_real_kind(15)
+    integer, parameter :: rint = selected_int_kind(6)
  !
  !     .. Scalar Arguments ..
-    INTEGER(i6) INCX,INCY,N
+    INTEGER(rint) INCX,INCY,N
  !     ..
  !     .. Array Arguments ..
-    REAL(r15) SX(*),SY(*)
+    REAL(rdp) SX(*),SY(*)
  !    ..
  !
  !  =====================================================================
  !
  !     .. Local Scalars ..
-    REAL(r15) STEMP, sdot
-    INTEGER(i6) I,IX,IY,M,MP1
+    REAL(rdp) STEMP, sdot
+    INTEGER(rint) I,IX,IY,M,MP1
  !     ..
  !     .. Intrinsic Functions ..
     INTRINSIC mod
@@ -775,12 +785,12 @@ function diag(A, n)
 
     implicit none
 !
-    integer, parameter :: r15 = selected_real_kind(15)
-    integer, parameter :: i6 = selected_int_kind(6)
+    integer, parameter :: rdp = selected_real_kind(15)
+    integer, parameter :: rint = selected_int_kind(6)
 !
-    integer(i6) n,i
-    real(r15) A(n), check(n,n)
-    real(r15) diag(n,n)
+    integer(rint) n,i
+    real(rdp) A(n), check(n,n)
+    real(rdp) diag(n,n)
 
     check = 0
     do i=1,n
@@ -797,11 +807,11 @@ function diagonals(A, n)
 
     implicit none
 !
-    integer, parameter :: r15 = selected_real_kind(15)
-    integer, parameter :: i6 = selected_int_kind(6)
+    integer, parameter :: rdp = selected_real_kind(15)
+    integer, parameter :: rint = selected_int_kind(6)
 
-    integer(i6) n,i
-    real(r15) A(n,n), diagonals(n), check(n)
+    integer(rint) n,i
+    real(rdp) A(n,n), diagonals(n), check(n)
 
     do i=1,n
         check(i)= A(i,i)
@@ -820,19 +830,19 @@ end function diagonals
 SUBROUTINE FINDInv(matrix, inverse, n, errorflag)
     IMPLICIT NONE
 
-    integer, parameter :: r15 = selected_real_kind(15)
-    integer, parameter :: i6 = selected_int_kind(6)
+    integer, parameter :: rdp = selected_real_kind(15)
+    integer, parameter :: rint = selected_int_kind(6)
 
     !Declarations
-    INTEGER(i6), INTENT(IN)  :: n
-    REAL(r15), INTENT(IN)    :: matrix(n,n)  !Input matrix
-    INTEGER(i6), INTENT(OUT) :: errorflag  !Return error status. -1 for error, 0 for normal
-    REAL(r15), INTENT(OUT)   :: inverse(n,n) !Inverted matrix
+    INTEGER(rint), INTENT(IN)  :: n
+    REAL(rdp), INTENT(IN)    :: matrix(n,n)  !Input matrix
+    INTEGER(rint), INTENT(OUT) :: errorflag  !Return error status. -1 for error, 0 for normal
+    REAL(rdp), INTENT(OUT)   :: inverse(n,n) !Inverted matrix
 
     LOGICAL :: FLAG = .TRUE.
-    INTEGER(i6) :: i, j, k
-    REAL(r15) :: m
-    REAL(r15), DIMENSION(n,2*n) :: augmatrix !augmented matrix
+    INTEGER(rint) :: i, j, k
+    REAL(rdp) :: m
+    REAL(rdp), DIMENSION(n,2*n) :: augmatrix !augmented matrix
 
     inverse = eye(n)
     !Augment input matrix with an identity matrix
@@ -921,14 +931,14 @@ recursive function det(a,n,permanent) result(accumulation)
 
     IMPLICIT NONE
 
-    integer, parameter :: r15 = selected_real_kind(15)
-    integer, parameter :: i6 = selected_int_kind(6)
+    integer, parameter :: rdp = selected_real_kind(15)
+    integer, parameter :: rint = selected_int_kind(6)
 
-    integer(i6), intent(in) :: n, permanent
-    real(r15), dimension(n,n), intent(in) :: a
-    real(r15), dimension(n-1, n-1) :: b
-    real(r15) :: accumulation
-    integer(i6) :: i, sgn
+    integer(rint), intent(in) :: n, permanent
+    real(rdp), dimension(n,n), intent(in) :: a
+    real(rdp), dimension(n-1, n-1) :: b
+    real(rdp) :: accumulation
+    integer(rint) :: i, sgn
 
     if (n .eq. 1) then
       accumulation = a(1,1)
@@ -978,17 +988,17 @@ function rnormal (iseed)
 !
   implicit none
 
-  integer, parameter :: r15 = selected_real_kind(15)
-  integer, parameter :: i6 = selected_int_kind(6)
+  integer, parameter :: rdp = selected_real_kind(15)
+  integer, parameter :: rint = selected_int_kind(6)
 
-  real ( kind = r15 ) r1
-  real ( kind = r15 ) r2
-  real ( kind = r15 ) r3
-  real ( kind = r15 ) rnormal
-  real ( kind = r15 ), parameter :: pi = 3.141592653589793D+00
-  !real ( kind = r15 ) GG
-  real ( kind = r15 ) x
-  integer ( kind = i6 ) iseed
+  real ( kind = rdp ) r1
+  real ( kind = rdp ) r2
+  real ( kind = rdp ) r3
+  real ( kind = rdp ) rnormal
+  real ( kind = rdp ), parameter :: pi = 3.141592653589793D+00
+  !real ( kind = rdp ) GG
+  real ( kind = rdp ) x
+  integer ( kind = rint ) iseed
 
   !nseed = 1344
   r1 = runiform(iseed)
@@ -1012,12 +1022,12 @@ function eye(n)
 
     implicit none
 
-    integer, parameter :: r15 = selected_real_kind(15)
-    integer, parameter :: i6 = selected_int_kind(6)
+    integer, parameter :: rdp = selected_real_kind(15)
+    integer, parameter :: rint = selected_int_kind(6)
 
-    integer(i6) i,n
-    real(r15) eye(n,n)
-    real(r15) check(n,n)
+    integer(rint) i,n
+    real(rdp) eye(n,n)
+    real(rdp) check(n,n)
 
     check=0
     do i=1,n
@@ -1035,16 +1045,16 @@ subroutine gen_wish(A,nu,B,P,iseed)
 !
     implicit none
 !
-    integer, parameter :: r15 = selected_real_kind(15)
-    integer, parameter :: i6 = selected_int_kind(6)
+    integer, parameter :: rdp = selected_real_kind(15)
+    integer, parameter :: rint = selected_int_kind(6)
 !
     !Declare local variables
 
-    integer(i6), intent (in)  :: nu,P,iseed
-    real(r15), intent (in)    :: A(P,P)
-    real(r15), intent (out)   :: B(P,P)
-    real(r15)                 :: RNmat(nu,P),para((P*(P+3)/2) + 1),m0(P)
-    integer(i6)               :: i
+    integer(rint), intent (in)  :: nu,P,iseed
+    real(rdp), intent (in)    :: A(P,P)
+    real(rdp), intent (out)   :: B(P,P)
+    real(rdp)                 :: RNmat(nu,P),para((P*(P+3)/2) + 1),m0(P)
+    integer(rint)               :: i
 !
     !sample from Wishart distribution as in Press (2005, p. 109)
     m0=0
@@ -1067,16 +1077,16 @@ subroutine robust_covest(m, betas1, betas2, mn1, mn2, varb1, varb2, varb1b2Plus,
 
     implicit none
 !
-    integer, parameter :: r15 = selected_real_kind(15)
-    integer, parameter :: i6 = selected_int_kind(6)
+    integer, parameter :: rdp = selected_real_kind(15)
+    integer, parameter :: rint = selected_int_kind(6)
 !
     !Declare local variables
-    integer(i6), intent(in)  :: m
-    real(r15), intent(in)    :: betas1(m), betas2(m), mn1, mn2
-    real(r15), intent(out)   :: varb1, varb2, varb1b2Plus, varb1b2Min
+    integer(rint), intent(in)  :: m
+    real(rdp), intent(in)    :: betas1(m), betas2(m), mn1, mn2
+    real(rdp), intent(out)   :: varb1, varb2, varb1b2Plus, varb1b2Min
 
-    real(r15)                :: dummy1(m), dummy2(m), Phi075, xxx
-    integer(i6)              :: mmin, i
+    real(rdp)                :: dummy1(m), dummy2(m), Phi075, xxx
+    integer(rint)              :: mmin, i
 !
     xxx=0.75
     Phi075 = dinvnr(xxx)
@@ -1135,11 +1145,11 @@ SUBROUTINE piksrt(n,arr)
 
   implicit none
 !
-  integer, parameter :: r15 = selected_real_kind(15)
-  integer, parameter :: i6 = selected_int_kind(6)
+  integer, parameter :: rdp = selected_real_kind(15)
+  integer, parameter :: rint = selected_int_kind(6)
 
-  integer(i6):: n, i,j
-  real(r15):: arr(n), a
+  integer(rint):: n, i,j
+  real(rdp):: arr(n), a
 
   do j=2, n
     a=arr(j)
@@ -1197,17 +1207,17 @@ SUBROUTINE setgmn(meanv,covm,p,parm)
 
       implicit none
 !
-      integer, parameter :: r15 = selected_real_kind(15)
-      integer, parameter :: i6 = selected_int_kind(6)
+      integer, parameter :: rdp = selected_real_kind(15)
+      integer, parameter :: rint = selected_int_kind(6)
 
 !     .. Scalar Arguments ..
-      INTEGER(i6) p
+      INTEGER(rint) p
 !     ..
 !     .. Array Arguments ..
-      REAL(r15) covm(p,p),meanv(p),parm(p*(p+3)/2+1)
+      REAL(rdp) covm(p,p),meanv(p),parm(p*(p+3)/2+1)
 !     ..
 !     .. Local Scalars ..
-      INTEGER(i6) i,icount,info,j
+      INTEGER(rint) i,icount,info,j
 !     ..
 !     .. External Subroutines ..
 
@@ -1297,18 +1307,18 @@ SUBROUTINE genmn(parm,x,p,iseed)
   !
         implicit none
   !
-        integer, parameter :: r15 = selected_real_kind(15)
-        integer, parameter :: i6 = selected_int_kind(6)
+        integer, parameter :: rdp = selected_real_kind(15)
+        integer, parameter :: rint = selected_int_kind(6)
   !
   !     .. Array Arguments ..
-        integer(i6), intent(in) :: p, iseed
-        real(r15), intent(in)   :: parm(p*(p+3)/2 + 1)
-        real(r15)               :: work(p)
-        real(r15), intent(out)  :: x(p)
+        integer(rint), intent(in) :: p, iseed
+        real(rdp), intent(in)   :: parm(p*(p+3)/2 + 1)
+        real(rdp)               :: work(p)
+        real(rdp), intent(out)  :: x(p)
   !     ..
   !     .. Local Scalars ..
-        real(r15) ae
-        INTEGER(i6) i,icount,j
+        real(rdp) ae
+        INTEGER(rint) i,icount,j
   !    ..
   !     .. External Functions ..
   !     ..
@@ -1351,11 +1361,11 @@ subroutine spofa(a,lda,n,info)
 
       implicit none
 !
-      integer, parameter :: r15 = selected_real_kind(15)
-      integer, parameter :: i6 = selected_int_kind(6)
+      integer, parameter :: rdp = selected_real_kind(15)
+      integer, parameter :: rint = selected_int_kind(6)
 !
-      integer(i6) lda,n,info
-      real(r15) a(lda,n)
+      integer(rint) lda,n,info
+      real(rdp) a(lda,n)
 !
 !     spofa factors a real symmetric positive definite matrix.
 !
@@ -1397,9 +1407,9 @@ subroutine spofa(a,lda,n,info)
 !
 !     internal variables
 !
-      real(r15) t
-      real(r15) s
-      integer(i6) j,jm1,k
+      real(rdp) t
+      real(rdp) s
+      integer(rint) j,jm1,k
 !     begin block with ...exits to 40
 !
          do 30 j = 1, n
