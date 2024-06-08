@@ -401,28 +401,23 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
             diffmat(1:Njs(g1),1:P) = Wgroups(g1,1:Njs(g1),1:P) - matmul(Xgroups(g1,1:Njs(g1),1:K), &
                 BDraws(g1,1:K,1:P))
             errorMatj = matmul(transpose(diffmat(1:Njs(g1),1:P)),diffmat(1:Njs(g1),1:P))
+            CheckStore(s1,g1,1,1,1:P) = errorMatj(1,1:P)
+            CheckStore(s1,g1,1,1,(P+1):(2*P)) = errorMatj(2,1:P)
+            CheckStore(s1,g1,1,1,(2*P+1):(3*P)) = errorMatj(3,1:P)
             Ds = diag(1/sqrt(diagonals(errorMatj,P)),P)
             !CheckStore(s1,g1,1,1,P+1) = Ds(1,1)
             diffmat(1:Njs(g1),1:P) = matmul(diffmat(1:Njs(g1),1:P),Ds) !diffmat is now epsilon in LD
             epsteps = matmul(transpose(diffmat(1:Njs(g1),1:P)),diffmat(1:Njs(g1),1:P))
             SS1 = matmul(matmul(diag(1/sigmaDraws(g1,:),P),epsteps),diag(1/sigmaDraws(g1,:),P))
+            CheckStore(s1,g1,1,2,1:P) = SS1(1,1:P)
+            CheckStore(s1,g1,1,2,(P+1):(2*P)) = SS1(2,1:P)
+            CheckStore(s1,g1,1,2,(2*P+1):(3*P)) = SS1(3,1:P)
             !CheckStore(s1,g1,1,1,P+2) = SS1(1,1)
       !      SS1 = SS1 * Cnugget
             call FINDInv(SS1,SS1inv,P,errorflag)
             !CheckStore(s1,g1,1,1,P+3) = SS1inv(1,1)
             call gen_wish(SS1inv,Njs(g1)-P-1,dummyPP,P,iseed) !!!!!
-            CheckStore(s1,g1,1,1,1:P) = dummyPP(1,1:P)
-            CheckStore(s1,g1,1,1,(P+1):(2*P)) = dummyPP(2,1:P)
-            CheckStore(s1,g1,1,1,(2*P+1):(3*P)) = dummyPP(3,1:P)
-            CheckStore(s1,g1,1,1,3*P+1) = real(Njs(g1)-P-1,kind=rdp)
-            CheckStore(s1,g1,1,2,1:P) = SS1inv(1,1:P)
-            CheckStore(s1,g1,1,2,(P+1):(2*P)) = SS1inv(2,1:P)
-            CheckStore(s1,g1,1,2,(2*P+1):(3*P)) = SS1inv(3,1:P)
             call FINDInv(dummyPP,dummyPPinv,P,errorflag)
-            CheckStore(s1,g1,1,3,1:P) = dummyPPinv(1,1:P)
-            CheckStore(s1,g1,1,3,(P+1):(2*P)) = dummyPPinv(2,1:P)
-            CheckStore(s1,g1,1,3,(2*P+1):(3*P)) = dummyPPinv(3,1:P)
-            CheckStore(s1,g1,1,3,3*P+1) = real(errorflag,kind=rdp)
             Ccan = matmul(matmul(diag(1/sqrt(diagonals(dummyPPinv,P)),P),dummyPPinv), &
                 diag(1/sqrt(diagonals(dummyPPinv,P)),P))
 !            CheckStore(s1,g1,1,1,P+7) = Ccan(2,1)
@@ -1978,9 +1973,9 @@ SUBROUTINE FINDinv(matrix, inverse, n, errorflag)
             IF (j <= n ) THEN
                 augmatrix(i,j) = matrix(i,j)
             ELSE IF ((i+n) == j) THEN
-                augmatrix(i,j) = 1
+                augmatrix(i,j) = 1_rdp
             Else
-                augmatrix(i,j) = 0
+                augmatrix(i,j) = 0_rdp
             ENDIF
         END DO
     END DO
@@ -1999,7 +1994,7 @@ SUBROUTINE FINDinv(matrix, inverse, n, errorflag)
                 ENDIF
                 IF (FLAG .EQV. .FALSE.) THEN
 !                    PRINT*, "Matrix is non - invertible"
-                    inverse = 0
+                    inverse = 0_rdp
                     errorflag = -1
                     return
                 ENDIF
@@ -2017,7 +2012,7 @@ SUBROUTINE FINDinv(matrix, inverse, n, errorflag)
     DO i = 1, n
         IF (augmatrix(i,i) == 0) THEN
 !            PRINT*, "Matrix is non - invertible"
-            inverse = 0
+            inverse = 0_rdp
             errorflag = -1
             return
         ENDIF
