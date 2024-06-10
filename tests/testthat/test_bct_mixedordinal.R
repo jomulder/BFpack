@@ -12,7 +12,7 @@ print("test bct")
 set.seed(123)
 Ntot <- 20
 data1 <- mvtnorm::rmvnorm(Ntot,mean=c(0,0,0),sigma=1+diag(3))
-qwe <- cor_test_test(as.data.frame(data1))
+qwe <- cor_test(as.data.frame(data1))
 print(qwe)
 print(qwe$corrdraws[[1]][100,1,])
 
@@ -37,7 +37,7 @@ print(tail(res$drawscorr))
 
 print("test cor_test_cont")
 set.seed(123)
-fit <- cor_test_test(BFpack::memory[,1:3])
+fit <- cor_test(BFpack::memory[,1:3])
 print(head(fit$corrdraws[[1]][,2,1]))
 print(tail(fit$corrdraws[[1]][,2,1]))
 
