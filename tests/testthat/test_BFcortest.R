@@ -110,6 +110,7 @@ mtcars_test <- mtcars[,8:9]
 mtcars_test[,2] <- as.factor(mtcars_test[,2])
 mtcars_test[,1] <- as.factor(mtcars_test[,1])
 cor2 <- cor_test(mtcars_test,burnin = 0, iter = 3000)
+print(cor2)
 print(head(cor2$corrdraws[[1]][,1,2]))
 print(tail(cor2$corrdraws[[1]][,1,2]))
 print(head(cor2$res$CheckStore[1,1,1,,],2))

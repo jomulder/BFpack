@@ -4,8 +4,8 @@ module rkinds3
    use, intrinsic :: iso_c_binding !c_int c_double
    use, intrinsic :: iso_fortran_env !int32 real64
    private
-   integer, parameter, public :: rint = int32
-   integer, parameter, public :: rdp = real64
+   integer, parameter, public :: rint = c_int
+   integer, parameter, public :: rdp = c_double
 end module
 
 
@@ -401,27 +401,27 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
             diffmat(1:Njs(g1),1:P) = Wgroups(g1,1:Njs(g1),1:P) - matmul(Xgroups(g1,1:Njs(g1),1:K), &
                 BDraws(g1,1:K,1:P))
             errorMatj = matmul(transpose(diffmat(1:Njs(g1),1:P)),diffmat(1:Njs(g1),1:P))
-!            CheckStore(s1,g1,1,1:P,1:P) = errorMatj(1:P,1:P)
+            CheckStore(s1,g1,1,1:P,1:P) = errorMatj(1:P,1:P)
             Ds = diag(1/sqrt(diagonals(errorMatj,P)),P)
-!            CheckStore(s1,g1,2,1:P,1:P) = Ds(1:P,1:P)
+            CheckStore(s1,g1,2,1:P,1:P) = Ds(1:P,1:P)
             diffmat(1:Njs(g1),1:P) = matmul(diffmat(1:Njs(g1),1:P),Ds) !diffmat is now epsilon in LD
             epsteps = matmul(transpose(diffmat(1:Njs(g1),1:P)),diffmat(1:Njs(g1),1:P))
-!            CheckStore(s1,g1,3,1:P,1:P) = epsteps(1:P,1:P)
+            CheckStore(s1,g1,3,1:P,1:P) = epsteps(1:P,1:P)
             SS1 = matmul(matmul(diag(1/sigmaDraws(g1,:),P),epsteps),diag(1/sigmaDraws(g1,:),P))
-!            CheckStore(s1,g1,4,1:P,1:P) = SS1(1:P,1:P)
+            CheckStore(s1,g1,4,1:P,1:P) = SS1(1:P,1:P)
             call FINDInv(SS1,SS1inv,P,errorflag)
-!            CheckStore(s1,g1,5,1:P,1:P) = SS1inv(1:P,1:P)
+            CheckStore(s1,g1,5,1:P,1:P) = SS1inv(1:P,1:P)
             call gen_wish(SS1inv,Njs(g1)-P-1,dummyPP,P,iseed) !!!!!
-!            CheckStore(s1,g1,6,1:P,1:P) = dummyPP(1:P,1:P)
+            CheckStore(s1,g1,6,1:P,1:P) = dummyPP(1:P,1:P)
             call FINDInv(dummyPP,dummyPPinv,P,errorflag)
-!            CheckStore(s1,g1,7,1:P,1:P) = dummyPPinv(1:P,1:P)
+            CheckStore(s1,g1,7,1:P,1:P) = dummyPPinv(1:P,1:P)
             Ccan = matmul(matmul(diag(1/sqrt(diagonals(dummyPPinv,P)),P),dummyPPinv), &
                 diag(1/sqrt(diagonals(dummyPPinv,P)),P))
-!            CheckStore(s1,g1,8,1:P,1:P) = Ccan(1:P,1:P)
+            CheckStore(s1,g1,8,1:P,1:P) = Ccan(1:P,1:P)
             Ccan = Ccan * Cnugget
-!            CheckStore(s1,g1,9,1:P,1:P) = Ccan(1:P,1:P)
+            CheckStore(s1,g1,9,1:P,1:P) = Ccan(1:P,1:P)
             call FINDInv(Ccan,CcanInv,P,errorflag)
-!            CheckStore(s1,g1,10,1:P,1:P) = CcanInv(1:P,1:P)
+            CheckStore(s1,g1,10,1:P,1:P) = CcanInv(1:P,1:P)
             CDraws(g1,:,:) = Ccan(:,:)
             Cinv = CcanInv
             do i1 = 1,P-1 !keep Fisher z transformed posterior draws of rho's
