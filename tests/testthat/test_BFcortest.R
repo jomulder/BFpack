@@ -3,10 +3,9 @@
 print("test2")
 set.seed(123)
 cor1 <- cor_test(mtcars[,4:6],iter = 3e3,burnin = 0)
-print(head(cor1$corrdraws[[1]][,1,2],30))
-print(tail(cor1$corrdraws[[1]][,1,2]))
-print(head(cor1$res$meanMatMeanStore[,1,],30))
-print(head(cor1$res$SigmaMatDrawStore[,1,],30))
+print(head(cor1$corrdraws[[1]][,1,2]))
+print(head(cor1$res$meanMatMeanStore[,1,]))
+print(head(cor1$res$SigmaMatDrawStore[,1,]))
 
 print(head(cor1$res$meanMatMeanStore[3,,],2))
 print(tail(cor1$res$meanMatMeanStore[3,,],2))
@@ -88,6 +87,7 @@ print(head(cor1$res$WgroupsStore[1,1,,]))
 #   )})
 #
 # test a single correlation on categorical outcomes
+print("test a single correlation on categorical outcomes")
 set.seed(123)
 mtcars_test <- mtcars[,8:9]
 mtcars_test[,2] <- as.factor(mtcars_test[,2])

@@ -113,12 +113,12 @@ contains
 !Reference : Algorithm has been well explained in:
 !http://math.uww.edu/~mcfarlat/inverse.htm
 !http://www.tutor.ms.unimelb.edu.au/matrix/matrix_inverse.html
-SUBROUTINE FINDinv(matrix, inverse, n, errorflag)
+SUBROUTINE FINDinv_old(matrix, inverse, n, errorflag)
 
     implicit none
 !
-!    integer, parameter :: r15 = selected_real_kind(15)
-!    integer, parameter :: i6 = selected_int_kind(6)
+!    integer, parameter :: rdp = selected_real_kind(15)
+!    integer, parameter :: rint = selected_int_kind(6)
 
     !Declarations
     INTEGER(rint), INTENT(IN) :: n
@@ -138,9 +138,9 @@ SUBROUTINE FINDinv(matrix, inverse, n, errorflag)
             IF (j <= n ) THEN
                 augmatrix(i,j) = matrix(i,j)
             ELSE IF ((i+n) == j) THEN
-                augmatrix(i,j) = 1
+                augmatrix(i,j) = 1_rdp
             Else
-                augmatrix(i,j) = 0
+                augmatrix(i,j) = 0_rdp
             ENDIF
         END DO
     END DO
@@ -159,7 +159,7 @@ SUBROUTINE FINDinv(matrix, inverse, n, errorflag)
                 ENDIF
                 IF (FLAG .EQV. .FALSE.) THEN
 !                    PRINT*, "Matrix is non - invertible"
-                    inverse = 0
+                    inverse = 0_rdp
                     errorflag = -1
                     return
                 ENDIF
@@ -177,7 +177,7 @@ SUBROUTINE FINDinv(matrix, inverse, n, errorflag)
     DO i = 1, n
         IF (augmatrix(i,i) == 0) THEN
 !            PRINT*, "Matrix is non - invertible"
-            inverse = 0
+            inverse = 0_rdp
             errorflag = -1
             return
         ENDIF
@@ -208,6 +208,42 @@ SUBROUTINE FINDinv(matrix, inverse, n, errorflag)
         END DO
     END DO
     errorflag = 0
+END SUBROUTINE FINDinv_old
+
+! Subroutine to find the inverse of a square matrix
+SUBROUTINE FINDinv(matrix, inverse, n, errorflag)
+
+    implicit none
+
+    !Declarations
+    INTEGER(rint), INTENT(IN) :: n
+    REAL(rdp), INTENT(IN) :: matrix(n,n)  !Input matrix
+    INTEGER(rint), INTENT(OUT) :: errorflag  !Return error status. -1 for error, 0 for normal
+    REAL(rdp), INTENT(OUT) :: inverse(n,n) !Inverted matrix
+
+    integer :: ipiv(n), info, lwork
+    real(rdp) :: work(n)
+
+    external :: dgetrf, dgetri
+
+    errorflag = 0
+
+    inverse = matrix
+    call dgetrf(n,n,inverse,n,ipiv,info)
+    if (info > 0) then
+        inverse = 0
+        errorflag = -1
+        return
+    end if
+
+    lwork = n
+    call dgetri(n,inverse,n,ipiv,work,lwork,info)
+    if (info > 0) then
+        inverse = 0
+        errorflag = -1
+        return
+    end if
+
 END SUBROUTINE FINDinv
 
 
