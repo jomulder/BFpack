@@ -13,13 +13,9 @@ set.seed(123)
 Ntot <- 20
 data1 <- mvtnorm::rmvnorm(Ntot,mean=c(0,0,0),sigma=1+diag(3))
 qwe <- cor_test_test(as.data.frame(data1))
-print(qwe$res$Ygroups)
-print(qwe$res$Ntot)
+print(qwe)
+print(qwe$corrdraws[[1]][100,1,])
 
-
-set.seed(123)
-qwe1 <- cor_test_test(as.data.frame(data1))
-print(qwe1$res$CDrawsStore[1,1,1,])
 
 
 print("prior draws")

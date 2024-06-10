@@ -1116,7 +1116,7 @@ cor_test_test <- function(..., formula = NULL, iter = 5e3, burnin = 3e3, nugget.
                   WgroupsStore=array(as.double(0),dim=c(samsize0,numG,Ntot,P)),
                   meanMatMeanStore = array(as.double(0),dim=c(samsize0,Ntot,P)),
                   SigmaMatDrawStore = array(as.double(0),dim=c(samsize0,P,P)),
-                  CheckStore = array(as.double(1),dim=c(samsize0,numG,Ntot,P,3*P+2+3))
+                  CheckStore = array(as.double(1),dim=c(samsize0,numG,10,P,P))
   )
 
   varnames <- lapply(1:numG,function(g){
