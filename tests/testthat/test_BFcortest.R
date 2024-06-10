@@ -2,7 +2,7 @@
 # exploratory testing correlations in multivariate normal model
 print("test2")
 set.seed(123)
-cor1 <- cor_test(mtcars[,4:6],iter = 3e3,burnin = 0)
+cor1 <- cor_test_test(mtcars[,4:6],iter = 3e3,burnin = 0)
 print(head(cor1$corrdraws[[1]][,1,2]))
 print(head(cor1$res$meanMatMeanStore[,1,]))
 print(head(cor1$res$SigmaMatDrawStore[,1,]))
@@ -109,7 +109,7 @@ set.seed(123)
 mtcars_test <- mtcars[,8:9]
 mtcars_test[,2] <- as.factor(mtcars_test[,2])
 mtcars_test[,1] <- as.factor(mtcars_test[,1])
-cor2 <- cor_test(mtcars_test,burnin = 0, iter = 3000)
+cor2 <- cor_test_test(mtcars_test,burnin = 0, iter = 3000)
 print(cor2)
 print(head(cor2$corrdraws[[1]][,1,2]))
 print(tail(cor2$corrdraws[[1]][,1,2]))

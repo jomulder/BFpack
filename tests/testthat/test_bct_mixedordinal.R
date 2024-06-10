@@ -37,7 +37,7 @@ print(tail(res$drawscorr))
 
 print("test cor_test_cont")
 set.seed(123)
-fit <- cor_test_continuous(BFpack::memory[,1:3])
+fit <- cor_test_test(BFpack::memory[,1:3])
 print(head(fit$corrdraws[[1]][,2,1]))
 print(tail(fit$corrdraws[[1]][,2,1]))
 
