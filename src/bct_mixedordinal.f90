@@ -1,11 +1,40 @@
 
 
-module rkinds3
+! rngfuncs.f90
+module rngfuncs
+
+implicit none
+
+public
+
+! See the R header `R_ext/Random.h` for details
+interface
+    ! double unif_rand(void);
+    function unif_rand() bind(c,name="unif_rand")
+        use, intrinsic :: iso_c_binding, only: c_double
+        real(c_double) :: unif_rand
+    end function
+
+    ! void GetRNGstate(void);
+    subroutine getrngstate() bind(c,name="GetRNGstate")
+    end subroutine
+
+    ! void PutRNGstate(void);
+    subroutine putrngstate() bind(c,name="PutRNGstate")
+    end subroutine
+
+  end interface
+
+end module
+
+
+module rkinds0
    use, intrinsic :: iso_c_binding !c_int c_double
    use, intrinsic :: iso_fortran_env !int32 real64
    private
-   integer, parameter, public :: rint = c_int
-   integer, parameter, public :: rdp = c_double
+   integer, parameter, public :: rint = c_int   ! Using int32 from iso_fortran_env
+   integer, parameter, public :: rdp = c_double   ! Using real64 from iso_fortran_env
+   ! Using real64 from iso_fortran_env
 end module
 
 
@@ -14,7 +43,8 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
     sigmaDrawsStore, CDrawsStore, sdMH, ordinal_in, Cat_in, maxCat, gLiuSab, seed, nuggetscale, WgroupsStore, &
     meanMatMeanStore, SigmaMatDrawStore, CheckStore)
 !
-    use rkinds3, only: rint, rdp
+    use rkinds0, only: rint, rdp
+    use rngfuncs
 !
     implicit none
 !
@@ -33,7 +63,7 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                               CheckStore(samsize0,numG,10,P,P)
     real(rdp) ::  BDraws(numG,K,P), CDraws(numG,P,P), sigmaDraws(numG,P), meanMat(Ntot,P), SigmaMatDraw(P,P), &
                   R_MH, covBeta(K*P,K*P), Ds(P,P), Ccan(P,P), CcanInv(P,P), Ccurr(P,P), epsteps(P,P), &
-                  SS1(P,P), SS1inv(P,P), rnunif(1), errorMatj(P,P), sigma_can(P), aa, bb, &
+                  SS1(P,P), SS1inv(P,P), rnunif, errorMatj(P,P), sigma_can(P), aa, bb, &
                   betaDrawj(1,P*K), acceptSigma(numG,P), dummyPP(P,P), dummyPPinv(P,P), &
                   varz1, varz2, varz1z2Plus, varz1z2Min, Cnugget(P,P), SigmaInv(P,P), sdMHg(numG,P), gLiuSab_can, &
                   Wgroups(numG,Ntot,P), alphaMin, alphaMax, Cinv(P,P), Bmean(K,P), acceptLS(numG,P), &
@@ -192,7 +222,7 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                         do c1=3,Cat(g1,p1)
                             alphaMin = maxval(Wdummy(g1,p1,1:tellers(g1,c1-1,p1),c1-1))
                             alphaMax = minval(Wdummy(g1,p1,1:tellers(g1,c1,p1),c1))
-                            randraw = runiform(iseed) * .999998 + .000001 !avoid approx boundary values
+                            randraw = unif_rand() * .999998 + .000001 !avoid approx boundary values
                             alphaMat(g1,c1,p1) = randraw * (alphaMax-alphaMin) + alphaMin
                         end do
                     end if
@@ -239,13 +269,13 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                         errorMatj(p1,p1)*Cinv(p1,p1)/sigmaDraws(g1,p1)
                     aa = Cinv(p1,p1)*errorMatj(p1,p1)
                     sigma_can(:) = sigmaDraws(g1,:)
-                    sigma_can(p1) = rnormal(iseed)
+                    sigma_can(p1) = rnormal()
                     sigma_can(p1) = sigma_can(p1)*sdMH(g1,p1) + sigmaDraws(g1,p1) !random walk
                     R_MH = exp((-real(Njs(g1))+1.0)*(log(sigma_can(p1))-log(sigmaDraws(g1,p1)) ) &
                            -.5*aa*(sigma_can(p1)**(-2) - sigmaDraws(g1,p1)**(-2)) &
                            -bb*(sigma_can(p1)**(-1) - sigmaDraws(g1,p1)**(-1)) )
-                    rnunif = runiform ( iseed )
-                    if(rnunif(1) < R_MH .and. sigma_can(p1)>0.0) then
+                    rnunif = unif_rand()
+                    if(rnunif < R_MH .and. sigma_can(p1)>0.0) then
                         sigmaDraws(g1,p1) = sigma_can(p1)
                         acceptSigma(g1,p1) = acceptSigma(g1,p1) + 1.0
                     end if
@@ -259,12 +289,12 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                     aa = errorMatj(p1,p1)*SigmaInv(p1,p1)/2.0
                     bb = sum(errorMatj(p1,:)*SigmaInv(p1,:)*gLiuSab_curr(g1,:)) - errorMatj(p1,p1) * &
                         SigmaInv(p1,p1)*gLiuSab_curr(g1,p1)
-                    gLiuSab_can = rnormal(iseed)
+                    gLiuSab_can = rnormal()
                     gLiuSab_can = gLiuSab_can * sdMHg(g1,p1) + gLiuSab_curr(g1,p1) ! random (moon) walk
                     R_MH = exp((K + Cat(g1,p1) - 2.0 + Njs(g1) - 1)*(log(gLiuSab_can) - log(gLiuSab_curr(g1,p1))) &
                                 -aa*(gLiuSab_can**2 - gLiuSab_curr(g1,p1)**2) - bb*(gLiuSab_can - gLiuSab_curr(g1,p1)))
-                    rnunif = runiform ( iseed )
-                    if(rnunif(1) < R_MH .and. gLiuSab_can>0) then
+                    rnunif = unif_rand()
+                    if(rnunif < R_MH .and. gLiuSab_can>0) then
                         gLiuSab_curr(g1,p1) = gLiuSab_can
                         acceptLS(g1,p1) = acceptLS(g1,p1) + 1.0
                         !update the other parameter through the parameter transformation g(x) = g * x
@@ -375,7 +405,7 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                         do c1=3,Cat(g1,p1)
                             alphaMin = maxval(Wdummy(g1,p1,1:tellers(g1,c1-1,p1),c1-1))
                             alphaMax = minval(Wdummy(g1,p1,1:tellers(g1,c1,p1),c1))
-                            randraw = runiform(iseed) * .999998 + .000001
+                            randraw = unif_rand() * .999998 + .000001
                             alphaMat(g1,c1,p1) = randraw * (alphaMax-alphaMin) + alphaMin
                         end do
                     end if
@@ -437,13 +467,13 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                         errorMatj(p1,p1)*Cinv(p1,p1)/sigmaDraws(g1,p1)
                     aa = Cinv(p1,p1)*errorMatj(p1,p1)
                     sigma_can(:) = sigmaDraws(g1,:)
-                    sigma_can(p1) = rnormal(iseed)
+                    sigma_can(p1) = rnormal()
                     sigma_can(p1) = sigma_can(p1)*sdMH(g1,p1) + sigmaDraws(g1,p1) !random walk
                     R_MH = exp((-real(Njs(g1))+1.0_rdp)*(log(sigma_can(p1))-log(sigmaDraws(g1,p1)) ) &
                            -.5_rdp*aa*(sigma_can(p1)**(-2.0_rdp) - sigmaDraws(g1,p1)**(-2.0_rdp)) &
                            -bb*(sigma_can(p1)**(-1.0_rdp) - sigmaDraws(g1,p1)**(-1.0_rdp)) )
-                    rnunif = runiform ( iseed )
-                    if(rnunif(1) < R_MH .and. sigma_can(p1)>0.0_rdp) then
+                    rnunif = unif_rand()
+                    if(rnunif < R_MH .and. sigma_can(p1) > 0.0_rdp) then
                         sigmaDraws(g1,p1) = sigma_can(p1)
                         acceptSigma(g1,p1) = acceptSigma(g1,p1) + 1.0_rdp
                     end if
@@ -457,13 +487,13 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                     aa = errorMatj(p1,p1)*SigmaInv(p1,p1)/2.0_rdp
                     bb = sum(errorMatj(p1,:)*SigmaInv(p1,:)*gLiuSab_curr(g1,:)) - errorMatj(p1,p1) * &
                         SigmaInv(p1,p1)*gLiuSab_curr(g1,p1)
-                    gLiuSab_can = rnormal(iseed)
+                    gLiuSab_can = rnormal()
                     gLiuSab_can = gLiuSab_can*sdMHg(g1,p1) + gLiuSab_curr(g1,p1) ! random (moon) walk
                     R_MH = exp((K + Cat(g1,p1) - 2.0_rdp + real(Njs(g1),kind=rdp) - 1)*(log(gLiuSab_can) - &
                                 log(gLiuSab_curr(g1,p1))) -aa*(gLiuSab_can**2.0_rdp - gLiuSab_curr(g1,p1)**2.0_rdp) &
                                 - bb*(gLiuSab_can - gLiuSab_curr(g1,p1)))
-                    rnunif = runiform ( iseed )
-                    if(rnunif(1) < R_MH .and. gLiuSab_can>0.0_rdp) then
+                    rnunif = unif_rand()
+                    if(rnunif < R_MH .and. gLiuSab_can>0.0_rdp) then
                         gLiuSab_curr(g1,p1) = gLiuSab_can
                         acceptLS(g1,p1) = acceptLS(g1,p1) + 1.0_rdp
                         !update the other parameter through the parameter transformation g(x) = g * x
@@ -725,7 +755,7 @@ end function diagonals
 
 
 
-function rnormal (iseed)
+function rnormal ()
 
 !*****************************************************************************80
 !
@@ -770,9 +800,9 @@ function rnormal (iseed)
   integer ( kind = rint ) iseed
 
   !nseed = 1344
-  r1 = runiform(iseed)
-  r2 = runiform(iseed)
-  r3 = runiform(iseed)
+  r1 = unif_rand()
+  r2 = unif_rand()
+  r3 = unif_rand()
   !PRINT*, iseed, r1, r2, r3
   !call random_number(GG)
   !r1 = GG
@@ -1102,7 +1132,7 @@ SUBROUTINE genmn(parm,x,p,iseed)
   !     Generate P independent normal deviates - WORK ~ N(0,1)
   !
         DO 10,i = 1,p
-            work(i) = rnormal(iseed)
+            work(i) = rnormal()
      10 CONTINUE
         DO 30,i = 1,p
   !
@@ -1367,7 +1397,8 @@ subroutine inverse_prob_sampling(condMean,condVar,LBtrue,UBtrue,LB,UB,condDraw,i
     !yLB = alnorm ( LBstand, uppie )
     yLB = cumnor (LBstand)
     teller = 0
-    rrand = runiform(iseed) * .999998 + .000001
+    rrand = unif_rand()
+    rrand = rrand * .999998_rdp + .000001_rdp
     rnIPS = rrand*(yUB - yLB) + yLB
     if(rnIPS .le. machPres) then
         rnIPS = machPres
@@ -2074,4 +2105,10 @@ END SUBROUTINE FINDinv
 
 
 end subroutine estimate_bct_ordinal
+
+
+
+
+
+
 

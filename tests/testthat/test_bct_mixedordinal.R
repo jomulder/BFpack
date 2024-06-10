@@ -42,8 +42,13 @@ print(head(fit$corrdraws[[1]][,2,1]))
 print(tail(fit$corrdraws[[1]][,2,1]))
 
 
-
-
+print("test kind")
+xin <- runif(1)
+yout <- 1
+res <-.Fortran("test_kind",
+               X = yout,
+               Y = yout)
+print(res)
 
 
 

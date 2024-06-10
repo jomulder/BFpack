@@ -161,16 +161,17 @@ print(head(cor2$res$CheckStore[1e3,1,2,,],2))
 #     log(BF2$BFmatrix_confirmatory[1,2]),.47, tolerance = .1
 #   )})
 #
-# # test with combinations between continuous and ordinal (categorical) outcome variables
-# set.seed(187)
-# mtcars_test <- rbind(mtcars[,c(1,2,9,10)],mtcars[,c(1,2,9,10)])
-# mtcars_test[,2] <- as.ordered(mtcars_test[,2])
-# mtcars_test[,3] <- as.factor(mtcars_test[,3])
-# mtcars_test[,4] <- as.integer(mtcars_test[,4])
-# cor4 <- cor_test(mtcars_test,iter = 3e3,burnin = 1e3)
-# BF4 <- BF(cor4,log = TRUE)
-# test_that("BF.cor_test exploratory hypotheses on correlations mixed measurement levels", {
-#   expect_equivalent(
-#     BF4$BFtu_exploratory[,2],c(0.7,-8.1,-9.7,.7,.7,-9.8), tolerance = .1
-#   )})
+# test with combinations between continuous and ordinal (categorical) outcome variables
+set.seed(187)
+mtcars_test <- rbind(mtcars[,c(1,2,9,10)],mtcars[,c(1,2,9,10)])
+mtcars_test[,2] <- as.ordered(mtcars_test[,2])
+mtcars_test[,3] <- as.factor(mtcars_test[,3])
+mtcars_test[,4] <- as.integer(mtcars_test[,4])
+cor4 <- cor_test(mtcars_test,iter = 3e3,burnin = 1e3)
+print(cor4)
+BF4 <- BF(cor4,log = TRUE)
+test_that("BF.cor_test exploratory hypotheses on correlations mixed measurement levels", {
+  expect_equivalent(
+    BF4$BFtu_exploratory[,2],c(0.53,-.74,-9.6,-.78,.52,-1.9), tolerance = .1
+  )})
 #
