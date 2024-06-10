@@ -923,18 +923,12 @@ subroutine gen_wish(A,nu,B,P,iseed)
 !
     implicit none
 !
-!    integer, parameter :: rdp = selected_real_kind(15)
-!    integer, parameter :: rint = selected_int_kind(6)
+    integer(rint), intent (in) :: nu,P,iseed
+    real(rdp), intent (in)     :: A(P,P)
+    real(rdp), intent (out)    :: B(P,P)
+    real(rdp)                  :: RNmat(nu,P),para((P*(P+3)/2) + 1), m0(P)
+    integer(rint)              :: i
 !
-    !Declare local variables
-
-    integer(rint), intent (in)    :: nu,P,iseed
-    real(rdp), intent (in)    :: A(P,P)
-    real(rdp), intent (out)   :: B(P,P)
-    real(rdp)                 :: RNmat(nu,P),para((P*(P+3)/2) + 1),m0(P)
-    integer(rint)                 :: i
-!
-    !sample from Wishart distribution as in Press (2005, p. 109)
     m0=0
 
     call setgmn(m0,A,P,para)

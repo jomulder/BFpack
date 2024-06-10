@@ -17,6 +17,11 @@ print(qwe$res$Ygroups)
 print(qwe$res$Ntot)
 
 
+set.seed(123)
+qwe1 <- cor_test_test(as.data.frame(data1))
+print(qwe1$res$CDrawsStore[1,1,1,])
+
+
 print("prior draws")
 set.seed(123)
 P <- 3
@@ -39,5 +44,10 @@ set.seed(123)
 fit <- cor_test_continuous(BFpack::memory[,1:3])
 print(head(fit$corrdraws[[1]][,2,1]))
 print(tail(fit$corrdraws[[1]][,2,1]))
+
+
+
+
+
 
 
