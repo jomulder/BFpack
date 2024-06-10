@@ -393,6 +393,7 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
             do p1 = 1,P
                 BDraws(g1,:,p1) = betaDrawj(1,((p1-1)*K+1):(p1*K)) + Bmean(1:K,p1)
             end do
+            BDraws = BHat
             !CheckStore(s1,g1,1,1,1:P) = BDraws(g1,1,:)
 !
             !draw R using method of Liu and Daniels (LD, 2006)
@@ -403,13 +404,11 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
             CheckStore(s1,g1,1,1:P,1:P) = errorMatj(1:P,1:P)
             Ds = diag(1/sqrt(diagonals(errorMatj,P)),P)
             CheckStore(s1,g1,2,1:P,1:P) = Ds(1:P,1:P)
-            !CheckStore(s1,g1,1,1,P+1) = Ds(1,1)
             diffmat(1:Njs(g1),1:P) = matmul(diffmat(1:Njs(g1),1:P),Ds) !diffmat is now epsilon in LD
             epsteps = matmul(transpose(diffmat(1:Njs(g1),1:P)),diffmat(1:Njs(g1),1:P))
             CheckStore(s1,g1,3,1:P,1:P) = epsteps(1:P,1:P)
             SS1 = matmul(matmul(diag(1/sigmaDraws(g1,:),P),epsteps),diag(1/sigmaDraws(g1,:),P))
             CheckStore(s1,g1,4,1:P,1:P) = SS1(1:P,1:P)
-      !      SS1 = SS1 * Cnugget
             call FINDInv(SS1,SS1inv,P,errorflag)
             CheckStore(s1,g1,5,1:P,1:P) = SS1inv(1:P,1:P)
             call gen_wish(SS1inv,Njs(g1)-P-1,dummyPP,P,iseed) !!!!!
