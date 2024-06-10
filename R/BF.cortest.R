@@ -778,7 +778,8 @@ cor_test <- function(..., formula = NULL, iter = 5e3, burnin = 3e3, nugget.scale
                   maxCat=as.integer(max(numcats)),
                   gLiuSab=gLiuSab,
                   seed=as.integer(sample.int(1e6,1)),
-                  nuggetscale=as.double(nugget.scale),
+                  nuggetscale=as.double(nugget.scale)
+                  ,
                   WgroupsStore=array(as.double(0),dim=c(samsize0,numG,Ntot,P)),
                   meanMatMeanStore = array(as.double(0),dim=c(samsize0,Ntot,P)),
                   SigmaMatDrawStore = array(as.double(0),dim=c(samsize0,P,P)),
