@@ -30,7 +30,7 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                               sigmaDrawsStore(samsize0,numG,P), CDrawsStore(samsize0,numG,P,P), &
                               gLiuSab(samsize0,numG,P), WgroupsStore(samsize0,numG,Ntot,P), &
                               meanMatMeanStore(samsize0,Ntot,P), SigmaMatDrawStore(samsize0,P,P), &
-                              CheckStore(samsize0,numG,Ntot,P,3*P+2+3)
+                              CheckStore(samsize0,numG,Ntot,P,9*P)
     real(rdp) ::  BDraws(numG,K,P), CDraws(numG,P,P), sigmaDraws(numG,P), meanMat(Ntot,P), SigmaMatDraw(P,P), &
                   R_MH, covBeta(K*P,K*P), Ds(P,P), Ccan(P,P), CcanInv(P,P), Ccurr(P,P), epsteps(P,P), &
                   SS1(P,P), SS1inv(P,P), rnunif(1), errorMatj(P,P), sigma_can(P), aa, bb, &
@@ -393,23 +393,32 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
             do p1 = 1,P
                 BDraws(g1,:,p1) = betaDrawj(1,((p1-1)*K+1):(p1*K)) + Bmean(1:K,p1)
             end do
+            CheckStore(s1,g1,1,1,1:P) = BDraws(g1,1,:)
 !
             !draw R using method of Liu and Daniels (LD, 2006)
             !draw candidate R
             diffmat(1:Njs(g1),1:P) = Wgroups(g1,1:Njs(g1),1:P) - matmul(Xgroups(g1,1:Njs(g1),1:K), &
                 BDraws(g1,1:K,1:P))
             errorMatj = matmul(transpose(diffmat(1:Njs(g1),1:P)),diffmat(1:Njs(g1),1:P))
+            CheckStore(s1,g1,1,1,(P+1):(2*P)) = errorMatj(1,:)
             Ds = diag(1/sqrt(diagonals(errorMatj,P)),P)
+            CheckStore(s1,g1,1,1,(2*P+1):(3*P)) = Ds(1,:)
             !CheckStore(s1,g1,1,1,P+1) = Ds(1,1)
             diffmat(1:Njs(g1),1:P) = matmul(diffmat(1:Njs(g1),1:P),Ds) !diffmat is now epsilon in LD
             epsteps = matmul(transpose(diffmat(1:Njs(g1),1:P)),diffmat(1:Njs(g1),1:P))
+            CheckStore(s1,g1,1,1,(3*P+1):(4*P)) = epsteps(1,:)
             SS1 = matmul(matmul(diag(1/sigmaDraws(g1,:),P),epsteps),diag(1/sigmaDraws(g1,:),P))
+            CheckStore(s1,g1,1,1,(4*P+1):(5*P)) = SS1(1,:)
       !      SS1 = SS1 * Cnugget
             call FINDInv(SS1,SS1inv,P,errorflag)
+            CheckStore(s1,g1,1,1,(5*P+1):(6*P)) = SS1inv(1,:)
             call gen_wish(SS1inv,Njs(g1)-P-1,dummyPP,P,iseed) !!!!!
+            CheckStore(s1,g1,1,1,(6*P+1):(7*P)) = dummyPP(1,:)
             call FINDInv(dummyPP,dummyPPinv,P,errorflag)
+            CheckStore(s1,g1,1,1,(7*P+1):(8*P)) = dummyPPinv(1,:)
             Ccan = matmul(matmul(diag(1/sqrt(diagonals(dummyPPinv,P)),P),dummyPPinv), &
                 diag(1/sqrt(diagonals(dummyPPinv,P)),P))
+            CheckStore(s1,g1,1,1,(8*P+1):(9*P)) = Ccan(1,:)
 !            CheckStore(s1,g1,1,1,P+7) = Ccan(2,1)
             Ccan = Ccan * Cnugget
 !            CheckStore(s1,g1,1,1,P+8) = Ccan(2,1)

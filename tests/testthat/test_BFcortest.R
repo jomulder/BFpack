@@ -16,6 +16,7 @@ print(round(cor1$res$CheckStore[1,1,1,,],4))
 print(round(cor1$res$CheckStore[2,1,1,,],4))
 print(head(cor1$res$WgroupsStore[1,1,,]))
 
+
 # BF1 <- BF(cor1)
 # BF1a <- BF(cor1,prior.hyp.explo = 3:5)
 # PHPexplo <- matrix(
