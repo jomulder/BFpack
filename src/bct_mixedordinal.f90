@@ -1027,7 +1027,8 @@ SUBROUTINE setgmn(meanv,covm,p,parm)
 !
 !      Cholesky decomposition to find A s.t. trans(A)*(A) = COVM
 !
-      CALL spofa(covm,p,p,info)
+!      CALL spofa(covm,p,p,info)
+      CALL dpotrf('U',p,covm,p,info)
       IF (.NOT. (info.NE.0)) GO TO 30
 !      WRITE (*,*) ' !OVM not positive definite in SETGMN'
 !      STOP ' COVM not positive definite in SETGMN'
@@ -1948,7 +1949,7 @@ function cumnor ( arg )
 !Reference : Algorithm has been well explained in:
 !http://math.uww.edu/~mcfarlat/inverse.htm
 !http://www.tutor.ms.unimelb.edu.au/matrix/matrix_inverse.html
-SUBROUTINE FINDinv(matrix, inverse, n, errorflag)
+SUBROUTINE FINDinv_old(matrix, inverse, n, errorflag)
 
     implicit none
 !
@@ -2043,6 +2044,42 @@ SUBROUTINE FINDinv(matrix, inverse, n, errorflag)
         END DO
     END DO
     errorflag = 0
+END SUBROUTINE FINDinv_old
+
+! Subroutine to find the inverse of a square matrix
+SUBROUTINE FINDinv(matrix, inverse, n, errorflag)
+
+    implicit none
+
+    !Declarations
+    INTEGER(rint), INTENT(IN) :: n
+    REAL(rdp), INTENT(IN) :: matrix(n,n)  !Input matrix
+    INTEGER(rint), INTENT(OUT) :: errorflag  !Return error status. -1 for error, 0 for normal
+    REAL(rdp), INTENT(OUT) :: inverse(n,n) !Inverted matrix
+
+    integer :: ipiv(n), info, lwork
+    real(rdp) :: work(n)
+
+    external :: dgetrf, dgetri
+
+    errorflag = 0
+
+    inverse = matrix
+    call dgetrf(n,n,inverse,n,ipiv,info)
+    if (info > 0) then
+        inverse = 0
+        errorflag = -1
+        return
+    end if
+
+    lwork = n
+    call dgetri(n,inverse,n,ipiv,work,lwork,info)
+    if (info > 0) then
+        inverse = 0
+        errorflag = -1
+        return
+    end if
+
 END SUBROUTINE FINDinv
 
 

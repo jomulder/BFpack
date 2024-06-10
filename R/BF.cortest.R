@@ -28,6 +28,12 @@
 #' @examples
 #' \donttest{
 #'
+#' # Bayesian correlation analysis of the 6 variables in 'memory' object
+#' # we consider a correlation analysis of the first three variable of the memory data.
+#' set.seed(123)
+#' fit <- cor_test_continuous(BFpack::memory[,1:3])
+#' print(head(fit$corrdraws[[1]][,2,1]))
+#' print(tail(fit$corrdraws[[1]][,2,1]))
 #' }
 #' @rdname cor_test_continuous
 #' @export

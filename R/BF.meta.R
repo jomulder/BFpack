@@ -68,22 +68,11 @@ BF.rma.uni <- function(x,
     logmus <- logmuu + log(post_rho$post_rho_s/(1-prior_rho)) # Likelihood of model delta unconstrained and rho < 0
 
     #get unconstrained estimates
-    rhodraws <- post_rho$rhodraws
+    post.draws <- gibbs_unc_marema(yi, vi, rho_min, typ_vi, start_mu = sum(yi*wi)/sum(wi), start_rho = x$I2/100,
+                                   sdstep = .1, burnin = 1e3, iters = 20000)
+    rhodraws <- post.draws[[1]][,2]
+    deltadraws <- post.draws[[1]][,1]
     rhostats <- c(mean(rhodraws),median(rhodraws),quantile(rhodraws,.025),quantile(rhodraws,.975))
-    tau2draws <- rhodraws/(1-rhodraws)*typ_vi # Compute tau2 based on generated I^2-statistic
-    mean_prior_delta <- 0
-    sd_prior_delta <- sqrt(length(yi)/sum(1/(vi+mean(tau2draws))))
-
-    mean_delta <- unlist(lapply(1:length(tau2draws), function(i){
-      (mean_prior_delta/sd_prior_delta^2+sum(yi/(vi+tau2draws[i])))/
-        (1/sd_prior_delta^2+sum(1/(vi+tau2draws[i])))
-    }))
-
-    sd_delta <- unlist(lapply(1:length(tau2draws), function(i){
-      1/sqrt(1/sd_prior_delta^2+sum(1/(vi+tau2draws[i])))
-    }))
-
-    deltadraws <- rnorm(length(rhodraws),mean=mean_delta,sd=sd_delta)
     deltastats <- c(mean(deltadraws),median(deltadraws),quantile(deltadraws,.025),quantile(deltadraws,.975))
     uncestimates <- t(matrix(c(rhostats,deltastats),ncol=2))
     row.names(uncestimates) <- c("I^2","mu")
@@ -480,3 +469,105 @@ get_condpost_rho <- function(yi, vi, rho_min, typ_vi, start_rho, iters = 20000)
 
   return(list(rhodraws = rho_s, logm0u = logm0u))
 }
+
+
+#unconstrained sampling using flat prior for delta and prior uniform for rho
+gibbs_unc_marema <- function(yi, vi, rho_min, typ_vi, start_mu, start_rho, sdstep = .1, burnin = 1e3,
+                             iters = 20000){
+
+  #check sd for random walk every 100 iterations
+  check1 <- 100
+  upper1 <- .5 # define region where the sdstep does not have to be changed
+  lower1 <- .15
+  sdsteptel <- 1
+
+  #initialization
+  mu <- start_mu
+  acceptMat <- rep(0, length = iters + burnin)
+  sdstepseq <- rep(0, length = (iters + burnin) / check1)
+  store <- matrix(NA,ncol=2,nrow = iters)
+  colnames(store) <- c("mu","rho")
+  rho <- start_rho
+
+  for(i in 1:burnin){
+    #draw rho
+    #draw candidate from truncated normal
+    rho_star <- rtnorm(1, mean = rho, sd = sdstep, a = rho_min, b = 1)
+
+    #evaluate Metropolis-Hastings acceptance probability
+    cur_vars <- vi+typ_vi*rho/(1-rho)
+    can_vars <- vi+typ_vi*rho_star/(1-rho_star)
+
+    R_MH <- exp( sum(dnorm(yi,mean=mu,sd=sqrt(can_vars),log=TRUE)) -
+                   sum(dnorm(yi,mean=mu,sd=sqrt(cur_vars),log=TRUE)) ) *
+      (pnorm(1,mean=rho,sd=sdstep) - pnorm(rho_min,mean=rho,sd=sdstep)) /
+      (pnorm(1,mean=rho_star,sd=sdstep) - pnorm(rho_min,mean=rho_star,sd=sdstep))
+    rho <- ifelse(runif(1) < R_MH, rho_star, rho)
+    acceptMat[i] <- rho_star == rho
+
+    #draw mu
+    varmu <- 1/sum(1/(vi+typ_vi*rho/(1-rho)))
+    meanmu <- sum(yi/(vi+typ_vi*rho/(1-rho)))/sum(1/(vi+typ_vi*rho/(1-rho)))
+    mu <- rnorm(1,mean=meanmu,sd=sqrt(varmu))
+
+    #if needed update random walk sd depending on acceptance rate
+    if(ceiling(i/check1)==i/check1){
+      probs <- mean(acceptMat[(i-check1+1):i])
+      if(probs>upper1){
+        sdstep <- sdstep * ( (probs-upper1)/(1-upper1) + 1)
+      }else if(probs < lower1){
+        sdstep <- sdstep * 1 / ( 2 - probs/lower1 )
+      }
+      sdstep <- ifelse(sdstep > 1,1,sdstep)
+      sdstepseq[sdsteptel] <- sdstep
+      sdsteptel <- sdsteptel + 1
+    }
+
+  }
+
+  #now actual drawing
+  for(i in 1:iters){
+    #draw rho
+    #draw candidate from truncated normal
+    rho_star <- rtnorm(1, mean = rho, sd = sdstep, a = rho_min, b = 1)
+
+    #evaluate Metropolis-Hastings acceptance probability
+    cur_vars <- vi+typ_vi*rho/(1-rho)
+    can_vars <- vi+typ_vi*rho_star/(1-rho_star)
+
+    R_MH <- exp( sum(dnorm(yi,mean=mu,sd=sqrt(can_vars),log=TRUE)) -
+                   sum(dnorm(yi,mean=mu,sd=sqrt(cur_vars),log=TRUE)) ) *
+      (pnorm(1,mean=rho,sd=sdstep) - pnorm(rho_min,mean=rho,sd=sdstep)) /
+      (pnorm(1,mean=rho_star,sd=sdstep) - pnorm(rho_min,mean=rho_star,sd=sdstep))
+    rho <- ifelse(runif(1) < R_MH, rho_star, rho)
+    acceptMat[i] <- rho_star == rho
+
+    #draw mu
+    varmu <- 1/sum(1/(vi+typ_vi*rho/(1-rho)))
+    meanmu <- sum(yi/(vi+typ_vi*rho/(1-rho)))/sum(1/(vi+typ_vi*rho/(1-rho)))
+    mu <- rnorm(1,mean=meanmu,sd=sqrt(varmu))
+
+    #if needed update random walk sd depending on acceptance rate
+    if(ceiling(i/check1)==i/check1){
+      probs <- mean(acceptMat[(i-check1+1):i])
+      if(probs>upper1){
+        sdstep <- sdstep * ( (probs-upper1)/(1-upper1) + 1)
+      }else if(probs < lower1){
+        sdstep <- sdstep * 1 / ( 2 - probs/lower1 )
+      }
+      sdstep <- ifelse(sdstep > 1,1,sdstep)
+      sdstepseq[sdsteptel] <- sdstep
+      sdsteptel <- sdsteptel + 1
+    }
+
+    store[i,] <- c(mu,rho)
+
+  }
+
+  return(list(postdraws = store))
+
+}
+
+
+
+
