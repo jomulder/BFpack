@@ -2,11 +2,10 @@
 
 module rkinds3
    use, intrinsic :: iso_c_binding !c_int c_double
-   use, intrinsic :: iso_fortran_env
+   use, intrinsic :: iso_fortran_env !int32 real64
    private
-   integer, parameter, public :: rint = int32   ! Using int32 from iso_fortran_env
-   integer, parameter, public :: rdp = real64   ! Using real64 from iso_fortran_env
-   ! Using real64 from iso_fortran_env
+   integer, parameter, public :: rint = int32
+   integer, parameter, public :: rdp = real64
 end module
 
 
@@ -394,28 +393,19 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
             do p1 = 1,P
                 BDraws(g1,:,p1) = betaDrawj(1,((p1-1)*K+1):(p1*K)) + Bmean(1:K,p1)
             end do
-            !CheckStore(s1,g1,1,1,1:P) = BDraws(g1,1,1:P)
 !
             !draw R using method of Liu and Daniels (LD, 2006)
             !draw candidate R
             diffmat(1:Njs(g1),1:P) = Wgroups(g1,1:Njs(g1),1:P) - matmul(Xgroups(g1,1:Njs(g1),1:K), &
                 BDraws(g1,1:K,1:P))
             errorMatj = matmul(transpose(diffmat(1:Njs(g1),1:P)),diffmat(1:Njs(g1),1:P))
-            CheckStore(s1,g1,1,1,1:P) = errorMatj(1,1:P)
-            CheckStore(s1,g1,1,1,(P+1):(2*P)) = errorMatj(2,1:P)
-            CheckStore(s1,g1,1,1,(2*P+1):(3*P)) = errorMatj(3,1:P)
             Ds = diag(1/sqrt(diagonals(errorMatj,P)),P)
             !CheckStore(s1,g1,1,1,P+1) = Ds(1,1)
             diffmat(1:Njs(g1),1:P) = matmul(diffmat(1:Njs(g1),1:P),Ds) !diffmat is now epsilon in LD
             epsteps = matmul(transpose(diffmat(1:Njs(g1),1:P)),diffmat(1:Njs(g1),1:P))
             SS1 = matmul(matmul(diag(1/sigmaDraws(g1,:),P),epsteps),diag(1/sigmaDraws(g1,:),P))
-            CheckStore(s1,g1,1,2,1:P) = SS1(1,1:P)
-            CheckStore(s1,g1,1,2,(P+1):(2*P)) = SS1(2,1:P)
-            CheckStore(s1,g1,1,2,(2*P+1):(3*P)) = SS1(3,1:P)
-            !CheckStore(s1,g1,1,1,P+2) = SS1(1,1)
       !      SS1 = SS1 * Cnugget
             call FINDInv(SS1,SS1inv,P,errorflag)
-            !CheckStore(s1,g1,1,1,P+3) = SS1inv(1,1)
             call gen_wish(SS1inv,Njs(g1)-P-1,dummyPP,P,iseed) !!!!!
             call FINDInv(dummyPP,dummyPPinv,P,errorflag)
             Ccan = matmul(matmul(diag(1/sqrt(diagonals(dummyPPinv,P)),P),dummyPPinv), &
@@ -1003,11 +993,8 @@ SUBROUTINE setgmn(meanv,covm,p,parm)
 !     ..
 !     .. Local Scalars ..
       INTEGER(rint) i,icount,info,j
-!     ..
-!     .. External Subroutines ..
-
-!     ..
-!     .. Executable Statements ..
+!
+      external :: dpotrf
 !
 !
 !     TEST THE INPUT
