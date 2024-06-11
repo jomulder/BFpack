@@ -30,7 +30,7 @@ end module
 
 module rkinds0
    use, intrinsic :: iso_c_binding !c_int c_double
-   use, intrinsic :: iso_fortran_env !int32 real64
+   ! use, intrinsic :: iso_fortran_env !int32 real64
    private
    integer, parameter, public :: rint = c_int   ! Using int32 from iso_fortran_env
    integer, parameter, public :: rdp = c_double   ! Using real64 from iso_fortran_env
@@ -40,8 +40,8 @@ end module
 
 subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, sdHat, CHat, XtXi, samsize0, &
     burnin, Ntot, Njs_in, Xgroups, Ygroups, C_quantiles, sigma_quantiles, B_quantiles, BDrawsStore, &
-    sigmaDrawsStore, CDrawsStore, sdMH, ordinal_in, Cat_in, maxCat, gLiuSab, seed, nuggetscale, WgroupsStore, &
-    meanMatMeanStore, SigmaMatDrawStore, CheckStore)
+    sigmaDrawsStore, CDrawsStore, sdMH, ordinal_in, Cat_in, maxCat, gLiuSab, seed, nuggetscale)
+!    WgroupsStore, meanMatMeanStore, SigmaMatDrawStore, CheckStore)
 !
     use rkinds0, only: rint, rdp
     use rngfuncs
@@ -58,9 +58,9 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
     real(rdp), intent(out)::  postZmean(numcorr,1), postZcov(numcorr,numcorr), B_quantiles(numG,K,P,3), &
                               C_quantiles(numG,P,P,3), sigma_quantiles(numG,P,3), BDrawsStore(samsize0,numG,K,P), &
                               sigmaDrawsStore(samsize0,numG,P), CDrawsStore(samsize0,numG,P,P), &
-                              gLiuSab(samsize0,numG,P), WgroupsStore(samsize0,numG,Ntot,P), &
-                              meanMatMeanStore(samsize0,Ntot,P), SigmaMatDrawStore(samsize0,P,P), &
-                              CheckStore(samsize0,numG,10,P,P)
+                              gLiuSab(samsize0,numG,P) !, WgroupsStore(samsize0,numG,Ntot,P), &
+                              !meanMatMeanStore(samsize0,Ntot,P), SigmaMatDrawStore(samsize0,P,P), &
+                              !CheckStore(samsize0,numG,10,P,P)
     real(rdp) ::  BDraws(numG,K,P), CDraws(numG,P,P), sigmaDraws(numG,P), meanMat(Ntot,P), SigmaMatDraw(P,P), &
                   R_MH, covBeta(K*P,K*P), Ds(P,P), Ccan(P,P), CcanInv(P,P), Ccurr(P,P), epsteps(P,P), &
                   SS1(P,P), SS1inv(P,P), rnunif, errorMatj(P,P), sigma_can(P), aa, bb, &
@@ -160,58 +160,58 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                             Wgroups(g1,i1,1:P),condMean,condVar)
                         select case (Yi1Categorie)
                             case(1)
-                                call inverse_prob_sampling(condMean,condVar,0,1,alphaMat(g1,1,p1), &
-                                    alphaMat(g1,2,p1),Wgroups(g1,i1,p1),iseed)
+                                call inverse_prob_sampling(condMean,condVar,alphaMat(g1,1,p1), &
+                                    alphaMat(g1,2,p1),Wgroups(g1,i1,p1))
                                 tellers(g1,1,p1) = tellers(g1,1,p1) + 1_rint
                                 Wdummy(g1,p1,tellers(g1,1,p1),1) = Wgroups(g1,i1,p1)
                             case(2)
-                                call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,2,p1), &
-                                    alphaMat(g1,3,p1),Wgroups(g1,i1,p1),iseed)
+                                call inverse_prob_sampling(condMean,condVar,alphaMat(g1,2,p1), &
+                                    alphaMat(g1,3,p1),Wgroups(g1,i1,p1))
                                 tellers(g1,2,p1) = tellers(g1,2,p1) + 1_rint
                                 Wdummy(g1,p1,tellers(g1,2,p1),2) = Wgroups(g1,i1,p1)
                             case(3)
-                                call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,3,p1), &
-                                    alphaMat(g1,4,p1),Wgroups(g1,i1,p1),iseed)
+                                call inverse_prob_sampling(condMean,condVar,alphaMat(g1,3,p1), &
+                                    alphaMat(g1,4,p1),Wgroups(g1,i1,p1))
                                 tellers(g1,3,p1) = tellers(g1,3,p1) + 1_rint
                                 Wdummy(g1,p1,tellers(g1,3,p1),3) = Wgroups(g1,i1,p1)
                             case(4)
-                                call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,4,p1), &
-                                    alphaMat(g1,5,p1),Wgroups(g1,i1,p1),iseed)
+                                call inverse_prob_sampling(condMean,condVar,alphaMat(g1,4,p1), &
+                                    alphaMat(g1,5,p1),Wgroups(g1,i1,p1))
                                 tellers(g1,4,p1) = tellers(g1,4,p1) + 1_rint
                                 Wdummy(g1,p1,tellers(g1,4,p1),4) = Wgroups(g1,i1,p1)
                             case(5)
-                                call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,5,p1), &
-                                    alphaMat(g1,6,p1),Wgroups(g1,i1,p1),iseed)
+                                call inverse_prob_sampling(condMean,condVar,alphaMat(g1,5,p1), &
+                                    alphaMat(g1,6,p1),Wgroups(g1,i1,p1))
                                 tellers(g1,5,p1) = tellers(g1,5,p1) + 1_rint
                                 Wdummy(g1,p1,tellers(g1,5,p1),5) = Wgroups(g1,i1,p1)
                             case(6)
-                                call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,6,p1), &
-                                    alphaMat(g1,7,p1),Wgroups(g1,i1,p1),iseed)
+                                call inverse_prob_sampling(condMean,condVar,alphaMat(g1,6,p1), &
+                                    alphaMat(g1,7,p1),Wgroups(g1,i1,p1))
                                 tellers(g1,6,p1) = tellers(g1,6,p1) + 1_rint
                                 Wdummy(g1,p1,tellers(g1,6,p1),6) = Wgroups(g1,i1,p1)
                             case(7)
-                                call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,7,p1), &
-                                    alphaMat(g1,8,p1),Wgroups(g1,i1,p1),iseed)
+                                call inverse_prob_sampling(condMean,condVar,alphaMat(g1,7,p1), &
+                                    alphaMat(g1,8,p1),Wgroups(g1,i1,p1))
                                 tellers(g1,7,p1) = tellers(g1,7,p1) + 1_rint
                                 Wdummy(g1,p1,tellers(g1,7,p1),7) = Wgroups(g1,i1,p1)
                             case(8)
-                                call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,8,p1), &
-                                    alphaMat(g1,9,p1),Wgroups(g1,i1,p1),iseed)
+                                call inverse_prob_sampling(condMean,condVar,alphaMat(g1,8,p1), &
+                                    alphaMat(g1,9,p1),Wgroups(g1,i1,p1))
                                 tellers(g1,8,p1) = tellers(g1,8,p1) + 1_rint
                                 Wdummy(g1,p1,tellers(g1,8,p1),8) = Wgroups(g1,i1,p1)
                             case(9)
-                                call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,9,p1), &
-                                    alphaMat(g1,10,p1),Wgroups(g1,i1,p1),iseed)
+                                call inverse_prob_sampling(condMean,condVar,alphaMat(g1,9,p1), &
+                                    alphaMat(g1,10,p1),Wgroups(g1,i1,p1))
                                 tellers(g1,9,p1) = tellers(g1,9,p1) + 1_rint
                                 Wdummy(g1,p1,tellers(g1,9,p1),9) = Wgroups(g1,i1,p1)
                             case(10)
-                                call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,10,p1), &
-                                    alphaMat(g1,11,p1),Wgroups(g1,i1,p1),iseed)
+                                call inverse_prob_sampling(condMean,condVar,alphaMat(g1,10,p1), &
+                                    alphaMat(g1,11,p1),Wgroups(g1,i1,p1))
                                 tellers(g1,10,p1) = tellers(g1,10,p1) + 1_rint
                                 Wdummy(g1,p1,tellers(g1,10,p1),10) = Wgroups(g1,i1,p1)
                             case(11)
-                                call inverse_prob_sampling(condMean,condVar,1,0,alphaMat(g1,11,p1), &
-                                    alphaMat(g1,12,p1),Wgroups(g1,i1,p1),iseed)
+                                call inverse_prob_sampling(condMean,condVar,alphaMat(g1,11,p1), &
+                                    alphaMat(g1,12,p1),Wgroups(g1,i1,p1))
                                 tellers(g1,11,p1) = tellers(g1,11,p1) + 1_rint
                                 Wdummy(g1,p1,tellers(g1,11,p1),11) = Wgroups(g1,i1,p1)
                          end select
@@ -339,62 +339,62 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
 !                        CheckStore(s1,g1,i1,p1,(P+P+P+1):(P+P+P+2)) = (/condMean,condVar/)
                         select case (Yi1Categorie)
                             case(1)
-                                call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,1,p1), &
-                                    alphaMat(g1,2,p1),Wgroups(g1,i1,p1),iseed)
+                                call inverse_prob_sampling(condMean,condVar,alphaMat(g1,1,p1), &
+                                    alphaMat(g1,2,p1),Wgroups(g1,i1,p1))
                                 tellers(g1,1,p1) = tellers(g1,1,p1) + 1_rint
                                 Wdummy(g1,p1,tellers(g1,1,p1),1) = Wgroups(g1,i1,p1)
 !                                CheckStore(s1,g1,i1,p1,(P+P+P+3):(P+P+P+5)) = (/alphaMat(g1,1,p1), &
 !                                    alphaMat(g1,2,p1),Wgroups(g1,i1,p1)/)
                             case(2)
-                                call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,2,p1), &
-                                    alphaMat(g1,3,p1),Wgroups(g1,i1,p1),iseed)
+                                call inverse_prob_sampling(condMean,condVar,alphaMat(g1,2,p1), &
+                                    alphaMat(g1,3,p1),Wgroups(g1,i1,p1))
                                 tellers(g1,2,p1) = tellers(g1,2,p1) + 1_rint
                                 Wdummy(g1,p1,tellers(g1,2,p1),2) = Wgroups(g1,i1,p1)
 !                                CheckStore(s1,g1,i1,p1,(P+P+P+3):(P+P+P+5)) = (/alphaMat(g1,2,p1), &
 !                                    alphaMat(g1,3,p1),Wgroups(g1,i1,p1)/)
                             case(3)
-                                call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,3,p1), &
-                                    alphaMat(g1,4,p1),Wgroups(g1,i1,p1),iseed)
+                                call inverse_prob_sampling(condMean,condVar,alphaMat(g1,3,p1), &
+                                    alphaMat(g1,4,p1),Wgroups(g1,i1,p1))
                                 tellers(g1,3,p1) = tellers(g1,3,p1) + 1_rint
                                 Wdummy(g1,p1,tellers(g1,3,p1),3) = Wgroups(g1,i1,p1)
                             case(4)
-                                call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,4,p1), &
-                                    alphaMat(g1,5,p1),Wgroups(g1,i1,p1),iseed)
+                                call inverse_prob_sampling(condMean,condVar,alphaMat(g1,4,p1), &
+                                    alphaMat(g1,5,p1),Wgroups(g1,i1,p1))
                                 tellers(g1,4,p1) = tellers(g1,4,p1) + 1_rint
                                 Wdummy(g1,p1,tellers(g1,4,p1),4) = Wgroups(g1,i1,p1)
                             case(5)
-                                call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,5,p1), &
-                                    alphaMat(g1,6,p1),Wgroups(g1,i1,p1),iseed)
+                                call inverse_prob_sampling(condMean,condVar,alphaMat(g1,5,p1), &
+                                    alphaMat(g1,6,p1),Wgroups(g1,i1,p1))
                                 tellers(g1,5,p1) = tellers(g1,5,p1) + 1_rint
                                 Wdummy(g1,p1,tellers(g1,5,p1),5) = Wgroups(g1,i1,p1)
                             case(6)
-                                call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,6,p1), &
-                                    alphaMat(g1,7,p1),Wgroups(g1,i1,p1),iseed)
+                                call inverse_prob_sampling(condMean,condVar,alphaMat(g1,6,p1), &
+                                    alphaMat(g1,7,p1),Wgroups(g1,i1,p1))
                                 tellers(g1,6,p1) = tellers(g1,6,p1) + 1_rint
                                 Wdummy(g1,p1,tellers(g1,6,p1),6) = Wgroups(g1,i1,p1)
                             case(7)
-                                call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,7,p1), &
-                                    alphaMat(g1,8,p1),Wgroups(g1,i1,p1),iseed)
+                                call inverse_prob_sampling(condMean,condVar,alphaMat(g1,7,p1), &
+                                    alphaMat(g1,8,p1),Wgroups(g1,i1,p1))
                                 tellers(g1,7,p1) = tellers(g1,7,p1) + 1_rint
                                 Wdummy(g1,p1,tellers(g1,7,p1),7) = Wgroups(g1,i1,p1)
                             case(8)
-                                call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,8,p1), &
-                                    alphaMat(g1,9,p1),Wgroups(g1,i1,p1),iseed)
+                                call inverse_prob_sampling(condMean,condVar,alphaMat(g1,8,p1), &
+                                    alphaMat(g1,9,p1),Wgroups(g1,i1,p1))
                                 tellers(g1,8,p1) = tellers(g1,8,p1) + 1_rint
                                 Wdummy(g1,p1,tellers(g1,8,p1),8) = Wgroups(g1,i1,p1)
                             case(9)
-                                call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,9,p1), &
-                                    alphaMat(g1,10,p1),Wgroups(g1,i1,p1),iseed)
+                                call inverse_prob_sampling(condMean,condVar,alphaMat(g1,9,p1), &
+                                    alphaMat(g1,10,p1),Wgroups(g1,i1,p1))
                                 tellers(g1,9,p1) = tellers(g1,9,p1) + 1_rint
                                 Wdummy(g1,p1,tellers(g1,9,p1),9) = Wgroups(g1,i1,p1)
                             case(10)
-                                call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,10,p1), &
-                                    alphaMat(g1,11,p1),Wgroups(g1,i1,p1),iseed)
+                                call inverse_prob_sampling(condMean,condVar,alphaMat(g1,10,p1), &
+                                    alphaMat(g1,11,p1),Wgroups(g1,i1,p1))
                                 tellers(g1,10,p1) = tellers(g1,10,p1) + 1_rint
                                 Wdummy(g1,p1,tellers(g1,10,p1),10) = Wgroups(g1,i1,p1)
                             case(11)
-                                call inverse_prob_sampling(condMean,condVar,1,1,alphaMat(g1,11,p1), &
-                                    alphaMat(g1,12,p1),Wgroups(g1,i1,p1),iseed)
+                                call inverse_prob_sampling(condMean,condVar,alphaMat(g1,11,p1), &
+                                    alphaMat(g1,12,p1),Wgroups(g1,i1,p1))
                                 tellers(g1,11,p1) = tellers(g1,11,p1) + 1_rint
                                 Wdummy(g1,p1,tellers(g1,11,p1),11) = Wgroups(g1,i1,p1)
                          end select
@@ -423,7 +423,7 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
             do p1 = 1,P
                 BDraws(g1,:,p1) = betaDrawj(1,((p1-1)*K+1):(p1*K)) + Bmean(1:K,p1)
             end do
-            BDraws = BHat
+!            BDraws = BHat
             !CheckStore(s1,g1,1,1,1:P) = BDraws(g1,1,:)
 !
             !draw R using method of Liu and Daniels (LD, 2006)
@@ -431,27 +431,27 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
             diffmat(1:Njs(g1),1:P) = Wgroups(g1,1:Njs(g1),1:P) - matmul(Xgroups(g1,1:Njs(g1),1:K), &
                 BDraws(g1,1:K,1:P))
             errorMatj = matmul(transpose(diffmat(1:Njs(g1),1:P)),diffmat(1:Njs(g1),1:P))
-            CheckStore(s1,g1,1,1:P,1:P) = errorMatj(1:P,1:P)
+!            CheckStore(s1,g1,1,1:P,1:P) = errorMatj(1:P,1:P)
             Ds = diag(1/sqrt(diagonals(errorMatj,P)),P)
-            CheckStore(s1,g1,2,1:P,1:P) = Ds(1:P,1:P)
+!            CheckStore(s1,g1,2,1:P,1:P) = Ds(1:P,1:P)
             diffmat(1:Njs(g1),1:P) = matmul(diffmat(1:Njs(g1),1:P),Ds) !diffmat is now epsilon in LD
             epsteps = matmul(transpose(diffmat(1:Njs(g1),1:P)),diffmat(1:Njs(g1),1:P))
-            CheckStore(s1,g1,3,1:P,1:P) = epsteps(1:P,1:P)
+!            CheckStore(s1,g1,3,1:P,1:P) = epsteps(1:P,1:P)
             SS1 = matmul(matmul(diag(1/sigmaDraws(g1,:),P),epsteps),diag(1/sigmaDraws(g1,:),P))
-            CheckStore(s1,g1,4,1:P,1:P) = SS1(1:P,1:P)
+!            CheckStore(s1,g1,4,1:P,1:P) = SS1(1:P,1:P)
             call FINDInv(SS1,SS1inv,P,errorflag)
-            CheckStore(s1,g1,5,1:P,1:P) = SS1inv(1:P,1:P)
+!            CheckStore(s1,g1,5,1:P,1:P) = SS1inv(1:P,1:P)
             call gen_wish(SS1inv,Njs(g1)-P-1,dummyPP,P,iseed) !!!!!
-            CheckStore(s1,g1,6,1:P,1:P) = dummyPP(1:P,1:P)
+!            CheckStore(s1,g1,6,1:P,1:P) = dummyPP(1:P,1:P)
             call FINDInv(dummyPP,dummyPPinv,P,errorflag)
-            CheckStore(s1,g1,7,1:P,1:P) = dummyPPinv(1:P,1:P)
+!            CheckStore(s1,g1,7,1:P,1:P) = dummyPPinv(1:P,1:P)
             Ccan = matmul(matmul(diag(1/sqrt(diagonals(dummyPPinv,P)),P),dummyPPinv), &
                 diag(1/sqrt(diagonals(dummyPPinv,P)),P))
-            CheckStore(s1,g1,8,1:P,1:P) = Ccan(1:P,1:P)
+!            CheckStore(s1,g1,8,1:P,1:P) = Ccan(1:P,1:P)
             Ccan = Ccan * Cnugget
-            CheckStore(s1,g1,9,1:P,1:P) = Ccan(1:P,1:P)
+!            CheckStore(s1,g1,9,1:P,1:P) = Ccan(1:P,1:P)
             call FINDInv(Ccan,CcanInv,P,errorflag)
-            CheckStore(s1,g1,10,1:P,1:P) = CcanInv(1:P,1:P)
+!            CheckStore(s1,g1,10,1:P,1:P) = CcanInv(1:P,1:P)
             CDraws(g1,:,:) = Ccan(:,:)
             Cinv = CcanInv
             do i1 = 1,P-1 !keep Fisher z transformed posterior draws of rho's
@@ -1160,86 +1160,6 @@ SUBROUTINE genmn(parm,x,p,iseed)
 END SUBROUTINE genmn
 
 
-subroutine spofa(a,lda,n,info)
-
-      implicit none
-!
-!      integer, parameter :: rdp = selected_real_kind(15)
-!      integer, parameter :: rint = selected_int_kind(6)
-
-      integer(rint) ::lda,n,info
-      real(rdp) :: a(lda,n)
-
-!     spofa factors a real symmetric positive definite matrix.
-!
-!     spofa is usually called by spoco, but it can be called
-!     directly with a saving in time if  rcond  is not needed.
-!     (time for spo!o) = (1 + 18/n)*(time for spofa) .
-!
-!     on entry
-!
-!        a       real(lda, n)
-!                the symmetric matrix to be factored.  only the
-!                diagonal and upper triangle are used.
-!
-!        lda     integer
-!                the leading dimension of the array  a .
-!
-!        n       integer
-!                the order of the matrix  a .
-!
-!     on return
-!
-!        a       an upper triangular matrix  r  so that  a = trans(r)*r
-!                where  trans(r)  is the transpose.
-!                the stri!t lower triangle is unaltered.
-!                if  info .ne. 0 , the fa!torization is not !omplete.
-!
-!        info    integer
-!                = 0  for normal return.
-!                = k  signals an error !ondition.  the leading minor
-!                     of order  k  is not positive definite.
-!
-!     linpa!k.  this version dated 08/14/78 .
-!     !leve moler, university of new mexi!o, argonne national lab.
-!
-!     subroutines and functions
-!
-!     blas sdot
-!     fortran sqrt
-!
-!     internal variables
-!
-      real(rdp) t
-      real(rdp) s
-      integer(rint) :: j,jm1,k
-!     begin block with ...exits to 40
-!
-!
-         do 30 j = 1, n
-            info = j
-            s = 0.0e0
-            jm1 = j - 1
-            if (jm1 .lt. 1) go to 20
-            do 10 k = 1, jm1
-               t = a(k,j) - sdot(k-1,a(1,k),1,a(1,j),1)
-               t = t/a(k,k)
-               a(k,j) = t
-               s = s + t*t
-   10       continue
-   20       continue
-            s = a(j,j) - s
-!     ......exit
-            if (s .le. 0.0e0) go to 40
-            a(j,j) = sqrt(s)
-   30    continue
-         info = 0
-   40 continue
-      return
-
-end SUBROUTINE spofa
-
-
 
 FUNCTION sdot(N,SX,INCX,SY,INCY)
  !
@@ -1367,14 +1287,10 @@ subroutine compute_condMeanVar(welke,dimIn,meanIn,covmIn,obsIn,condMean,condVar)
 end subroutine compute_condMeanVar
 
 
-subroutine inverse_prob_sampling(condMean,condVar,LBtrue,UBtrue,LB,UB,condDraw,iseed)
+subroutine inverse_prob_sampling(condMean,condVar,LB,UB,condDraw)
 
     implicit none
 !
-!    integer, parameter :: rdp = selected_real_kind(15)
-!    integer, parameter :: rint = selected_int_kind(6)
-
-    integer(rint), intent(in)           :: LBtrue, UBtrue, iseed
     real ( kind = rdp ), intent(in)   :: condMean, condVar, LB, UB
     real ( kind = rdp ), intent(out)  :: condDraw
     real ( kind = rdp )               :: xdraw
@@ -1964,107 +1880,6 @@ function cumnor ( arg )
  end function cumnor
 
 
-!Subroutine to find the inverse of a square matrix
-!Author : Louisda16th a.k.a Ashwith J. Rego
-!Reference : Algorithm has been well explained in:
-!http://math.uww.edu/~mcfarlat/inverse.htm
-!http://www.tutor.ms.unimelb.edu.au/matrix/matrix_inverse.html
-SUBROUTINE FINDinv_old(matrix, inverse, n, errorflag)
-
-    implicit none
-!
-!    integer, parameter :: rdp = selected_real_kind(15)
-!    integer, parameter :: rint = selected_int_kind(6)
-
-    !Declarations
-    INTEGER(rint), INTENT(IN) :: n
-    REAL(rdp), INTENT(IN) :: matrix(n,n)  !Input matrix
-    INTEGER(rint), INTENT(OUT) :: errorflag  !Return error status. -1 for error, 0 for normal
-    REAL(rdp), INTENT(OUT) :: inverse(n,n) !Inverted matrix
-
-    LOGICAL :: FLAG = .TRUE.
-    INTEGER(rint) :: i, j, k
-    REAL(rdp) :: m
-    REAL(rdp), DIMENSION(n,2*n) :: augmatrix !augmented matrix
-
-    inverse = eye(n)
-    !Augment input matrix with an identity matrix
-    DO i = 1, n
-        DO j = 1, 2*n
-            IF (j <= n ) THEN
-                augmatrix(i,j) = matrix(i,j)
-            ELSE IF ((i+n) == j) THEN
-                augmatrix(i,j) = 1_rdp
-            Else
-                augmatrix(i,j) = 0_rdp
-            ENDIF
-        END DO
-    END DO
-
-    !Reduce augmented matrix to upper traingular form
-    DO k =1, n-1
-        IF (augmatrix(k,k) == 0) THEN
-            FLAG = .FALSE.
-            DO i = k+1, n
-                IF (augmatrix(i,k) /= 0) THEN
-                    DO j = 1,2*n
-                        augmatrix(k,j) = augmatrix(k,j)+augmatrix(i,j)
-                    END DO
-                    FLAG = .TRUE.
-                    EXIT
-                ENDIF
-                IF (FLAG .EQV. .FALSE.) THEN
-!                    PRINT*, "Matrix is non - invertible"
-                    inverse = 0_rdp
-                    errorflag = -1
-                    return
-                ENDIF
-            END DO
-        ENDIF
-        DO j = k+1, n
-            m = augmatrix(j,k)/augmatrix(k,k)
-            DO i = k, 2*n
-                augmatrix(j,i) = augmatrix(j,i) - m*augmatrix(k,i)
-            END DO
-        END DO
-    END DO
-
-    !Test for invertibility
-    DO i = 1, n
-        IF (augmatrix(i,i) == 0) THEN
-!            PRINT*, "Matrix is non - invertible"
-            inverse = 0_rdp
-            errorflag = -1
-            return
-        ENDIF
-    END DO
-
-    !Make diagonal elements as 1
-    DO i = 1 , n
-        m = augmatrix(i,i)
-        DO j = i , (2 * n)
-            augmatrix(i,j) = (augmatrix(i,j) / m)
-        END DO
-    END DO
-
-    !Reduced right side half of augmented matrix to identity matrix
-    DO k = n-1, 1, -1
-        DO i = 1, k
-            m = augmatrix(i,k+1)
-            DO j = k, (2*n)
-                augmatrix(i,j) = augmatrix(i,j) -augmatrix(k+1,j) * m
-            END DO
-        END DO
-    END DO
-
-    !store answer
-    DO i =1, n
-        DO j = 1, n
-            inverse(i,j) = augmatrix(i,j+n)
-        END DO
-    END DO
-    errorflag = 0
-END SUBROUTINE FINDinv_old
 
 ! Subroutine to find the inverse of a square matrix
 SUBROUTINE FINDinv(matrix, inverse, n, errorflag)

@@ -1034,6 +1034,9 @@ cor_test <- function(..., formula = NULL, iter = 5e3, burnin = 3e3, nugget.scale
   K <- ncol(YXlist[[1]][[2]])
   numcorr <- numG*P*(P-1)/2
   ngroups <- unlist(lapply(1:numG,function(g){nrow(YXlist[[g]][[1]])}))
+  if(min(ngroups)<2*P+1){
+    stop("sample size in each group must at least be equal to 2*P+1, with P the number of DVs.")
+  }
   Ntot <- max(ngroups)
   Ygroups <- array(0,dim=c(numG,Ntot,P))
   Xgroups <- array(0,dim=c(numG,Ntot,K))
@@ -1112,11 +1115,11 @@ cor_test <- function(..., formula = NULL, iter = 5e3, burnin = 3e3, nugget.scale
                   maxCat=as.integer(max(numcats)),
                   gLiuSab=gLiuSab,
                   seed=as.integer(sample.int(1e6,1)),
-                  nuggetscale=as.double(nugget.scale),
-                  WgroupsStore=array(as.double(0),dim=c(samsize0,numG,Ntot,P)),
-                  meanMatMeanStore = array(as.double(0),dim=c(samsize0,Ntot,P)),
-                  SigmaMatDrawStore = array(as.double(0),dim=c(samsize0,P,P)),
-                  CheckStore = array(as.double(1),dim=c(samsize0,numG,10,P,P))
+                  nuggetscale=as.double(nugget.scale)
+                  #,WgroupsStore=array(as.double(0),dim=c(samsize0,numG,Ntot,P)),
+                  #meanMatMeanStore = array(as.double(0),dim=c(samsize0,Ntot,P)),
+                  #SigmaMatDrawStore = array(as.double(0),dim=c(samsize0,P,P)),
+                  #CheckStore = array(as.double(1),dim=c(samsize0,numG,10,P,P))
   )
 
   varnames <- lapply(1:numG,function(g){
