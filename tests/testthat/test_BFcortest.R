@@ -107,7 +107,7 @@ mtcars_test <- rbind(mtcars[,c(1,2,9,10)],mtcars[,c(1,2,9,10)])
 mtcars_test[,2] <- as.ordered(mtcars_test[,2])
 mtcars_test[,3] <- as.factor(mtcars_test[,3])
 mtcars_test[,4] <- as.integer(mtcars_test[,4])
-cor4 <- cor_test(mtcars_test[1:5,],iter = 1e3,burnin = 3e2)
+cor4 <- cor_test(mtcars_test,iter = 1e3,burnin = 3e2)
 print(cor4)
 BF4 <- BF(cor4,log = TRUE)
 test_that("BF.cor_test exploratory hypotheses on correlations mixed measurement levels", {
