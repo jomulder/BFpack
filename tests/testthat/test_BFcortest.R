@@ -1,6 +1,5 @@
 
 # exploratory testing correlations in multivariate normal model
-print("test2")
 set.seed(123)
 cor1 <- cor_test(mtcars[,4:6],iter = 1e3,burnin = 0)
 BF1 <- BF(cor1)
@@ -98,7 +97,7 @@ test_that("BF.cor_test exploratory hypotheses on correlations correctly evaluate
 # confirmatory hypothesis test on the correlation
 test_that("BF.cor_test confirmatory hypotheses on correlations correctly evaluated", {
   expect_equivalent(
-    round(log(BF2$BFmatrix_confirmatory[1,2]),2),.67, tolerance = .1
+    round(log(BF2$BFmatrix_confirmatory[1,2]),2),.55, tolerance = .1
   )})
 
 # test with combinations between continuous and ordinal (categorical) outcome variables
@@ -112,6 +111,6 @@ print(cor4)
 BF4 <- BF(cor4,log = TRUE)
 test_that("BF.cor_test exploratory hypotheses on correlations mixed measurement levels", {
   expect_equivalent(
-    round(BF4$BFtu_exploratory[,2],1),c(0.7,-10.7,-9.2,.7,.7,-5.3), tolerance = .1
+    round(BF4$BFtu_exploratory[,2],1),c(0.7,-37,-9.5,.7,.7,-11.5), tolerance = .1
   )})
 #

@@ -269,7 +269,8 @@ draw_ju_r <- function(P, samsize=50000, Fisher=1){
                  samsize=as.integer(samsize),
                  numcorrgroup=as.integer(.5*P*(P-1)),
                  Fisher=as.integer(Fisher),
-                 seed=as.integer( sample.int(1e6,1) ),PACKAGE="BFpack")
+                 #seed=as.integer( sample.int(1e6,1) ),
+                 PACKAGE="BFpack")
   return(res$drawscorr)
 
 }
@@ -529,7 +530,7 @@ cor_test <- function(..., formula = NULL, iter = 5e3, burnin = 3e3, nugget.scale
                   Cat_in=numcats,
                   maxCat=as.integer(max(numcats)),
                   gLiuSab=gLiuSab,
-                  seed=as.integer(sample.int(1e6,1)),
+                  #seed=as.integer(sample.int(1e6,1)),
                   nuggetscale=as.double(nugget.scale)
                   #,WgroupsStore=array(as.double(0),dim=c(samsize0,numG,Ntot,P)),
                   #meanMatMeanStore = array(as.double(0),dim=c(samsize0,Ntot,P)),

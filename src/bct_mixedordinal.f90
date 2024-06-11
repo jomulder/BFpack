@@ -40,7 +40,7 @@ end module
 
 subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, sdHat, CHat, XtXi, samsize0, &
     burnin, Ntot, Njs_in, Xgroups, Ygroups, C_quantiles, sigma_quantiles, B_quantiles, BDrawsStore, &
-    sigmaDrawsStore, CDrawsStore, sdMH, ordinal_in, Cat_in, maxCat, gLiuSab, seed, nuggetscale)
+    sigmaDrawsStore, CDrawsStore, sdMH, ordinal_in, Cat_in, maxCat, gLiuSab, nuggetscale)
 !    WgroupsStore, meanMatMeanStore, SigmaMatDrawStore, CheckStore)
 !
     use rkinds0, only: rint, rdp
@@ -48,10 +48,7 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
 !
     implicit none
 !
-!    integer, parameter :: rdp = selected_real_kind(15)
-!    integer, parameter :: rint = selected_int_kind(6)
-!
-    integer(rint), intent(in) ::P, numcorr, K, numG, samsize0, burnin, Ntot, maxCat, seed
+    integer(rint), intent(in) ::P, numcorr, K, numG, samsize0, burnin, Ntot, maxCat
     real(rdp), intent(in) ::  BHat(numG,K,P), sdHat(numG,P), CHat(numG,P,P), XtXi(numG,K,K), Cat_in(numG,P), &
                               sdMH(numG,P), Xgroups(numG,Ntot,K), Ygroups(numG,Ntot,P), ordinal_in(numG,P), &
                               nuggetscale, Njs_in(numG,1)
@@ -71,11 +68,8 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                   Zcorr_sample(samsize0,numcorr), dummy3(samsize0), dummy2(samsize0), &
                   diffmat(Ntot,P), meanO(P*K), para((P*K)*((P*K)+3)/2 + 1), randraw, gLiuSab_curr(numG,P)
     integer(rint) ::s1, g1, i1, corrteller, Cat(numG,P), ordinal(numG,P), Njs(numG), &
-                  c1, c2, p1, Yi1Categorie, tellers(numG,maxCat,P), k1, p2, iseed, errorflag, &
+                  c1, c2, p1, Yi1Categorie, tellers(numG,maxCat,P), k1, p2, errorflag, &
                   lower_int, median_int, upper_int
-!
-!   set seed
-    iseed = seed
 !
     !initial posterior draws
     BDraws = BHat
@@ -234,7 +228,7 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
             call kronecker(K,P,XtXi(g1,:,:),SigmaMatDraw,covBeta)
 !
             call setgmn(meanO,covBeta,P*K,para)
-            call GENMN(para,betaDrawj(1,1:(P*K)),P*K,iseed)
+            call GENMN(para,betaDrawj(1,1:(P*K)),P*K)
             do p1 = 1,P
                 BDraws(g1,:,p1) = betaDrawj(1,((p1-1)*K+1):(p1*K)) + Bmean(1:K,p1)
             end do
@@ -251,7 +245,7 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
 !            write(*,*)
 !            write(*,*)SS1
             call FINDInv(SS1,SS1inv,P,errorflag)
-            call gen_wish(SS1inv,Njs(g1)-P-1,dummyPP,P,iseed) !!!!!
+            call gen_wish(SS1inv,Njs(g1)-P-1,dummyPP,P) !!!!!
             call FINDInv(dummyPP,dummyPPinv,P,errorflag)
             Ccan = matmul(matmul(diag(1/sqrt(diagonals(dummyPPinv,P)),P),dummyPPinv), &
                 diag(1/sqrt(diagonals(dummyPPinv,P)),P))
@@ -419,7 +413,7 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
             call kronecker(K,P,XtXi(g1,:,:),SigmaMatDraw,covBeta)
 !
             call setgmn(meanO,covBeta,P*K,para)
-            call GENMN(para,betaDrawj(1,1:(P*K)),P*K,iseed)
+            call GENMN(para,betaDrawj(1,1:(P*K)),P*K)
             do p1 = 1,P
                 BDraws(g1,:,p1) = betaDrawj(1,((p1-1)*K+1):(p1*K)) + Bmean(1:K,p1)
             end do
@@ -441,7 +435,7 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
 !            CheckStore(s1,g1,4,1:P,1:P) = SS1(1:P,1:P)
             call FINDInv(SS1,SS1inv,P,errorflag)
 !            CheckStore(s1,g1,5,1:P,1:P) = SS1inv(1:P,1:P)
-            call gen_wish(SS1inv,Njs(g1)-P-1,dummyPP,P,iseed) !!!!!
+            call gen_wish(SS1inv,Njs(g1)-P-1,dummyPP,P) !!!!!
 !            CheckStore(s1,g1,6,1:P,1:P) = dummyPP(1:P,1:P)
             call FINDInv(dummyPP,dummyPPinv,P,errorflag)
 !            CheckStore(s1,g1,7,1:P,1:P) = dummyPPinv(1:P,1:P)
@@ -797,7 +791,7 @@ function rnormal ()
   real ( kind = rdp ), parameter :: pi = 3.141592653589793D+00
   !real ( kind = rdp ) GG
   real ( kind = rdp ) x
-  integer ( kind = rint ) iseed
+  !integer ( kind = rint ) iseed
 
   !nseed = 1344
   r1 = unif_rand()
@@ -814,109 +808,6 @@ function rnormal ()
 
   return
 end function rnormal
-
-
-function runiform ( iseed )
-
-!*****************************************************************************80
-!
-!! RUNIFORM returns a unit pseudorandom R8.
-!
-!  Discussion:
-!
-!    An R8 is a real ( kind = 8 ) value.
-!
-!    For now, the input quantity iseed is an integer variable.
-!
-!    This routine implements the recursion
-!
-!      iseed = ( 16807 * iseed ) mod ( 2^31 - 1 )
-!      runiform = iseed / ( 2^31 - 1 )
-!
-!    The integer arithmetic never requires more than 32 bits,
-!    including a sign bit.
-!
-!    If the initial iseed is 12345, then the first three computations are
-!
-!      Input     Output      RUNIFORM
-!      iseed      iseed
-!
-!         12345   207482415  0.096616
-!     207482415  1790989824  0.833995
-!    1790989824  2035175616  0.947702
-!
-!  Licensing:
-!
-!    This code is distributed under the GNU LGPL license.
-!
-!  Modified:
-!
-!    31 May 2007
-!
-!  Author:
-!
-!    John Burkardt
-!
-!  Reference:
-!
-!    Paul Bratley, Bennett Fox, Linus Schrage,
-!    A Guide to Simulation,
-!    Second Edition,
-!    Springer, 1987,
-!    ISBN: 0387964673,
-!    LC: QA76.9.C65.B73.
-!
-!    Bennett Fox,
-!    Algorithm 647:
-!    Implementation and Relative Efficiency of Quasirandom
-!    Sequence Generators,
-!    ACM Transactions on Mathematical Software,
-!    Volume 12, Number 4, December 1986, pages 362-376.
-!
-!    Pierre L'Ecuyer,
-!    Random Number Generation,
-!    in Handbook of Simulation,
-!    edited by Jerry Banks,
-!    Wiley, 1998,
-!    ISBN: 0471134031,
-!    LC: T57.62.H37.
-!
-!    Peter Lewis, Allen Goodman, James Miller,
-!    A Pseudo-Random Number Generator for the System/360,
-!    IBM Systems Journal,
-!    Volume 8, Number 2, 1969, pages 136-143.
-!
-!  Parameters:
-!
-!    Input/output, integer ( kind = 8 ) iseed, the "iseed" value, which should
-!    NOT be 0. On output, iseed has been updated.
-!
-!    Output, real ( kind = 8 ) RUNIFORM, a new pseudorandom variate,
-!    strictly between 0 and 1.
-!
-
-  implicit none
-!
-!  integer, parameter :: rdp = selected_real_kind(15)
-!  integer, parameter :: rint = selected_int_kind(6)
-
-  integer ( kind = rint ), parameter :: i4_huge = 2147483647
-  integer ( kind = rint ) k
-  real ( kind = rdp ) runiform
-  integer ( kind = rint ) iseed
-
-  k = iseed / 127773
-
-  iseed = 16807 * ( iseed - k * 127773 ) - k * 2836
-
-  if ( iseed < 0 ) then
-    iseed = iseed + i4_huge
-  end if
-
-  runiform = real ( iseed, kind = rdp ) * 4.656612875D-10
-
-return
-end function runiform
 
 
 recursive function det(a,n,permanent) result(accumulation)
@@ -949,11 +840,11 @@ recursive function det(a,n,permanent) result(accumulation)
 end function det
 
 
-subroutine gen_wish(A,nu,B,P,iseed)
+subroutine gen_wish(A,nu,B,P)
 !
     implicit none
 !
-    integer(rint), intent (in) :: nu,P,iseed
+    integer(rint), intent (in) :: nu,P
     real(rdp), intent (in)     :: A(P,P)
     real(rdp), intent (out)    :: B(P,P)
     real(rdp)                  :: RNmat(nu,P),para((P*(P+3)/2) + 1), m0(P)
@@ -965,7 +856,7 @@ subroutine gen_wish(A,nu,B,P,iseed)
 
     do i=1,nu
 
-        call GENMN(para,RNmat(i,:),P,iseed)
+        call GENMN(para,RNmat(i,:),P)
 
     end do
 
@@ -1073,7 +964,7 @@ END SUBROUTINE setgmn
 
 
 
-SUBROUTINE genmn(parm,x,p,iseed)
+SUBROUTINE genmn(parm,x,p)
   !**********************************************************************
   !
   !     SUBROUTINE GENMN(PARM,X,WORK)
@@ -1116,7 +1007,7 @@ SUBROUTINE genmn(parm,x,p,iseed)
 !        integer, parameter :: rdp = selected_real_kind(15)
 !        integer, parameter :: rint = selected_int_kind(6)
 
-        integer(rint), intent(in) :: p, iseed
+        integer(rint), intent(in) :: p
         real(rdp), intent(in) :: parm(p*(p+3)/2 + 1)
         real(rdp)             :: work(p)
         real(rdp), intent(out):: x(p)
