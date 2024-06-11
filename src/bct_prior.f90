@@ -1,5 +1,5 @@
 
-module rkinds2
+module rkinds1
    use, intrinsic :: iso_c_binding
    use, intrinsic :: iso_fortran_env
    private
@@ -12,7 +12,7 @@ end module
 subroutine draw_ju(P,drawscorr,samsize,numcorrgroup,Fisher,seed)
     ! Fortran implementation of the algorithm proposed by Joe (2006)
 
-    use rkinds2, only: rint, rdp
+    use rkinds1, only: rint, rdp
 
     implicit none
 
