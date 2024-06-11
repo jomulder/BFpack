@@ -241,13 +241,18 @@ BF1 <- BF(fit, hypothesis = "ztrust > zfWHR > 0;
 summary(BF1)
 
 # EXAMPLE 5. Correlation analysis
-#set.seed(123)
-#cor1 <- cor_test(memory[1:20,1:3])
-#BF1 <- BF(cor1)
-#summary(BF1)
-#BF2 <- BF(cor1, hypothesis = "Wmn_with_Im > Wmn_with_Del > 0;
-#                             Wmn_with_Im = Wmn_with_Del = 0")
-#summary(BF2)
+set.seed(123)
+cor1 <- cor_test(memory[1:20,c(1,2,6)])
+BF1 <- BF(cor1)
+summary(BF1)
+BF2 <- BF(cor1, hypothesis = "Rat_with_Im > Rat_with_Del > 0;
+                             Rat_with_Im = Rat_with_Del = 0")
+summary(BF2)
+# correlations can also be computed between continuous/ordinal variables
+memory_test <- memory[1:20,c(1,2,6)]
+memory_test[,3] <- as.ordered(memory_test[,3])
+cor2 <- cor_test(memory_test)
+BF(cor2)
 
 # EXAMPLE 6. Bayes factor testing on a named vector
 # A Poisson regression model is used to illustrate the computation
