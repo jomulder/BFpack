@@ -1,1 +1,3 @@
 FFLAGS = -fcheck=all
+
+PKG_LIBS = @LAPACK_LIBS@
