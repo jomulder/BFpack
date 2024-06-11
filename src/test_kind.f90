@@ -2,7 +2,7 @@
 !
 module rkindss
    use, intrinsic :: iso_c_binding !c_int c_double
-   use, intrinsic :: iso_fortran_env !int32 real64
+!   use, intrinsic :: iso_fortran_env !int32 real64
    private
    integer, parameter, public :: rint = c_int   ! Using int32 from iso_fortran_env
    integer, parameter, public :: rdp = c_double   ! Using real64 from iso_fortran_env
