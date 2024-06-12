@@ -408,7 +408,7 @@ The unconstrained estimates (posterior mean and median) and the lower and upper 
 BFmeta$estimates
 ```
 
-For more information about the methodology, we refer the interested reader to [Van Aert and Mulder (2021)](http://doi.org/10.3758/s13423-021-01918-9/)
+For more information about the methodology, we refer the interested reader to [Van Aert and Mulder (2021)](https://link.springer.com/article/10.3758/s13423-021-01918-9)
 
 
 ### Running `BF` on a named vector
