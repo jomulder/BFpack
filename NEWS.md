@@ -1,6 +1,6 @@
 # BFpack 1.3.0
 
-* Date: 2024-06-11
+* Date: 2024-06-18
 * Package update for implementation step in JASP.
 * cor_test now support ordinal measurement levels.
 * bug fixes in Fortran subroutine for cor_test
