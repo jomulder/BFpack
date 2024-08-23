@@ -19,7 +19,11 @@ print.cor_test <- function(x,
   })
 
   cat("\n")
-  cat("Unconstrained Bayesian estimates","\n", sep = "")
+  if(x$prior.cor=="joint.unif"){
+    cat("Unconstrained Bayesian estimation (joint uniform prior)","\n", sep = "")
+  }else{
+    cat("Unconstrained Bayesian estimation (marginally uniform prior)","\n", sep = "")
+  }
   cat("\n")
 
   if(groups > 1){
@@ -69,3 +73,29 @@ summary.cor_test <- function(object, digits = 3, ...){
   cor.df
 
 }
+
+
+#' @importFrom coda mcmc
+#' @method plot cor_test
+#' @export
+plot.cor_test <- function(x, ...){
+
+  numgroups <- length(x$corrdraws)
+  P <- dim(x$corrdraws[[1]])[2]
+  numcor <- P*(P-1)/2
+  numcor.total <- numcor * numgroups
+
+  cor.draws.matrix <- mcmc(data=do.call(cbind,lapply(1:numgroups,function(g){
+    do.call(cbind,lapply(1:(P-1),function(p){
+      draws_g_p <- as.matrix(x$corrdraws[[g]][,(p+1):P,p])
+      colnames(draws_g_p) <- x$corrnames[[g]][(p+1):P,p]
+      draws_g_p
+    }))
+  })),start=1,end=length(x$corrdraws[[1]][,1,1]),thin=1)
+
+  plot(cor.draws.matrix, ...)
+
+}
+
+
+

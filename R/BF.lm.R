@@ -12,18 +12,18 @@ BF.lm <- function(x,
                   prior.hyp = NULL,
                   complement = TRUE,
                   log = FALSE,
-                  BF.type = 2,
+                  BF.type = NULL,
                   iter = 1e4,
                   ...){
 
   if(is.null(BF.type)){
-    stop("The argument 'BF.type' must be the integer 1 (for the fractional BF) or 2 (for the adjusted fractional BF).")
+    BF.type <- "FBF"
   }
   if(!is.null(BF.type)){
-    if(is.na(BF.type) | (BF.type!=1 & BF.type!=2))
-      stop("The argument 'BF.type' must be the integer 1 (for the fractional BF) or 2 (for the adjusted fractional BF).")
+    if(is.na(BF.type) | (BF.type!="FBF" & BF.type!="AFBF"))
+      stop("The argument 'BF.type' must be 'FBF' (for the fractional BF) or 'AFBF' (for the adjusted fractional BF).")
   }
-  if(BF.type==2){
+  if(BF.type=="AFBF"){
     bayesfactor <- "generalized adjusted fractional Bayes factors"
   }else{
     bayesfactor <- "generalized fractional Bayes factors"
@@ -217,7 +217,7 @@ BF.lm <- function(x,
   # prior hyperparameters
   df0 <- 1 # should be the same as sum(rep(bj,times=Nj))-K-P+1
   Scale0 <- kronecker(S_b,tXXi_b)
-  if(BF.type==2){
+  if(BF.type=="AFBF"){
     mean0 <- as.matrix(rep(0,K*P))
   }else{
     mean0 <- as.matrix(c(BetaHat_b))
@@ -459,7 +459,7 @@ BF.lm <- function(x,
     }
 
     # check if a common boundary exists for prior location under all constrained hypotheses
-    if(nrow(RrStack) > 1 & BF.type == 2){
+    if(nrow(RrStack) > 1 & BF.type == "AFBF"){
       rref_ei <- rref(RrStack)
       nonzero <- rref_ei[,P*K+1]!=0
       if(max(nonzero)>0){
@@ -476,7 +476,7 @@ BF.lm <- function(x,
     if(P > 1){
 
       #default prior location
-      if(BF.type==2){
+      if(BF.type=="AFBF"){
         Mean0 <- matrix(c(ginv(RStack)%*%rStack),nrow=K,ncol=P)
       }else{
         Mean0 <- BetaHat #mean0
@@ -630,7 +630,7 @@ BF.lm <- function(x,
       df0 <- 1 # should be the same as sum(rep(bj,times=Nj))-K-P+1
       Scale0 <- kronecker(S_b,tXXi_b)
       #default prior location
-      if(BF.type==2){
+      if(BF.type=="AFBF"){
         mean0 <- ginv(RStack)%*%rStack
       }else{
         mean0 <- BetaHat #mean0
@@ -656,8 +656,10 @@ BF.lm <- function(x,
 
       if(complement == TRUE){
         # Compute relative fit/complexity for the complement hypothesis
-        relfit <- Student_prob_Hc(meanN,ScaleN,dfN,relfit,hypothesis,RrO)
-        relcomp <- Student_prob_Hc(mean0,Scale0,df0,relcomp,hypothesis,RrO)
+        relfit <- Student_prob_Hc(mean1=meanN,scale1=ScaleN,df1=dfN,relmeas1=relfit,
+                                  constraints=hypothesis,RrO1=RrO)
+        relcomp <- Student_prob_Hc(mean1=mean0,scale1=Scale0,df1=df0,relmeas1=relcomp,
+                                   constraints=hypothesis,RrO1=RrO)
         row.names(relcomp)[1:numhyp] <- parse_hyp$original_hypothesis
         row.names(relfit)[1:numhyp] <- parse_hyp$original_hypothesis
       }
@@ -1086,10 +1088,11 @@ MatrixStudent_prob_Hc <- function(Mean1,Scale1,tXXi1,df1,relmeas,RrO1){
       randomDraws <- rmvnorm(draws2,mean=rep(0,numpara),sigma=diag(numpara))
       #get draws that satisfy the constraints of the separate order constrained hypotheses
       checksOC <- lapply(welk,function(h){
-        Rorder <- as.matrix(RrO1[[h]][,-(1+numpara)])
-        if(ncol(Rorder)==1){
-          Rorder <- t(Rorder)
-        }
+        #Rorder <- as.matrix(RrO1[[h]][,-(1+numpara)])
+        Rorder <- matrix(RrO1[[h]][,-(1+numpara)],nrow=nrow(RrO1[[h]]))
+        #if(ncol(Rorder)==1){
+        #  Rorder <- t(Rorder)
+        #}
         rorder <- as.matrix(RrO1[[h]][,1+numpara])
         apply(randomDraws%*%t(Rorder) > rep(1,draws2)%*%t(rorder),1,prod)
       })
@@ -1114,10 +1117,11 @@ MatrixStudent_prob_Hc <- function(Mean1,Scale1,tXXi1,df1,relmeas,RrO1){
           })),nrow=numpara)
 
           checksOC <- lapply(welk,function(h){
-            Rorder <- as.matrix(RrO1[[h]][,-(1+numpara)])
-            if(ncol(Rorder)==1){
-              Rorder <- t(Rorder)
-            }
+            #Rorder <- as.matrix(RrO1[[h]][,-(1+numpara)])
+            Rorder <- matrix(RrO1[[h]][,-(1+numpara)],nrow=nrow(RrO1[[h]]))
+            #if(ncol(Rorder)==1){
+            #  Rorder <- t(Rorder)
+            #}
             rorder <- as.matrix(RrO1[[h]][,1+numpara])
             apply(Rorder%*%randomDraws > rorder%*%t(rep(1,draws2)),2,prod)
           })
@@ -1158,10 +1162,11 @@ Student_prob_Hc <- function(mean1,scale1,df1,relmeas1,constraints,RrO1=NULL){
       randomDraws <- rmvnorm(draws2,mean=rep(0,numpara),sigma=diag(numpara))
       #get draws that satisfy the constraints of the separate order constrained hypotheses
       checksOC <- lapply(welk,function(h){
-        Rorder <- as.matrix(RrO1[[h]][,-(1+numpara)])
-        if(ncol(Rorder)==1){
-          Rorder <- t(Rorder)
-        }
+        #Rorder <- as.matrix(RrO1[[h]][,-(1+numpara)])
+        Rorder <- matrix(RrO1[[h]][,-(1+numpara)],nrow=nrow(RrO1[[h]]))
+        #if(ncol(Rorder)==1){
+        #  Rorder <- t(Rorder)
+        #}
         rorder <- as.matrix(RrO1[[h]][,1+numpara])
         apply(randomDraws%*%t(Rorder) > rep(1,draws2)%*%t(rorder),1,prod)
       })
@@ -1170,7 +1175,7 @@ Student_prob_Hc <- function(mean1,scale1,df1,relmeas1,constraints,RrO1=NULL){
       if(sum(checkOCplus > 0) < draws2){ #then the joint order constrained hypotheses do not completely cover the parameter space.
         if(sum(checkOCplus>1)==0){ # then order constrained spaces are nonoverlapping
           relmeas <- rbind(relmeas,rep(log(1),2))
-          relmeas[numhyp+1,2] <- 1 - sum(exp(relmeas[welk,2]))
+          relmeas[numhyp+1,2] <- log(1 - sum(exp(relmeas[welk,2])))
           rownames(relmeas)[numhyp+1] <- "complement"
         }else{ #the order constrained subspaces at least partly overlap
 
@@ -1179,10 +1184,11 @@ Student_prob_Hc <- function(mean1,scale1,df1,relmeas1,constraints,RrO1=NULL){
 
           randomDraws <- rmvt(draws2,delta=mean1,sigma=scale1,df=df1)
           checksOC <- lapply(welk,function(h){
-            Rorder <- as.matrix(RrO1[[h]][,-(1+numpara)])
-            if(ncol(Rorder)==1){
-              Rorder <- t(Rorder)
-            }
+            #Rorder <- as.matrix(RrO1[[h]][,-(1+numpara)])
+            Rorder <- matrix(RrO1[[h]][,-(1+numpara)],nrow=nrow(RrO1[[h]]))
+            #if(ncol(Rorder)==1){
+            #  Rorder <- t(Rorder)
+            #}
             rorder <- as.matrix(RrO1[[h]][,1+numpara])
             apply(randomDraws%*%t(Rorder) > rep(1,draws2)%*%t(rorder),1,prod)
           })

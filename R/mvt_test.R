@@ -173,8 +173,14 @@ BF.mvt_test <- function(x,
                         prior.hyp = NULL,
                         complement = TRUE,
                         log = FALSE,
-                        BF.type = 2,
+                        BF.type = NULL,
                         ...) {
+
+  if(is.null(BF.type)){
+    BF.type <- "FBF"
+    message("Note that the default Bayes factor has been changed to the fractional Bayes factor (FBF). To use
+          the adjusted fractional Bayes factor (AFBF), set the 'BF.type' argument to 'AFBF'.")
+  }
 
   if(x$numpop==1 & x$paired==FALSE){
     parameters <- "means"

@@ -32,12 +32,21 @@
 #' to the tested hypothesis under \code{hypothesis}.
 #' @param log a logical specifying whether the Bayes factors should be computed on a log scale.
 #' Default is \code{FALSE}.
-#' @param BF.type An integer that specified the type of Bayes factor (or prior) that is used for the test.
-#' Currently, this argument is only used for models of class 'lm' and 't_test',
-#' where \code{BF.type=2} implies an adjusted fractional Bayes factor with a 'fractional prior mean' at the null value (Mulder, 2014),
-#' and \code{BF.type=1} implies a regular fractional Bayes factor (based on O'Hagan (1995)) with a 'fractional prior mean' at the MLE.
+#' @param BF.type For certain object classes of \code{x}, different types of Bayes factor tests are supported.
+#' This can be specified using this argument. For models of class 'lm' and 't_test', setting this argument to
+#' \code{'FBF'} the fractional Bayes factor (O'Hagan, 1995) is used and setting this argument to
+#' \code{'AFBF'} the adjusted fractional Bayes factor (Mulder, 2014) is used. The default for these model classes
+#' is the fractional Bayes factor. For models of class 'rma.uni' (meta-analyses), 'BF.type' controls the prior
+#' that is used for the test. Certain defaults are provided for a standardized effect (\code{BF.type="stand.effect"}),
+#' a normal prior with mean 0 and sd 0.5 is used, for log odds (\code{BF.type="log.odds"}), a Student prior with mean 0,
+#' scale 2.36, and 13.1 degrees of freedom is used (corresponding to uniform priors on the success probabilities), for
+#' a correlation (\code{BF.type="correlation"}), a logistic prior is used for the Fisher transformed correlation having
+#' scale 0.5 (corresponding to a uniform prior for the correlation in (-1,1)), for a unit-information prior
+#' (\code{BF.type="unit.info"}), the total sample size \code{sum(ni)} is used to scale a normal unit information prior,
+#' and for a manually specified prior \code{BF.type} needs to be an object of class
+#' \code{prior} from the \code{metaBMA} package.
 #' @param iter Number of iterations that are used to compute the Monte Carlo estimates
-#' (only used for certain hypotheses under multivariate models and when testing group variances).
+#' (only used for certain hypothesis tests of class \code{mlm} (multivariate regression), \code{} ).
 #' @param Sigma An approximate posterior covariance matrix (e.g,. error covariance
 #' matrix) of the parameters of interest. This argument is only required when \code{x}
 #' is a named vector.
@@ -143,7 +152,7 @@
 #' F. Böing-Messing, J.A.O.C. Olsson-Collentine, Marlyne Meyerink, J. Menke,
 #' J.-P. Fox, Y. Rosseel, E.J. Wagenmakers, H. Hoijtink., and van Lissa, C.
 #' (2021). BFpack: Flexible Bayes Factor Testing of Scientific Theories
-#' in R. Journal of Statistical Software. <https://doi.org/10.18637/jss.v100.i18>
+#' in R. Journal of Statistical Software, 100. <https://doi.org/10.18637/jss.v100.i18>
 #'
 #' @examples
 #' \donttest{

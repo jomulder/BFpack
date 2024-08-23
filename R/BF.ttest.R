@@ -26,20 +26,20 @@ BF.t_test <- function(x,
                       prior.hyp = NULL,
                       complement = TRUE,
                       log = FALSE,
-                      BF.type = 2,
+                      BF.type = NULL,
                       iter = 1e6,
                       ...){
 
   numpop <- length(x$estimate)
 
   if(is.null(BF.type)){
-    stop("The argument 'BF.type' must be the integer 1 (for the fractional BF) or 2 (for the adjusted fractional BF).")
+    BF.type <- "FBF"
   }
   if(!is.null(BF.type)){
-    if(is.na(BF.type) | (BF.type!=1 & BF.type!=2))
-      stop("The argument 'BF.type' must be the integer 1 (for the fractional BF) or 2 (for the adjusted fractional BF).")
+    if(is.na(BF.type) | (BF.type!="FBF" & BF.type!="AFBF"))
+      stop("The argument 'BF.type' must be 'FBF' (for the fractional BF) or 'AFBF' (for the adjusted fractional BF).")
   }
-  if(BF.type==2){
+  if(BF.type=='AFBF'){
     bayesfactor <- "generalized adjusted fractional Bayes factors"
   }else{
     bayesfactor <- "generalized fractional Bayes factors"
@@ -226,7 +226,7 @@ BF.t_test <- function(x,
                                 mean=diff.obs,
                                 sd=sqrt(1/sigma2_1.draws*1/nvec[1] + 1/sigma2_2.draws*1/nvec[2]))))
       relfit2 <- log(1 - exp(relfit1))
-      if(BF.type == 2){
+      if(BF.type == 'AFBF'){
         prior.mean <- x$null.value
       }else{
         prior.mean <- diff.obs
@@ -275,7 +275,7 @@ BF.t_test <- function(x,
           rStack <- RrStack[,2]
         }
 
-        if(BF.type==2){
+        if(BF.type=='AFBF'){
           # check if a common boundary exists for prior location under all constrained hypotheses
           # necessary for the adjusted FBF
           if(nrow(RrStack) > 1){

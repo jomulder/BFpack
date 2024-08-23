@@ -77,6 +77,8 @@ The output is of class `BF`. By running the `print` function on the `BF` object,
 
 ### Bayesian t testing
 
+All Bayesian t tests for one-samples, two samples, paired samples, linear regression models, and analysis of variance models, the fractional Bayes factor (FBF, O'Hagan, 1995) and the adjusted fractional Bayes factor (AFBF, Mulder, 2014) are implemented in ***BFpack***. These default Bayes factors do not require any manual prior specification as the data is split in a minimal fraction that used for default prior specification and the remaining maximal fraction is used for hypothesis testing. This implicit minimally informative fractional prior follows a Cauchy distribution (Mulder & Gu, 2023). The default is the FBF. The AFBF is used by setting the argument \code{BF.type=AFBF}. In this vignette, all tests are executed with the default (FBF) setting.
+
 #### Univariate t testing
 
 First a classical one sample t test is executed for the test value

@@ -25,9 +25,9 @@ process.prior.hyp.explo <- function(prior_hyp_explo, model){
   }else{
     if(is.null(prior_hyp_explo)){ # then equal prior probabilities
       if(sum(class(model)=="aov")>0){
-        prior_hyp_explo <- list(rep(1,3),rep(1,2),rep(1,2))
+        prior_hyp_explo <- list(c(.5,.25,.25),rep(1,2),rep(1,2))
       }else{
-        prior_hyp_explo <- list(rep(1,3))
+        prior_hyp_explo <- list(c(.5,.25,.25))
       }
     }else{
       if(!is.list(prior_hyp_explo)){#then no error if it is a vector of length 3 for testing individual parameters
@@ -48,7 +48,7 @@ process.prior.hyp.explo <- function(prior_hyp_explo, model){
       }else{
         if(length(prior_hyp_explo)==1){
           if(is.null(prior_hyp_explo[[1]])){
-            prior_hyp_explo <- list(rep(1,3),rep(1,2),rep(1,2))
+            prior_hyp_explo <- list(c(.5,.25,.25),rep(1,2),rep(1,2))
           }else{
             if(length(prior_hyp_explo[[1]]!=3)){
               stop("Specify three prior probabilities for the exploratory test of a zero, negative, or positive
@@ -61,7 +61,7 @@ process.prior.hyp.explo <- function(prior_hyp_explo, model){
 
             if(length(prior_hyp_explo)==2){
               if(is.null(prior_hyp_explo[[1]])){
-                prior_hyp_explo[[1]] <- rep(1,3)
+                prior_hyp_explo[[1]] <- c(.5,.25,.25)
               }else{
                 if(length(prior_hyp_explo[[1]]!=3)){
                   stop("Specify three prior probabilities for the exploratory test of a zero, negative, or positive
@@ -81,7 +81,7 @@ process.prior.hyp.explo <- function(prior_hyp_explo, model){
             }
             if(length(prior_hyp_explo)==3){
               if(is.null(prior_hyp_explo[[1]])){
-                prior_hyp_explo[[1]] <- rep(1,3)
+                prior_hyp_explo[[1]] <- c(.5,.25,.25)
               }else{
                 if(length(prior_hyp_explo[[1]])!=3){
                   stop("Specify three prior probabilities for the exploratory test of a zero, negative, or positive
@@ -114,7 +114,7 @@ process.prior.hyp.explo <- function(prior_hyp_explo, model){
             }
           }else{
             if(is.null(prior_hyp_explo[[1]])){
-              prior_hyp_explo <- list(rep(1,3))
+              prior_hyp_explo <- list(c(.5,.25,.25))
             }else{
               if(length(prior_hyp_explo[[1]])!=3){
                 stop("Specify three prior probabilities for the exploratory test of a zero, negative, or positive

@@ -4,7 +4,7 @@ res <- polycor::hetcor(fmri[,3:5])
 #BF1 <- BF(res, hypothesis = "Deep_with_Superficial > Middle_with_Superficial")
 
 BF2 <- BF(res,hypothesis="(Superficial_with_Middle,Deep_with_Superficial,Deep_with_Middle) > 0;
-          Middle_with_Superficial=Deep_with_Superficial=Deep_with_Middle= 0")
+          Middle_with_Superficial=Deep_with_Superficial=Deep_with_Middle= 0",prior.hyp.explo=c(1,1,1))
 PHPexplo <- matrix(c(0.51,  0.21,  0.27,
 0.50,  0.17,  0.33,
 0.51,  0.22,  0.26),nrow=3,byrow=T)

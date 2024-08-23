@@ -16,7 +16,7 @@ summary.BF <- function(object, ...){
   cat("Parameter: ",object$parameter,"\n", sep = "")
   cat("Method: ",object$bayesfactor,"\n\n", sep = "")
 
-  cat("Posterior probabilities","\n", sep = "")
+  cat("Posterior probabilities of the hypotheses","\n", sep = "")
   cat("\n")
   cat("Model parameters:")
   cat("\n")
@@ -49,7 +49,7 @@ summary.BF <- function(object, ...){
     cat("Parameter: ",object$parameter,"\n", sep = "")
     cat("Method: ",object$bayesfactor,"\n\n", sep = "")
 
-    cat("Posterior probabilities:")
+    cat("Posterior probabilities of the hypotheses")
     cat("\n")
 
     PHPmatrix <- as.matrix(round(object$PHP_confirmatory,digits))

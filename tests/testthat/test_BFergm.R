@@ -16,7 +16,7 @@ test_that("BF.ergm tests", {
   seed <- 123
   BFergm.test <- BF(ergm_fit,
                     hypothesis = "0 = absdiff.wealth > kstar2",
-                    main.iters = 500)
+                    main.iters = 500, prior.hyp.explo = c(1,1,1))
   expect_true(
     all.equal(c(0.185,0.815),
               unname(BFergm.test$PHP_confirmatory), tolerance = .2)
@@ -28,7 +28,7 @@ test_that("BF.ergm tests", {
   seed <- 123
   BFergm.test2 <- BF(ergm_fit,
                      hypothesis = "0 = absdiff.wealth > kstar2",
-                     main.iters = 500,prior.hyp.explo = 1:3)
+                     main.iters = 500, prior.hyp.explo = 1:3)
   expect_equivalent(
     unname(BFergm.test2$PHP_exploratory[1,]),
     unname(BFergm.test$BFtu_exploratory[1,]*(1:3)/sum(BFergm.test$BFtu_exploratory[1,]*(1:3))),

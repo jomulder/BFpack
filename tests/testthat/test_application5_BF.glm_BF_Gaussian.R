@@ -2,7 +2,7 @@ fit <- glm(sent ~ ztrust + zfWHR + zAfro + glasses + attract + maturity +
              tattoos, family = binomial(), data = wilson)
 set.seed(123)
 BF_glm <- BF(fit, hypothesis="ztrust > zfWHR > zAfro > 0;
-             ztrust > 0 & zfWHR = zAfro = 0")
+             ztrust > 0 & zfWHR = zAfro = 0",prior.hyp.explo=c(1,1,1))
 #check results exploratory test
 test_that("glm two hypotheses correctly evaluated via exploratory test", {
 expect_equivalent(

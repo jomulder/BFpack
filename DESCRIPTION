@@ -128,7 +128,10 @@ Imports:
     ergm,
     Bergm,
     sandwich,
-    QRM
+    QRM,
+    coda,
+    metaBMA,
+    methods
 Suggests: 
     testthat,
     polycor,

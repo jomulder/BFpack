@@ -4,7 +4,7 @@ outcome <- gl(3,1,9)
 treatment <- gl(3,3)
 glm.D93 <- glm(counts ~ treatment, family = poisson())
 set.seed(432)
-BF1 <- BF(x=glm.D93, hypothesis = "treatment2 = 0; treatment2 < 0")
+BF1 <- BF(x=glm.D93, hypothesis = "treatment2 = 0; treatment2 < 0",prior.hyp.explo=c(1,1,1))
 #check if confirmatory and exploratory test are the same for Gaussian estimator
 test_that("BF.glm two hypotheses correctly evaluated", {
 expect_true(

@@ -4,7 +4,14 @@
 \alias{cor_test}
 \title{Bayesian correlation analysis}
 \usage{
-cor_test(..., formula = NULL, iter = 5000, burnin = 3000, nugget.scale = 0.995)
+cor_test(
+  ...,
+  formula = NULL,
+  iter = 5000,
+  burnin = 3000,
+  nugget.scale = 0.995,
+  prior.cor = "joint.unif"
+)
 }
 \arguments{
 \item{...}{matrices (or data frames) of dimensions \emph{n} (observations) by  \emph{p} (variables)
@@ -17,8 +24,14 @@ control variables in the model (e.g., \code{~ education}).}
 
 \item{burnin}{number of iterations for burnin (default is 3000).}
 
-\item{nugget.scale}{a scalar which serves to avoid violations of positive definite correlation matrices.
-It should be very close to 1 (the default is .995).}
+\item{nugget.scale}{a scalar to avoid computational issues due to posterior draws for the corralations
+too close to 1 in absolute value. Posterior draws for the correlations are multiplied with this nugget.scale.
+So \code{nugget.scale} should be close to 1 (the default is .995). If the traceplots show that draws are stuck
+at 1 or -1 too long try a slightly smaller \code{nugget.scale}.}
+
+\item{prior.cor}{setting this argument to \code{joint.unif} uses the joint uniform prior for the correlation matrix
+(Mulder and Gelissen, 2023) and setting this to \code{marg.unif} implies a marginal uniform prior (Barnard et al., 2000,
+Mulder, 2016).}
 }
 \value{
 list of class \code{cor_test}:
@@ -31,28 +44,39 @@ list of class \code{cor_test}:
 }
 }
 \description{
-Estimate the unconstrained posterior for the correlations using a joint uniform prior.
+Estimate the unconstrained posterior for the correlations using a joint uniform prior (Mulder and Gelissen,
+2023) or a marginally uniform prior (Barnard et al., 2000, Mulder, 2016).
 }
 \examples{
 \donttest{
 # Bayesian correlation analysis of the 6 variables in 'memory' object
 # we consider a correlation analysis of the first three variable of the memory data.
-#fit <- cor_test(BFpack::memory[,1:3])
+fit <- cor_test(BFpack::memory[,1:3])
 
 # Bayesian correlation of variables in memory object in BFpack while controlling
 # for the Cat variable
-#fit <- cor_test(BFpack::memory[,c(1:4)],formula = ~ Cat)
+fit <- cor_test(BFpack::memory[,c(1:4)],formula = ~ Cat)
 
 # Example of Bayesian estimation of polyserial correlations
-#memory_example <- memory[,c("Im","Rat")]
-#memory_example$Rat <- as.ordered(memory_example$Rat)
-#fit <- cor_test(memory_example)
+memory_example <- memory[,c("Im","Rat")]
+memory_example$Rat <- as.ordered(memory_example$Rat)
+fit <- cor_test(memory_example)
 
 # Bayesian correlation analysis of first three variables in memory data
 # for two different groups
-#HC <- subset(BFpack::memory[,c(1:3,7)], Group == "HC")[,-4]
-#SZ <- subset(BFpack::memory[,c(1:3,7)], Group == "SZ")[,-4]
-#fit <- cor_test(HC,SZ)
+HC <- subset(BFpack::memory[,c(1:3,7)], Group == "HC")[,-4]
+SZ <- subset(BFpack::memory[,c(1:3,7)], Group == "SZ")[,-4]
+fit <- cor_test(HC,SZ)
 
 }
+}
+\references{
+Barnard, J., McCulloch, R., & Meng, X. L. (2000). Modeling covariance matrices in terms of standard deviations and
+correlations, with application to shrinkage. Statistica Sinica, 1281-1311. <https://www.jstor.org/stable/24306780>
+
+Mulder, J. (2016). Bayes factors for testing order-constrained hypotheses on correlations. Journal of Mathematical
+Psychology, 72, 104-115. <https://doi.org/10.1016/j.jmp.2014.09.004>
+
+Mulder, J., & Gelissen, J. P. (2023). Bayes factor testing of equality and order constraints on measures of
+association in social research. Journal of Applied Statistics, 50(2), 315-351. <https://doi.org/10.1080/02664763.2021.1992360>
 }
