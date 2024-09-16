@@ -148,11 +148,26 @@
 #' (with minimal fractions) are computed using Gaussian approximations, similar as
 #' a classical Wald test.
 #'
-#' @references Mulder, J., D.R. Williams, Gu, X., A. Tomarken,
-#' F. Böing-Messing, J.A.O.C. Olsson-Collentine, Marlyne Meyerink, J. Menke,
-#' J.-P. Fox, Y. Rosseel, E.J. Wagenmakers, H. Hoijtink., and van Lissa, C.
-#' (2021). BFpack: Flexible Bayes Factor Testing of Scientific Theories
-#' in R. Journal of Statistical Software, 100. <https://doi.org/10.18637/jss.v100.i18>
+#' @references Mulder, Williams, Gu, Tomarken, Böing-Messing, Olsson-Collentine, Meyerink,
+#' Menke, Fox, Rosseel, Wagenmakers, Hoijtink, and van Lissa (2021). BFpack: Flexible Bayes
+#' Factor Testing of Scientific Theories in R. Journal of Statistical Software, 100.
+#' <https://doi.org/10.18637/jss.v100.i18>
+#' @references Mulder and Xin (2022). Bayesian Testing of Scientific Expectations under
+#' Multivariate Normal Linear Models. <https://doi.org/10.1080/00273171.2021.1904809>
+#' @references Mulder and Gelissen (2021). Bayes factor testing of equality and order
+#' constraints on measures of association in social research. Journal of Applied Statistics,
+#' 50. <https://doi.org/10.1080/02664763.2021.1992360>
+#' @references Mulder and Fox (2019). Bayes Factor Testing of Multiple Intraclass Correlations.
+#' Bayesian Analysis, 14. <http://doi.org/10.1214/18-BA1115>
+#' @references Hoijtink, Mulder, van Lissa, and Gu (2018). A tutorial on testing hypotheses
+#' using the Bayes factor. Psychological Methods, 24(5), 539–556.
+#' <http://doi.org/10.1037/met0000201>
+#' @references Boeing-Messing, van Assen, Hofman, Hoijtink, and Mulder (2017).
+#' Bayesian evaluation of constrained hypotheses on variances of multiple independent groups.
+#' Psycholological Methods, 22(2), 262-287. <https://doi.org/10.1037/met0000116>
+#' @references van Aert and Mulder (2021). Bayesian hypothesis testing and estimation under
+#' the marginalized random-effects meta-analysis model. Psychonomic Bulletin and Review, 29,
+#' 55–69. <https://doi.org/10.3758/s13423-021-01918-9>
 #'
 #' @examples
 #' \donttest{
