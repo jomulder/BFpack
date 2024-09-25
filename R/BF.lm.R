@@ -103,59 +103,6 @@ BF.lm <- function(x,
         stop("Not enough observations to compute a fractional Bayes factor.")
       }
     }
-
-    # dummy01TRUE <- prod(unlist(lapply(1:length(x$contrasts),function(fac){
-    #   x$contrasts[[fac]] == "contr.treatment"
-    # }))) == 1
-    # if(dummy01TRUE){
-    #   numlevels <- unlist(lapply(x$xlevels,length))
-    #   mains <- unlist(lapply(1:length(x$xlevels),function(fac){
-    #     unlist(lapply(1:length(x$xlevels[[fac]]),function(lev){
-    #       paste0(names(x$xlevels)[fac],x$xlevels[[fac]][lev])
-    #     }))
-    #   }))
-    #   intercept <- attr(x$terms,"intercept")==1
-    #   names_coef <- row.names(x$coefficients)
-    #   # dummyX1 checks which columns of the design matrix X are dummy's for a
-    #   # main effect or interaction effect
-    #   dummyX1 <- apply(matrix(unlist(lapply(1:length(mains),function(faclev){
-    #     unlist(lapply(1:length(names_coef),function(cf){
-    #       grepl(mains[faclev],names_coef[cf],fixed=TRUE)
-    #     }))
-    #   })),nrow=length(names_coef)),1,max)==1
-    # }else{
-    #   dummyX1 <- rep(TRUE,K)
-    # }
-    # # dummyX2 checks which columns of the design matrix have two possible outcomes,
-    # # which indicates a dummy variable
-    # dummyX2 <- unlist(lapply(1:K,function(k){
-    #   length(table(Xmat[,k])) == 2
-    # }))
-    # # dummyX indicate which columns contain dummy group covariates
-    # dummyX <- dummyX2 * dummyX1 == 1
-    # #number of groups on variations of dummy combinations
-    # groupcode <- as.matrix(unique(Xmat[,dummyX]))
-    # rownames(groupcode) <- unlist(lapply(1:nrow(groupcode),function(r){
-    #   paste0("groupcode",r)
-    # }))
-    # J <- nrow(groupcode)
-    # if(J==nrow(Xmat)){
-    #   stop("Not enough observations for every group. Try fitting the model without factors.")
-    # }
-    #
-    # # group membership of each observation
-    # dvec <- unlist(lapply(1:N,function(i){
-    #   which(rowSums(abs(t(matrix(rep(Xmat[i,dummyX],J),ncol=J)) - groupcode))==0)
-    # }))
-    # Nj <- c(table(dvec))
-    # #set minimal fractions for each group
-    # bj <- ((P+K)/J)/Nj
-    # if(max(bj)>1){#then too few observations in certain groups, then use one single minimal fraction
-    #   bj <- rep((P+K)/sum(Nj),length=J)
-    #   if(bj[1]>1){
-    #     stop("Not enough observations to compute a fractional Bayes factor.")
-    #   }
-    # }
   }
 
   #Compute sufficient statistics for all groups
@@ -591,38 +538,6 @@ BF.lm <- function(x,
         row.names(relcomp) <- row.names(relfit) <- hypothesisshort
       }
 
-      # # the BF for the complement hypothesis vs Hu needs to be computed.
-      # BFtu_conf <- relfit - relcomp
-      # BFtu_confirmatory <- c(apply(BFtu_conf, 1, sum))
-      # # Check input of prior probabilies
-      # if(is.null(prior.hyp)){
-      #   priorprobs <- rep(1/length(BFtu_confirmatory),length(BFtu_confirmatory))
-      # }else{
-      #   if(!is.numeric(prior.hyp) || length(prior.hyp)!=length(BFtu_confirmatory)){
-      #     warning(paste0("Argument 'prior.hyp' should be numeric and of length ",as.character(length(BFtu_confirmatory)),". Equal prior probabilities are used."))
-      #     priorprobs <- rep(1/length(BFtu_confirmatory),length(BFtu_confirmatory))
-      #   }else{
-      #     priorprobs <- prior.hyp
-      #   }
-      # }
-      #
-      # names(priorprobs) <- names(BFtu_confirmatory)
-      # BFtu_scaled <- BFtu_confirmatory - max(BFtu_confirmatory)
-      # PHP_confirmatory <- exp(BFtu_scaled)*priorprobs / sum(exp(BFtu_scaled)*priorprobs)
-      # BFtable <- cbind(relcomp,relfit,relfit[,1]/relcomp[,1],relfit[,2]/relcomp[,2],
-      #                  apply(relfit,1,prod)/apply(relcomp,1,prod),PHP_confirmatory)
-      # row.names(BFtable) <- names(PHP_confirmatory)
-      # colnames(BFtable) <- c("comp_E","comp_O","fit_E","fit_O","BF_E","BF_O","BF","PHP")
-      # BFmatrix_confirmatory <- matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory)) -
-      #   t(matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory)))
-      # diag(BFmatrix_confirmatory) <- 1
-      # row.names(BFmatrix_confirmatory) <- colnames(BFmatrix_confirmatory) <- names(BFtu_confirmatory)
-      # if(nrow(relfit)==length(parse_hyp$original_hypothesis)){
-      #   hypotheses <- parse_hyp$original_hypothesis
-      # }else{
-      #   hypotheses <- c(parse_hyp$original_hypothesis,"complement")
-      # }
-
     }else{
       # one dependent variable and posterior/prior have Student t distributions
 
@@ -663,32 +578,6 @@ BF.lm <- function(x,
         row.names(relcomp)[1:numhyp] <- parse_hyp$original_hypothesis
         row.names(relfit)[1:numhyp] <- parse_hyp$original_hypothesis
       }
-
-      # # the BF for the complement hypothesis vs Hu needs to be computed.
-      # BFtu_confirmatory <- c(apply(relfit - relcomp, 1, sum))
-      # # Check input of prior probabilies
-      # if(is.null(prior.hyp)){
-      #   priorprobs <- rep(1/length(BFtu_confirmatory),length(BFtu_confirmatory))
-      # }else{
-      #   if(!is.numeric(prior.hyp) || length(prior.hyp)!=length(BFtu_confirmatory)){
-      #     warning(paste0("Argument 'prior.hyp' should be numeric and of length ",as.character(length(BFtu_confirmatory)),". Equal prior probabilities are used."))
-      #     priorprobs <- rep(1/length(BFtu_confirmatory),length(BFtu_confirmatory))
-      #   }else{
-      #     priorprobs <- prior.hyp
-      #   }
-      # }
-      # names(priorprobs) <- names(BFtu_confirmatory)
-      # PHP_confirmatory <- BFtu_confirmatory*priorprobs / sum(BFtu_confirmatory*priorprobs)
-      # BFtable <- cbind(relcomp,relfit,relfit[,1]/relcomp[,1],relfit[,2]/relcomp[,2],
-      #                  BFtu_confirmatory,PHP_confirmatory)
-      # row.names(BFtable) <- names(BFtu_confirmatory)
-      # colnames(BFtable) <- c("complex=","complex>","fit=","fit>","BF=","BF>","BF","PHP")
-      # BFmatrix_confirmatory <- matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory))/
-      #   t(matrix(rep(BFtu_confirmatory,length(BFtu_confirmatory)),ncol=length(BFtu_confirmatory)))
-      # diag(BFmatrix_confirmatory) <- 1
-      # row.names(BFmatrix_confirmatory) <- colnames(BFmatrix_confirmatory) <- names(BFtu_confirmatory)
-      # #tested hypotheses
-      # hypotheses <- row.names(relfit)
     }
 
     # the BF for the complement hypothesis vs Hu needs to be computed.
@@ -950,7 +839,7 @@ Student_measures <- function(mean1,Scale1,df1,RrE1,RrO1,names1=NULL,constraints1
         relO <- pt((rO1-meanO)/sqrt(scaleO[1,1]),df=df1,lower.tail=FALSE,log.p = TRUE)
       }else{
         relO <- pmvt(lower=rO1,upper=Inf,delta=meanO,sigma=scaleO,df=df1,
-             type="shifted",algorithm="TVPACK")[1]
+             type="shifted")[1]
         if(relO<0){relO <- 0}
         if(relO>1){relO <- 1}
         relO <- log(relO)
@@ -1036,7 +925,7 @@ Student_measures <- function(mean1,Scale1,df1,RrE1,RrO1,names1=NULL,constraints1
                    log.p = TRUE)[1]
       } else { # multivariate
         relO <- pmvt(lower = rO1tilde, upper = Inf, delta = delta_trans, sigma = scale1_trans,
-                         df = df1+qE1, type = "shifted",algorithm="TVPACK")[1]
+                         df = df1+qE1, type = "shifted")[1]
         if(relO<0){relO <- 0}
         if(relO>1){relO <- 1}
         relO <- log(relO)

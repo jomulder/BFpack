@@ -57,9 +57,10 @@ Mulder, J., van Lissa, C., Gu, X., Olsson-Collentine, A., Boeing-Messing, F., Wi
   + By default `hypothesis = NULL` which executes exploratory hypothesis tests (examples below).
   + The parameter names are based on the names of the estimated key parameters. An overview of the key parameters is given using the function `get_estimates`, e.g., `get_estimates(model1),` where `model1` is a fitted model object.
   + Separate constraints within a hypothesis are separated with an ampersand `&`. Hypotheses are separated using a semi-colon `;`. For example `hypothesis = "weight > height & height > 0; weight = height = 0"` implies that the first hypothesis assumes that the parameter `weight` is larger than the parameter `height` and that the parameter `height` is positive, and the second hypothesis assumes that the two parameters are equal to zero. Note that the first hypothesis could equivalently have been written as `weight > height > 0`.
-* `prior.hyp`, a numeric vector specifying the prior probabilities of the hypotheses of the `hypothesis` argument. The default setting is `prior.hyp = NULL` which sets equal prior probabilities.
+* `prior.hyp.explo`, a numeric vector specifying the prior probabilities of the hypotheses in the exploratory tests. In the default setting, the null hypothesis has a prior probability of `0.50`, and each of the two one-sided hypotheses both have a prior probability of `0.25`.
+* `prior.hyp.conf`, a numeric vector specifying the prior probabilities of the hypotheses of the `hypothesis` argument. The default setting is `prior.hyp = NULL` which sets equal prior probabilities.
 * `complement`, a logical value which specified if a complement hypothesis is included in the tested hypotheses specified under `hypothesis`. The default setting is `TRUE`. The complement hypothesis covers the remaining parameters space that is not covered by the constrained hypotheses. For example, if an equality hypothesis and an order hypothesis are formulated, say, `hypothesis = "weight = height = length; weight > height > length"`, the complement hypothesis covers the remaining subspace where neither `"weight = height = length"` holds, nor `"weight > height > length"` holds.
-
+* `log`, a logical specifying whether the Bayes factors should be computed on a log scale. Default is `FALSE`.
 
 Alternatively if one is interested in testing hypotheses under a model class which that is currently not supported, an approximate Bayesian test can be executed with the following (additional) arguments
 
@@ -75,9 +76,9 @@ The output is of class `BF`. By running the `print` function on the `BF` object,
 
 ## Example analyses
 
-### Bayesian t testing
+### Normal linear models (t-testing, linear regression, (M)AN(C)OVA)
 
-All Bayesian t tests for one-samples, two samples, paired samples, linear regression models, and analysis of variance models, the fractional Bayes factor (FBF, O'Hagan, 1995) and the adjusted fractional Bayes factor (AFBF, Mulder, 2014) are implemented in ***BFpack***. These default Bayes factors do not require any manual prior specification as the data is split in a minimal fraction that used for default prior specification and the remaining maximal fraction is used for hypothesis testing. This implicit minimally informative fractional prior follows a Cauchy distribution (Mulder & Gu, 2023). The default is the FBF. The AFBF is used by setting the argument \code{BF.type=AFBF}. In this vignette, all tests are executed with the default (FBF) setting.
+For an object of class `t_test` (t testing), `lm` (linear regression), `lml` (multivariate linear regression), `aov` (AN(C)OVA), `manova` (MAN(C)OVA), the evidence and posterior probabilities are computed using the fractional Bayes factor (FBF) methodology [O'Hagan (1995) ](https://rss.onlinelibrary.wiley.com/doi/abs/10.1111/j.2517-6161.1995.tb02017.x). Manual prior specification is avoided by using a minimal fraction of the data to construct a default (fractional) prior while the remaining fraction is used for hypothesis testing. For a simple t-test, there are 2 unknown parameters (the normal mean and the variance), and therefore at least 2 observations are required to identify the model, yielding a minimal fraction of `2/n`, where `n` is the sample size. In this case, the default prior follows a Cauchy distribution. In the case of grouping variables, i.e., variables of class `factor` in R, it is recommended that the minimal fractions depend on the respective group sizes [De Santis and Spezzaferri (2001)](https://doi.org/10.1016/S0378- 3758(00)00240-8). For instance, in case of an ANOVA with 2 groups (equivalent to a 2-sample t test with equal variances), there are 3 unknown parameters (the two normal means and the within-groups variance), and thus, at least 3 observations are required to identify the model. Therefore, the minimal fraction for the observations in group 1 and 2 are equal to `1.5/n_1` and `1.5/n_2`, where `n_1` and `n_2` are the sample sizes in group 1 and 2, respectively. In the resulting `BF` object, the element `fraction_groupID_observations` contains the group IDs, which are based on all combinations of the levels of the factors in the linear model. If no grouping variables (`factor`) are included as predictors, the same minimal fraction is used for all observations. Moreover, besides regular fractional Bayes factors (which is the current default), adjusted fractional Bayes factors (AFBF) can also be computed by setting the argument `BF.type = AFBF`. In the AFBF, the default prior is shifted to the null value ([Mulder, 2014](https://www.sciencedirect.com/science/article/pii/S0167947313002624?casa_token=d1d_qTUqX1IAAAAA:b8gICq-TAkTdmryMaoYmXSqIVt0AB9XoKtRSjLHOLVFYzoHQJZ4s7yq6gAIno_JGZ1Ax-nw2mDQ); [Mulder and Olsson-Collentine, 2019](https://link.springer.com/article/10.3758/s13428-018-01196-9)). The AFBF was specifically designed for testing hypotheses with only one-sided or order constraints. The general methodology for the multivariate linear model is discussed in [Mulder et al. (2021) ](https://www.jstatsoft.org/article/view/v100i18) and [Mulder and Gu (2021)](https://doi.org/10.1080/00273171.2021.1904809). 
 
 #### Univariate t testing
 
@@ -156,8 +157,7 @@ BFmlm1 <- BF(mlm1, hypothesis="ones_on_Superficial=ones_on_Middle=ones_on_Deep=0
                                (ones_on_Superficial,ones_on_Middle,ones_on_Deep)>0")
 ```
 
-
-### Analysis of variance
+#### Analysis of variance
 
 First an analysis of variance (ANOVA) model is fitted using the `aov`
 fuction in `R`.
@@ -187,7 +187,50 @@ set.seed(1234)
 BF(aov1, hypothesis = constraints2)
 ```
 
-For more information about the methodology, we refer the interested reader to [Mulder et al. (2021) ](https://www.jstatsoft.org/article/view/v100i18) and [Mulder and Gu (2021)](https://doi.org/10.1080/00273171.2021.1904809).
+
+#### Univariate and multivariate multiple regression
+
+For a univariate regression model, by default an exhaustive test is
+executed of whether an effect is zero, negative, or postive.
+
+``` r
+lm1 <- lm(Superficial ~ Face + Vehicle, data = fmri)
+BF1 <- BF(lm1)
+print(BF1)
+```
+
+Hypotheses can be tested with equality and/or order constraints on the
+effects of interest. If prefered the complement hypothesis can be
+omitted using the `complement`
+argument
+
+``` r
+BF2 <- BF(lm1, hypothesis = "Vehicle > 0 & Face < 0; Vehicle = Face = 0",
+          complement = FALSE)
+print(BF2)
+```
+
+In a multivariate regression model hypotheses can be tested on the
+effects on the same dependent variable, and on effects across different
+dependent variables. The name of an effect is constructed as the name of
+the predictor variable and the dependent variable separated by `_on_`.
+Testing hypotheses with both constraints within a dependent variable and
+across dependent variables makes use of a Monte Carlo estimate which may
+take a few seconds.
+
+``` r
+lm2 <- lm(cbind(Superficial, Middle, Deep) ~ Face + Vehicle,
+              data = fmri)
+constraint2 <- "Face_on_Deep = Face_on_Superficial = Face_on_Middle < 0 <
+     Vehicle_on_Deep = Vehicle_on_Superficial = Vehicle_on_Middle;
+     Face_on_Deep < Face_on_Superficial = Face_on_Middle < 0 < Vehicle_on_Deep =
+     Vehicle_on_Superficial = Vehicle_on_Middle"
+set.seed(123)
+BF3 <- BF(lm2, hypothesis = constraint2)
+summary(BF3)
+```
+
+For more information about the methodology, we refer the interested reader to [Mulder and Olsson-Collentine (2019)](https://link.springer.com/article/10.3758/s13428-018-01196-9) and [Mulder and Gu (2021)](https://doi.org/10.1080/00273171.2021.1904809)
 
 
 ### Testing independent group variances
@@ -229,7 +272,137 @@ The confirmatory test shows that H1 receives strongest support from the data, bu
 For more information about the methodology, we refer the interested reader to [Boing-Messing et al. (2017)](https://www.researchgate.net/publication/317418250_Bayesian_evaluation_of_constrained_hypotheses_on_variances_of_multiple_independent_groups)
 
 
-### Logistic regression
+### Testing correlations
+
+`BFpack` can be used for testing overlapping, nonoverlapping, and independent correlations, between variables of different measurement levels (continuous, dichotomous, ordinal), possibly while correcting for certain covariates. Joint uniform priors are specified for the correlations in the full correlation matrices. This implies that all combinations of correlation values that result in positive definite correlation matrices are equally likely a priori.
+
+By default `BF` performs exhaustive tests of whether the separate
+correlations are zero, negative, or positive.
+
+``` r
+set.seed(123)
+cor1 <- cor_test(memory[,1:3])
+BF1 <- BF(cor1)
+print(BF1)
+```
+
+The names of the
+correlations is constructed using the names of the variables separated
+by `_with_`:
+``` r
+get_estimates(cor1)
+```
+
+Specific hypotheses based on prior/theoretical considerations can be tested using the 
+`hypothesis` argument. As an example we show here how to test whether all
+correlations are equal and positive versus its complement. 
+``` r
+BF2 <- BF(cor1, hypothesis = "Del_with_Im = Wmn_with_Im = Wmn_with_Del > 0")
+print(BF2)
+```
+
+We can also test equality and order constraints on independent correlations across different groups. As the seventh column of the `memory` object is a group indicator, let us first create different objects for the two different groups, and perform Bayesian estimation on the correlation matrices of the two different groups 
+``` r
+memoryHC <- subset(memory,Group=="HC")[,-(4:7)]
+memorySZ <- subset(memory,Group=="SZ")[,-(4:7)]
+set.seed(123)
+cor1 <- cor_test(memoryHC,memorySZ)
+```
+
+In this case with multiple groups by default exploratory tests are executed of whether the correlations
+are zero, negative, or positive for each separate group (e.g., correlations in group `gr1`
+are denoted by `_in_gr1` at the end of the name)
+``` r
+get_estimates(cor1)
+```
+
+Next we test the one-sided hypothesis that the respective correlations in the first group (`g1`) are larger than the correlations in the second group (`g2`) via
+
+``` r
+set.seed(123)
+BF6_cor <- BF(cor1, hypothesis =
+  "Del_with_Im_in_g1 > Del_with_Im_in_g2 &
+  Del_with_Wmn_in_g1 > Del_with_Wmn_in_g2 &
+  Im_with_Wmn_in_g1 > Im_with_Wmn_in_g2")
+```
+
+By running `print(BF6_cor)`, the output shows that the one-sided hypothesis received a posterior probability of 0.991 and the alternative received a posterior probability of .009 (assuming equal prior probabilities).
+
+For more information about the methodology, we refer the interested reader to [Mulder (2016)](https://www.researchgate.net/publication/280256902_Bayes_factors_for_testing_order-constrained_hypotheses_on_correlations) and [Mulder and Gelissen (2019)](https://doi.org/10.1080/02664763.2021.1992360)
+
+
+### Meta-analyses
+
+`BFpack` supports testing the mean effect in a fixed effects meta-analysis model, a random effects model, and a (hybrid) marginalized random effects meta-analysis (marema) model. Depending on the nature of the parameter, different default priors are readily implemented. For testing a standardized effect (set `BF.type = "stand.effect"`), a normal prior with mean 0 and standard deviation 0.5 is specified which implies that, on average, medium (0.5) standardized effect sizes are expected (if the null is false). For testing a log odds (set `BF.type = "log.odds"`), a Student prior with mean 0, scale 2.36, and 13.1 degrees of freedom is used, which corresponds to success probabilities following uniform priors in the interval (0,1). For testing correlations (set `BF.type = "correlation"`), a logistic prior with scale 0.5 is used for the Fisher transformed correlation, which corresponds to a uniform prior for the correlation in the interval (-1,1). To specify a unit-information prior (set `BF.type = "unit.info"`), the total sample size `sum(ni)` is used to construct a minimally informative normal unit-information prior using the sample sizes `ni` of the individual studies from the `rma.uni` object. For a manually specified prior, the argument `BF.type` needs to be an object of class `prior` from the `metaBMA` package. Note that in order for the Bayes factors to be meaningful, the prior should reflect a plausible range of values given the available context. Arbitrarily vague priors (which can be used for estimation) should not be used for Bayes factor testing.
+
+For illustrative purposes, we use hypothetical simulated data for standardized effect sizes:
+
+``` r
+set.seed(123)
+tau2 <- 0.05
+vi <- runif(10, min = 0.01, max = 0.2)
+yi <- rnorm(10, mean = 0, sd = sqrt(vi+tau2))
+```
+
+where `tau2` denotes the true between-study heterogeneity, `vi` is a vector containing the squared standard errors of 10 studies, and `yi` is a vector containing the estimated effects sizes in the 10 studies. To test the overall effect size and the between-study heterogeneity using `BFpack`, an initial meta-analysis needs to be executed using the `metafor` package. A random effects meta-analysis model is considered:
+
+``` r
+res1 <- metafor::rma(yi = yi, vi = vi)
+```
+
+Subsequently, the output is plugged into the `BF` function using the default prior for a standardized effect (normal prior with mean of 0 and a sd of 0.5). For a random effects model (`res1$method` does not equal `"EE"` or `"FE"`), `BFpack` computes Bayes factors and posterior probabilities of a zero, negative, and positive mean effect:
+
+``` r
+BFmeta1 <- BF(res1, BF.type = "stand.effect")
+```
+
+The `summary` output gives the posterior probabilities for a zero, negative, and positive mean effect size `mu` assuming equal prior probabilities:
+
+``` r
+summary(BFmeta1)
+```
+
+The results indicate support for a zero effect with a posterior probability of approximately 0.75 under both the random effects model and the marema model.
+
+Under the random effects model and the marema model, the posterior mean and median, the lower and upper bound of the 95% Bayesian credible intervals, and the posterior probability that the parameters are positive can be obtained by calling:
+
+``` r
+BFmeta1$estimates
+```
+
+Note that under the marema model, the between-study heterogeneity `tau2` can attain negative values (indicating support for a fixed effects model). Therefore, the posterior probability that `tau2` is positive under the marema model gives an indication of the posterior support of a random effects model given the available data. In this case, the posterior probability that `tau2` is positive is about 0.95, which indicates clear support for a random effects model.
+
+In order to test the mean effect under a fixed effects meta-analysis model, this needs to be specified when fitting the initial meta-analytic model:
+
+``` r
+res2 <- metafor::rma(yi = yi, vi = vi, method = "EE")
+BFmeta2 <- BF(res2, BF.type = "stand.effect")
+```
+
+For more information about the methodology, we refer the interested reader to [Van Aert and Mulder (2021)](https://link.springer.com/article/10.3758/s13423-021-01918-9) and Mulder and van Aert (in prep.).
+
+
+### Exponential random graph models
+...
+
+### Network autocorrelation models
+...
+
+### Hypothesis testing using normal approximations
+
+### Running `BF` on a named vector
+
+The input for the `BF` function can also be a named vector containing
+the estimates of the parameters of interest. In this case the error
+covariance matrix of the estimates is also needed via the `Sigma`
+argument, as well as the sample size that was used for obtaining the
+estimates via the `n` argument. Bayes factors are then computed using
+Gaussian approximations of the likelihood (and posterior), similar as in
+classical Wald test. Furthermore, a minimally informative default prior is automatically constructed using a minimal fraction of the data, similar as the adjusted fractional Bayes factor. The minimal fraction is constructed by dividing the number of parameters that are tested in the hypothesis by the total sample size `n`. Moreover, the prior is shifted to the null value, resulting in an approximate adjusted fractional Bayes factor. This methodology is used by default in case the input object `x` has class `glm`, `coxph`, `survreg`, 
+`polr`, and `zeroinfl`. Below we first show how the function can be used for testing coefficients in a logistic regression model, and then we show how the function can be used for testing coefficients in a poisson regression model and as well an equivalent analysis when `x` is a named vector using the MLEs, error covariance matrix `Sigma`, and sample size `n`.
+
+
+#### Logistic regression
 
 An example hypothesis test is considered under a logistic regression
 model. First a logistic regression model is fitted using the `glm`
@@ -275,156 +448,9 @@ zAfro) > 0"` holds, nor where `"ztrust > zfWHR = zAfro = 0"` holds.
 For more information about the methodology, we refer the interested reader to [Gu et al. (2018)](https://bpspsychub.onlinelibrary.wiley.com/doi/full/10.1111/bmsp.12110?casa_token=tjWwoVqLI7QAAAAA%3Ac84DWKNw8pf23ybOgZTs1pzgyZMuCc-BeTaPFj8vnfnTytzHd0gr-D9ymVxYbKj_MTO1ITGFW8tGBZ1J) and [Mulder et al. (2021)](https://www.jstatsoft.org/article/view/v100i18)
 
 
-### Correlation analysis
+#### Poisson regression
 
-By default `BF` performs exhaustice tests of whether the separate
-correlations are zero, negative, or positive.
-
-``` r
-set.seed(123)
-cor1 <- cor_test(memory[,1:3])
-BF1 <- BF(cor1)
-print(BF1)
-```
-
-The names of the
-correlations is constructed using the names of the variables separated
-by `_with_`:
-``` r
-get_estimates(cor1)
-```
-
-Specific hypotheses based on prior/theoretical considerations can be tested using the 
-`hypothesis` argument. As an example we show here how to test whether all
-correlations are equal and positive versus its complement. 
-``` r
-BF2 <- BF(cor1, hypothesis = "Del_with_Im = Wmn_with_Im = Wmn_with_Del > 0")
-print(BF2)
-```
-
-We can also test equality and order constraints on correlations across different groups. As the seventh column of the `memory` object is a group indicator, let us first create different objects for the two different groups, and perform Bayesian estimation on the correlation matrices of the two different groups 
-``` r
-memoryHC <- subset(memory,Group=="HC")[,-(4:7)]
-memorySZ <- subset(memory,Group=="SZ")[,-(4:7)]
-set.seed(123)
-cor1 <- cor_test(memoryHC,memorySZ)
-```
-
-In this case with multiple groups by default exploratory tests are executed of whether the correlations
-are zero, negative, or positive for each separate group (e.g., correlations in group `gr1`
-are denoted by `_in_gr1` at the end of the name)
-``` r
-get_estimates(cor1)
-```
-
-Next we test the one-sided hypothesis that the respective correlations in the first group (`g1`) are larger than the correlations in the second group (`g2`) via
-
-``` r
-set.seed(123)
-BF6_cor <- BF(cor1, hypothesis =
-  "Del_with_Im_in_g1 > Del_with_Im_in_g2 &
-  Del_with_Wmn_in_g1 > Del_with_Wmn_in_g2 &
-  Im_with_Wmn_in_g1 > Im_with_Wmn_in_g2")
-```
-
-By running `print(BF6_cor)`, the output shows that the one-sided hypothesis received a posterior probability of 0.991 and the alternative received a posterior probability of .009 (assuming equal prior probabilities).
-
-For more information about the methodology, we refer the interested reader to [Mulder (2016)](https://www.researchgate.net/publication/280256902_Bayes_factors_for_testing_order-constrained_hypotheses_on_correlations) and [Mulder and Gelissen (2019)](https://doi.org/10.1080/02664763.2021.1992360)
-
-
-
-### Univariate/Multivariate multiple regression
-
-For a univariate regression model, by default an exhaustive test is
-executed of whether an effect is zero, negative, or postive.
-
-``` r
-lm1 <- lm(Superficial ~ Face + Vehicle, data = fmri)
-BF1 <- BF(lm1)
-print(BF1)
-```
-
-Hypotheses can be tested with equality and/or order constraints on the
-effects of interest. If prefered the complement hypothesis can be
-omitted using the `complement`
-argument
-
-``` r
-BF2 <- BF(lm1, hypothesis = "Vehicle > 0 & Face < 0; Vehicle = Face = 0",
-          complement = FALSE)
-print(BF2)
-```
-
-In a multivariate regression model hypotheses can be tested on the
-effects on the same dependent variable, and on effects across different
-dependent variables. The name of an effect is constructed as the name of
-the predictor variable and the dependent variable separated by `_on_`.
-Testing hypotheses with both constraints within a dependent variable and
-across dependent variables makes use of a Monte Carlo estimate which may
-take a few seconds.
-
-``` r
-lm2 <- lm(cbind(Superficial, Middle, Deep) ~ Face + Vehicle,
-              data = fmri)
-constraint2 <- "Face_on_Deep = Face_on_Superficial = Face_on_Middle < 0 <
-     Vehicle_on_Deep = Vehicle_on_Superficial = Vehicle_on_Middle;
-     Face_on_Deep < Face_on_Superficial = Face_on_Middle < 0 < Vehicle_on_Deep =
-     Vehicle_on_Superficial = Vehicle_on_Middle"
-set.seed(123)
-BF3 <- BF(lm2, hypothesis = constraint2)
-summary(BF3)
-```
-
-For more information about the methodology, we refer the interested reader to [Mulder and Olsson-Collentine (2019)](https://link.springer.com/article/10.3758/s13428-018-01196-9) and [Mulder and Gu (2021)](https://doi.org/10.1080/00273171.2021.1904809)
-
-
-### Testing the effect size and beteen-study heterogeneity in a meta-analysis
-
-For illustrative purposes we generate a hypothetical simulated dataset
-
-``` r
-set.seed(123)
-tau2 <- 0.05
-vi <- runif(50, min = 0.01, max = 0.2)
-yi <- rnorm(50, mean = 0, sd = sqrt(vi+tau2))
-```
-
-where `tau2` denotes the true between-study heterogeneity, `vi` is a vector containing the squared standard errors of 50 studies, and `yi` is a vector containing the estimated effects sizes in the 50 studies. To test the overall effect size and the between-study heterogeneity using `BFpack`, an initial meta-analysis needs to be executed using the `metafor` package. Subsequently the output is plugged into the `BF` function:
-
-``` r
-res <- metafor::rma(yi = yi, vi = vi)
-BFmeta <- BF(res)
-```
-
-The `summary` output gives the posterior probabilities for a zero, negative, and positive between-study heterogeneity `I^2` and overall effect size `mu` assuming equal prior probabilities:
-
-``` r
-summary(BFmeta)
-```
-
-The results indicate evidence for positive between-study heterogeneity (suggesting that a random effects meta-analysis model is appropriate) and for a zero overall effect size.
-
-The unconstrained estimates (posterior mean and median) and the lower and upper bound of the 95% Bayesian credible intervals can be obtained by calling:
-
-``` r
-BFmeta$estimates
-```
-
-For more information about the methodology, we refer the interested reader to [Van Aert and Mulder (2021)](https://link.springer.com/article/10.3758/s13423-021-01918-9)
-
-
-### Running `BF` on a named vector
-
-The input for the `BF` function can also be a named vector containing
-the estimates of the parameters of interest. In this case the error
-covariance matrix of the estimates is also needed via the `Sigma`
-argument, as well as the sample size that was used for obtaining the
-estimates via the `n` argument. Bayes factors are then computed using
-Gaussian approximations of the likelihood (and posterior), similar as in
-classical Wald test.
-
-We illustrate this for a Poisson regression
-model
+We illustrate this for a Poisson regression model
 
 ``` r
 poisson1 <- glm(formula = breaks ~ wool + tension, data = datasets::warpbreaks,
