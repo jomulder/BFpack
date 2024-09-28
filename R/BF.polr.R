@@ -10,6 +10,7 @@ BF.polr <- function(x,
                        prior.hyp = NULL,
                        complement = TRUE,
                        log = FALSE,
+                    cov.prob = .95,
                        ...){
 
   #Extract summary statistics
@@ -24,6 +25,7 @@ BF.polr <- function(x,
   Args$prior.hyp.conf <- prior.hyp.conf
   Args$complement <- complement
   Args$log <- log
+  Args$cov.prob <- cov.prob
   out <- do.call(BF, Args)
   out$model <- x
   out$call <- match.call()

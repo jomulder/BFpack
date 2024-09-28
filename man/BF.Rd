@@ -18,6 +18,7 @@ testing}
   prior.hyp = NULL,
   complement = TRUE,
   log = FALSE,
+  cov.prob = 0.95,
   Sigma,
   n,
   ...
@@ -31,6 +32,7 @@ testing}
   prior.hyp = NULL,
   complement = TRUE,
   log = FALSE,
+  cov.prob = 0.95,
   BF.type = NULL,
   iter = 10000,
   ...
@@ -44,6 +46,7 @@ testing}
   prior.hyp = NULL,
   complement = TRUE,
   log = FALSE,
+  cov.prob = 0.95,
   BF.type,
   iter = 20000,
   ...
@@ -57,6 +60,7 @@ testing}
   prior.hyp = NULL,
   complement = TRUE,
   log = FALSE,
+  cov.prob = 0.95,
   BF.type = NULL,
   iter = 1e+06,
   ...
@@ -94,6 +98,10 @@ to the tested hypothesis under \code{hypothesis}.}
 
 \item{log}{a logical specifying whether the Bayes factors should be computed on a log scale.
 Default is \code{FALSE}.}
+
+\item{cov.prob}{coverage probability of the Bayesian credibility interval in the \code{estimates} element of
+the output object. The argument is only used for objects for which a Bayesion estimation algorithm is used,
+such as a \code{cor_test} or \code{rma.uni} object. The default coverage probability is 0.95.}
 
 \item{Sigma}{An approximate posterior covariance matrix (e.g,. error covariance
 matrix) of the parameters of interest. This argument is only required when \code{x}
@@ -179,7 +187,8 @@ against the unconstrained hypothesis.
 \item \code{prior.hyp.explo}: The prior probabilities of the constrained hypotheses in the exploratory tests.
 \item \code{prior.hyp.conf}: The prior probabilities of the constrained hypotheses in the confirmatory test.
 \item \code{hypotheses}: The tested constrained hypotheses in a confirmatory test.
-\item \code{estimates}: The unconstrained estimates.
+\item \code{estimates}: Descriptives of unconstrained estimates based on flat priors (also for \code{rma.uni} objects for
+Bayesian meta-analyses).
 \item \code{model}: The input model \code{x}.
 \item \code{bayesfactor}: The type of Bayes factor that is used for this model.
 \item \code{parameter}: The type of parameter that is tested.

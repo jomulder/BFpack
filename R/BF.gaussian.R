@@ -12,6 +12,7 @@ BF.default <- function(x,
                        prior.hyp = NULL,
                        complement = TRUE,
                        log = FALSE,
+                       cov.prob = .95,
                        Sigma,
                        n,
                        ...){
@@ -30,7 +31,8 @@ BF.default <- function(x,
                                         prior.hyp.conf = prior.hyp.conf,
                                         prior.hyp = prior.hyp,
                                         complement = complement,
-                                        log = log)
+                                        log = log,
+                                   cov.prob=cov.prob)
 
   BF_out$model <- x
   BF_out$call <- match.call()
@@ -51,7 +53,14 @@ Savage.Dickey.Gaussian <- function(prior.mean,
                                    prior.hyp.conf,
                                    prior.hyp,
                                    complement,
-                                   log = FALSE){
+                                   log = FALSE,
+                                   cov.prob = .95){
+
+  if(!(cov.prob>0 & cov.prob<1)){
+    stop("The argument 'cov.prob' is a coverage probability for the interval estimates that should lie between 0 and 1. The default is 0.95.")
+  }
+  CrI_LB <- (1 - cov.prob)/2
+  CrI_UB <- 1 - (1 - cov.prob)/2
 
   #prior.mean is a normal prior mean of key parameters
   #prior.sigma is a normal prior covariance matrix of key parameters
@@ -104,7 +113,8 @@ Savage.Dickey.Gaussian <- function(prior.mean,
                          })),nrow=2))
   )
   row.names(postestimates) <- names_coef
-  colnames(postestimates) <- c("mean","median","2.5%","97.5%")
+  colnames(postestimates) <- c("mean","median",paste0(as.character(round(CrI_LB*100,7)),"%"),
+                               paste0(as.character(round(CrI_UB*100,7)),"%"))
 
   if(logIN == FALSE){
     BFtu_exploratory <- exp(BFtu_exploratory)

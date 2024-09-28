@@ -173,8 +173,13 @@ BF.mvt_test <- function(x,
                         prior.hyp = NULL,
                         complement = TRUE,
                         log = FALSE,
+                        cov.prob = .95,
                         BF.type = NULL,
                         ...) {
+
+  if(!(cov.prob>0 & cov.prob<1)){
+    stop("The argument 'cov.prob' is a coverage probability for the interval estimates that should lie between 0 and 1. The default is 0.95.")
+  }
 
   if(is.null(BF.type)){
     BF.type <- "FBF"
@@ -207,6 +212,7 @@ BF.mvt_test <- function(x,
                  hypothesis=hypothesis.explo,
                  prior.hyp.conf=prior.hyp.explo,
                  log=log,
+                 cov.prob=cov.prob,
                  BF.type=BF.type)
   BF.explo$BFtu_confirmatory <- t(as.matrix(BF.explo$BFtu_confirmatory))
   BF.explo$PHP_confirmatory <- t(as.matrix(BF.explo$PHP_confirmatory))
@@ -254,7 +260,7 @@ BF.mvt_test <- function(x,
     prior.hyp.explo=BF.explo$prior.hyp.conf,
     prior.hyp.conf=BF.conf$prior.hyp.conf,
     hypotheses=BF.conf$hypotheses,
-    estimates=BF.conf$estimates,
+    estimates=BF.explo$estimates,
     model=x1,
     bayesfactor=BF.conf$bayesfactor,
     parameter=parameters,

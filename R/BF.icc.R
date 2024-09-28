@@ -13,7 +13,12 @@ BF.lmerMod <- function(x,
                        prior.hyp = NULL,
                        complement = TRUE,
                        log = FALSE,
+                       cov.prob = .95,
                        ...){
+
+  if(!(cov.prob>0 & cov.prob<1)){
+    stop("The argument 'cov.prob' is a coverage probability for the interval estimates that should lie between 0 and 1. The default is 0.95.")
+  }
 
   logIN <- log
 
@@ -126,7 +131,7 @@ BF.lmerMod <- function(x,
   cat("\n")
   numuncdraws <- 5e4
   marglike_Hu <- MargLikeICC_Hq(rhoML,zW=zWstack,ngroups,pvec,samsize1=numuncdraws,
-                                samsize2=4e4,unique1=1:numcat)
+                                samsize2=4e4,unique1=1:numcat,cov.prob=cov.prob)
 
   postestimates <- marglike_Hu[[4]]
   colnames(postestimates) <- iccnames
@@ -383,7 +388,7 @@ int_lhood <- function(rhoS,ngroups,pvec,N,K,Wmat1,zvec1,tWW2,tWz2,tzz2){
 
 #' @importFrom stats rnorm rbeta dbeta
 MargLikeICC_Hq <- function(rhoML,zW,ngroups,pvec,samsize1=5e4,samsize2=5e4,
-                           unique1,inequalities=0,complement=FALSE){
+                           unique1,inequalities=0,complement=FALSE,cov.prob=.95){
 
   #E.g., for categories=5, unique1=c(0,2,0,1,1),inequalities=[1 -1 0],
   #the hypothesis equals, Hq:rho1=rho3=0, rho4=rho5>rho2
@@ -391,6 +396,9 @@ MargLikeICC_Hq <- function(rhoML,zW,ngroups,pvec,samsize1=5e4,samsize2=5e4,
   #sample estimate of the marginal likelihood excluding the inequality constraints.
   #samsize2 sets the sample size for computing the probability that the inequality constraints hold,
   #and for sampling from the proposal distribution. to get the IS estimate.
+
+  CrI_LB <- (1 - cov.prob)/2
+  CrI_UB <- 1 - (1 - cov.prob)/2
 
   numcat <- length(ngroups)
   N <- sum(pvec)
@@ -488,7 +496,7 @@ MargLikeICC_Hq <- function(rhoML,zW,ngroups,pvec,samsize1=5e4,samsize2=5e4,
 
     postestimates <- rbind(t(apply(drawsMat,2,mean)),
                            t(apply(drawsMat,2,median)),
-                           apply(drawsMat,2,quantile,probs=c(.025,.975)))
+                           apply(drawsMat,2,quantile,probs=c(CrI_LB,CrI_UB)))
     row.names(postestimates)[c(1,2)] <- c("mean","median")
     iccnames <- unlist(lapply(1:ncol(drawsMat),function(nc){paste0("icc",as.character(nc))}))
     colnames(postestimates) <- iccnames

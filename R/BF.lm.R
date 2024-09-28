@@ -12,9 +12,16 @@ BF.lm <- function(x,
                   prior.hyp = NULL,
                   complement = TRUE,
                   log = FALSE,
+                  cov.prob = .95,
                   BF.type = NULL,
                   iter = 1e4,
                   ...){
+
+  if(!(cov.prob>0 & cov.prob<1)){
+    stop("The argument 'cov.prob' is a coverage probability for the interval estimates that should lie between 0 and 1. The default is 0.95.")
+  }
+  CrI_LB <- (1 - cov.prob)/2
+  CrI_UB <- 1 - (1 - cov.prob)/2
 
   if(is.null(BF.type)){
     BF.type <- "FBF"
@@ -203,13 +210,14 @@ BF.lm <- function(x,
   #compute estimates
   postestimates <- cbind(meanN,meanN,
                          t(matrix(unlist(lapply(1:length(meanN),function(coef){
-                           ub <- qt(p=.975,df=dfN)*sqrt(ScaleN[coef,coef])+meanN[coef,1]
-                           lb <- qt(p=.025,df=dfN)*sqrt(ScaleN[coef,coef])+meanN[coef,1]
+                           ub <- qt(p=CrI_UB,df=dfN)*sqrt(ScaleN[coef,coef])+meanN[coef,1]
+                           lb <- qt(p=CrI_LB,df=dfN)*sqrt(ScaleN[coef,coef])+meanN[coef,1]
                            return(c(lb,ub))
                          })),nrow=2))
   )
   row.names(postestimates) <- names_coef
-  colnames(postestimates) <- c("mean","median","2.5%","97.5%")
+  colnames(postestimates) <- c("mean","median",paste0(as.character(round(CrI_LB*100,7)),"%"),
+                               paste0(as.character(round(CrI_UB*100,7)),"%"))
 
   # Additional exploratory tests of main effects and interaction effects
   # in the case of an aov type object

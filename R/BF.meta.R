@@ -14,6 +14,7 @@ BF.rma.uni <- function(x,
                     prior.hyp = NULL,
                     complement = TRUE,
                     log = FALSE,
+                    cov.prob = .95,
                     BF.type,
                     iter = 2e4,
                     ...){
@@ -28,6 +29,11 @@ BF.rma.uni <- function(x,
   if(!is.null(hypothesis)){
     message("Note that confirmatory testing via the 'hypothesis' argument is currently not supported for object of class 'rma.uni'.")
   }
+  if(!(cov.prob>0 & cov.prob<1)){
+    stop("The argument 'cov.prob' is a coverage probability for the interval estimates that should lie between 0 and 1. The default is 0.95.")
+  }
+  CrI_LB <- (1 - cov.prob)/2
+  CrI_UB <- 1 - (1 - cov.prob)/2
 
   if(!exists("BF.type")){
     stop("The argument 'BF.type' is missing. See documentation. See ?BF")
@@ -77,7 +83,7 @@ BF.rma.uni <- function(x,
     }else if(BF.type == "log.odds"){
       # Student t prior which approximates the implied distribution of the log odds ratio based on uniform success probabilities
       prior.mu <- function(x,tau2,log=FALSE){
-        dt1 <- dt(x/2.36,df=13.1,log=log)-log(2.36)
+        dt1 <- dt(x/2.36,df=13.1,log=TRUE)-log(2.36)
         ifelse(log,dt1,exp(dt1))
         }
       prior.muGR0 <- .5
@@ -111,6 +117,10 @@ BF.rma.uni <- function(x,
     message("Be sure that the specified prior is not truncated in a specific interval.")
   }else{
     stop("The argument 'BF.type' is not correctly specified for an object of type 'rma.uni'. See documentation. ?BF")
+  }
+  prior.mu.estimation <- function(x,tau2,log=FALSE){
+    dens <- 0
+    ifelse(log,dens,exp(dens))
   }
 
   #exploratory testing
@@ -201,26 +211,41 @@ BF.rma.uni <- function(x,
     }
 
     #store descriptives of estimates
-    estimates_marema <- cbind(apply(marg.like.marema.full$post.draws,2,mean),
-                              apply(marg.like.marema.full$post.draws,2,median),
-                              apply(marg.like.marema.full$post.draws,2,quantile,.025),
-                              apply(marg.like.marema.full$post.draws,2,quantile,.975),
-                              apply(marg.like.marema.full$post.draws,2,function(x){mean(x>0)}))
+    marema_estimation <- log_marg_like_full(yi, vi, tau2_min=tau2.min,
+                                                prior.mu=prior.mu.estimation,
+                                                prior.tau2=prior.tau2.Jeffreys1,
+                                                start_mu=start_mu, start_tau2=start_tau2,
+                                                sdstep.mu=sdstep.mu, sdstep.tau2=sdstep.tau2,
+                                                burnin = round(iter/2), iters1=iter, iters2=1e3)
+    ranef_estimation <- log_marg_like_full(yi, vi, tau2_min=0,
+                                               prior.mu = prior.mu,
+                                               prior.tau2 = prior.tau2.Jeffreys1,
+                                               start_mu = start_mu, start_tau2 = ifelse(start_tau2<0,sdstep.tau2,start_tau2),
+                                               sdstep.mu = sdstep.mu, sdstep.tau2 = sdstep.tau2,
+                                               burnin=round(iter/2), iters1=iter, iters2=iter)
+    estimates_marema <- cbind(apply(marema_estimation$post.draws,2,mean),
+                              apply(marema_estimation$post.draws,2,median),
+                              apply(marema_estimation$post.draws,2,quantile,CrI_LB),
+                              apply(marema_estimation$post.draws,2,quantile,CrI_UB),
+                              apply(marema_estimation$post.draws,2,function(x){mean(x>0)}))
     row.names(estimates_marema) <- c("mu      (marema)", "tau2    (marema)")
-    estimates_ranef <- cbind(apply(marg.like.ranef.full$post.draws,2,mean),
-                             apply(marg.like.ranef.full$post.draws,2,median),
-                             apply(marg.like.ranef.full$post.draws,2,quantile,.025),
-                             apply(marg.like.ranef.full$post.draws,2,quantile,.975),
-                             apply(marg.like.ranef.full$post.draws,2,function(x){mean(x>0)}))
+    estimates_ranef <- cbind(apply(ranef_estimation$post.draws,2,mean),
+                             apply(ranef_estimation$post.draws,2,median),
+                             apply(ranef_estimation$post.draws,2,quantile,CrI_LB),
+                             apply(ranef_estimation$post.draws,2,quantile,CrI_UB),
+                             apply(ranef_estimation$post.draws,2,function(x){mean(x>0)}))
     row.names(estimates_ranef) <- c("mu      (ranef)", "tau2    (ranef)")
-    colnames(estimates_marema) <- colnames(estimates_ranef) <- c("mean","median","2.5%","97.5%","Pr(>0)")
+    colnames(estimates_marema) <- colnames(estimates_ranef) <-
+      c("mean","median",paste0(as.character(round(CrI_LB*100,7)),"%"),
+        paste0(as.character(round(CrI_UB*100,7)),"%"),"Pr(>0)")
+
     uncestimates <- estimates_marema
     # estimates of separate group means
     #under marema model
-    marema_post.draws_mu <- marg.like.marema.full$post.draws[,1]
-    marema_post.draws_tau2 <- marg.like.marema.full$post.draws[,2]
-    tau2draws_trunc <- marg.like.marema.full$post.draws[marema_post.draws_tau2>0,2]
-    mudraws_trunc <- marg.like.marema.full$post.draws[marema_post.draws_tau2>0,1]
+    marema_post.draws_mu <- marema_estimation$post.draws[,1]
+    marema_post.draws_tau2 <- marema_estimation$post.draws[,2]
+    tau2draws_trunc <- marema_estimation$post.draws[marema_post.draws_tau2>0,2]
+    mudraws_trunc <- marema_estimation$post.draws[marema_post.draws_tau2>0,1]
     numzerotau2 <- sum(marema_post.draws_tau2 <= 0)
     mudraws_studies <- do.call(cbind,lapply(1:length(vi),function(s){
       var_s <- 1/(1/vi[s] + 1/tau2draws_trunc)
@@ -233,8 +258,8 @@ BF.rma.uni <- function(x,
     row.names(uncestimates)[-(1:2)] <- paste0("theta_",1:ncol(mudraws_studies)," (marema)")
     #under random effects model
     uncestimates <- rbind(uncestimates,estimates_ranef)
-    ranef_post.draws_mu <- marg.like.ranef.full$post.draws[,1]
-    ranef_post.draws_tau2 <- marg.like.ranef.full$post.draws[,2]
+    ranef_post.draws_mu <- ranef_estimation$post.draws[,1]
+    ranef_post.draws_tau2 <- ranef_estimation$post.draws[,2]
     mudraws_studies <- do.call(cbind,lapply(1:length(vi),function(s){
       var_s <- 1/(1/vi[s] + 1/ranef_post.draws_tau2)
       mean_s <- (yi[s]/vi[s] + ranef_post.draws_mu/ranef_post.draws_tau2) * var_s
@@ -246,8 +271,8 @@ BF.rma.uni <- function(x,
 
     #store posterior draws based on noninformative improper prior
     post.draws <- list()
-    post.draws$marema <- marg.like.marema.full$post.draws
-    post.draws$ranef <- marg.like.ranef.full$post.draws
+    post.draws$marema <- marema_estimation$post.draws
+    post.draws$ranef <- ranef_estimation$post.draws
 
   } else if (x$method == "EE" | x$method == "FE") { ### common effect model
 
@@ -280,14 +305,19 @@ BF.rma.uni <- function(x,
     row.names(BFtu_exploratory) <- row.names(PHP_exploratory) <- c("mu (comef)")
 
     #descriptives of estimates
-    uncestimates <- cbind(mean(marg.like.comef.muEQ0$post.draws), median(marg.like.comef.muEQ0$post.draws),
-                          quantile(marg.like.comef.muEQ0$post.draws,.025),quantile(marg.like.comef.muEQ0$post.draws,.975),
-                          mean(marg.like.comef.muEQ0$post.draws>0))
-    colnames(uncestimates) <- c("mean","median","2.5%","97.5%","Pr(>0)")
+    comef_estimation <- log_marg_like_cond.tau2(yi, vi, tau2IN=0,
+                                                     prior.mu=prior.mu.estimation,
+                                                     start_mu=est.mu, sdstep.mu=se.mu,
+                                                     burnin = round(iter/2), iters1 = iter, iters2 = 1e3)
+    uncestimates <- cbind(mean(comef_estimation$post.draws), median(comef_estimation$post.draws),
+                          quantile(comef_estimation$post.draws,CrI_LB),quantile(comef_estimation$post.draws,CrI_UB),
+                          mean(comef_estimation$post.draws>0))
+    colnames(uncestimates) <- c("mean","median",paste0(as.character(round(CrI_LB*100,2)),"%"),
+                                paste0(as.character(round(CrI_UB*100,2)),"%"),"Pr(>0)")
     row.names(uncestimates) <- "mu"
 
     #store posterior draws based on noninformative improper prior
-    post.draws <- marg.like.comef.muEQ0$post.draws
+    post.draws <- comef_estimation$post.draws
     colnames(post.draws) <- row.names(uncestimates)
 
     if(logIN == FALSE){

@@ -13,7 +13,12 @@ BF.ergm <- function(x,
                     prior.hyp = NULL,
                     complement = TRUE,
                     log = FALSE,
+                    cov.prob = .95,
                     ...){
+
+  if(!(cov.prob>0 & cov.prob<1)){
+    stop("The argument 'cov.prob' is a coverage probability for the interval estimates that should lie between 0 and 1. The default is 0.95.")
+  }
 
   logIN <- log
 
@@ -88,10 +93,12 @@ BF.ergm <- function(x,
                                          log = logIN)
   }
 
+  CrI_LB <- (1 - cov.prob)/2
+  CrI_UB <- 1 - (1 - cov.prob)/2
   postestimates <- cbind(apply(Bergm.out$Theta,2,mean),
                           apply(Bergm.out$Theta,2,median),
-                          apply(Bergm.out$Theta,2,quantile,.025),
-                          apply(Bergm.out$Theta,2,quantile,.975))
+                          apply(Bergm.out$Theta,2,quantile,CrI_LB),
+                          apply(Bergm.out$Theta,2,quantile,CrI_UB))
   rownames(postestimates) <- names(estimate)
   colnames(postestimates) <- c("mean","median","2.5%","97.5%")
 

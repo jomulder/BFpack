@@ -48,6 +48,7 @@ BF.cor_test <- function(x,
                         prior.hyp = NULL,
                         complement = TRUE,
                         log = FALSE,
+                        cov.prob = .95,
                         ...){
 
   if(x$prior.cor == "joint.unif"){
@@ -60,6 +61,12 @@ BF.cor_test <- function(x,
     stop("argument 'prior' of cor_test object should be 'joint.unif' or 'marg.unif'. See ?cor_test")
   }
   testedparameter <- "correlation coefficients"
+
+  if(!(cov.prob>0 & cov.prob<1)){
+    stop("The argument 'cov.prob' is a coverage probability for the interval estimates that should lie between 0 and 1. The default is 0.95.")
+  }
+  CrI_LB <- (1 - cov.prob)/2
+  CrI_UB <- 1 - (1 - cov.prob)/2
 
   logIN <- log
 
@@ -120,8 +127,21 @@ BF.cor_test <- function(x,
     (rep(1,nrow(BFtu_exploratory)) %*% t(prior.hyp.explo[[1]]))
   PHP_exploratory <- norm_BF_explo / apply(norm_BF_explo,1,sum)
   colnames(PHP_exploratory) <- c("P(=0)","P(<0)","P(>0)")
+
   # posterior estimates
-  postestimates <- x$correstimates
+  postestimates_correlations <- Reduce(rbind,
+                                       lapply(1:numG,function(g){
+                                         draws_stack_g <- as.matrix(do.call(cbind,lapply(1:P,function(p){x$corrdraws[[g]][,,p]}))[,which(c(lower.tri(diag(P))))])
+                                         means <- apply(draws_stack_g,2,mean)
+                                         medians <- apply(draws_stack_g,2,median)
+                                         lb <- apply(draws_stack_g,2,quantile,CrI_LB)
+                                         ub <- apply(draws_stack_g,2,quantile,CrI_UB)
+                                         rm(draws_stack_g)
+                                         return(cbind(means,medians,lb,ub))
+                                       }))
+  colnames(postestimates_correlations) <- c("mean","median",paste0(as.character(round(CrI_LB*100,7)),"%"),
+                                            paste0(as.character(round(CrI_UB*100,7)),"%"))
+  postestimates <- postestimates_correlations
 
   if(logIN == FALSE){
     BFtu_exploratory <- exp(BFtu_exploratory)

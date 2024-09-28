@@ -101,8 +101,16 @@ BF.bartlett_htest <- function(x,
                            prior.hyp = NULL,
                            complement = TRUE,
                            log = FALSE,
+                           cov.prob = .95,
                            iter = 1e5,
                            ...) {
+
+  if(!(cov.prob>0 & cov.prob<1)){
+    stop("The argument 'cov.prob' is a coverage probability for the interval estimates that should lie between 0 and 1. The default is 0.95.")
+  }
+  CrI_LB <- (1 - cov.prob)/2
+  CrI_UB <- 1 - (1 - cov.prob)/2
+
   get_est <- get_estimates(x)
   nsim <- iter
   s2 <- get_est$estimate
@@ -113,12 +121,13 @@ BF.bartlett_htest <- function(x,
   scale.post_group <- s2*(n-1)/2
   shape.post_group <- (n-1)/2
   postestimates <- cbind(NA,qinvgamma(.5,alpha=shape.post_group,beta=scale.post_group),
-                         qinvgamma(.025,alpha=shape.post_group,beta=scale.post_group),
-                         qinvgamma(.975,alpha=shape.post_group,beta=scale.post_group))
+                         qinvgamma(CrI_LB,alpha=shape.post_group,beta=scale.post_group),
+                         qinvgamma(CrI_UB,alpha=shape.post_group,beta=scale.post_group))
   which.means <- which(shape.post_group>1)
   postestimates[which.means,1] <- scale.post_group[which.means]/(shape.post_group[which.means]-1)
   row.names(postestimates) <- names_coef
-  colnames(postestimates) <- c("mean","median","2.5%","97.5%")
+  colnames(postestimates) <- c("mean","median",paste0(as.character(round(CrI_LB*100,7)),"%"),
+                               paste0(as.character(round(CrI_UB*100,7)),"%"))
 
   logIN <- log
 

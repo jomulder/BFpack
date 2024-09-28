@@ -26,9 +26,16 @@ BF.t_test <- function(x,
                       prior.hyp = NULL,
                       complement = TRUE,
                       log = FALSE,
+                      cov.prob = .95,
                       BF.type = NULL,
                       iter = 1e6,
                       ...){
+
+  if(!(cov.prob>0 & cov.prob<1)){
+    stop("The argument 'cov.prob' is a coverage probability for the interval estimates that should lie between 0 and 1. The default is 0.95.")
+  }
+  CrI_LB <- (1 - cov.prob)/2
+  CrI_UB <- 1 - (1 - cov.prob)/2
 
   numpop <- length(x$estimate)
 
@@ -71,7 +78,8 @@ BF.t_test <- function(x,
                   prior.hyp=prior.hyp,
                   complement=complement,
                   BF.type=BF.type,
-                  log=logIN)
+                  log=logIN,
+                  cov.prob=cov.prob)
     sampledata_explo <- sampledata - x$null.value
     lm_explo <- lm(obs_explo~mu-1,data=df.draws)
     BF_explo <- BF(lm_explo,
@@ -81,7 +89,8 @@ BF.t_test <- function(x,
                    prior.hyp=prior.hyp,
                    complement=complement,
                    BF.type=BF.type,
-                   log=logIN)
+                   log=logIN,
+                   cov.prob=cov.prob)
     BF_out <- BF_conf
     BF_out$BFtu_exploratory <- BF_explo$BFtu_exploratory
     BF_out$PHP_exploratory <- BF_explo$PHP_exploratory
@@ -89,6 +98,8 @@ BF.t_test <- function(x,
       c(paste0("Pr(=",as.character(mu0),")"),paste0("Pr(<",as.character(mu0),")"),
         paste0("Pr(>",as.character(mu0),")"))
     colnames(BF_out$BFtu_exploratory) <- c("BF0u","BF1u","BF2u")
+
+    estimates_ttest <- BF_explo$estimates
 
   }else{ # two samples t test
 
@@ -114,19 +125,14 @@ BF.t_test <- function(x,
                    prior.hyp=prior.hyp,
                    complement=complement,
                    BF.type=BF.type,
-                   log=logIN)
+                   log=logIN,
+                   cov.prob=cov.prob)
       BF_out$BFtu_exploratory <- t(as.matrix(BF_out$BFtu_exploratory[2,]))
       BF_out$PHP_exploratory <- t(as.matrix(BF_out$PHP_exploratory[2,]))
       row.names(BF_out$BFtu_exploratory) <- row.names(BF_out$PHP_exploratory) <- "difference"
 
-      # if(!is.null(hypothesis)){
-      #   BFtu_confirmatory <- BFlm1$BFtu_confirmatory
-      #   PHP_confirmatory <- BFlm1$PHP_confirmatory
-      #   BFmatrix_confirmatory <- BFlm1$BFmatrix_confirmatory
-      #   BFtable <- BFlm1$BFtable_confirmatory
-      #   hypotheses <- row.names(BFtable)
-      #   priorprobs <- BFlm1$prior
-      # }
+      estimates_ttest <- BF_out$estimates
+
     }else{ #equal variances not assumed. BF.lm cannot be used
 
       # check proper usage of argument 'prior.hyp.conf' and 'prior.hyp.explo'
@@ -150,6 +156,14 @@ BF.t_test <- function(x,
       relfit1 <- log(mean(pnorm(x$null.value,
                                 mean=diff.obs,
                                 sd=sqrt(1/sigma2_1.draws*1/nvec[1] + 1/sigma2_2.draws*1/nvec[2]))))
+
+      diff.draws <- rnorm(iter,mean=diff.obs,sd=sqrt(1/sigma2_1.draws*1/nvec[1] + 1/sigma2_2.draws*1/nvec[2]))
+      estimates_ttest <- t(c(mean(diff.draws),median(diff.draws),quantile(diff.draws,CrI_LB),
+                         quantile(diff.draws,CrI_UB)))
+      row.names(estimates_ttest) <- "difference"
+      colnames(estimates_ttest) <- c("mean","median",paste0(as.character(round(CrI_LB*100,7)),"%"),
+                                    paste0(as.character(round(CrI_UB*100,7)),"%"))
+
       relfit2 <- log(1 - exp(relfit1))
       if(BF.type == 'AFBF'){
         prior.mean <- x$null.value
@@ -370,7 +384,7 @@ BF.t_test <- function(x,
         prior.hyp.explo=prior.hyp.explo,
         prior.hyp.conf=priorprobs,
         hypotheses=hypotheses,
-        estimates=x$coefficients,
+        estimates=estimates_ttest,
         model=x,
         bayesfactor=bayesfactor,
         parameter=parameter,

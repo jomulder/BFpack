@@ -7,13 +7,12 @@ res <- metafor::rma(yi = yi, vi = vi)
 
 #check results exploratory test
 test_that("metafor exploratory test", {
-  skip_on_cran()
   set.seed(123)
-  BF1 <- BF(res,BF.type="correlation")
+  BF1 <- BF(res,BF.type="correlation",iter=1e3,cov.prob=.9)
   expect_equivalent(
-    round(BF1$BFtu_exploratory[,3],3),c(1.910,1.924), tolerance = .05
+    round(BF1$BFtu_exploratory[,3],3),c(1.918,1.954), tolerance = .05
   )
   expect_equivalent(
-    round(BF1$estimates[1:2,1],2),c(2.14,15.41), tolerance = .5
+    round(BF1$estimates[1:2,3],2),c(2.66,1.04), tolerance = .5
   )
 })

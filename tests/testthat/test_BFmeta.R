@@ -9,12 +9,12 @@ set.seed(123)
 vi <- runif(50, min = 0.01, max = 0.2) # Observed sampling variances
 yi <- rnorm(50, mean = 0, sd = sqrt(vi+tau2)) # Observed effect sizes
 
-test_that("exploratory metafor test for I^2", {
+test_that("exploratory metafor random effects model", {
   skip_on_cran()
   ### Fit a random-effects model to the data
   res <- rma(yi = yi, vi = vi)
   set.seed(123)
-  BFmeta1 <- BF(res,BF.type="stand.effect")
+  BFmeta1 <- BF(res,BF.type="stand.effect",cov.prob=.9)
   set.seed(123)
   BFmeta1a <- BF(res,BF.type="stand.effect",prior.hyp.explo = c(5:7))
   set.seed(123)
@@ -33,7 +33,7 @@ test_that("exploratory metafor test for I^2", {
 })
 
 # test fixed effects meta model
-test_that("exploratory metafor test for I^2", {
+test_that("exploratory metafor fixed effects model", {
   set.seed(123)
   res <- metafor::rma(yi = yi, vi = vi, method = "EE")
   BFmeta2 <- BF(res,BF.type="stand.effect")

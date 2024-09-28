@@ -9,6 +9,7 @@ BF.coeftest <- function(x,
                      prior.hyp = NULL,
                      complement = TRUE,
                      log = FALSE,
+                     cov.prob = 0.95,
                      ...){
 
   logIN <- log
@@ -21,7 +22,7 @@ BF.coeftest <- function(x,
   if(!is.null(prior.hyp)) warning("prior specification via 'prior.hyp' is not supported for objects of class 'coeftest'")
   #if(!exploratory) stop("only exploratory hypothesis testing is supported for objects of class 'coeftest'")
 
-  out <- BF.default(x[, 1L], Sigma = Sigma, n = n, log = logIN, ...)
+  out <- BF.default(x[, 1L], Sigma = Sigma, n = n, log = logIN, cov.prob = cov.prob, ...)
   out$model <- x
   out$call <- match.call()
   out

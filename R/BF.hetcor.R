@@ -9,7 +9,14 @@ BF.hetcor <- function(x,
                        prior.hyp = NULL,
                        complement = TRUE,
                        log = FALSE,
+                      cov.prob = .95,
                        ...){
+
+  if(!(cov.prob>0 & cov.prob<1)){
+    stop("The argument 'cov.prob' is a coverage probability for the interval estimates that should lie between 0 and 1. The default is 0.95.")
+  }
+  CrI_LB <- (1 - cov.prob)/2
+  CrI_UB <- 1 - (1 - cov.prob)/2
 
   logIN <- log
 
@@ -38,7 +45,7 @@ BF.hetcor <- function(x,
     errcov.F <- as.matrix(est.var.F[2,])
   }
   corr_names <- names(get_est$estimate)
-  matrix_names <- matrix(corr_names,nrow=P)
+  #matrix_names <- matrix(corr_names,nrow=P)
   names(estimates.F) <- colnames(errcov.F) <- row.names(errcov.F) <- corr_names
 
   #exploratory BF testing

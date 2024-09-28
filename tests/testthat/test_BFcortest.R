@@ -2,7 +2,15 @@
 # exploratory testing correlations in multivariate normal model
 set.seed(123)
 cor1 <- cor_test(mtcars[,4:6],iter = 1e3,burnin = 0)
-BF1 <- BF(cor1,prior.hyp.explo = c(1,1,1))
+BF1 <- BF(cor1,prior.hyp.explo = c(1,1,1),cov.prob=.99)
+test_that("BF.cor_test use of cov.prob argument", {
+  expect_equivalent(
+    colnames(BF1$estimates)[3],"0.5%"
+  )
+  expect_equivalent(
+    BF1$estimates[1,3],-0.7662987,tol=.05
+  )
+})
 BF1a <- BF(cor1,prior.hyp.explo = 3:5)
 PHPexplo <- matrix(
   c(0.06,  0.94,  0.0,

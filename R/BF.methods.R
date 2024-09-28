@@ -32,6 +32,9 @@
 #' to the tested hypothesis under \code{hypothesis}.
 #' @param log a logical specifying whether the Bayes factors should be computed on a log scale.
 #' Default is \code{FALSE}.
+#' @param cov.prob coverage probability of the Bayesian credibility interval in the \code{estimates} element of
+#' the output object. The argument is only used for objects for which a Bayesion estimation algorithm is used,
+#' such as a \code{cor_test} or \code{rma.uni} object. The default coverage probability is 0.95.
 #' @param BF.type For certain object classes of \code{x}, different types of Bayes factor tests are supported.
 #' This can be specified using this argument. For models of class 'lm' and 't_test', setting this argument to
 #' \code{'FBF'} the fractional Bayes factor (O'Hagan, 1995) is used and setting this argument to
@@ -111,7 +114,8 @@
 #' \item \code{prior.hyp.explo}: The prior probabilities of the constrained hypotheses in the exploratory tests.
 #' \item \code{prior.hyp.conf}: The prior probabilities of the constrained hypotheses in the confirmatory test.
 #' \item \code{hypotheses}: The tested constrained hypotheses in a confirmatory test.
-#' \item \code{estimates}: The unconstrained estimates.
+#' \item \code{estimates}: Descriptives of unconstrained estimates based on flat priors (also for \code{rma.uni} objects for
+#' Bayesian meta-analyses).
 #' \item \code{model}: The input model \code{x}.
 #' \item \code{bayesfactor}: The type of Bayes factor that is used for this model.
 #' \item \code{parameter}: The type of parameter that is tested.
@@ -229,6 +233,6 @@
 #' @export
 #' @useDynLib BFpack, .registration = TRUE
 #'
-BF <- function(x, hypothesis, prior.hyp.explo, prior.hyp.conf, prior.hyp, complement, log, ...) {
+BF <- function(x, hypothesis, prior.hyp.explo, prior.hyp.conf, prior.hyp, complement, log, cov.prob, ...) {
   UseMethod("BF", x)
 }
