@@ -269,6 +269,7 @@ BF.mvt_test <- function(x,
     log = BF.conf$log,
     fraction_number_groupIDs = BF.conf$fraction_number_groupIDs,
     fraction_groupID_observations = BF.conf$fraction_groupID_observations,
+    fraction_groupID = BF.conf$fraction_groupID,
     call=match.call())
 
   class(BFlm_out) <- "BF"

@@ -652,6 +652,7 @@ BF.lm <- function(x,
       log = logIN,
       fraction_number_groupIDs = J,
       fraction_groupID_observations = dvec,
+      fraction_groupID = bj,
       call=match.call())
   }else{
     BFlm_out <- list(
@@ -671,6 +672,7 @@ BF.lm <- function(x,
       log = logIN,
       fraction_number_groupIDs = J,
       fraction_groupID_observations = dvec,
+      fraction_groupID = bj,
       call=match.call())
   }
 

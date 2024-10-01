@@ -83,12 +83,20 @@ Y <- as.data.frame(rmvnorm(10,mean=c(1,1),sigma=.5*diag(2)+.5))
 mvt_test1 <- mvt_test(X,Y,paired=TRUE)
 BF3 <- BF(mvt_test1,hypothesis="(difference_V1,difference_V2)<0;difference_V1=difference_V2=0",log=TRUE,
           BF.type = "AFBF")
+Diff1 <- X[,1] - Y[,1]
+Diff2 <- X[,2] - Y[,2]
+ones1 <- rep(1,nrow(Diffs))
+mlm1 <- lm(cbind(Diff1,Diff2) ~ -1 + ones1)
+BF3a <- BF(mlm1,hypothesis="(ones1_on_Diff1,ones1_on_Diff2)<0;ones1_on_Diff1=ones1_on_Diff2=0",BF.type = "AFBF")
 test_that("test multivariate Student t, paired samples", {
   expect_equivalent(
     round(c(BF3$PHP_exploratory),3),c(0.519,0.481)
   )
   expect_equivalent(
     round(c(BF3$BFmatrix_confirmatory[1:2,3]),1),c(2.8,1.8)
+  )
+  expect_equivalent(
+    round(BF3a$BFtu_confirmatory,3),round(exp(BF3$BFtu_confirmatory),3)
   )
 })
 
