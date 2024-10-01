@@ -181,12 +181,6 @@ BF.mvt_test <- function(x,
     stop("The argument 'cov.prob' is a coverage probability for the interval estimates that should lie between 0 and 1. The default is 0.95.")
   }
 
-  if(is.null(BF.type)){
-    BF.type <- "FBF"
-    message("Note that the default Bayes factor has been changed to the fractional Bayes factor (FBF). To use
-          the adjusted fractional Bayes factor (AFBF), set the 'BF.type' argument to 'AFBF'.")
-  }
-
   if(x$numpop==1 & x$paired==FALSE){
     parameters <- "means"
   }else{
@@ -250,6 +244,14 @@ BF.mvt_test <- function(x,
     BF.conf$hypotheses <- gsub(add.name,rem.name,BF.conf$hypotheses)
   }
 
+  BF.explo_estimates <- BF.explo$estimates
+  if(x$numpop == 1){
+    row.names(BF.explo_estimates) <- names(get_estimates(x)$estimate)
+  }else{
+    BF.explo_estimates <- BF.explo_estimates[(1:P)*2,]
+    row.names(BF.explo_estimates) <- names(get_estimates(x)$estimate)
+  }
+
   BFlm_out <- list(
     BFtu_exploratory=BF.explo$BFtu_confirmatory,
     PHP_exploratory=BF.explo$PHP_confirmatory,
@@ -260,7 +262,7 @@ BF.mvt_test <- function(x,
     prior.hyp.explo=BF.explo$prior.hyp.conf,
     prior.hyp.conf=BF.conf$prior.hyp.conf,
     hypotheses=BF.conf$hypotheses,
-    estimates=BF.explo$estimates,
+    estimates=BF.explo_estimates,
     model=x1,
     bayesfactor=BF.conf$bayesfactor,
     parameter=parameters,

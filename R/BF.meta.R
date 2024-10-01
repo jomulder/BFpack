@@ -119,8 +119,8 @@ BF.rma.uni <- function(x,
     stop("The argument 'BF.type' is not correctly specified for an object of type 'rma.uni'. See documentation. ?BF")
   }
   prior.mu.estimation <- function(x,tau2,log=FALSE){
-    dens <- 0
-    ifelse(log,dens,exp(dens))
+    logdens <- 0
+    ifelse(log,logdens,exp(logdens))
   }
 
   #exploratory testing
