@@ -139,9 +139,11 @@ BF.cor_test <- function(x,
                                          rm(draws_stack_g)
                                          return(cbind(means,medians,lb,ub))
                                        }))
+
   colnames(postestimates_correlations) <- c("mean","median",paste0(as.character(round(CrI_LB*100,7)),"%"),
                                             paste0(as.character(round(CrI_UB*100,7)),"%"))
   postestimates <- postestimates_correlations
+  rownames(postestimates) <- corr_names
 
   if(logIN == FALSE){
     BFtu_exploratory <- exp(BFtu_exploratory)
