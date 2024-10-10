@@ -101,6 +101,9 @@ get_estimates.lm <- function(x, ...){
   K <- nrow(x$coefficients)
   N <- nrow(x$residuals)
   if(!is.matrix(x$coefficients)){
+    if(sum(names(x$coefficients) == "(Intercept)")>0){
+      names(x$coefficients)[which(names(x$coefficients) == "(Intercept)")] <- "Intercept"
+    }
     out$estimate <- coef(x)
     out$Sigma <- list(vcov(x))
     class(out) <- "model_estimates"
@@ -108,6 +111,9 @@ get_estimates.lm <- function(x, ...){
     out
   }else{
     names_coef1 <- row.names(x$coefficients)
+    if(sum(names_coef1 == "(Intercept)")>0){
+      names_coef1[which(names_coef1 == "(Intercept)")] <- "Intercept"
+    }
     names_coef2 <- colnames(x$coefficients)
     names_coef <- unlist(lapply(1:P,function(p){
       lapply(1:K,function(k){

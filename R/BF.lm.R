@@ -157,9 +157,15 @@ BF.lm <- function(x,
 
   # BF computation for exploratory analysis of separate parameters
   if(P==1){
+    if(sum(row.names(x$coefficients) == "(Intercept)") > 0){
+      row.names(x$coefficients)[which(row.names(x$coefficients) == "(Intercept)")] <- "Intercept"
+    }
     names_coef <- row.names(x$coefficients)
   }else{
     names_coef1 <- row.names(x$coefficients)
+    if(sum(names_coef1 == "(Intercept)")>0){
+      names_coef1[which(names_coef1 == "(Intercept)")] <- "Intercept"
+    }
     names_coef2 <- colnames(x$coefficients)
     names_coef <- unlist(lapply(1:P,function(p){
       lapply(1:K,function(k){

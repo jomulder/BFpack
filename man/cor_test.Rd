@@ -71,12 +71,15 @@ fit <- cor_test(HC,SZ)
 }
 }
 \references{
-Barnard, J., McCulloch, R., & Meng, X. L. (2000). Modeling covariance matrices in terms of standard deviations and
-correlations, with application to shrinkage. Statistica Sinica, 1281-1311. <https://www.jstor.org/stable/24306780>
+Mulder, J., & Gelissen, J. P. (2023). Bayes factor testing of equality and order constraints on measures of
+association in social research. Journal of Applied Statistics, 50(2), 315-351. <https://doi.org/10.1080/02664763.2021.1992360>
 
 Mulder, J. (2016). Bayes factors for testing order-constrained hypotheses on correlations. Journal of Mathematical
 Psychology, 72, 104-115. <https://doi.org/10.1016/j.jmp.2014.09.004>
 
-Mulder, J., & Gelissen, J. P. (2023). Bayes factor testing of equality and order constraints on measures of
-association in social research. Journal of Applied Statistics, 50(2), 315-351. <https://doi.org/10.1080/02664763.2021.1992360>
+Barnard, J., McCulloch, R., & Meng, X. L. (2000). Modeling covariance matrices in terms of standard deviations and
+correlations, with application to shrinkage. Statistica Sinica, 1281-1311. <https://www.jstor.org/stable/24306780>
+
+Joe. Generating random correlation matrices based on partial correlations, Journal of Multivariate Analysis,
+97(10), 2177-2189. <https://doi.org/10.1016/j.jmva.2005.05.010>
 }
