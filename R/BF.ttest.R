@@ -68,9 +68,19 @@ BF.t_test <- function(x,
     sampledata <- (sampledata - mean(sampledata)) / sd(sampledata)
     sampledata <- sampledata * sqrt(x$v[1]) + xbar
     sampledata_explo <- sampledata - mu0
-    mu <- rep(1,length(sampledata))
-    df.draws <- data.frame(obs=sampledata,obs_explo=sampledata_explo,mu=mu)
-    lm_conf <- lm(obs~mu-1,data=df.draws)
+    if(x$method == "One Sample t-test"){
+      mu <- rep(1,length(sampledata))
+      df.draws <- data.frame(obs=sampledata,obs_explo=sampledata_explo,mu=mu)
+      lm_conf <- lm(obs~mu-1,data=df.draws)
+      sampledata_explo <- sampledata - x$null.value
+      lm_explo <- lm(obs_explo~mu-1,data=df.draws)
+    }else{
+      difference <- rep(1,length(sampledata))
+      df.draws <- data.frame(obs=sampledata,obs_explo=sampledata_explo,difference=difference)
+      lm_conf <- lm(obs~difference-1,data=df.draws)
+      sampledata_explo <- sampledata - x$null.value
+      lm_explo <- lm(obs_explo~difference-1,data=df.draws)
+    }
     BF_conf <- BF(lm_conf,
                   hypothesis=hypothesis,
                   prior.hyp.explo = prior.hyp.explo,
@@ -80,8 +90,6 @@ BF.t_test <- function(x,
                   BF.type=BF.type,
                   log=logIN,
                   cov.prob=cov.prob)
-    sampledata_explo <- sampledata - x$null.value
-    lm_explo <- lm(obs_explo~mu-1,data=df.draws)
     BF_explo <- BF(lm_explo,
                    hypothesis=NULL,
                    prior.hyp.explo = prior.hyp.explo,

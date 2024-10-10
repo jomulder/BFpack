@@ -153,7 +153,7 @@ get_estimates.t_test <- function(x, ...){
     names(difference) <- "difference"
     out$estimate <- difference
     out$Sigma <- list((x$stderr)**2)
-  }else if(names(x$estimate) == "mean of the differences"){
+  }else if(names(x$estimate) == "mean difference"){
     difference <- x$estimate
     names(difference) <- "difference"
     out$estimate <- difference

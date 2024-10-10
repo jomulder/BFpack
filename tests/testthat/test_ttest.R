@@ -32,6 +32,9 @@ test_that("test log(BF) t test", {
   expect_equal(
     c(0.6086118),BF1$BFmatrix_confirmatory[2,1],tol=.01
   )})
+BF1 <- BF(x=ttest1,hypothesis="mu=5;mu<6 & mu>4",complement=TRUE,log=FALSE, BF.type = "AFBF",prior.hyp.conf = c(2,1,1))
+summary(BF1)
+BF1$BFtable_confirmatory
 
 # test if one-sided PMP is same as one-sided p-value
 ttest2 <- t_test(therapeutic,mu=5,alternative="less")
@@ -54,6 +57,19 @@ test_that("2 samples t test of exploratory hypotheses correctly evaluated
     c(unname(BF3$PHP_exploratory)),c(0.767913,0.04941605,0.1826709)
     ,tolerance = .00001)
 })
+# check if posterior model probabilities are correct
+ttest3a <- t_test(x=therapeutic$correct,y=therapeutic$correct*.9+.1,paired=TRUE)
+BF3a <- BF(ttest3a,prior.hyp.explo=c(1,1,1), BF.type = "AFBF",hypothesis="difference=0.3;difference<0.3")
+test_that("2 samples t test of exploratory hypotheses correctly evaluated
+          with equal variances", {
+            expect_equivalent(
+              round(c(unname(BF3a$PHP_confirmatory)),2),c(0.59,0.04,0.36)
+              ,tolerance = .00001)
+          })
+
+ttest3a <- t_test(x=therapeutic$correct,y=therapeutic$correct*.9+.1,paired=TRUE)
+BF3a <- BF(ttest3a,prior.hyp.explo=c(1,1,1), BF.type = "FBF",hypothesis="difference < 1;difference > -1")
+BF3a$BFtable_confirmatory
 
 # t test check for testing interval hypotheses
 set.seed(123)

@@ -6,7 +6,7 @@ data.example$group1 <- as.factor(data.example$group1)
 data.example$group2 <- as.factor(data.example$group2)
 
 m1 <- aov(dv1 ~ 1 + group1, data.example)
-BF1 <- BF(m1)
+BF1 <- BF(m1,prior.hyp.explo = list(c(1,1,1),c(1,1),c(1,1)))
 m2 <- aov(dv1 ~ -1 + group1, data.example)
 BF2 <- BF(m2)
 test_that("BF.aov exploratory ANOVA (1 factor) when including/excluding the intercept", {
