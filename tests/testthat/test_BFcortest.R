@@ -121,3 +121,19 @@ test_that("BF.cor_test exploratory hypotheses on correlations mixed measurement 
     round(BF4$BFtu_exploratory[,2],1),c(0.7,-37,-9.5,.7,.7,-11.5), tolerance = .1
   )})
 #
+
+#test ordinal correlations multiple groups
+set.seed(123)
+group1 <- data.frame(cbind(round(runif(20)*2+1),rnorm(20)))
+class(group1$X1) <- "ordered"
+group2 <- data.frame(cbind(round(runif(14)*2+1),rnorm(14)))
+class(group2$X1) <- "ordered"
+cor4 <- cor_test(group1,group2,iter = 1e3,burnin = 3e2)
+test_that("test ordinal correlations multiple groups", {
+  expect_equivalent(
+    round(cor4$meanF,2),c(-0.46,0.30), tolerance = .1
+  )
+})
+
+
+

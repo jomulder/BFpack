@@ -406,14 +406,14 @@ cor_test <- function(..., formula = NULL, iter = 5e3, burnin = 3e3, nugget.scale
   if(nugget.scale > 1 | nugget.scale < 0){stop("'nugget.scale' should be very close 1. If should not exceed 1 nor fall below 0.")}
   nugget.scale <- nugget.scale[1]
 
-  Y_groups <- list(...)
-  numG <- length(Y_groups)
+  Y_input <- list(...)
+  numG <- length(Y_input)
 
   if(is.null(formula)){
     formula <- ~ 1
   }
   Xnames <- attr(terms(formula), "term.labels")
-  whichDV <- lapply(Y_groups,function(y){
+  whichDV <- lapply(Y_input,function(y){
     unlist(lapply(colnames(y),function(x){sum(x==Xnames)==0}))
   })
   if(numG>1){ #check that the same number of DVs are present in each group (that's how dimensions are coded)
@@ -426,19 +426,24 @@ cor_test <- function(..., formula = NULL, iter = 5e3, burnin = 3e3, nugget.scale
     }
   }
 
-  #check measurement level of dependent variables, and convert to numericals (whichDV)
+  #check measurement level of dependent variables
   P <- sum(whichDV[[1]])
   ordi <- numcats <- matrix(0,nrow=numG,ncol=P)
   Ylevel <- matrix(0,nrow=numG,ncol=P)
-  teller <- 1
+  Y_groups <- Y_input
   for(gg in 1:numG){
+    teller <- 1
     for(pp in which(whichDV[[gg]])){
       if(class(Y_groups[[gg]][,pp])[1] == "numeric" | class(Y_groups[[gg]][,pp])[1] == "integer"){
         teller <- teller + 1
         Ylevel[gg,pp] <- "numeric"
       }else{
         if(class(Y_groups[[gg]][,pp])[1] == "ordered"){
-          levels(Y_groups[[gg]][,pp]) <- 1:length(levels(Y_groups[[gg]][,pp]))
+          #levels(Y_groups[[gg]][,pp]) <- 1:length(levels(Y_groups[[gg]][,pp]))
+          old_levels <- sort(as.numeric(unique(Y_groups[[gg]][,pp])))
+          for(index_levels_g_p in 1:length(old_levels)){
+            Y_groups[[gg]][which(Y_groups[[gg]][,pp] == old_levels[index_levels_g_p]),pp] <- index_levels_g_p
+          }
           Y_groups[[gg]][,pp] <- as.numeric(Y_groups[[gg]][,pp])
           ordi[gg,teller] <- 1
           numcats[gg,teller] <- max(Y_groups[[gg]][,pp])
