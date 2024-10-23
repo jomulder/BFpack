@@ -43,6 +43,7 @@ BF.glm <- function(x,
     Args$prior.hyp.explo <- prior.hyp.explo
     Args$complement <- complement
     Args$log <- log
+    Args$cov.prob <- cov.prob
     out <- do.call(BF, Args)
     out$model <- x
     out$call <- match.call()
