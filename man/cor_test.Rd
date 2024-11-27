@@ -9,7 +9,7 @@ cor_test(
   formula = NULL,
   iter = 5000,
   burnin = 3000,
-  nugget.scale = 0.995,
+  nugget.scale = 0.999,
   prior.cor = "joint.unif"
 )
 }
@@ -26,7 +26,7 @@ control variables in the model (e.g., \code{~ education}).}
 
 \item{nugget.scale}{a scalar to avoid computational issues due to posterior draws for the corralations
 too close to 1 in absolute value. Posterior draws for the correlations are multiplied with this nugget.scale.
-So \code{nugget.scale} should be close to 1 (the default is .995). If the traceplots show that draws are stuck
+So \code{nugget.scale} should be close to 1 (the default is .999). If the traceplots show that draws are stuck
 at 1 or -1 too long try a slightly smaller \code{nugget.scale}.}
 
 \item{prior.cor}{setting this argument to \code{joint.unif} uses the joint uniform prior for the correlation matrix

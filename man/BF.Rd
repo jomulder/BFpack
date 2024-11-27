@@ -127,8 +127,9 @@ scale 0.5 (corresponding to a uniform prior for the correlation in (-1,1)), for 
 and for a manually specified prior \code{BF.type} needs to be an object of class
 \code{prior} from the \code{metaBMA} package.}
 
-\item{iter}{Number of iterations that are used to compute the Monte Carlo estimates
-(only used for certain hypothesis tests of class \code{mlm} (multivariate regression), \code{} ).}
+\item{iter}{Number of iterations that are used to compute the Monte Carlo estimates.
+Only used for certain hypothesis tests of class \code{mlm} (multivariate regression) where constraints are formulated
+across different dependent variables as well as different predictors.}
 }
 \value{
 The output is an object of class \code{BF}. The object has elements:

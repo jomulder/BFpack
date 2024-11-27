@@ -155,7 +155,7 @@ BF.cor_test <- function(x,
       BFtu_confirmatory <- PHP_confirmatory <- BFmatrix_confirmatory <- relfit <-
         relcomp <- hypotheses <- BFtable <- priorprobs <- NULL
       warning(
-"'hypothesis' argument not used. No manual hypothesis test is supported when the prior of the
+        "The 'hypothesis' argument not used. No manual hypothesis test is supported when the prior of the
 correlation matrix is marginally uniform. Set the 'prior.cor' argument in cor_test() to 'joint.unif'
 for manual hypothesis testing (Mulder and Gelissen, 2023).")
     }else{
@@ -338,7 +338,7 @@ draw_ju_r <- function(P, samsize=50000, Fisher=1){
 #'
 #' @param nugget.scale a scalar to avoid computational issues due to posterior draws for the corralations
 #' too close to 1 in absolute value. Posterior draws for the correlations are multiplied with this nugget.scale.
-#' So \code{nugget.scale} should be close to 1 (the default is .995). If the traceplots show that draws are stuck
+#' So \code{nugget.scale} should be close to 1 (the default is .999). If the traceplots show that draws are stuck
 #' at 1 or -1 too long try a slightly smaller \code{nugget.scale}.
 #'
 #' @param prior.cor setting this argument to \code{joint.unif} uses the joint uniform prior for the correlation matrix
@@ -390,7 +390,7 @@ draw_ju_r <- function(P, samsize=50000, Fisher=1){
 #' }
 #' @rdname cor_test
 #' @export
-cor_test <- function(..., formula = NULL, iter = 5e3, burnin = 3e3, nugget.scale = .995, prior.cor = "joint.unif"){
+cor_test <- function(..., formula = NULL, iter = 5e3, burnin = 3e3, nugget.scale = .999, prior.cor = "joint.unif"){
 
   if(is.na(prior.cor)){stop("'prior.cor' argument needs to be either 'joint.unif' or 'marg.unif'. See ?cor_test.")}
   if(is.null(prior.cor)){stop("'prior.cor' argument needs to be either 'joint.unif' or 'marg.unif'. See ?cor_test.")}
