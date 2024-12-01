@@ -341,10 +341,6 @@ draw_ju_r <- function(P, samsize=50000, Fisher=1){
 #' So \code{nugget.scale} should be close to 1 (the default is .999). If the traceplots show that draws are stuck
 #' at 1 or -1 too long try a slightly smaller \code{nugget.scale}.
 #'
-#' @param prior.cor setting this argument to \code{joint.unif} uses the joint uniform prior for the correlation matrix
-#' (Mulder and Gelissen, 2023) and setting this to \code{marg.unif} implies a marginal uniform prior (Barnard et al., 2000,
-#' Mulder, 2016).
-#'
 #' @return list of class \code{cor_test}:
 #' \itemize{
 #' \item \code{meanF} posterior means of Fisher transform correlations
@@ -390,7 +386,9 @@ draw_ju_r <- function(P, samsize=50000, Fisher=1){
 #' }
 #' @rdname cor_test
 #' @export
-cor_test <- function(..., formula = NULL, iter = 5e3, burnin = 3e3, nugget.scale = .999, prior.cor = "joint.unif"){
+cor_test <- function(..., formula = NULL, iter = 5e3, burnin = 3e3, nugget.scale = .995){
+
+  prior.cor <- "joint.unif"
 
   if(is.na(prior.cor)){stop("'prior.cor' argument needs to be either 'joint.unif' or 'marg.unif'. See ?cor_test.")}
   if(is.null(prior.cor)){stop("'prior.cor' argument needs to be either 'joint.unif' or 'marg.unif'. See ?cor_test.")}

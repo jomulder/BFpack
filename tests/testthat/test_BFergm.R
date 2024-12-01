@@ -31,7 +31,7 @@ test_that("BF.ergm tests", {
                      main.iters = 500, prior.hyp.explo = 1:3)
   expect_equivalent(
     unname(BFergm.test2$PHP_exploratory[1,]),
-    unname(BFergm.test$BFtu_exploratory[1,]*(1:3)/sum(BFergm.test$BFtu_exploratory[1,]*(1:3))),
+    unname(BFergm.test2$BFtu_exploratory[1,]*(1:3)/sum(BFergm.test2$BFtu_exploratory[1,]*(1:3))),
     tol=.05
   )
 })

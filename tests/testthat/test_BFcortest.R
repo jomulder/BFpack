@@ -87,15 +87,15 @@ set.seed(123)
 mtcars_test <- mtcars[,8:9]
 mtcars_test[,2] <- as.factor(mtcars_test[,2])
 mtcars_test[,1] <- as.factor(mtcars_test[,1])
-cor2 <- cor_test(mtcars_test,burnin = 5e2, iter = 3000)
+cor2 <- cor_test(mtcars_test,burnin = 5e2, iter = 3000,nugget.scale = .995)
 #print(cor2)
 test_that("check estimate of polychoric correlation", {
   expect_equivalent(
-    round(cor2$correstimates[1,1],2),.28, tolerance = .1
+    round(cor2$correstimates[1,1],2),.39, tolerance = .1
   )})
 BF2 <- BF(cor2,hypothesis="am_with_vs= .1",prior.hyp.explo = c(1,1,1))
 PHPexplo <- matrix(
-  c(.4,  .1,  .5),nrow=1,byrow=T)
+  c(.4,  .09,  .504),nrow=1,byrow=T)
 # exploratory hypothesis test on the correlation
 test_that("BF.cor_test exploratory hypotheses on correlations correctly evaluated", {
   expect_equivalent(
