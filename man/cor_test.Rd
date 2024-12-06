@@ -4,7 +4,14 @@
 \alias{cor_test}
 \title{Bayesian correlation analysis}
 \usage{
-cor_test(..., formula = NULL, iter = 5000, burnin = 3000, nugget.scale = 0.995)
+cor_test(
+  ...,
+  formula = NULL,
+  iter = 5000,
+  burnin = 3000,
+  nugget.scale = 0.995,
+  prior.cor = "joint.unif"
+)
 }
 \arguments{
 \item{...}{matrices (or data frames) of dimensions \emph{n} (observations) by  \emph{p} (variables)
@@ -21,6 +28,11 @@ control variables in the model (e.g., \code{~ education}).}
 too close to 1 in absolute value. Posterior draws for the correlations are multiplied with this nugget.scale.
 So \code{nugget.scale} should be close to 1 (the default is .999). If the traceplots show that draws are stuck
 at 1 or -1 too long try a slightly smaller \code{nugget.scale}.}
+
+\item{prior.cor}{setting this argument to \code{joint.unif} uses the jointly uniform prior for the correlation matrix
+and setting this to \code{marg.unif} implies a marginal uniform prior (Barnard et al., 2000, Mulder, 2016). The default
+is the jointly uniform prior. Only for the jointly uniform prior, correlations can be tested against each other (e.g.,
+see Mulder and Gelissen, 2023, Section 4.2.2).}
 }
 \value{
 list of class \code{cor_test}:
@@ -34,7 +46,8 @@ list of class \code{cor_test}:
 }
 \description{
 Estimate the unconstrained posterior for the correlations using a joint uniform prior (Mulder and Gelissen,
-2023) or a marginally uniform prior (Barnard et al., 2000, Mulder, 2016).
+2023) or a marginally uniform prior (Barnard et al., 2000, Mulder, 2016). Correlation matrices are sampled from the posterior
+using the MCMC algorithm of Talhouk et al. (2012).
 }
 \examples{
 \donttest{
@@ -60,15 +73,19 @@ fit <- cor_test(HC,SZ)
 }
 }
 \references{
+Barnard, J., McCulloch, R., & Meng, X. L. (2000). Modeling covariance matrices in terms of standard deviations and
+correlations, with application to shrinkage. Statistica Sinica, 1281-1311. <https://www.jstor.org/stable/24306780>
+
+Joe, H. (2006). Generating random correlation matrices based on partial correlations. Journal of Multivariate
+Analysis, 97(10), 2177-2189. <https://doi.org/10.1016/j.jmva.2005.05.010>
+
 Mulder, J., & Gelissen, J. P. (2023). Bayes factor testing of equality and order constraints on measures of
 association in social research. Journal of Applied Statistics, 50(2), 315-351. <https://doi.org/10.1080/02664763.2021.1992360>
 
 Mulder, J. (2016). Bayes factors for testing order-constrained hypotheses on correlations. Journal of Mathematical
 Psychology, 72, 104-115. <https://doi.org/10.1016/j.jmp.2014.09.004>
 
-Barnard, J., McCulloch, R., & Meng, X. L. (2000). Modeling covariance matrices in terms of standard deviations and
-correlations, with application to shrinkage. Statistica Sinica, 1281-1311. <https://www.jstor.org/stable/24306780>
-
-Joe. Generating random correlation matrices based on partial correlations, Journal of Multivariate Analysis,
-97(10), 2177-2189. <https://doi.org/10.1016/j.jmva.2005.05.010>
+Talhouk, A., Doucet, A., & Murphy, K. (2012). Efficient Bayesian inference for multivariate probit models with
+sparse inverse correlation matrices. Journal of Computational and Graphical Statistics, 21(3), 739-757.
+<https://doi.org/10.1080/10618600.2012.679239>
 }

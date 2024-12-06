@@ -1,7 +1,7 @@
 Package: BFpack
 Type: Package
 Title: Flexible Bayes Factor Testing of Scientific Expectations
-Version: 1.4.0
+Version: 1.4.1
 Authors@R: 
     c(person(given = c("Joris"),
              family = "Mulder",
@@ -95,7 +95,9 @@ Description: Implementation of default Bayes factors
     association (e.g,. polychoric/polyserial/biserial/tetrachoric/product
     moments correlations), among others.
     The statistical underpinnings are
-    described in 
+    described in
+    O'Hagan (1995) <DOI:10.1111/j.2517-6161.1995.tb02017.x>,
+    De Santis and Spezzaferri (2001) <DOI:10.1016/S0378-3758(00)00240-8>,
     Mulder and Xin (2022) <DOI:10.1080/00273171.2021.1904809>,
     Mulder and Gelissen (2019) <DOI:10.1080/02664763.2021.1992360>,
     Mulder (2016) <DOI:10.1016/j.jmp.2014.09.004>,
@@ -106,7 +108,8 @@ Description: Implementation of default Bayes factors
     Gu, Mulder, and Hoijtink (2018) <DOI:10.1111/bmsp.12110>,
     Hoijtink, Gu, and Mulder (2018) <DOI:10.1111/bmsp.12145>, and
     Hoijtink, Gu, Mulder, and Rosseel (2018) <DOI:10.1037/met0000187>. When using the
-    packages, please refer to Mulder et al. (2021) <DOI:10.18637/jss.v100.i18>.
+    packages, please refer to the package Mulder et al. (2021) <DOI:10.18637/jss.v100.i18>
+    and the relevant methodological papers.
 License: GPL (>= 3)
 URL: https://github.com/jomulder/BFpack
 BugReports: https://github.com/jomulder/BFpack/issues

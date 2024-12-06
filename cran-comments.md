@@ -1,12 +1,7 @@
-# BFpack 1.4.0
+# BFpack 1.4.1
 
 * Date: 2024-12-02.
-* Package update for implementation step in JASP.
-* Changes to the identification of groups using factors.
-* Updates for aov and manova objects.
-* cor_test update to support ordinal measurement levels.
-* Change of certain defaults (e.g., Bayesian t test).
-* Bug fixes, also in Fortran subroutines.
+* cor_test now based on the MCMC sampler of Talhouk et al. (2012).
 * Minor edits.
 
 ## Test environments
