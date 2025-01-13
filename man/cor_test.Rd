@@ -4,14 +4,7 @@
 \alias{cor_test}
 \title{Bayesian correlation analysis}
 \usage{
-cor_test(
-  ...,
-  formula = NULL,
-  iter = 5000,
-  burnin = 3000,
-  nugget.scale = 0.995,
-  prior.cor = "joint.unif"
-)
+cor_test(..., formula = NULL, iter = 5000, burnin = 3000, nugget.scale = 0.995)
 }
 \arguments{
 \item{...}{matrices (or data frames) of dimensions \emph{n} (observations) by  \emph{p} (variables)

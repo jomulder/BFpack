@@ -1,7 +1,6 @@
 # BFpack 1.4.1
 
-* Date: 2024-12-06
-* cor_test now based on the MCMC sampler of Talhouk et al. (2012).
+* Date: 2025-01-13
 * Change of default to FBF instead of adjusted FBF for normal linear models.
 * Change of default prior probs of standard (exploratory) tests to .5 for the null.
 * Minor changes, and bug fixes.

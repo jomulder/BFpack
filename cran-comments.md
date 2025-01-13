@@ -1,7 +1,6 @@
 # BFpack 1.4.1
 
 * Date: 2024-12-02.
-* cor_test now based on the MCMC sampler of Talhouk et al. (2012).
 * Minor edits.
 
 ## Test environments

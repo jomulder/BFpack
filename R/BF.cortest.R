@@ -342,11 +342,6 @@ draw_ju_r <- function(P, samsize=50000, Fisher=1){
 #' So \code{nugget.scale} should be close to 1 (the default is .999). If the traceplots show that draws are stuck
 #' at 1 or -1 too long try a slightly smaller \code{nugget.scale}.
 #'
-#'@param prior.cor setting this argument to \code{joint.unif} uses the jointly uniform prior for the correlation matrix
-#' and setting this to \code{marg.unif} implies a marginal uniform prior (Barnard et al., 2000, Mulder, 2016). The default
-#' is the jointly uniform prior. Only for the jointly uniform prior, correlations can be tested against each other (e.g.,
-#' see Mulder and Gelissen, 2023, Section 4.2.2).
-#'
 #' @return list of class \code{cor_test}:
 #' \itemize{
 #' \item \code{meanF} posterior means of Fisher transform correlations
@@ -396,17 +391,20 @@ draw_ju_r <- function(P, samsize=50000, Fisher=1){
 #' }
 #' @rdname cor_test
 #' @export
-cor_test <- function(..., formula = NULL, iter = 5e3, burnin = 3e3, nugget.scale = .995, prior.cor = "joint.unif"){
+cor_test <- function(..., formula = NULL, iter = 5e3, burnin = 3e3, nugget.scale = .995){
 
-  if(is.na(prior.cor)){stop("'prior.cor' argument needs to be either 'joint.unif' or 'marg.unif'. See ?cor_test.")}
-  if(is.null(prior.cor)){stop("'prior.cor' argument needs to be either 'joint.unif' or 'marg.unif'. See ?cor_test.")}
-  if(!(prior.cor == "joint.unif" | prior.cor == "marg.unif")){
-    stop("'prior.cor' argument needs to be either 'joint.unif' or 'marg.unif'. See ?cor_test.")}
-  if(prior.cor == "joint.unif"){
-    priorchoice <- 1
-  }else{
-    priorchoice <- 2
-  }
+  # if(is.na(prior.cor)){stop("'prior.cor' argument needs to be either 'joint.unif' or 'marg.unif'. See ?cor_test.")}
+  # if(is.null(prior.cor)){stop("'prior.cor' argument needs to be either 'joint.unif' or 'marg.unif'. See ?cor_test.")}
+  # if(!(prior.cor == "joint.unif" | prior.cor == "marg.unif")){
+  #   stop("'prior.cor' argument needs to be either 'joint.unif' or 'marg.unif'. See ?cor_test.")}
+  # if(prior.cor == "joint.unif"){
+  #   priorchoice <- 1
+  # }else{
+  #   priorchoice <- 2
+  # }
+  prior.cor <- "joint.unif"
+  priorchoice <- 1
+
 
   if(!is.numeric(nugget.scale)){stop("'nugget.scale' should be a numerical scalar.")}
   if(nugget.scale > 1 | nugget.scale < 0){stop("'nugget.scale' should be very close 1. If should not exceed 1 nor fall below 0.")}
@@ -584,6 +582,7 @@ cor_test <- function(..., formula = NULL, iter = 5e3, burnin = 3e3, nugget.scale
   # call Fortran subroutine for Gibbs sampling using noninformative improper priors
   # for regression coefficients, Jeffreys priors for standard deviations, and a proper
   # joint uniform prior for the correlation matrices.
+
   res <- .Fortran("estimate_bct_ordinal",
                   postZmean=matrix(as.double(0),nrow=numcorr,ncol=1),
                   postZcov=matrix(as.double(0),nrow=numcorr,ncol=numcorr),
@@ -607,14 +606,13 @@ cor_test <- function(..., formula = NULL, iter = 5e3, burnin = 3e3, nugget.scale
                   BDrawsStore=array(as.double(0),dim=c(samsize0,numG,K,P)),
                   sigmaDrawsStore=array(as.double(0),dim=c(samsize0,numG,P)),
                   CDrawsStore=array(as.double(0),dim=c(samsize0,numG,P,P)),
-                  #sdMH=sdsd,
+                  sdMH=sdsd,
                   ordinal_in=ordi,
                   Cat_in=numcats,
                   maxCat=as.integer(max(numcats)),
                   gLiuSab=gLiuSab,
-                  #seed=as.integer(sample.int(1e6,1)),
-                  nuggetscale=as.double(nugget.scale),
-                  priorchoice = as.integer(priorchoice)
+                  nuggetscale=as.double(nugget.scale)
+                  #priorchoice = as.integer(priorchoice)
                   #,WgroupsStore=array(as.double(0),dim=c(samsize0,numG,Ntot,P)),
                   #meanMatMeanStore = array(as.double(0),dim=c(samsize0,Ntot,P)),
                   #SigmaMatDrawStore = array(as.double(0),dim=c(samsize0,P,P)),
