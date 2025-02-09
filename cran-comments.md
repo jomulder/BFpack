@@ -1,6 +1,7 @@
 # BFpack 1.4.1
 
 * Date: 2024-12-02.
+* Critical bug fix of MCMC sampler for correlation test.
 * Minor edits.
 
 ## Test environments

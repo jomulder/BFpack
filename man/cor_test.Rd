@@ -4,7 +4,7 @@
 \alias{cor_test}
 \title{Bayesian correlation analysis}
 \usage{
-cor_test(..., formula = NULL, iter = 5000, burnin = 3000, nugget.scale = 0.995)
+cor_test(..., formula = NULL, iter = 5000, burnin = 3000, nugget.scale = 0.999)
 }
 \arguments{
 \item{...}{matrices (or data frames) of dimensions \emph{n} (observations) by  \emph{p} (variables)
@@ -21,11 +21,6 @@ control variables in the model (e.g., \code{~ education}).}
 too close to 1 in absolute value. Posterior draws for the correlations are multiplied with this nugget.scale.
 So \code{nugget.scale} should be close to 1 (the default is .999). If the traceplots show that draws are stuck
 at 1 or -1 too long try a slightly smaller \code{nugget.scale}.}
-
-\item{prior.cor}{setting this argument to \code{joint.unif} uses the jointly uniform prior for the correlation matrix
-and setting this to \code{marg.unif} implies a marginal uniform prior (Barnard et al., 2000, Mulder, 2016). The default
-is the jointly uniform prior. Only for the jointly uniform prior, correlations can be tested against each other (e.g.,
-see Mulder and Gelissen, 2023, Section 4.2.2).}
 }
 \value{
 list of class \code{cor_test}:

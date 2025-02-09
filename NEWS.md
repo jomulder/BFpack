@@ -1,6 +1,11 @@
 # BFpack 1.4.1
 
-* Date: 2025-01-13
+* Date: 2025-02-09
+* Bug fit of MCMC sampler for correlation test.
+
+# BFpack 1.4.0
+
+* Date: 2025-12-03
 * Change of default to FBF instead of adjusted FBF for normal linear models.
 * Change of default prior probs of standard (exploratory) tests to .5 for the null.
 * Minor changes, and bug fixes.
