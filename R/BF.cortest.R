@@ -210,11 +210,11 @@ using the marginally uniform prior (Mulder and Gelissen, 2023, Section 4.2.2).")
           Scale0 <- diag(rep(approx_studt[2]**2,numG))
         }
         mean0 <- rep(0,numG)
-        df0 <- round(approx_studt[1])
+        df0 <- approx_studt[1]
       }else{
         mean0 <- rep(0,numcorrgroup*numG)
         Scale0 <- diag(rep(approx_studt[2]**2,numcorrgroup*numG))
-        df0 <- round(approx_studt[1])
+        df0 <- approx_studt[1]
       }
       relcomp <- t(matrix(unlist(lapply(1:numhyp,function(h){
         relcomp_h <- Student_measures(mean1=mean0,
