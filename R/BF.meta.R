@@ -69,6 +69,7 @@ BF.rma.uni <- function(x,
     ptau2 <- -1/K*sum(log(vi+tau2.arg))
     #ptau2 <- .5*log(sum(1/(vi+tau2.arg)^2)) # Tibshirani (1989)
     #ptau2 <- 0 #uniform prior
+    #ptau2 <- -.5*log(tau2.arg) #right-Haar prior (e.g., Daniels, 1999)
     ifelse(log,ptau2,exp(ptau2))
     } # Berger & Deely (1988)
 
@@ -76,9 +77,9 @@ BF.rma.uni <- function(x,
   if(is(BF.type,"character")){
     if(BF.type == "stand.effect"){
       # conjugate normal prior assuming average effects of about .5
-      prior.mu <- function(x,tau2,log=FALSE){dnorm(x, mean = 0, sd = .5, log = log)}
+      prior.mu <- function(x,tau2,log=FALSE){dnorm(x, mean = 0, sd = 1, log = log)}
       prior.muGR0 <- .5
-      bayesfactor.name <- "Bayes factor based on a normal prior (mu ~ norm(mean=0, sd=0.5))"
+      bayesfactor.name <- "Bayes factor based on a normal prior (mu ~ norm(mean=0, sd=1))"
       parameter.name <- "standardized effect"
     }else if(BF.type == "log.odds"){
       # Student t prior which approximates the implied distribution of the log odds ratio based on uniform success probabilities
@@ -690,83 +691,114 @@ BF_rma.uni <- function(x,
   if(is.na(se.tau2)){se.tau2 <- .5}
   tau2.min <- -min(vi)
 
-  # prior tau2
+  if(length(BF.type)==1){
+    # prior.tau2.Jeffreys1
+    prior.tau2.func <- function(tau2.arg,log=FALSE){
+      ptau2 <- -.5 * log(abs(tau2.arg)) # right invariant Haar prior
+      ifelse(log,ptau2,exp(ptau2))
+    }
+    if(is(BF.type,"character")){
+      if(BF.type == "stand.effect"){
+        # conjugate normal prior assuming average effects of about .5
+        prior.mu <- function(x,tau2,log=FALSE){dnorm(x, mean = 0, sd = 1, log = log)}
+        prior.muGR0 <- .5
+        bayesfactor.name <- "Bayes factor based on a normal prior (mu ~ norm(mean=0, sd=1)) and invariant right Haar prior for tau^2"
+        parameter.name <- "standardized effect"
+      }else if(BF.type == "log.odds"){
+        # Student t prior which approximates the implied distribution of the log odds ratio based on uniform success probabilities
+        prior.mu <- function(x,tau2,log=FALSE){
+          dt1 <- dt(x/2.36,df=13.1,log=log)-log(2.36)
+          ifelse(log,dt1,exp(dt1))
+        }
+        prior.muGR0 <- .5
+        bayesfactor.name <- "Bayes factor based on uniform priors for success probabilities (log.odds ~ t(0,2.36,13.1)) and invariant right Haar prior for tau^2."
+        parameter.name <- "log odds"
+      }else if(BF.type == "correlation"){
+        # logistic prior for the Fisher transformed correlation corresponding to a uniform prior for the correlation in (-1,1)
+        prior.mu <- function(x,tau2,log=FALSE){dlogis(x, scale = .5, log = log)}
+        prior.muGR0 <- .5
+        bayesfactor.name <- "Bayes factor based on a uniform prior for the correlation in (-1,1) (Fisher(cor)~logis(0.5)) and invariant right Haar prior for tau^2."
+        parameter.name <- "Fisher transformed correlation"
+      }else if(BF.type == "unit.info"){
+        if(N==0){
+          stop("In order to use a unit-information prior, the sample sizes need to be part of the element 'ni'
+              of the 'rma.uni' object (e.g., using the 'ni' argument of the 'rma' function).")
+        }
+        prior.mu <- function(x,tau2,log=FALSE){dnorm(x, mean = 0, sd = sqrt(N/sum(1/(vi+tau2))), log = log)}
+        prior.muGR0 <- .5
+        bayesfactor.name <- "Bayes factor based on unit information prior."
+        parameter.name <- "mean parameter"
+      }else{
+        stop("The argument 'BF.type' is not correctly specified for an object of type 'rma.uni'. See documentation. ?BF")
+      }
+    }else if(is(BF.type,"prior")){
+      prior.mu <- function(x,tau2,log=FALSE){BF.type(x,log)}
+      seq1 <- seq(0,1e3,length=1e5)
+      seq1 <- seq1+(seq1[2]-seq1[1])/2
+      prior.muGR0 <- sum(prior.mu(seq1,0))*(seq1[2]-seq1[1]) #riemann estimate of prior prob that mu > 0.
+      bayesfactor.name <- paste0("Bayes factor based on manually chosen prior")
+      parameter.name <- "general parameter"
+      message("Be sure that the specified prior is not truncated in a specific interval.")
+    }else{
+      stop("The argument 'BF.type' is not correctly specified for an object of type 'rma.uni'. See documentation. ?BF")
+    }
+  }else if(length(BF.type)==2){
+    # both elements of BF.type should be of class 'prior' (from metaBMA package)
+    # first element of BF.type is the prior for the mean
+    # section element of BF.type is the prior for tau^2
+    if( is(BF.type[[1]],"prior") & is(BF.type[[2]],"prior") ){
+
+      prior.mu <- function(x,tau2,log=FALSE){BF.type[[1]](x,log)}
+      seq1 <- seq(0,1e3,length=1e5)
+      seq1 <- seq1+(seq1[2]-seq1[1])/2
+      prior.muGR0 <- sum(prior.mu(seq1,0))*(seq1[2]-seq1[1]) #riemann estimate of prior prob that mu > 0.
+      bayesfactor.name <- paste0("Bayes factor based on manually chosen prior")
+      parameter.name <- "general parameter"
+      message("The prior for the mean should not be truncated in a specific interval.")
+      prior.tau2.func <- function(tau2.arg,log=FALSE){
+        #ptau2 <- -1/K*sum(log(vi+tau2.arg))
+        #ptau2 <- .5*log(sum(1/(vi+tau2.arg)^2)) # Tibshirani (1989)
+        #ptau2 <- 0 #uniform prior
+        ptau2 <- BF.type[[2]](tau2.arg,log=TRUE) # the right Haar prior for tau^2 is used by default
+        ifelse(log,ptau2,exp(ptau2))
+      }
+    }else{
+      stop("The argument 'BF.type' is not correctly specified for an object of type 'rma.uni'. See documentation. ?BF")
+    }
+  }else{
+    stop("The argument 'BF.type' is not correctly specified for an object of type 'rma.uni'. See documentation. ?BF")
+  }
+
+  # try different improper priors for tau2
   if(prior.tau2 == 1){
-    prior.tau2.Jeffreys1 <- function(tau2.arg,log=FALSE){
+    prior.tau2.func <- function(tau2.arg,log=FALSE){
       ptau2 <- -1/K*sum(log(vi+tau2.arg))
       #ptau2 <- .5*log(sum(1/(vi+tau2.arg)^2)) # Tibshirani (1989)
       #ptau2 <- 0 #uniform prior
       ifelse(log,ptau2,exp(ptau2))
     }
   }else if(prior.tau2 == 2){
-    prior.tau2.Jeffreys1 <- function(tau2.arg,log=FALSE){
+    prior.tau2.func <- function(tau2.arg,log=FALSE){
       #ptau2 <- -1/K*sum(log(vi+tau2.arg))
       ptau2 <- .5*log(sum(1/(vi+tau2.arg)^2)) # Tibshirani (1989)
       #ptau2 <- 0 #uniform prior
       ifelse(log,ptau2,exp(ptau2))
     }
   }else if(prior.tau2 == 3){
-    prior.tau2.Jeffreys1 <- function(tau2.arg,log=FALSE){
+    prior.tau2.func <- function(tau2.arg,log=FALSE){
       #ptau2 <- -1/K*sum(log(vi+tau2.arg))
       #ptau2 <- .5*log(sum(1/(vi+tau2.arg)^2)) # Tibshirani (1989)
       ptau2 <- 0 #uniform prior
       ifelse(log,ptau2,exp(ptau2))
     }
-  }else{
-    prior.tau2.Jeffreys1 <- function(tau2.arg,log=FALSE){
+  }else if(prior.tau2 == 4){
+    prior.tau2.func <- function(tau2.arg,log=FALSE){
       #ptau2 <- -1/K*sum(log(vi+tau2.arg))
       #ptau2 <- .5*log(sum(1/(vi+tau2.arg)^2)) # Tibshirani (1989)
       #ptau2 <- 0 #uniform prior
-      #ptau2 <- dnorm(tau2.arg,mean=tau2.min,sd=1e3,log=log) * 2
-      ptau2 <- tau2.arg - tau2.min
+      ptau2 <- -.5 * log(abs(tau2.arg))
       ifelse(log,ptau2,exp(ptau2))
     }
-  }
-
-  if(is(BF.type,"character")){
-    if(BF.type == "stand.effect"){
-      # conjugate normal prior assuming average effects of about .5
-      prior.mu <- function(x,tau2,log=FALSE){dnorm(x, mean = 0, sd = .5, log = log)}
-      prior.muGR0 <- .5
-      bayesfactor.name <- "Bayes factor based on a normal prior (mu ~ norm(mean=0, sd=0.5))"
-      parameter.name <- "standardized effect"
-    }else if(BF.type == "log.odds"){
-      # Student t prior which approximates the implied distribution of the log odds ratio based on uniform success probabilities
-      prior.mu <- function(x,tau2,log=FALSE){
-        dt1 <- dt(x/2.36,df=13.1,log=log)-log(2.36)
-        ifelse(log,dt1,exp(dt1))
-      }
-      prior.muGR0 <- .5
-      bayesfactor.name <- "Bayes factor based on uniform priors for success probabilities (log.odds ~ t(0,2.36,13.1))."
-      parameter.name <- "log odds"
-    }else if(BF.type == "correlation"){
-      # logistic prior for the Fisher transformed correlation corresponding to a uniform prior for the correlation in (-1,1)
-      prior.mu <- function(x,tau2,log=FALSE){dlogis(x, scale = .5, log = log)}
-      prior.muGR0 <- .5
-      bayesfactor.name <- "Bayes factor based on a uniform prior for the correlation in (-1,1) (Fisher(cor)~logis(0.5))."
-      parameter.name <- "correlation"
-    }else if(BF.type == "unit.info"){
-      if(N==0){
-        stop("In order to use a unit-information prior, the sample sizes need to be part of the element 'ni'
-              of the 'rma.uni' object (e.g., using the 'ni' argument of the 'rma' function).")
-      }
-      prior.mu <- function(x,tau2,log=FALSE){dnorm(x, mean = 0, sd = sqrt(N/sum(1/(vi+tau2))), log = log)}
-      prior.muGR0 <- .5
-      bayesfactor.name <- "Bayes factor based on unit information prior."
-      parameter.name <- "general parameter"
-    }else{
-      stop("The argument 'BF.type' is not correctly specified for an object of type 'rma.uni'. See documentation. ?BF")
-    }
-  }else if(is(BF.type,"prior")){
-    prior.mu <- function(x,tau2,log=FALSE){BF.type(x,log)}
-    seq1 <- seq(0,1e3,length=1e5)
-    seq1 <- seq1+(seq1[2]-seq1[1])/2
-    prior.muGR0 <- sum(prior.mu(seq1,0))*(seq1[2]-seq1[1]) #riemann estimate of prior prob that mu > 0.
-    bayesfactor.name <- paste0("Bayes factor based on manually chosen prior")
-    parameter.name <- "general parameter"
-    message("Be sure that the specified prior is not truncated in a specific interval")
-  }else{
-    stop("The argument 'BF.type' is not correctly specified for an object of type 'rma.uni'. See documentation. ?BF")
   }
 
   #exploratory testing
@@ -784,14 +816,14 @@ BF_rma.uni <- function(x,
     # marginal likelihood full unconstrained model. marema.unc.post.draws
     marg.like.marema.full <- log_marg_like_full(yi, vi, tau2_min=tau2.min,
                                                 prior.mu=prior.mu,
-                                                prior.tau2=prior.tau2.Jeffreys1,
+                                                prior.tau2=prior.tau2.func,
                                                 start_mu=start_mu, start_tau2=start_tau2,
                                                 sdstep.mu=sdstep.mu, sdstep.tau2=sdstep.tau2,
                                                 burnin = round(iter/2), iters1=iter, iters2=iter)
 
     # marginal likelihood under mu = 0
     marg.like.marema.muEQ0 <- log_marg_like_cond.mu(yi, vi, tau2_min=tau2.min,
-                                                    muIN=0, prior.tau2=prior.tau2.Jeffreys1,
+                                                    muIN=0, prior.tau2=prior.tau2.func,
                                                     start_tau2=start_tau2+start_mu^2, sdstep.tau2=sdstep.tau2,
                                                     burnin=iter, iters1=iter, iters2=iter)
 
@@ -808,14 +840,14 @@ BF_rma.uni <- function(x,
     # marginal likelihood full unconstrained model
     marg.like.ranef.full <- log_marg_like_full(yi, vi, tau2_min=0,
                                                prior.mu = prior.mu,
-                                               prior.tau2 = prior.tau2.Jeffreys1,
+                                               prior.tau2 = prior.tau2.func,
                                                start_mu = start_mu, start_tau2 = ifelse(start_tau2<0,sdstep.tau2,start_tau2),
                                                sdstep.mu = sdstep.mu, sdstep.tau2 = sdstep.tau2,
                                                burnin=round(iter/2), iters1=iter, iters2=iter)
 
     # marginal likelihood under mu = 0
     marg.like.ranef.muEQ0 <- log_marg_like_cond.mu(yi, vi, tau2_min=0,
-                                                   muIN=0, prior.tau2=prior.tau2.Jeffreys1,
+                                                   muIN=0, prior.tau2=prior.tau2.func,
                                                    start_tau2=ifelse(start_tau2<0,sdstep.tau2,start_tau2)+start_mu^2, sdstep.tau2=sdstep.tau2,
                                                    burnin = round(iter/2), iters1=iter, iters2=iter)
 

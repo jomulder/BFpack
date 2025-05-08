@@ -20,7 +20,7 @@ test_that("exploratory metafor random effects model", {
   set.seed(123)
   BFmeta1b <- BF(res,BF.type=prior("norm", c(mean = 0, sd = .5)))
   expect_equivalent(
-    round(BFmeta1$PHP_exploratory[1,],3),c(.906,.055,.039), tolerance = .05
+    round(BFmeta1$PHP_exploratory[1,],3),c(.950,.020,.039), tolerance = .05
   )
   expect_equivalent(
     round(BFmeta1b$PHP_exploratory[1,],3),c(.906,.055,.039), tolerance = .05
@@ -38,13 +38,13 @@ test_that("exploratory metafor fixed effects model", {
   res <- metafor::rma(yi = yi, vi = vi, method = "EE")
   BFmeta2 <- BF(res,BF.type="stand.effect")
   expect_equivalent(
-    round(BFmeta2$PHP_exploratory,3),c(.93,0.033,0.037), tolerance = .05
+    round(BFmeta2$PHP_exploratory,3),c(.964,0.019,0.017), tolerance = .05
   )
   set.seed(123)
   res$ni <- rep(10,50)
   BFmeta2b <- BF(res,BF.type="unit.info")
   expect_equivalent(
-    round(BFmeta2b$PHP_exploratory,3),c(.958,0.02,0.022), tolerance = .05
+    round(BFmeta2b$PHP_exploratory,3),c(.957,0.023,0.022), tolerance = .05
   )
 })
 
