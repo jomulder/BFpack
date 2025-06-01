@@ -4,7 +4,7 @@
 \alias{cor_test}
 \title{Bayesian correlation analysis}
 \usage{
-cor_test(..., formula = NULL, iter = 5000, burnin = 3000, nugget.scale = 0.999)
+cor_test(..., formula = NULL, iter = 6000, burnin = 2000, nugget.scale = 0.999)
 }
 \arguments{
 \item{...}{matrices (or data frames) of dimensions \emph{n} (observations) by  \emph{p} (variables)
@@ -13,9 +13,10 @@ for different groups (in case of multiple matrices or data frames).}
 \item{formula}{an object of class \code{\link[stats]{formula}}. This allows for including
 control variables in the model (e.g., \code{~ education}).}
 
-\item{iter}{number of iterations from posterior (default is 5000).}
+\item{iter}{total number of iterations from posterior. The total is split across three chains. The total default is 6000,
+which implies 2000 per chain.}
 
-\item{burnin}{number of iterations for burnin (default is 3000).}
+\item{burnin}{number of iterations for burnin (default is 2000).}
 
 \item{nugget.scale}{a scalar to avoid computational issues due to posterior draws for the corralations
 too close to 1 in absolute value. Posterior draws for the correlations are multiplied with this nugget.scale.

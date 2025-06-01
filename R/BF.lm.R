@@ -219,11 +219,13 @@ BF.lm <- function(x,
                            ub <- qt(p=CrI_UB,df=dfN)*sqrt(ScaleN[coef,coef])+meanN[coef,1]
                            lb <- qt(p=CrI_LB,df=dfN)*sqrt(ScaleN[coef,coef])+meanN[coef,1]
                            return(c(lb,ub))
-                         })),nrow=2))
+                         })),nrow=2)
+                         ),
+                         1-pt((0-meanN[,1])/sqrt(diag(ScaleN)),df=dfN)
   )
   row.names(postestimates) <- names_coef
   colnames(postestimates) <- c("mean","median",paste0(as.character(round(CrI_LB*100,7)),"%"),
-                               paste0(as.character(round(CrI_UB*100,7)),"%"))
+                               paste0(as.character(round(CrI_UB*100,7)),"%"),"Pr(>0)")
 
   # Additional exploratory tests of main effects and interaction effects
   # in the case of an aov type object
@@ -410,6 +412,11 @@ BF.lm <- function(x,
         interval_RrStack(rbind(RrE[[h]],RrO[[h]]))
       })
       RrStack <- do.call(rbind,RrStack_list)
+      RrStack <- interval_RrStack(RrStack)
+      # RrStack_list <- do.call(rbind,lapply(1:length(RrE),function(h){
+      #   rbind(RrE[[h]],RrO[[h]])
+      # }))
+      # RrStack <- interval_RrStack(RrStack_list)
     }
     if(nrow(RrStack)>1){
       RStack <- RrStack[,-(K*P+1)]

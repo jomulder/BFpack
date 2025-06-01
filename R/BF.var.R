@@ -91,7 +91,7 @@ bartlett_test.default <- function(x, g, ...){
 
 #' @importFrom stats rgamma
 #' @importFrom stats rchisq
-#' @importFrom extraDistr qinvgamma
+#' @importFrom extraDistr qinvgamma dinvgamma
 #' @method BF bartlett_htest
 #' @export
 BF.bartlett_htest <- function(x,

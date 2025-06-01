@@ -35,7 +35,7 @@ test_that("exploratory metafor random effects model", {
 # test fixed effects meta model
 test_that("exploratory metafor fixed effects model", {
   set.seed(123)
-  res <- metafor::rma(yi = yi, vi = vi, method = "EE")
+  res <- rma(yi = yi, vi = vi, method = "EE")
   BFmeta2 <- BF(res,BF.type="stand.effect")
   expect_equivalent(
     round(BFmeta2$PHP_exploratory,3),c(.964,0.019,0.017), tolerance = .05

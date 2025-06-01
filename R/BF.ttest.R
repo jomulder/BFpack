@@ -139,7 +139,8 @@ BF.t_test <- function(x,
       BF_out$PHP_exploratory <- t(as.matrix(BF_out$PHP_exploratory[2,]))
       row.names(BF_out$BFtu_exploratory) <- row.names(BF_out$PHP_exploratory) <- "difference"
 
-      estimates_ttest <- BF_out$estimates
+      BF_out$estimates <- t(BF_out$estimates[2,])
+      row.names(BF_out$estimates) <- "difference"
 
     }else{ #equal variances not assumed. BF.lm cannot be used
 

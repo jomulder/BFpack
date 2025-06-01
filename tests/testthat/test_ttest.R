@@ -32,7 +32,7 @@ test_that("test log(BF) t test", {
   expect_equal(
     c(0.6086118),BF1$BFmatrix_confirmatory[2,1],tol=.01
   )})
-BF1 <- BF(x=ttest1,hypothesis="mu=5;mu<6 & mu>4",complement=TRUE,log=FALSE, BF.type = "AFBF",prior.hyp.conf = c(2,1,1))
+BF1 <- BF(x=ttest1,hypothesis="mu=5; mu<6 & mu>4",complement=TRUE,log=FALSE, BF.type = "AFBF",prior.hyp.conf = c(2,1,1))
 summary(BF1)
 BF1$BFtable_confirmatory
 
