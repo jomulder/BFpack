@@ -825,6 +825,7 @@ BF_rma.uni <- function(x,
                        prior.hyp = NULL,
                        complement = TRUE,
                        log = FALSE,
+                       cov.prob = .95,
                        BF.type,
                        prior.tau2 = 1,
                        iter = 2e4,
@@ -840,6 +841,12 @@ BF_rma.uni <- function(x,
   if(!is.null(hypothesis)){
     message("Note that confirmatory testing via the 'hypothesis' argument is currently not supported for object of class 'rma.uni'.")
   }
+  if(!(cov.prob>0 & cov.prob<1)){
+    stop("The argument 'cov.prob' is a coverage probability for the interval estimates that
+         should lie between 0 and 1. The default is 0.95.")
+  }
+  CrI_LB <- (1 - cov.prob)/2
+  CrI_UB <- 1 - (1 - cov.prob)/2
 
   if(!exists("BF.type")){
     stop("The argument 'BF.type' is missing. See documentation. See ?BF")
@@ -886,7 +893,7 @@ BF_rma.uni <- function(x,
       }else if(BF.type == "log.odds"){
         # Student t prior which approximates the implied distribution of the log odds ratio based on uniform success probabilities
         prior.mu <- function(x,tau2,log=FALSE){
-          dt1 <- dt(x/2.36,df=13.1,log=log)-log(2.36)
+          dt1 <- dt(x/2.36,df=13.1,log=TRUE)-log(2.36)
           ifelse(log,dt1,exp(dt1))
         }
         prior.muGR0 <- .5
@@ -1093,7 +1100,9 @@ BF_rma.uni <- function(x,
                              apply(marg.like.ranef.full$post.draws,2,quantile,.975),
                              apply(marg.like.ranef.full$post.draws,2,function(x){mean(x>0)}))
     row.names(estimates_ranef) <- c("mu      (ranef)", "tau2    (ranef)")
-    colnames(estimates_marema) <- colnames(estimates_ranef) <- c("mean","median","2.5%","97.5%","Pr(>0)")
+    colnames(estimates_marema) <- colnames(estimates_ranef) <- #c("mean","median","2.5%","97.5%","Pr(>0)")
+      c("mean","median",paste0(as.character(round(CrI_LB*100,7)),"%"),
+        paste0(as.character(round(CrI_UB*100,7)),"%"),"Pr(>0)")
     uncestimates <- estimates_marema
     # estimates of separate group means
     #under marema model
@@ -1107,7 +1116,7 @@ BF_rma.uni <- function(x,
       mean_s <- (yi[s]/vi[s] + mudraws_trunc/tau2draws_trunc) * var_s
       draws_s <- c(rnorm(length(mudraws_trunc),mean=mean_s,sd=sqrt(var_s)),
                    marema_post.draws_mu[marema_post.draws_tau2<0])
-      c(draws_s,mean(draws_s),median(draws_s),quantile(draws_s,.025),quantile(draws_s,.975),mean(draws_s>0))
+      c(draws_s,mean(draws_s),median(draws_s),quantile(draws_s,CrI_LB),quantile(draws_s,CrI_UB),mean(draws_s>0))
     }))
     uncestimates <- rbind(uncestimates,t(mudraws_studies[length(marema_post.draws_mu)+1:5,]))
     row.names(uncestimates)[-(1:2)] <- paste0("theta_",1:ncol(mudraws_studies)," (marema)")
@@ -1119,7 +1128,7 @@ BF_rma.uni <- function(x,
       var_s <- 1/(1/vi[s] + 1/ranef_post.draws_tau2)
       mean_s <- (yi[s]/vi[s] + ranef_post.draws_mu/ranef_post.draws_tau2) * var_s
       draws_s <- rnorm(length(ranef_post.draws_mu),mean=mean_s,sd=sqrt(var_s))
-      c(draws_s,mean(draws_s),median(draws_s),quantile(draws_s,.025),quantile(draws_s,.975),mean(draws_s>0))
+      c(draws_s,mean(draws_s),median(draws_s),quantile(draws_s,CrI_LB),quantile(draws_s,CrI_UB),mean(draws_s>0))
     }))
     uncestimates <- rbind(uncestimates,t(mudraws_studies[length(ranef_post.draws_mu)+1:5,]))
     row.names(uncestimates)[-(1:(4+length(vi)))] <- paste0("theta_",1:ncol(mudraws_studies)," (ranef)")
@@ -1161,9 +1170,10 @@ BF_rma.uni <- function(x,
 
     #descriptives of estimates
     uncestimates <- cbind(mean(marg.like.comef.muEQ0$post.draws), median(marg.like.comef.muEQ0$post.draws),
-                          quantile(marg.like.comef.muEQ0$post.draws,.025),quantile(marg.like.comef.muEQ0$post.draws,.975),
+                          quantile(marg.like.comef.muEQ0$post.draws,CrI_LB),quantile(marg.like.comef.muEQ0$post.draws,CrI_UB),
                           mean(marg.like.comef.muEQ0$post.draws>0))
-    colnames(uncestimates) <- c("mean","median","2.5%","97.5%","Pr(>0)")
+    colnames(uncestimates) <- c("mean","median",paste0(as.character(round(CrI_LB*100,7)),"%"),
+                                paste0(as.character(round(CrI_UB*100,7)),"%"),"Pr(>0)")
     row.names(uncestimates) <- "mu"
 
     #store posterior draws based on noninformative improper prior

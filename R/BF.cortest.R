@@ -637,11 +637,21 @@ cor_test <- function(..., formula = NULL, iter = 6e3, burnin = 2e3, nugget.scale
   chain3_mcmc <- as.mcmc(FisherZ(res[[3]]$CDrawsStore[,1,2:P,1]))
   chains_list <- mcmc.list(chain1_mcmc, chain2_mcmc, chain3_mcmc)
   gelmanrubin_check <- gelman.diag(chains_list, autoburnin = FALSE)
-  if(gelmanrubin_check$psrf[1] > 1.05){
-    warning(paste0("Gelman-Rubin's Rhat is ",round(gelmanrubin_check$psrf[1],2),", which is larger than 1.05. Check
+  if(P==2){
+    if(gelmanrubin_check$psrf[1] > 1.05){
+      warning(paste0("Gelman-Rubin's Rhat is ",round(gelmanrubin_check$psrf[1],2),", which is larger than 1.05. Check
     the traceplot for possible convergence issues. To resolve,
     possibly use a sligthly smaller 'nugget.scale'."))
+    }
+  }else{
+    if(gelmanrubin_check$mpsrf[1] > 1.05){
+      warning(paste0("Gelman-Rubin's Rhat is ",round(gelmanrubin_check$mpsrf[1],2),", which is larger than 1.05. Check
+    the traceplot for possible convergence issues. To resolve,
+    possibly use a sligthly smaller 'nugget.scale'."))
+    }
   }
+
+
 
   varnames <- lapply(1:numG,function(g){
     names(correlate[[g]])
