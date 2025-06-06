@@ -632,12 +632,24 @@ cor_test <- function(..., formula = NULL, iter = 6e3, burnin = 2e3, nugget.scale
   samsize0 <- samsize0 * length(res)
 
   # compute Gelman-Rubin Rhat
-  chain1_mcmc <- as.mcmc(FisherZ(res[[1]]$CDrawsStore[,1,2:P,1]))
-  chain2_mcmc <- as.mcmc(FisherZ(res[[2]]$CDrawsStore[,1,2:P,1]))
-  chain3_mcmc <- as.mcmc(FisherZ(res[[3]]$CDrawsStore[,1,2:P,1]))
+  chain1_mcmc <- as.mcmc(FisherZ(do.call(cbind,lapply(1:numG,function(gr){
+    do.call(cbind,lapply(1:(P-1),function(p2){
+      res[[1]]$CDrawsStore[,gr,(p2+1):P,p2]
+    }))
+  }))))
+  chain2_mcmc <- as.mcmc(FisherZ(do.call(cbind,lapply(1:numG,function(gr){
+    do.call(cbind,lapply(1:(P-1),function(p2){
+      res[[2]]$CDrawsStore[,gr,(p2+1):P,p2]
+    }))
+  }))))
+  chain3_mcmc <- as.mcmc(FisherZ(do.call(cbind,lapply(1:numG,function(gr){
+    do.call(cbind,lapply(1:(P-1),function(p2){
+      res[[3]]$CDrawsStore[,gr,(p2+1):P,p2]
+    }))
+  }))))
   chains_list <- mcmc.list(chain1_mcmc, chain2_mcmc, chain3_mcmc)
   gelmanrubin_check <- gelman.diag(chains_list, autoburnin = FALSE)
-  if(P==2){
+  if(P==2 & numG==1){
     if(gelmanrubin_check$psrf[1] > 1.05){
       warning(paste0("Gelman-Rubin's Rhat is ",round(gelmanrubin_check$psrf[1],2),", which is larger than 1.05. Check
     the traceplot for possible convergence issues. To resolve,
@@ -650,8 +662,6 @@ cor_test <- function(..., formula = NULL, iter = 6e3, burnin = 2e3, nugget.scale
     possibly use a sligthly smaller 'nugget.scale'."))
     }
   }
-
-
 
   varnames <- lapply(1:numG,function(g){
     names(correlate[[g]])
@@ -727,6 +737,7 @@ cor_test <- function(..., formula = NULL, iter = 6e3, burnin = 2e3, nugget.scale
                                          return(cbind(means,medians,lb,ub))
                                        }))
   colnames(postestimates_correlations) <- c("mean","median","2.5%","97.5%")
+  row.names(gelmanrubin_check$psrf) <- row.names(postestimates_correlations)
 
   cor_out <- list(meanF=meanN,covmF=covmN,correstimates=postestimates_correlations,
                   corrdraws=corrdraws,corrnames=corrnames,variables=varnames,
