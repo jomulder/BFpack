@@ -91,7 +91,7 @@ BF.cor_test <- function(x,
     #number of draws to get 1e7 draws for the marginal of 1 Fisher transformation correlation
     numdraws <- round(1e7/(P*(P-1)/2))
     drawsJU <- draw_ju_r(P,samsize=numdraws,Fisher=1)
-    approx_studt <- QRM::fit.st(c(drawsJU))$par.ests[c(1,3)]
+    approx_studt <- fit.st(c(drawsJU))$par.ests[c(1,3)]
   }else{
     # use the estimate of the scale from the Fcor object
     # for the df the estimates show some numerical error for P>20, so use fitted line
@@ -199,7 +199,8 @@ using the marginally uniform prior (Mulder and Gelissen, 2023, Section 4.2.2).")
       }
 
       relfit <- t(matrix(unlist(lapply(1:numhyp,function(h){
-        Gaussian_measures(corrmeanN,corrcovmN,RrE1=RrE[[h]],RrO1=RrO[[h]])
+        Gaussian_measures(mean1=corrmeanN,Sigma1=corrcovmN,RrE1=RrE[[h]],RrO1=RrO[[h]],names1=names(corrmeanN),
+                          constraints1=parse_hyp$original_hypothesis[h])
       })),nrow=2))
       #names1 and constraints1 ... to fix ...
       # approximate unconstrained Fisher transformed correlations with a multivariate Student t
@@ -216,10 +217,13 @@ using the marginally uniform prior (Mulder and Gelissen, 2023, Section 4.2.2).")
         Scale0 <- diag(rep(approx_studt[2]**2,numcorrgroup*numG))
         df0 <- approx_studt[1]
       }
+      names(mean0) <- row.names(Scale0) <- colnames(Scale0) <- names(corrmeanN)
       relcomp <- t(matrix(unlist(lapply(1:numhyp,function(h){
         relcomp_h <- Student_measures(mean1=mean0,
                                       Scale1=Scale0,
                                       df1=df0,
+                                      constraints1=parse_hyp$original_hypothesis[h],
+                                      names1=names(corrmeanN),
                                       RrE1=RrE[[h]],
                                       RrO1=RrO[[h]])
         return(relcomp_h)
@@ -228,7 +232,7 @@ using the marginally uniform prior (Mulder and Gelissen, 2023, Section 4.2.2).")
 
       row.names(relfit) <- row.names(relcomp) <- parse_hyp$original_hypothesis
       if(complement == TRUE){
-        relfit <- Gaussian_prob_Hc(corrmeanN,corrcovmN,relfit,RrO)
+        relfit <- Gaussian_prob_Hc(mean1=corrmeanN,Sigma1=corrcovmN,relmeas=relfit,RrO)
         relcomp <- Student_prob_Hc(mean1=mean0,scale1=Scale0,df1=df0,relmeas1=relcomp,
                                    constraints=NULL,RrO1=RrO)
       }
@@ -333,8 +337,8 @@ draw_ju_r <- function(P, samsize=50000, Fisher=1){
 #' @param formula an object of class \code{\link[stats]{formula}}. This allows for including
 #' control variables in the model (e.g., \code{~ education}).
 #'
-#' @param iter total number of iterations from posterior. The total is split across three chains. The total default is 6000,
-#' which implies 2000 per chain.
+#' @param iter total number of iterations from posterior. The total is split across three chains. By default, the total number of iterations is 10000,
+#' implying 3333 iterations per chain.
 #'
 #' @param burnin number of iterations for burnin (default is 2000).
 #'
@@ -392,7 +396,7 @@ draw_ju_r <- function(P, samsize=50000, Fisher=1){
 #' }
 #' @rdname cor_test
 #' @export
-cor_test <- function(..., formula = NULL, iter = 6e3, burnin = 2e3, nugget.scale = .999){
+cor_test <- function(..., formula = NULL, iter = 1e4, burnin = 2e3, nugget.scale = .999){
 
   # if(is.na(prior.cor)){stop("'prior.cor' argument needs to be either 'joint.unif' or 'marg.unif'. See ?cor_test.")}
   # if(is.null(prior.cor)){stop("'prior.cor' argument needs to be either 'joint.unif' or 'marg.unif'. See ?cor_test.")}
@@ -405,7 +409,6 @@ cor_test <- function(..., formula = NULL, iter = 6e3, burnin = 2e3, nugget.scale
   # }
   prior.cor <- "joint.unif"
   priorchoice <- 1
-
 
   if(!is.numeric(nugget.scale)){stop("'nugget.scale' should be a numerical scalar.")}
   if(nugget.scale > 1 | nugget.scale < 0){stop("'nugget.scale' should be very close 1. If should not exceed 1 nor fall below 0.")}
@@ -682,12 +685,14 @@ cor_test <- function(..., formula = NULL, iter = 6e3, burnin = 2e3, nugget.scale
     Fdraws_g <- FisherZ(t(matrix(unlist(lapply(1:samsize0,function(s){
       CDrawsStore[s,g,,][lower.tri(diag(P))]
     })),ncol=samsize0)))
-    mean_g <- apply(Fdraws_g,2,mean)
+    mean_g <- apply(Fdraws_g,2,median)
     names(mean_g) <- corrnames[[g]][lower.tri(diag(P))]
-    covm_g <- cov(Fdraws_g)
-    ### DELETE THIS
-    #covm_g <- diag(numcorr/numG)
-    ### DELETE THIS
+    #covm_g <- cov(Fdraws_g)
+
+    #get robust estimate of posterior covariance matrix
+    mlm1 <- lm(Fdraws_g ~ 1)
+    covm_g <- sandwich(mlm1) * nrow(Fdraws_g)
+
     return(list(mean_g,covm_g))
   })
 

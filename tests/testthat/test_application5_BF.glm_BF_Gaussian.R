@@ -29,8 +29,7 @@ expect_true(
 )})
 
 #check that complement is not added the complete parameter space is covered by hypotheses
-BF2 <- BF(fit, hypothesis="ztrust = zfWHR;
-             ztrust > zfWHR; ztrust < zfWHR")
+BF2 <- BF(x=fit, hypothesis="ztrust = zfWHR; ztrust > zfWHR; ztrust < zfWHR")
 test_that("glm does not add a complement hypothesis as the test is exhaustive", {
 expect_true(
   length(BF2$PHP_confirmatory)==3

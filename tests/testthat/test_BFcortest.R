@@ -148,4 +148,21 @@ test_that("test ordinal correlations multiple groups", {
 #   )
 # })
 
+test_that("correlation test for intervals", {
+  skip_on_cran()
+  set.seed(1)
+  cor_test1 <- cor_test(mtcars[,c('vs','am')])
+  BF1 <- BF(x=cor_test1,hypothesis = "am_with_vs = 0; -.1<am_with_vs<.1; .1<am_with_vs<.5; -.5<am_with_vs< -.1")
+  expect_equivalent(
+    sum(BF1$BFtable_confirmatory[-1,2]), 1, tolerance = .05
+  )
+  expect_equivalent(
+    BF1$BFtu_confirmatory, c(3.12, 3.16, 3.06, .38, 0.01), tolerance = .2
+  )
+  set.seed(1)
+  BF2 <- BF(x=cor_test1,hypothesis = "am_with_vs = 0; -.1<am_with_vs<.1; -.1<am_with_vs<.5")
+  expect_equivalent(
+    BF2$BFtu_confirmatory, c(3.12, 3.15, 3.06, 0.13), tolerance = .2
+  )
+})
 

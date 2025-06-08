@@ -1,3 +1,8 @@
+# BFpack 1.5.0
+
+* Version part of publication of a tutorial paper in JASP.
+* Bug fixes to interval hypothesis testing.
+
 # BFpack 1.4.1
 
 * Date: 2025-02-09

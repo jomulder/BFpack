@@ -68,7 +68,7 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                   alphaMat(numG,maxCat+1,P), Wdummy(numG,P,Ntot,maxCat), condMean, condVar, &
                   Zcorr_sample(samsize0,numcorr), dummy3(samsize0), dummy2(samsize0), priorScale(P,P), &
                   diffmat(Ntot,P), meanO(P*K), para((P*K)*((P*K)+3)/2 + 1), randraw, gLiuSab_curr(numG,P), &
-                  logR_MH
+                  logR_MH !, thresh1, thresh2
     integer(rint) ::s1, g1, i1, corrteller, Cat(numG,P), ordinal(numG,P), Njs(numG), &
                   c1, c2, p1, Yi1Categorie, tellers(numG,maxCat,P), k1, p2, errorflag, &
                   lower_int, median_int, upper_int, priorDf
@@ -118,6 +118,8 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
     do p1=1,P
         Cnugget(p1,p1) = 1.0_rdp
     end do
+    !thresh1 = -0.85_rdp
+    !thresh2 = 0.85_rdp
 !
     !count number of accepted draws for R (over all groups)
     acceptSigma = 0.0_rdp
@@ -266,6 +268,12 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
             Ccan = matmul(matmul(diag(1/sqrt(diagonals(dummyPPinv,P)),P),dummyPPinv), &
                 diag(1/sqrt(diagonals(dummyPPinv,P)),P))
             Ccan = Ccan * Cnugget
+            !do p1 = 1,P-1
+            !    do p2 = p1+1,P
+            !        Ccan(p1,p2) = scale_function(Ccan(p1,p2), nuggetscale, thresh2, thresh1)
+            !        Ccan(p2,p1) = Ccan(p1,p2)
+            !    end do
+            !end do
             ! check acceptance of candidate via MH
             logR_MH = 0.5*real(P+1,kind=rdp) * (log(det(Ccan,P,-1)) - log(det(Ccurr,P,-1)))
             R_MH = exp(logR_MH)
@@ -457,6 +465,12 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
             Ccan = matmul(matmul(diag(1/sqrt(diagonals(dummyPPinv,P)),P),dummyPPinv), &
                 diag(1/sqrt(diagonals(dummyPPinv,P)),P))
             Ccan = Ccan * Cnugget
+            !do p1 = 1,P-1
+            !    do p2 = p1+1,P
+            !        Ccan(p1,p2) = scale_function(Ccan(p1,p2), nuggetscale, thresh2, thresh1)
+            !        Ccan(p2,p1) = Ccan(p1,p2)
+            !    end do
+            !end do
             ! check acceptance of candidate via MH
             logR_MH = 0.5*real(P+1,kind=rdp) * (log(det(Ccan,P,-1)) - log(det(Ccurr,P,-1)))
             R_MH = exp(logR_MH)
@@ -703,6 +717,27 @@ function eye(n)
 
 end function eye
 
+
+!elemental function scale_function(x, s, x1, x2) result(y)
+!
+!  implicit none
+!
+!  real(rdp), intent(in) :: x, s, x1, x2
+!  real(rdp) :: y, m_left, m_right
+!  real(rdp) :: cond1, cond2, cond3
+!
+!  m_left  = (-x1 - s) / (-1d0 - x1)
+!  m_right = (s - x2) / (1d0 - x2)
+!
+!  cond1 = merge(1.0d0, 0.0d0, x < x1)
+!  cond2 = merge(1.0d0, 0.0d0, x >= x1 .and. x <= x2)
+!  cond3 = merge(1.0d0, 0.0d0, x > x2)
+!
+!  y = cond1 * (m_left * (x - x1) + x1) + &
+!      cond2 * x + &
+!      cond3 * (m_right * (x - x2) + x2)
+!
+!end function scale_function
 
 
 subroutine kronecker(dimA,dimB,A,B,AB)

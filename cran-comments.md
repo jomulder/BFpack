@@ -1,7 +1,10 @@
-# BFpack 1.4.2
+# BFpack 1.5.0
 
-* Date: 2024-02-09.
-* Critical bug fix of MCMC sampler for correlation test.
+* Date: 2025-06-08.
+* Update as part of publication of a tutorial paper in JASP
+* Multiple chains implemented for correlation test, including Gelman-Rubin check.
+* Bugs fixes to interval hypothesis testing.
+* Minor bug fixes.
 * Minor edits.
 
 ## Test environments

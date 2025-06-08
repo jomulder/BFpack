@@ -186,7 +186,8 @@ Savage.Dickey.Gaussian <- function(prior.mean,
 
     if(complement == TRUE){
       # get relative fit and complexity of complement hypothesis
-      relcomp <- Gaussian_prob_Hc(mean1 = mean0, Sigma1 = covm0, relmeas = relcomp, RrO = RrO) #Note that input is a bit strange here, Gaussian_prob_Hc needs fixing
+      #Note that input is a bit strange here, Gaussian_prob_Hc needs fixing
+      relcomp <- Gaussian_prob_Hc(mean1 = mean0, Sigma1 = covm0, relmeas = relcomp, RrO = RrO)
       relfit <- Gaussian_prob_Hc(mean1 = meanN, Sigma1 = covmN, relmeas = relfit, RrO = RrO)
     }
     hypothesisshort <- unlist(lapply(1:nrow(relfit),function(h) paste0("H",as.character(h))))
@@ -259,6 +260,7 @@ Savage.Dickey.Gaussian <- function(prior.mean,
 
 # compute relative meausures (fit or complexity) under a multivariate Gaussian distribution
 #' @importFrom mvtnorm dmvnorm pmvnorm
+#' @importFrom berryFunctions is.error
 Gaussian_measures <- function(mean1,Sigma1,n1=0,RrE1,RrO1,names1=NULL,constraints1=NULL){
   K <- length(mean1)
   relE <- relO <- log(1)
@@ -284,21 +286,25 @@ Gaussian_measures <- function(mean1,Sigma1,n1=0,RrE1,RrO1,names1=NULL,constraint
     if(Rank(RO1)==nrow(RO1)){ #RO1 is of full row rank. So use transformation.
       meanO <- c(RO1%*%mean1)
       SigmaO <- RO1%*%Sigma1%*%t(RO1)
-      check_vcov(SigmaO)
+      #check_vcov(SigmaO)
       relO <- log(pmvnorm(lower=rO1,upper=Inf,mean=meanO,sigma=SigmaO)[1])
     }else{ #no linear transformation can be used; pmvt cannot be used. Use bain with a multivariate normal approximation
       names(mean1) <- names1
+      mean1vec <- c(mean1)
+      names(mean1vec) <- row.names(Sigma1) <- colnames(Sigma1) <- names1
       if(n1>0){ # we need prior measures
-        mean1vec <- c(mean1)
-        names(mean1vec) <- names1
         bain_res <- bain(x=mean1vec,hypothesis=constraints1,Sigma=Sigma1,n=n1)
         relO <- log(bain_res$fit[1,4])
       }else { # we need posterior measures (there is very little information)
-        mean1vec <- c(mean1)
-        names(mean1vec) <- names1
-        bain_res <- bain(x=mean1vec,hypothesis=constraints1,Sigma=Sigma1,n=999) #n not used in computation
-        relO <- log(bain_res$fit[1,3])
+        if(!is.error(bain(x=mean1vec,hypothesis=constraints1,Sigma=Sigma1,n=999))){
+          bain_res <- bain(x=mean1vec,hypothesis=constraints1,Sigma=Sigma1,n=999) #n not used in computation
+          relO <- log(bain_res$fit[1,3])
+        }else{
+          # simply compute the proportion based on 1e6 draws
+          relO <- log(mean(apply(rmvnorm(1e6,mean=mean1vec,sigma=Sigma1) %*% t(RO1) - rep(1,1e6) %*% t(rO1) > 0,1,prod)))
+        }
       }
+
     }
   }
   if(!is.null(RrE1) && !is.null(RrO1)){ #hypothesis with equality and order constraints
@@ -377,14 +383,14 @@ Gaussian_prob_Hc <- function(mean1,Sigma1,relmeas,RrO){
       rownames(relmeas)[numhyp+1] <- "complement"
     }else{ # So more than one hypothesis with only order constraints
       # First we check whether ther is an overlap between the order constrained spaces.
-      draws2 <- 1e4
+      draws2 <- 1e5
       randomDraws <- rmvnorm(draws2,mean=rep(0,numpara),sigma=diag(numpara))
       #get draws that satisfy the constraints of the separate order constrained hypotheses
       checksOC <- lapply(welk,function(h){
-        Rorder <- as.matrix(RrO[[h]][,-(1+numpara)])
-        if(ncol(Rorder)==1){
-          Rorder <- t(Rorder)
-        }
+        Rorder <- matrix(RrO[[h]][,-(1+numpara)],nrow=nrow(RrO[[h]]))
+        # if(ncol(Rorder)==1){
+        #   Rorder <- t(Rorder)
+        # }
         rorder <- as.matrix(RrO[[h]][,1+numpara])
         apply(randomDraws%*%t(Rorder) > rep(1,draws2)%*%t(rorder),1,prod)
       })
@@ -402,10 +408,10 @@ Gaussian_prob_Hc <- function(mean1,Sigma1,relmeas,RrO){
 
           randomDraws <- rmvnorm(draws2,mean=mean1,sigma=Sigma1)
           checksOCpost <- lapply(welk,function(h){
-            Rorder <- as.matrix(RrO[[h]][,-(1+numpara)])
-            if(ncol(Rorder)==1){
-              Rorder <- t(Rorder)
-            }
+            Rorder <- matrix(RrO[[h]][,-(1+numpara)],nrow=nrow(RrO[[h]]))
+            # if(ncol(Rorder)==1){
+            #   Rorder <- t(Rorder)
+            # }
             rorder <- as.matrix(RrO[[h]][,1+numpara])
             apply(randomDraws%*%t(Rorder) > rep(1,draws2)%*%t(rorder),1,prod)
           })
