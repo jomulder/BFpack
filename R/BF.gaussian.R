@@ -214,7 +214,7 @@ Savage.Dickey.Gaussian <- function(prior.mean,
     PHP_confirmatory <- round(exp(BFtu_confirmatory-maxBFtu)*priorprobs /
                                 sum(exp(BFtu_confirmatory-maxBFtu)*priorprobs),3)
     BFtable <- cbind(relcomp,relfit,relfit[,1]-relcomp[,1],relfit[,2]-relcomp[,2],
-                     exp(apply(relfit,1,sum)-apply(relcomp,1,sum)),PHP_confirmatory)
+                     apply(relfit,1,sum)-apply(relcomp,1,sum),PHP_confirmatory)
     BFtable[,1:7] <- exp(BFtable[,1:7])
     row.names(BFtable) <- names(PHP_confirmatory)
     colnames(BFtable) <- c("complex=","complex>","fit=","fit>","BF=","BF>","BF","PHP")

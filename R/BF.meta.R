@@ -1,13 +1,6 @@
 
-#' @importFrom metaBMA prior
-#' @importFrom stats dlogis rlnorm dlnorm
-#' @importFrom extraDistr rtnorm
-#' @importFrom MASS fitdistr
-#' @importFrom methods is
-#' @describeIn BF BF S3 method for an object of class 'rma.uni'
-#' @method BF rma.uni
-#' @export
-BF.rma.uni <- function(x,
+# old BF test
+BF_rma.uni <- function(x,
                     hypothesis = NULL,
                     prior.hyp.explo = NULL,
                     prior.hyp.conf = NULL,
@@ -817,8 +810,15 @@ log_marg_like_cond.tau2 <- function(yi, vi, tau2IN,
 }
 
 
-# test different priors for tau
-BF_rma.uni <- function(x,
+#' @importFrom metaBMA prior
+#' @importFrom stats dlogis rlnorm dlnorm
+#' @importFrom extraDistr rtnorm
+#' @importFrom MASS fitdistr
+#' @importFrom methods is
+#' @describeIn BF BF S3 method for an object of class 'rma.uni'
+#' @method BF rma.uni
+#' @export
+BF.rma.uni <- function(x,
                        hypothesis = NULL,
                        prior.hyp.explo = NULL,
                        prior.hyp.conf = NULL,
@@ -827,7 +827,7 @@ BF_rma.uni <- function(x,
                        log = FALSE,
                        cov.prob = .95,
                        BF.type,
-                       prior.tau2 = 1,
+                       #prior.tau2 = 1,
                        iter = 2e4,
                        ...){
 
@@ -879,16 +879,18 @@ BF_rma.uni <- function(x,
   tau2.min <- -min(vi) + nugget_boundary
 
   if(length(BF.type)==1){
-    prior.tau2.func <- function(tau2.arg,log=FALSE){
-      ptau2 <- -.5 * log(abs(tau2.arg))
+
+    prior.tau2.func <- prior.tau2.func.RE <- function(tau2.arg,log=FALSE){
+      ptau2 <- -1/K*sum(log(vi+tau2.arg)) #Berger-Deely prior
       ifelse(log,ptau2,exp(ptau2))
     }
+
     if(is(BF.type,"character")){
       if(BF.type == "stand.effect"){
-        # conjugate normal prior assuming average effects of about .5
+        # conjugate normal prior with sd of 1
         prior.mu <- function(x,tau2,log=FALSE){dnorm(x, mean = 0, sd = 1, log = log)}
         prior.muGR0 <- .5
-        bayesfactor.name <- "Bayes factor based on a normal prior (mu ~ norm(mean=0, sd=1)) and invariant right Haar prior for tau^2"
+        bayesfactor.name <- "Bayes factor based on a normal prior (mu ~ norm(mean=0, sd=1)) and noninformative Berger-Deely prior for tau^2"
         parameter.name <- "standardized effect"
       }else if(BF.type == "log.odds"){
         # Student t prior which approximates the implied distribution of the log odds ratio based on uniform success probabilities
@@ -897,13 +899,13 @@ BF_rma.uni <- function(x,
           ifelse(log,dt1,exp(dt1))
         }
         prior.muGR0 <- .5
-        bayesfactor.name <- "Bayes factor based on uniform priors for success probabilities (log.odds ~ t(0,2.36,13.1)) and invariant right Haar prior for tau^2."
+        bayesfactor.name <- "Bayes factor based on uniform priors for success probabilities (log.odds ~ t(0,2.36,13.1)) and noninformative Berger-Deely prior for tau^2."
         parameter.name <- "log odds"
       }else if(BF.type == "correlation"){
         # logistic prior for the Fisher transformed correlation corresponding to a uniform prior for the correlation in (-1,1)
         prior.mu <- function(x,tau2,log=FALSE){dlogis(x, scale = .5, log = log)}
         prior.muGR0 <- .5
-        bayesfactor.name <- "Bayes factor based on a uniform prior for the correlation in (-1,1) (Fisher(cor)~logis(0.5)) and invariant right Haar prior for tau^2."
+        bayesfactor.name <- "Bayes factor based on a uniform prior for the correlation in (-1,1) (Fisher(cor)~logis(0.5)) and noninformative Berger-Deely prior for tau^2."
         parameter.name <- "Fisher transformed correlation"
       }else if(BF.type == "unit.info"){
         if(N==0){
@@ -912,7 +914,7 @@ BF_rma.uni <- function(x,
         }
         prior.mu <- function(x,tau2,log=FALSE){dnorm(x, mean = 0, sd = sqrt(N/sum(1/(vi+tau2))), log = log)}
         prior.muGR0 <- .5
-        bayesfactor.name <- "Bayes factor based on unit information prior."
+        bayesfactor.name <- "Bayes factor based on unit information prior and noninformative Berger-Deely prior for tau^2."
         parameter.name <- "mean parameter"
       }else{
         stop("The argument 'BF.type' is not correctly specified for an object of type 'rma.uni'. See documentation. ?BF")
@@ -955,47 +957,47 @@ BF_rma.uni <- function(x,
     stop("The argument 'BF.type' is not correctly specified for an object of type 'rma.uni'. See documentation. ?BF")
   }
 
-  # try different improper priors for tau2
-  if(prior.tau2 == 1){
-    prior.tau2.func <- prior.tau2.func.RE <- function(tau2.arg,log=FALSE){
-      ptau2 <- -1/K*sum(log(vi+tau2.arg))
-      #ptau2 <- .5*log(sum(1/(vi+tau2.arg)^2)) # Tibshirani (1989)
-      #ptau2 <- 0 #uniform prior
-      ifelse(log,ptau2,exp(ptau2))
-    }
-  }else if(prior.tau2 == 2){
-    prior.tau2.func <- prior.tau2.func.RE <- function(tau2.arg,log=FALSE){
-      #ptau2 <- -1/K*sum(log(vi+tau2.arg))
-      #ptau2 <- .5*log(sum(1/(vi+tau2.arg)^2)) # Tibshirani (1989)
-      ptau2 <- 0 #uniform prior
-      ifelse(log,ptau2,exp(ptau2))
-    }
-  }else if(prior.tau2 == 3){
-    prior.tau2.func <- prior.tau2.func.RE <- function(tau2.arg,log=FALSE){
-      #ptau2 <- -1/K*sum(log(vi+tau2.arg))
-      #ptau2 <- .5*log(sum(1/(vi+tau2.arg)^2)) # Tibshirani (1989)
-      #ptau2 <- 0 #uniform prior
-      ptau2 <- -.5 * log(abs(tau2.arg))
-      ifelse(log,ptau2,exp(ptau2))
-    }
-  }else if(prior.tau2 == 4){
-    prior.tau2.func <- function(tau2.arg,log=FALSE){
-      #ptau2 <- -1/K*sum(log(vi+tau2.arg))
-      #ptau2 <- .5*log(sum(1/(vi+tau2.arg)^2)) # Tibshirani (1989)
-      #ptau2 <- 0 #uniform prior
-      #ptau2 <- -.5 * log(abs(tau2.arg))
-      ptau2 <- dinvgamma(sqrt(tau2.arg-tau2.min),alpha=1,beta=.15,log=TRUE) + log(.5) -.5 * log(tau2.arg-tau2.min)
-      ifelse(log,ptau2,exp(ptau2))
-    }
-    prior.tau2.func.RE <- function(tau2.arg,log=FALSE){
-      #ptau2 <- -1/K*sum(log(vi+tau2.arg))
-      #ptau2 <- .5*log(sum(1/(vi+tau2.arg)^2)) # Tibshirani (1989)
-      #ptau2 <- 0 #uniform prior
-      #ptau2 <- -.5 * log(abs(tau2.arg))
-      ptau2 <- dinvgamma(sqrt(tau2.arg),alpha=1,beta=.15,log=TRUE) + log(.5) -.5 * log(tau2.arg)
-      ifelse(log,ptau2,exp(ptau2))
-    }
-  }
+  # # try different improper priors for tau2
+  # if(prior.tau2 == 1){
+  #   prior.tau2.func <- prior.tau2.func.RE <- function(tau2.arg,log=FALSE){
+  #     ptau2 <- -1/K*sum(log(vi+tau2.arg))
+  #     #ptau2 <- .5*log(sum(1/(vi+tau2.arg)^2)) # Tibshirani (1989)
+  #     #ptau2 <- 0 #uniform prior
+  #     ifelse(log,ptau2,exp(ptau2))
+  #   }
+  # }else if(prior.tau2 == 2){
+  #   prior.tau2.func <- prior.tau2.func.RE <- function(tau2.arg,log=FALSE){
+  #     #ptau2 <- -1/K*sum(log(vi+tau2.arg))
+  #     #ptau2 <- .5*log(sum(1/(vi+tau2.arg)^2)) # Tibshirani (1989)
+  #     ptau2 <- 0 #uniform prior
+  #     ifelse(log,ptau2,exp(ptau2))
+  #   }
+  # }else if(prior.tau2 == 3){
+  #   prior.tau2.func <- prior.tau2.func.RE <- function(tau2.arg,log=FALSE){
+  #     #ptau2 <- -1/K*sum(log(vi+tau2.arg))
+  #     #ptau2 <- .5*log(sum(1/(vi+tau2.arg)^2)) # Tibshirani (1989)
+  #     #ptau2 <- 0 #uniform prior
+  #     ptau2 <- -.5 * log(abs(tau2.arg))
+  #     ifelse(log,ptau2,exp(ptau2))
+  #   }
+  # }else if(prior.tau2 == 4){
+  #   prior.tau2.func <- function(tau2.arg,log=FALSE){
+  #     #ptau2 <- -1/K*sum(log(vi+tau2.arg))
+  #     #ptau2 <- .5*log(sum(1/(vi+tau2.arg)^2)) # Tibshirani (1989)
+  #     #ptau2 <- 0 #uniform prior
+  #     #ptau2 <- -.5 * log(abs(tau2.arg))
+  #     ptau2 <- dinvgamma(sqrt(tau2.arg-tau2.min),alpha=1,beta=.15,log=TRUE) + log(.5) -.5 * log(tau2.arg-tau2.min)
+  #     ifelse(log,ptau2,exp(ptau2))
+  #   }
+  #   prior.tau2.func.RE <- function(tau2.arg,log=FALSE){
+  #     #ptau2 <- -1/K*sum(log(vi+tau2.arg))
+  #     #ptau2 <- .5*log(sum(1/(vi+tau2.arg)^2)) # Tibshirani (1989)
+  #     #ptau2 <- 0 #uniform prior
+  #     #ptau2 <- -.5 * log(abs(tau2.arg))
+  #     ptau2 <- dinvgamma(sqrt(tau2.arg),alpha=1,beta=.15,log=TRUE) + log(.5) -.5 * log(tau2.arg)
+  #     ifelse(log,ptau2,exp(ptau2))
+  #   }
+  # }
 
   #exploratory testing
   if (x$method != "EE" & x$method != "FE") ### random effects / marema model

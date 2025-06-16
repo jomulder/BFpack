@@ -357,9 +357,12 @@ BF.t_test <- function(x,
         relative_fit <- relfit
         relative_complexity <- relcomp
 
-        BFtable <- cbind(relative_complexity,relative_fit,relative_fit[,1]-relative_complexity[,1],
-                         relative_fit[,2]-relative_complexity[,2],apply(relative_fit,1,sum)/
-                           apply(relative_complexity,1,prod),PHP_confirmatory)
+        BFtable <- cbind(relative_complexity,
+                         relative_fit,
+                         relative_fit[,1]-relative_complexity[,1],
+                         relative_fit[,2]-relative_complexity[,2],
+                         apply(relfit - relcomp, 1, sum),
+                         PHP_confirmatory)
         BFtable[,1:7] <- exp(BFtable[,1:7])
         row.names(BFtable) <- names(BFtu_confirmatory)
         colnames(BFtable) <- c("complex=","complex>","fit=","fit>","BF=","BF>","BF","PHP")

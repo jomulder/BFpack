@@ -1,3 +1,7 @@
+# BFpack 1.5.1
+
+* Version update as part of a publication on meta-analyses.
+
 # BFpack 1.5.0
 
 * Version part of publication of a tutorial paper in JASP.

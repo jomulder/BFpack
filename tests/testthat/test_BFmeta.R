@@ -20,10 +20,10 @@ test_that("exploratory metafor random effects model", {
   set.seed(123)
   BFmeta1b <- BF(res,BF.type=prior("norm", c(mean = 0, sd = .5)))
   expect_equivalent(
-    round(BFmeta1$PHP_exploratory[1,],3),c(.950,.020,.039), tolerance = .05
+    round(BFmeta1$PHP_exploratory[1,],3),c(.950,.021,.029), tolerance = .05
   )
   expect_equivalent(
-    round(BFmeta1b$PHP_exploratory[1,],3),c(.906,.055,.039), tolerance = .05
+    round(BFmeta1b$PHP_exploratory[1,],3),c(.906,.040,.055), tolerance = .05
   )
   expect_equivalent(
     unname(round(BFmeta1a$PHP_exploratory[2,],3)),
