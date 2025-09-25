@@ -40,6 +40,25 @@ summary.BF <- function(object, ...){
       cat("\n")
     }
   }
+  if(class(object$model)[1]=="rma.uni"){
+    cat("Posterior support for random effects","\n", sep = "")
+    cat("\n")
+    tau2out <- matrix(object$estimates[2,5])
+    row.names(tau2out) <- "tau2 (marema)"
+    colnames(tau2out) <- "Pr(>0)"
+    print(round(tau2out,digits))
+    cat("\n")
+  }
+  if(class(object$model)[1]=="cor_test"){
+    cat("Bartlett's test of sphericity (all correlations are zero):","\n", sep = "")
+    cat("\n")
+    if(nrow(object$PHP_Bartlett)>1){
+      print(round(object$PHP_Bartlett,digits))
+    }else{
+      print(round(object$PHP_Bartlett[1,],digits))
+    }
+    cat("\n")
+  }
 
   if(!is.null(object$BFtu_confirmatory)){
 
@@ -62,9 +81,9 @@ summary.BF <- function(object, ...){
 
     cat("\n")
     if(object$log==FALSE){
-      cat("Evidence matrix (BFs):")
+      cat("Bayes factors (rows versus columns):")
     }else{
-      cat("Evidence matrix (log BFs):")
+      cat("Log Bayes factors (rows versus columns):")
     }
     cat("\n")
 

@@ -10,7 +10,7 @@ BF.polr <- function(x,
                        prior.hyp = NULL,
                        complement = TRUE,
                        log = FALSE,
-                    cov.prob = .95,
+                       cov.prob = .95,
                        ...){
 
   #Extract summary statistics

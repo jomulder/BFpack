@@ -18,7 +18,7 @@ test_that("exploratory metafor random effects model", {
   set.seed(123)
   BFmeta1a <- BF(res,BF.type="stand.effect",prior.hyp.explo = c(5:7))
   set.seed(123)
-  BFmeta1b <- BF(res,BF.type=prior("norm", c(mean = 0, sd = .5)))
+  BFmeta1b <- BF(res,BF.type=metaBMA::prior("norm", c(mean = 0, sd = .5)))
   expect_equivalent(
     round(BFmeta1$PHP_exploratory[1,],3),c(.950,.021,.029), tolerance = .05
   )

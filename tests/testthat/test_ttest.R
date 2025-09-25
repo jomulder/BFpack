@@ -33,8 +33,8 @@ test_that("test log(BF) t test", {
     c(0.6086118),BF1$BFmatrix_confirmatory[2,1],tol=.01
   )})
 BF1 <- BF(x=ttest1,hypothesis="mu=5; mu<6 & mu>4",complement=TRUE,log=FALSE, BF.type = "AFBF",prior.hyp.conf = c(2,1,1))
-summary(BF1)
-BF1$BFtable_confirmatory
+#summary(BF1)
+#BF1$BFtable_confirmatory
 
 # test if one-sided PMP is same as one-sided p-value
 ttest2 <- t_test(therapeutic,mu=5,alternative="less")
@@ -69,7 +69,7 @@ test_that("2 samples t test of exploratory hypotheses correctly evaluated
 
 ttest3a <- t_test(x=therapeutic$correct,y=therapeutic$correct*.9+.1,paired=TRUE)
 BF3a <- BF(ttest3a,prior.hyp.explo=c(1,1,1), BF.type = "FBF",hypothesis="difference < 1;difference > -1")
-BF3a$BFtable_confirmatory
+#BF3a$BFtable_confirmatory
 
 # t test check for testing interval hypotheses
 set.seed(123)

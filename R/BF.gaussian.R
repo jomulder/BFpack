@@ -110,11 +110,12 @@ Savage.Dickey.Gaussian <- function(prior.mean,
                            ub <- qnorm(p=.975)*sqrt(covmN[coef,coef])+meanN[coef]
                            lb <- qnorm(p=.025)*sqrt(covmN[coef,coef])+meanN[coef]
                            return(c(lb,ub))
-                         })),nrow=2))
+                         })),nrow=2)),
+                         1-pnorm(0,mean=meanN,sd=sqrt(diag(covmN)))
   )
   row.names(postestimates) <- names_coef
   colnames(postestimates) <- c("mean","median",paste0(as.character(round(CrI_LB*100,7)),"%"),
-                               paste0(as.character(round(CrI_UB*100,7)),"%"))
+                               paste0(as.character(round(CrI_UB*100,7)),"%"),"Pr(>0)")
 
   if(logIN == FALSE){
     BFtu_exploratory <- exp(BFtu_exploratory)

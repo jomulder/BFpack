@@ -105,6 +105,8 @@ BF.cor_test <- function(x,
   }
   if(x$prior.cor == "joint.unif"){
     relcomp0 <- dt(0,df=approx_studt[1],log=TRUE)-log(approx_studt[2]) # all marginal priors are the same
+    relcomp0_bartlett <- dmvt(rep(0,numcorrgroup),df=approx_studt[1],sigma=approx_studt[1]^2*diag(numcorrgroup),
+                              log=TRUE)
   }
   if(x$prior.cor == "marg.unif"){
     relcomp0 <- dt(0,df=Fcor[1,1],log=TRUE)-log(Fcor[1,2]) #Fisher transformed height for a uniform(-1,1) prior
@@ -117,6 +119,11 @@ BF.cor_test <- function(x,
                      pnorm(0,mean=corrmeanN,sd=sqrt(diag(corrcovmN)),log.p=TRUE),
                      pnorm(0,mean=corrmeanN,sd=sqrt(diag(corrcovmN)),log.p=TRUE,
                              lower.tail=FALSE)),ncol=3)
+  relfit0_bartlett <- unlist(lapply(1:numG,function(gr){
+    dmvnorm(rep(0,numcorrgroup),mean=corrmeanN[(gr-1)*numcorrgroup+1:numcorrgroup],
+            sigma=as.matrix(corrcovmN[(gr-1)*numcorrgroup+1:numcorrgroup,(gr-1)*numcorrgroup+1:numcorrgroup]),
+            log=TRUE)
+  }))
   relcomp <- matrix(c(rep(relcomp0,numcorr),rep(log(.5),numcorr*2)),ncol=3)
   colnames(relcomp) <- colnames(relfit) <- c("p(=0)","Pr(<0)","Pr(>0)")
   BFtu_exploratory <- relfit - relcomp
@@ -127,6 +134,13 @@ BF.cor_test <- function(x,
     (rep(1,nrow(BFtu_exploratory)) %*% t(prior.hyp.explo[[1]]))
   PHP_exploratory <- norm_BF_explo / apply(norm_BF_explo,1,sum)
   colnames(PHP_exploratory) <- c("P(=0)","P(<0)","P(>0)")
+  BF_Bartlett <- relfit0_bartlett - relcomp0_bartlett
+  PHP_Bartlett <- exp(BF_Bartlett) / (exp(BF_Bartlett) + 1)
+  PHP_Bartlett <- cbind(PHP_Bartlett,1-PHP_Bartlett)
+  BF_Bartlett <- cbind(BF_Bartlett,1)
+  colnames(BF_Bartlett) <- c("BF0u","BFuu")
+  row.names(PHP_Bartlett) <- row.names(BF_Bartlett) <- paste0("group",1:numG)
+  colnames(PHP_Bartlett) <- c("Pr(all zero)","Pr(not all zero)")
 
   # posterior estimates
   postestimates_correlations <- Reduce(rbind,
@@ -136,12 +150,13 @@ BF.cor_test <- function(x,
                                          medians <- apply(draws_stack_g,2,median)
                                          lb <- apply(draws_stack_g,2,quantile,CrI_LB)
                                          ub <- apply(draws_stack_g,2,quantile,CrI_UB)
+                                         probGr0 <- apply(draws_stack_g>0,2,mean)
                                          rm(draws_stack_g)
-                                         return(cbind(means,medians,lb,ub))
+                                         return(cbind(means,medians,lb,ub,probGr0))
                                        }))
 
   colnames(postestimates_correlations) <- c("mean","median",paste0(as.character(round(CrI_LB*100,7)),"%"),
-                                            paste0(as.character(round(CrI_UB*100,7)),"%"))
+                                            paste0(as.character(round(CrI_UB*100,7)),"%"),"Pr(>0)")
   postestimates <- postestimates_correlations
   rownames(postestimates) <- corr_names
 
@@ -282,7 +297,9 @@ using the marginally uniform prior (Mulder and Gelissen, 2023, Section 4.2.2).")
 
   BFcorr_out <- list(
     BFtu_exploratory=BFtu_exploratory,
+    BF_Bartlett=BF_Bartlett,
     PHP_exploratory=PHP_exploratory,
+    PHP_Bartlett=PHP_Bartlett,
     BFtu_confirmatory=BFtu_confirmatory,
     PHP_confirmatory=PHP_confirmatory,
     BFmatrix_confirmatory=BFmatrix_confirmatory,

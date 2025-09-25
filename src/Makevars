@@ -1,3 +1,7 @@
+FC = /opt/gfortran/bin/gfortran
+F77 = /opt/gfortran/bin/gfortran
 
+FLIBS = -L/opt/gfortran/lib/gcc/aarch64-apple-darwin20.0/12.2.0 -lgfortran -lquadmath -lm
 
-PKG_LIBS = $(LAPACK_LIBS) $(BLAS_LIBS)
+PKG_LIBS = $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
+SHLIB_LDFLAGS = -L/opt/gfortran/lib/gcc/aarch64-apple-darwin20.0/12.2.0 -lgfortran -lquadmath -lm
