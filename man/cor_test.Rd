@@ -9,6 +9,7 @@ cor_test(
   formula = NULL,
   iter = 10000,
   burnin = 2000,
+  method = "LKJ",
   nugget.scale = 0.999
 )
 }
@@ -20,12 +21,16 @@ for different groups (in case of multiple matrices or data frames).}
 control variables in the model (e.g., \code{~ education}).}
 
 \item{iter}{total number of iterations from posterior. The total is split across three chains. By default, the total number of iterations is 10000,
-implying 3333 iterations per chain.}
+implying a rounded integer of 3333 iterations per chain.}
 
 \item{burnin}{number of iterations for burnin (default is 2000).}
 
-\item{nugget.scale}{a scalar to avoid computational issues due to posterior draws for the corralations
-too close to 1 in absolute value. Posterior draws for the correlations are multiplied with this nugget.scale.
+\item{method}{\code{"LKJ"} for onion method sampler of correlation matrix proposed by Lewandowski, Kurowicka,
+& Joe (2009), which is the default, or \code{"LD"} for 'PX-RPMH' correlation matrix sampler of Liu and Daniels (2009).
+\code{"onion"} method tends to mix better for larger correlation matrices.}
+
+\item{nugget.scale}{When using \code{method = "LD"}, a nugget.scale can be used to avoid computational issues due to posterior draws
+for the correlations too close to 1 in absolute value. Posterior draws for the correlations are multiplied with this nugget.scale.
 So \code{nugget.scale} should be close to 1 (the default is .999). If the traceplots show that draws are stuck
 at 1 or -1 too long try a slightly smaller \code{nugget.scale}.}
 }
@@ -80,7 +85,9 @@ association in social research. Journal of Applied Statistics, 50(2), 315-351. <
 Mulder, J. (2016). Bayes factors for testing order-constrained hypotheses on correlations. Journal of Mathematical
 Psychology, 72, 104-115. <https://doi.org/10.1016/j.jmp.2014.09.004>
 
-Talhouk, A., Doucet, A., & Murphy, K. (2012). Efficient Bayesian inference for multivariate probit models with
-sparse inverse correlation matrices. Journal of Computational and Graphical Statistics, 21(3), 739-757.
-<https://doi.org/10.1080/10618600.2012.679239>
+Lewandowski, D., Kurowicka, D., & Joe, H. (2009). Generating random correlation matrices based on vines and extended
+onion method. Journal of Multivariate Analysis, 100(9), 1989–2001. <https://doi.org/10.1016/j.jmva.2009.04.008>
+
+Liu, X., & Daniels, M. J. (2006). A new algorithm for simulating a correlation matrix based on parameter expansion and
+reparameterization. Journal of Computational and Graphical Statistics, 15(4), 897-914. <https://doi.org/10.1198/106186006X160681>
 }

@@ -37,19 +37,364 @@ module rkinds0
    ! Using real64 from iso_fortran_env
 end module
 
+
+module corr_slice_mod
+  use, intrinsic :: iso_c_binding, only: c_double
+  use rkinds0, only: rdp
+  use rngfuncs, only: unif_rand
+  implicit none
+  private
+  public :: slice_update_corr_LKJ, init_y_from_R
+
+  interface
+    subroutine dpotrf(uplo, n, a, lda, info)
+      import :: c_double
+      character(len=1), intent(in) :: uplo
+      integer, intent(in) :: n, lda
+      integer, intent(out) :: info
+      real(c_double), intent(inout) :: a(lda,*)
+    end subroutine dpotrf
+
+    subroutine dpotrs(uplo, n, nrhs, a, lda, b, ldb, info)
+      import :: c_double
+      character(len=1), intent(in) :: uplo
+      integer, intent(in) :: n, nrhs, lda, ldb
+      integer, intent(out) :: info
+      real(c_double), intent(in) :: a(lda,*)
+      real(c_double), intent(inout) :: b(ldb,*)
+    end subroutine dpotrs
+
+    subroutine dpotri(uplo, n, a, lda, info)
+      import :: c_double
+      character(len=1), intent(in) :: uplo
+      integer, intent(in) :: n, lda
+      integer, intent(out) :: info
+      real(c_double), intent(inout) :: a(lda,*)
+    end subroutine dpotri
+  end interface
+
+contains
+
+subroutine init_y_from_R(P, R, y, info)
+  implicit none
+  integer, intent(in) :: P
+  real(kind=rdp), intent(in) :: R(P,P)
+  real(kind=rdp), intent(out) :: y(P*(P-1)/2)
+  integer, intent(out) :: info
+
+  real(kind=rdp) :: A(P,P)
+  real(kind=rdp) :: w, z, denom
+  real(kind=rdp), parameter :: eps = 1.0e-12_rdp
+  integer :: i, j, idx
+
+  ! copy; DPOTRF overwrites
+  A(:,:) = R(:,:)
+
+  call dpotrf('L', P, A, P, info)
+  if (info /= 0) then
+    ! fallback: identity (y=0) if Cholesky fails
+    y(:) = 0.0_rdp
+    return
+  end if
+
+  idx = 0
+  do i = 2, P
+    w = 1.0_rdp
+    do j = 1, i-1
+      idx = idx + 1
+      denom = sqrt(max(w, 1.0e-300_rdp))
+      z = A(i,j) / denom
+
+      ! clamp to avoid atanh blowups
+      if (z >  1.0_rdp - eps) z =  1.0_rdp - eps
+      if (z < -1.0_rdp + eps) z = -1.0_rdp + eps
+
+      ! atanh(z) = 0.5*log((1+z)/(1-z))
+      y(idx) = 0.5_rdp * log( (1.0_rdp + z) / (1.0_rdp - z) )
+
+      w = w * (1.0_rdp - z*z)
+    end do
+  end do
+end subroutine
+
+subroutine slice_update_corr_LKJ(P, n, Sz, eta, y, C, Cinv)
+    implicit none
+    integer, intent(in) :: P, n
+    real(kind=rdp), intent(in) :: Sz(P,P), eta
+    real(kind=rdp), intent(inout) :: y(P*(P-1)/2)
+    real(kind=rdp), intent(inout) :: C(P,P), Cinv(P,P)
+    real(kind=rdp) :: y_old(P*(P-1)/2)
+
+
+    integer :: k, npar, errorflag, iterrr
+    real(kind=rdp) :: logf0, logy, u, w, Lb, Rb
+    real(kind=rdp), parameter :: slice_w = 1.0_rdp
+    integer, parameter :: max_steps = 50
+
+    npar = P*(P-1)/2
+    y_old(:) = y(:)
+
+    ! current log density
+    call logpost_corr_LKJ_lapack(P, n, Sz, eta, y, logf0)
+
+    do k = 1, npar
+
+        ! vertical slice level
+        u = unif_rand()
+        logy = logf0 + log(u)
+
+        ! stepping-out interval y(m)
+        w  = slice_w
+        Lb = y(k) - w*unif_rand()
+        Rb = Lb + w
+
+        call step_out(k, Lb, Rb, logy, y, P, n, Sz, eta, max_steps)
+
+        ! shrinkage
+        iterrr = 0
+        do
+          iterrr = iterrr + 1
+          y(k) = Lb + (Rb-Lb)*unif_rand()
+          y(k) = max(-7.0_rdp, min(7.0_rdp, y(k)))
+          call logpost_corr_LKJ_lapack(P,n,Sz,eta,y,logf0)
+
+          if (logf0 >= logy) exit
+
+          if (y(k) < 0.5_rdp*(Lb+Rb)) then
+          Lb = y(k)
+          else
+            Rb = y(k)
+          end if
+
+          if (iterrr >= 1000) then
+            y(:) = y_old(:)
+            call build_R_from_y(P, y, C)
+            call invert_spd_lapack(P, C, Cinv, errorflag)
+            return
+          end if
+        end do
+
+    end do
+
+    ! build final correlation matrix and inverse
+    call build_R_from_y(P, y, C)
+    call invert_spd_lapack(P, C, Cinv, errorflag)
+
+    if (errorflag /= 0) then
+      y(:) = y_old(:)
+      call build_R_from_y(P, y, C)
+      call invert_spd_lapack(P, C, Cinv, errorflag)
+      if (errorflag /= 0) then
+          ! keep incoming C/Cinv; just revert y and exit
+          y(:) = y_old(:)
+        return
+      end if
+    end if
+
+end subroutine
+
+subroutine logpost_corr_LKJ_lapack(P, n, Sz, eta, y, logpost)
+    implicit none
+    integer, intent(in) :: P, n
+    real(kind=rdp), intent(in) :: Sz(P,P), eta
+    real(kind=rdp), intent(in) :: y(P*(P-1)/2)
+    real(kind=rdp), intent(out) :: logpost
+
+    real(kind=rdp) :: R(P,P), A(P,P), B(P,P)
+    real(kind=rdp) :: logdetR, traceTerm, logJac
+    integer :: info, i
+
+    call build_R_from_y(P, y, R)
+
+    ! Copy R into A because DPOTRF overwrites input
+    A(:,:) = R(:,:)
+
+    ! Cholesky factorization: A = L*L' (lower triangle)
+    call dpotrf('L', P, A, P, info)
+    if (info /= 0) then
+        logpost = -huge(1.0_rdp)
+        return
+    end if
+
+    ! logdet(R) = 2 * sum(log(diag(L)))
+    logdetR = 0.0_rdp
+    do i = 1, P
+        logdetR = logdetR + log( max(A(i,i), 1.0e-300_rdp) )
+    end do
+    logdetR = 2.0_rdp * logdetR
+
+    ! Solve R * X = Sz for X using the Cholesky factors in A
+    ! DPOTRS overwrites RHS with the solution.
+    B(:,:) = Sz(:,:)
+    call dpotrs('L', P, P, A, P, B, P, info)
+    if (info /= 0) then
+        logpost = -huge(1.0_rdp)
+        return
+    end if
+
+    ! trace(Sz * R^{-1}) = trace(X) because X = R^{-1} Sz
+    traceTerm = 0.0_rdp
+    do i = 1, P
+        traceTerm = traceTerm + B(i,i)
+    end do
+
+    call lkj_log_jacobian(P, y, logJac)
+
+    logpost = -0.5_rdp * real(n,rdp) * logdetR   &
+              -0.5_rdp * traceTerm               &
+              + (eta - 1.0_rdp) * logdetR        &
+              + logJac
+end subroutine
+
+subroutine lkj_log_jacobian(P, y, logJac)
+    implicit none
+    integer, intent(in) :: P
+    real(kind=rdp), intent(in) :: y(P*(P-1)/2)
+    real(kind=rdp), intent(out) :: logJac
+
+    integer :: i, j, idx
+    real(kind=rdp) :: z, log1mz2, expo
+    real(kind=rdp), parameter :: tiny = 1.0e-300_rdp
+
+    logJac = 0.0_rdp
+    idx = 0
+
+    ! y is ordered as: i=2..P, j=1..i-1
+    do i = 2, P
+        do j = 1, i-1
+            idx = idx + 1
+            z = tanh(y(idx))
+            log1mz2 = log(max(1.0_rdp - z*z, tiny))
+
+            ! dz/dy term
+            expo = 1.0_rdp
+
+            ! LKJ-Cholesky transform term (depends on column j)
+            expo = expo + 0.5_rdp * real(P - j - 1, rdp)
+
+            logJac = logJac + expo * log1mz2
+        end do
+    end do
+end subroutine
+
+subroutine build_R_from_y(P, y, R)
+    implicit none
+    integer, intent(in) :: P
+    real(kind=rdp), intent(in) :: y(P*(P-1)/2)
+    real(kind=rdp), intent(out) :: R(P,P)
+
+    real(kind=rdp) :: L(P,P)
+    real(kind=rdp) :: z, w
+    integer :: i, j, idx
+
+    L = 0.0_rdp
+    idx = 0
+
+    L(1,1) = 1.0_rdp
+
+    do i = 2, P
+        w = 1.0_rdp
+        do j = 1, i-1
+            idx = idx + 1
+            z = tanh(y(idx))
+            L(i,j) = z * sqrt(w)
+            w = w * (1.0_rdp - z*z)
+        end do
+        L(i,i) = sqrt(w)
+    end do
+
+    R = matmul(L, transpose(L))
+
+    ! enforce symmetry (numerical hygiene)
+    R = 0.5_rdp * (R + transpose(R))
+
+    ! enforce unit diagonal
+    do i = 1, P
+        R(i,i) = 1.0_rdp
+    end do
+
+end subroutine
+
+subroutine step_out(k, Lb, Rb, logy, y, P, n, Sz, eta, max_steps)
+    implicit none
+    integer, intent(in) :: k, P, n, max_steps
+    real(kind=rdp), intent(inout) :: Lb, Rb
+    real(kind=rdp), intent(inout) :: y(:)
+    real(kind=rdp), intent(in) :: logy, Sz(P,P), eta
+
+    real(kind=rdp) :: logf, ysave, width
+    integer :: j
+
+    ysave = y(k)
+    width = Rb - Lb
+    if (width <= 0.0_rdp) width = 1.0_rdp
+
+    ! step out on the left
+    do j = 1, max_steps
+        y(k) = Lb
+        call logpost_corr_LKJ_lapack(P, n, Sz, eta, y, logf)
+        if (logf <= logy) exit
+        Lb = Lb - width
+    end do
+
+    ! step out on the right
+    do j = 1, max_steps
+        y(k) = Rb
+        call logpost_corr_LKJ_lapack(P, n, Sz, eta, y, logf)
+        if (logf <= logy) exit
+        Rb = Rb + width
+    end do
+
+    y(k) = ysave
+end subroutine
+
+subroutine invert_spd_lapack(P, A, Ainv, info)
+  implicit none
+  integer, intent(in) :: P
+  real(kind=rdp), intent(in) :: A(P,P)
+  real(kind=rdp), intent(out) :: Ainv(P,P)
+  integer, intent(out) :: info
+
+  integer :: i, j
+  real(kind=rdp) :: T(P,P)
+
+  T(:,:) = A(:,:)
+
+  call dpotrf('L', P, T, P, info)
+  if (info /= 0) return
+
+  call dpotri('L', P, T, P, info)
+  if (info /= 0) return
+
+  ! DPOTRI returns only the triangle it worked on; symmetrize
+  Ainv(:,:) = 0.0_rdp
+  do i = 1, P
+    do j = 1, i
+      Ainv(i,j) = T(i,j)
+      Ainv(j,i) = T(i,j)
+    end do
+  end do
+end subroutine
+
+end module corr_slice_mod
+
+
 ! also support marginally uniform prior?
 
 subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, sdHat, CHat, XtXi, samsize0, &
     burnin, Ntot, Njs_in, Xgroups, Ygroups, C_quantiles, sigma_quantiles, B_quantiles, BDrawsStore, &
-    sigmaDrawsStore, CDrawsStore, sdMH, ordinal_in, Cat_in, maxCat, gLiuSab, nuggetscale)
+    sigmaDrawsStore, CDrawsStore, sdMH, ordinal_in, Cat_in, maxCat, gLiuSab, nuggetscale, corrAlg)
+    ! corrAlg: 1 = Liu & Daniels MH, 2 = slice on R
+!
 !    WgroupsStore, meanMatMeanStore, SigmaMatDrawStore, CheckStore)
 !
     use rkinds0, only: rint, rdp
     use rngfuncs
+    use corr_slice_mod, only: slice_update_corr_LKJ, init_y_from_R
 !
     implicit none
 !
-    integer(rint), intent(in) ::P, numcorr, K, numG, samsize0, burnin, Ntot, maxCat!, priorchoice
+    integer(rint), intent(in) ::P, numcorr, K, numG, samsize0, burnin, Ntot, maxCat, corrAlg
     real(rdp), intent(in) ::  BHat(numG,K,P), sdHat(numG,P), CHat(numG,P,P), XtXi(numG,K,K), Cat_in(numG,P), &
                               Xgroups(numG,Ntot,K), Ygroups(numG,Ntot,P), ordinal_in(numG,P), &
                               sdMH(numG,P), nuggetscale, Njs_in(numG,1)
@@ -68,11 +413,13 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                   alphaMat(numG,maxCat+1,P), Wdummy(numG,P,Ntot,maxCat), condMean, condVar, &
                   Zcorr_sample(samsize0,numcorr), dummy3(samsize0), dummy2(samsize0), priorScale(P,P), &
                   diffmat(Ntot,P), meanO(P*K), para((P*K)*((P*K)+3)/2 + 1), randraw, gLiuSab_curr(numG,P), &
-                  logR_MH !, thresh1, thresh2
+                  logR_MH, lkj_eta, epsmat(Ntot,P), yCorr(numG,P*(P-1)/2), Sz(P,P) !, thresh1, thresh2
     integer(rint) ::s1, g1, i1, corrteller, Cat(numG,P), ordinal(numG,P), Njs(numG), &
                   c1, c2, p1, Yi1Categorie, tellers(numG,maxCat,P), k1, p2, errorflag, &
-                  lower_int, median_int, upper_int, priorDf
+                  lower_int, median_int, upper_int, priorDf, M
 !
+    ! check
+
     !initial posterior draws
     BDraws = BHat
     sigmaDraws = sdHat
@@ -80,6 +427,10 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
     meanO = 0.0_rdp
     gLiuSab_curr = 1.0_rdp
     do g1=1,numG
+        CDraws(g1,:,:) = 0.5_rdp*(CDraws(g1,:,:) + transpose(CDraws(g1,:,:)))
+        do p1 = 1, P
+            CDraws(g1,p1,p1) = 1.0_rdp
+        end do
         call FINDInv(CDraws(g1,:,:),CcurrInv(g1,:,:),P,errorflag)
     end do
 !
@@ -105,6 +456,16 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
     !set prior hyperparameters. Only supprt for joint uniform prior
     priorDf = 0 ! target prior as in Liu & Daniels
     priorScale = 0.0_rdp
+!
+    ! set prior hyper parameter eta
+    lkj_eta = 1.0_rdp   ! uniform on R
+    !lkj_eta = 2.0_rdp  ! shrink toward identity
+    M = P*(P-1)/2
+    !yCorr(:,:) = 0.0_rdp
+    do g1 = 1, numG
+        call init_y_from_R(P, CDraws(g1,:,:), yCorr(g1,1:M), errorflag)
+    end do
+!
 !    if(priorchoice == 1) then
 !        priorDf = -P-1
 !        priorScale = 0
@@ -147,8 +508,9 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
         end do
     end if
 !
-!    write(*,*)'sampling for burn-in period'
-    !start Gibbs sampler
+    call getrngstate()
+!
+    !start Gibbs sampler: burn-in period
     do s1 = 1,burnin
         corrteller = 0_rint
         tellers = 0_rint
@@ -251,23 +613,36 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
                 BDraws(g1,:,p1) = betaDrawj(1,((p1-1)*K+1):(p1*K)) + Bmean(1:K,p1)
             end do
 !
-            !draw R using method of Liu and Daniels (LD, 2006)
-            !draw candidate R
-            diffmat(1:Njs(g1),1:P) = Wgroups(g1,1:Njs(g1),1:P) - matmul(Xgroups(g1,1:Njs(g1),1:K), &
-                BDraws(g1,1:K,1:P))
+            !------------------------------------------------------------
+            ! Draw correlation matrix
+            ! corrMethod = 1 : Liu & Daniels MH (existing code)
+            ! corrMethod = 2 : Slice sampler on R (uniform prior)
+            !------------------------------------------------------------
+
+            ! residuals
+            diffmat(1:Njs(g1),1:P) = Wgroups(g1,1:Njs(g1),1:P) - &
+              matmul(Xgroups(g1,1:Njs(g1),1:K), BDraws(g1,1:K,1:P))
+!
             errorMatj = matmul(transpose(diffmat(1:Njs(g1),1:P)),diffmat(1:Njs(g1),1:P))
-            Ds = diag(1/sqrt(diagonals(errorMatj,P)),P)
-            diffmat(1:Njs(g1),1:P) = matmul(diffmat(1:Njs(g1),1:P),Ds) !diffmat is now epsilon in LD
-            epsteps = matmul(transpose(diffmat(1:Njs(g1),1:P)),diffmat(1:Njs(g1),1:P))
-            SS1 = matmul(matmul(diag(1/sigmaDraws(g1,:),P),epsteps),diag(1/sigmaDraws(g1,:),P))
+
+            if (corrAlg == 1) then
+
+              !========================================================
+              ! Method 1: Liu & Daniels (2006)
+              !========================================================
+!
+              Ds = diag(1/sqrt(diagonals(errorMatj,P)),P)
+              epsmat(1:Njs(g1),1:P) = matmul(diffmat(1:Njs(g1),1:P),Ds) !diffmat is now epsilon in LD
+              epsteps = matmul(transpose(epsmat(1:Njs(g1),1:P)), epsmat(1:Njs(g1),1:P))
+              SS1 = matmul(matmul(diag(1/sigmaDraws(g1,:),P),epsteps),diag(1/sigmaDraws(g1,:),P))
 !            write(*,*)
 !            write(*,*)SS1
-            call FINDInv(SS1+priorScale,SS1inv,P,errorflag)
-            call gen_wish(SS1inv,Njs(g1)+priorDf,dummyPP,P) !!!!!
-            call FINDInv(dummyPP,dummyPPinv,P,errorflag)
-            Ccan = matmul(matmul(diag(1/sqrt(diagonals(dummyPPinv,P)),P),dummyPPinv), &
-                diag(1/sqrt(diagonals(dummyPPinv,P)),P))
-            Ccan = Ccan * Cnugget
+              call FINDInv(SS1+priorScale,SS1inv,P,errorflag)
+              call gen_wish(SS1inv,Njs(g1)+priorDf,dummyPP,P) !!!!!
+              call FINDInv(dummyPP,dummyPPinv,P,errorflag)
+              Ccan = matmul(matmul(diag(1/sqrt(diagonals(dummyPPinv,P)),P),dummyPPinv), &
+                  diag(1/sqrt(diagonals(dummyPPinv,P)),P))
+              Ccan = Ccan * Cnugget
             !do p1 = 1,P-1
             !    do p2 = p1+1,P
             !        Ccan(p1,p2) = scale_function(Ccan(p1,p2), nuggetscale, thresh2, thresh1)
@@ -275,16 +650,40 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
             !    end do
             !end do
             ! check acceptance of candidate via MH
-            logR_MH = 0.5*real(P+1,kind=rdp) * (log(det(Ccan,P,-1)) - log(det(Ccurr,P,-1)))
-            R_MH = exp(logR_MH)
-            rnunif = unif_rand()
-            if(rnunif < R_MH) then
-                CDraws(g1,:,:) = Ccan(:,:)
-                call FINDInv(Ccan,CcanInv,P,errorflag)
-                CcurrInv(g1,:,:) = CcanInv(:,:)
-                !acceptC(g1) = acceptC(g1) + 1
+              logR_MH = 0.5*real(P+1,kind=rdp) * (log(det(Ccan,P,-1)) - log(det(Ccurr,P,-1)))
+              R_MH = exp(logR_MH)
+              rnunif = unif_rand()
+              if(rnunif < R_MH) then
+                    CDraws(g1,:,:) = Ccan(:,:)
+                  call FINDInv(Ccan,CcanInv,P,errorflag)
+                  CcurrInv(g1,:,:) = CcanInv(:,:)
+                  !acceptC(g1) = acceptC(g1) + 1
+              end if
+              Cinv(:,:) = CcurrInv(g1,:,:)
+              !
+            else if (corrAlg == 2) then
+
+              !========================================================
+              ! Method 2: Onion sampler based on:
+              ! Lewandowski, D., Kurowicka, D., & Joe, H. (2009).
+              ! Generating random correlation matrices based on vines and extended onion method.
+              ! Journal of Multivariate Analysis, 100(9), 1989–2001.
+              !========================================================
+
+              ! Standardize residuals
+              do i1 = 1, P
+                  do p1 = 1, P
+                      Sz(i1,p1) = errorMatj(i1,p1) / (sigmaDraws(g1,i1)*sigmaDraws(g1,p1))
+                  end do
+              end do
+
+              ! One full slice sweep over LKJ coordinates
+              call slice_update_corr_LKJ(P, Njs(g1), Sz, lkj_eta, yCorr(g1,1:M), &
+                CDraws(g1,:,:), CcurrInv(g1,:,:))
+
+              Cinv(:,:) = CcurrInv(g1,:,:)
+
             end if
-            Cinv(:,:) = CcurrInv(g1,:,:)
 
             !draw sigma's
             do p1 = 1,P
@@ -450,21 +849,37 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
 !            BDraws = BHat
             !CheckStore(s1,g1,1,1,1:P) = BDraws(g1,1,:)
 !
-            !draw R using method of Liu and Daniels (LD, 2006)
-            !draw candidate R
-            diffmat(1:Njs(g1),1:P) = Wgroups(g1,1:Njs(g1),1:P) - matmul(Xgroups(g1,1:Njs(g1),1:K), &
-                BDraws(g1,1:K,1:P))
+
+            !------------------------------------------------------------
+            ! Draw correlation matrix
+            ! corrMethod = 1 : Liu & Daniels MH (existing code)
+            ! corrMethod = 2 : Slice sampler on R (uniform prior)
+            !------------------------------------------------------------
+
+            ! residuals
+            diffmat(1:Njs(g1),1:P) = Wgroups(g1,1:Njs(g1),1:P) - &
+              matmul(Xgroups(g1,1:Njs(g1),1:K), BDraws(g1,1:K,1:P))
+!
             errorMatj = matmul(transpose(diffmat(1:Njs(g1),1:P)),diffmat(1:Njs(g1),1:P))
-            Ds = diag(1/sqrt(diagonals(errorMatj,P)),P)
-            diffmat(1:Njs(g1),1:P) = matmul(diffmat(1:Njs(g1),1:P),Ds) !diffmat is now epsilon in LD
-            epsteps = matmul(transpose(diffmat(1:Njs(g1),1:P)),diffmat(1:Njs(g1),1:P))
-            SS1 = matmul(matmul(diag(1/sigmaDraws(g1,:),P),epsteps),diag(1/sigmaDraws(g1,:),P))
-            call FINDInv(SS1+priorScale,SS1inv,P,errorflag)
-            call gen_wish(SS1inv,Njs(g1)+priorDf,dummyPP,P) !!!!!
-            call FINDInv(dummyPP,dummyPPinv,P,errorflag)
-            Ccan = matmul(matmul(diag(1/sqrt(diagonals(dummyPPinv,P)),P),dummyPPinv), &
-                diag(1/sqrt(diagonals(dummyPPinv,P)),P))
-            Ccan = Ccan * Cnugget
+
+            if (corrAlg == 1) then
+
+              !========================================================
+              ! Method 1: Liu & Daniels
+              !========================================================
+!
+              Ds = diag(1/sqrt(diagonals(errorMatj,P)),P)
+              epsmat(1:Njs(g1),1:P) = matmul(diffmat(1:Njs(g1),1:P),Ds) !diffmat is now epsilon in LD
+              epsteps = matmul(transpose(epsmat(1:Njs(g1),1:P)), epsmat(1:Njs(g1),1:P))
+              SS1 = matmul(matmul(diag(1/sigmaDraws(g1,:),P),epsteps),diag(1/sigmaDraws(g1,:),P))
+!            write(*,*)
+!            write(*,*)SS1
+              call FINDInv(SS1+priorScale,SS1inv,P,errorflag)
+              call gen_wish(SS1inv,Njs(g1)+priorDf,dummyPP,P) !!!!!
+              call FINDInv(dummyPP,dummyPPinv,P,errorflag)
+              Ccan = matmul(matmul(diag(1/sqrt(diagonals(dummyPPinv,P)),P),dummyPPinv), &
+                  diag(1/sqrt(diagonals(dummyPPinv,P)),P))
+              Ccan = Ccan * Cnugget
             !do p1 = 1,P-1
             !    do p2 = p1+1,P
             !        Ccan(p1,p2) = scale_function(Ccan(p1,p2), nuggetscale, thresh2, thresh1)
@@ -472,16 +887,38 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
             !    end do
             !end do
             ! check acceptance of candidate via MH
-            logR_MH = 0.5*real(P+1,kind=rdp) * (log(det(Ccan,P,-1)) - log(det(Ccurr,P,-1)))
-            R_MH = exp(logR_MH)
-            rnunif = unif_rand()
-            if(rnunif < R_MH) then
-                CDraws(g1,:,:) = Ccan(:,:)
-                call FINDInv(Ccan,CcanInv,P,errorflag)
-                CcurrInv(g1,:,:) = CcanInv(:,:)
-                !acceptC(g1) = acceptC(g1) + 1
+              logR_MH = 0.5*real(P+1,kind=rdp) * (log(det(Ccan,P,-1)) - log(det(Ccurr,P,-1)))
+              R_MH = exp(logR_MH)
+              rnunif = unif_rand()
+              if(rnunif < R_MH) then
+                    CDraws(g1,:,:) = Ccan(:,:)
+                  call FINDInv(Ccan,CcanInv,P,errorflag)
+                  CcurrInv(g1,:,:) = CcanInv(:,:)
+                  !acceptC(g1) = acceptC(g1) + 1
+              end if
+              Cinv(:,:) = CcurrInv(g1,:,:)
+              !
+            else if (corrAlg == 2) then
+
+              !========================================================
+              ! Method 2: Slice sampler for R (with LKJ prior)
+              !========================================================
+
+              ! Standardize residuals using *model* sigmas (Jeffreys kept)
+              do i1 = 1, P
+                  do p1 = 1, P
+                      Sz(i1,p1) = errorMatj(i1,p1) / (sigmaDraws(g1,i1)*sigmaDraws(g1,p1))
+                  end do
+              end do
+
+              ! One full slice sweep over LKJ coordinates
+              call slice_update_corr_LKJ(P, Njs(g1), Sz, lkj_eta, yCorr(g1,1:M), &
+                CDraws(g1,:,:), CcurrInv(g1,:,:))
+
+              Cinv(:,:) = CcurrInv(g1,:,:)
+
             end if
-            Cinv(:,:) = CcurrInv(g1,:,:)
+
             do i1 = 1,P-1 !keep Fisher z transformed posterior draws of rho's
                 Zcorr_sample(s1,(corrteller+1):(corrteller+P-i1)) = .5*log((1+CDraws(g1,(1+i1):P,i1))/ &
                     (1-CDraws(g1,(1+i1):P,i1)))
@@ -540,6 +977,8 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
         gLiuSab(s1,1:numG,1:P) = gLiuSab_curr(1:numG,1:P)
 !
     end do
+!
+    call putrngstate()
 !
     ! compute posterior mean
     do c1=1,numcorr
@@ -603,7 +1042,6 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
     !write(*,*)'end'
 
 contains
-
 
 
 subroutine robust_covest(m, betas1, betas2, mn1, mn2, varb1, varb2, varb1b2Plus, varb1b2Min)
@@ -1862,7 +2300,6 @@ SUBROUTINE FINDinv(matrix, inverse, n, errorflag)
     end if
 
 END SUBROUTINE FINDinv
-
 
 
 end subroutine estimate_bct_ordinal

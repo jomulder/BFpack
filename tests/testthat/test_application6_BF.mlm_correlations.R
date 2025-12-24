@@ -11,7 +11,7 @@ test_that("correlation test on cor_test object with two groups correctly evaluat
     Del_with_Wmn_in_g1 > Del_with_Wmn_in_g2 &
     Im_with_Wmn_in_g1 > Im_with_Wmn_in_g2")
   expect_equivalent(
-    log(BF6_cor$BFmatrix_confirmatory[1,2]), 4.9, tolerance = .5
+    log(BF6_cor$BFmatrix_confirmatory[1,2]), 4.8, tolerance = .5
 )})
 
 

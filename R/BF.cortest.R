@@ -1,4 +1,5 @@
 
+#' @importFrom sandwich sandwich
 #' @importFrom coda as.mcmc mcmc.list gelman.diag
 #' @importFrom stats terms
 remove_predictors_helper <- function(Y_groups, formula){
@@ -355,12 +356,16 @@ draw_ju_r <- function(P, samsize=50000, Fisher=1){
 #' control variables in the model (e.g., \code{~ education}).
 #'
 #' @param iter total number of iterations from posterior. The total is split across three chains. By default, the total number of iterations is 10000,
-#' implying 3333 iterations per chain.
+#' implying a rounded integer of 3333 iterations per chain.
 #'
 #' @param burnin number of iterations for burnin (default is 2000).
 #'
-#' @param nugget.scale a scalar to avoid computational issues due to posterior draws for the corralations
-#' too close to 1 in absolute value. Posterior draws for the correlations are multiplied with this nugget.scale.
+#' @param method \code{"LKJ"} for onion method sampler of correlation matrix proposed by Lewandowski, Kurowicka,
+#'  & Joe (2009), which is the default, or \code{"LD"} for 'PX-RPMH' correlation matrix sampler of Liu and Daniels (2009).
+#'  \code{"onion"} method tends to mix better for larger correlation matrices.
+#'
+#' @param nugget.scale When using \code{method = "LD"}, a nugget.scale can be used to avoid computational issues due to posterior draws
+#' for the correlations too close to 1 in absolute value. Posterior draws for the correlations are multiplied with this nugget.scale.
 #' So \code{nugget.scale} should be close to 1 (the default is .999). If the traceplots show that draws are stuck
 #' at 1 or -1 too long try a slightly smaller \code{nugget.scale}.
 #'
@@ -385,9 +390,11 @@ draw_ju_r <- function(P, samsize=50000, Fisher=1){
 #' @references Mulder, J. (2016). Bayes factors for testing order-constrained hypotheses on correlations. Journal of Mathematical
 #' Psychology, 72, 104-115. <https://doi.org/10.1016/j.jmp.2014.09.004>
 #'
-#' @references Talhouk, A., Doucet, A., & Murphy, K. (2012). Efficient Bayesian inference for multivariate probit models with
-#' sparse inverse correlation matrices. Journal of Computational and Graphical Statistics, 21(3), 739-757.
-#' <https://doi.org/10.1080/10618600.2012.679239>
+#' @references Lewandowski, D., Kurowicka, D., & Joe, H. (2009). Generating random correlation matrices based on vines and extended
+#' onion method. Journal of Multivariate Analysis, 100(9), 1989–2001. <https://doi.org/10.1016/j.jmva.2009.04.008>
+#'
+#' @references Liu, X., & Daniels, M. J. (2006). A new algorithm for simulating a correlation matrix based on parameter expansion and
+#' reparameterization. Journal of Computational and Graphical Statistics, 15(4), 897-914. <https://doi.org/10.1198/106186006X160681>
 #'
 #' @examples
 #' \donttest{
@@ -413,7 +420,7 @@ draw_ju_r <- function(P, samsize=50000, Fisher=1){
 #' }
 #' @rdname cor_test
 #' @export
-cor_test <- function(..., formula = NULL, iter = 1e4, burnin = 2e3, nugget.scale = .999){
+cor_test <- function(..., formula = NULL, iter = 1e4, burnin = 2e3, method = "LKJ", nugget.scale = .999){
 
   # if(is.na(prior.cor)){stop("'prior.cor' argument needs to be either 'joint.unif' or 'marg.unif'. See ?cor_test.")}
   # if(is.null(prior.cor)){stop("'prior.cor' argument needs to be either 'joint.unif' or 'marg.unif'. See ?cor_test.")}
@@ -426,6 +433,14 @@ cor_test <- function(..., formula = NULL, iter = 1e4, burnin = 2e3, nugget.scale
   # }
   prior.cor <- "joint.unif"
   priorchoice <- 1
+
+  if(method=="LKJ"){
+    methodnum <- 2
+  }else if(method=="LD"){
+    methodnum <- 1
+  }else{
+    warning("argument 'method' ill-specified. Default 'LKJ' method used.")
+  }
 
   if(!is.numeric(nugget.scale)){stop("'nugget.scale' should be a numerical scalar.")}
   if(nugget.scale > 1 | nugget.scale < 0){stop("'nugget.scale' should be very close 1. If should not exceed 1 nor fall below 0.")}
@@ -633,12 +648,8 @@ cor_test <- function(..., formula = NULL, iter = 1e4, burnin = 2e3, nugget.scale
                     Cat_in=numcats,
                     maxCat=as.integer(max(numcats)),
                     gLiuSab=gLiuSab,
-                    nuggetscale=as.double(nugget.scale)
-                    #priorchoice = as.integer(priorchoice)
-                    #,WgroupsStore=array(as.double(0),dim=c(samsize0,numG,Ntot,P)),
-                    #meanMatMeanStore = array(as.double(0),dim=c(samsize0,Ntot,P)),
-                    #SigmaMatDrawStore = array(as.double(0),dim=c(samsize0,P,P)),
-                    #CheckStore = array(as.double(1),dim=c(samsize0,numG,10,P,P))
+                    nuggetscale=as.double(nugget.scale),
+                    corrAlg=as.integer(methodnum)
     )
   })
   CDrawsStore <- array(NA,dim=c(length(res)*samsize0,numG,P,P))
@@ -769,306 +780,6 @@ cor_test <- function(..., formula = NULL, iter = 1e4, burnin = 2e3, nugget.scale
   return(cor_out)
 }
 
-cor_test_1chain <- function(..., formula = NULL, iter = 5e3, burnin = 3e3, nugget.scale = .999){
 
-  # if(is.na(prior.cor)){stop("'prior.cor' argument needs to be either 'joint.unif' or 'marg.unif'. See ?cor_test.")}
-  # if(is.null(prior.cor)){stop("'prior.cor' argument needs to be either 'joint.unif' or 'marg.unif'. See ?cor_test.")}
-  # if(!(prior.cor == "joint.unif" | prior.cor == "marg.unif")){
-  #   stop("'prior.cor' argument needs to be either 'joint.unif' or 'marg.unif'. See ?cor_test.")}
-  # if(prior.cor == "joint.unif"){
-  #   priorchoice <- 1
-  # }else{
-  #   priorchoice <- 2
-  # }
-  prior.cor <- "joint.unif"
-  priorchoice <- 1
-
-
-  if(!is.numeric(nugget.scale)){stop("'nugget.scale' should be a numerical scalar.")}
-  if(nugget.scale > 1 | nugget.scale < 0){stop("'nugget.scale' should be very close 1. If should not exceed 1 nor fall below 0.")}
-  nugget.scale <- nugget.scale[1]
-
-  Y_input <- list(...)
-  numG <- length(Y_input)
-
-  if(is.null(formula)){
-    formula <- ~ 1
-  }
-  Xnames <- attr(terms(formula), "term.labels")
-  whichDV <- lapply(Y_input,function(y){
-    unlist(lapply(colnames(y),function(x){sum(x==Xnames)==0}))
-  })
-  if(numG>1){ #check that the same number of DVs are present in each group (that's how dimensions are coded)
-    numDV <- rep(NA,numG)
-    for(gg in 1:numG){
-      numDV[gg] <- sum(whichDV[[gg]])
-    }
-    if(sum(abs(diff(numDV)))!=0){
-      stop("Each group should contain same number of dependent variables.")
-    }
-  }
-
-  #check measurement level of dependent variables
-  P <- sum(whichDV[[1]])
-  ordi <- numcats <- matrix(0,nrow=numG,ncol=P)
-  Ylevel <- matrix(0,nrow=numG,ncol=P)
-  Y_groups <- Y_input
-  for(gg in 1:numG){
-    teller <- 1
-    for(pp in which(whichDV[[gg]])){
-      if(class(Y_groups[[gg]][,pp])[1] == "numeric" | class(Y_groups[[gg]][,pp])[1] == "integer"){
-        teller <- teller + 1
-        Ylevel[gg,pp] <- "numeric"
-      }else{
-        if(class(Y_groups[[gg]][,pp])[1] == "ordered"){
-          #levels(Y_groups[[gg]][,pp]) <- 1:length(levels(Y_groups[[gg]][,pp]))
-          old_levels <- sort(as.numeric(unique(Y_groups[[gg]][,pp])))
-          for(index_levels_g_p in 1:length(old_levels)){
-            Y_groups[[gg]][which(Y_groups[[gg]][,pp] == old_levels[index_levels_g_p]),pp] <- index_levels_g_p
-          }
-          Y_groups[[gg]][,pp] <- as.numeric(Y_groups[[gg]][,pp])
-          ordi[gg,teller] <- 1
-          numcats[gg,teller] <- max(Y_groups[[gg]][,pp])
-          Ylevel[gg,pp] <- "ordinal"
-          if(numcats[gg,teller]==2){Ylevel[gg,pp] <- "dichotomous"}
-          teller <- teller + 1
-          if(max(Y_groups[[gg]][,pp])>11){
-            stop("Ordinal variables are not allowed to have more than 11 categories")
-          }
-        }else{
-          if(class(Y_groups[[gg]][,pp])[1] == "factor"){
-            if(length(levels(Y_groups[[gg]][,pp]))==2){
-              Ylevel[gg,pp] <- "dichotomous"
-              levels(Y_groups[[gg]][,pp]) <- 1:length(levels(Y_groups[[gg]][,pp]))
-              Y_groups[[gg]][,pp] <- as.numeric(Y_groups[[gg]][,pp])
-              ordi[gg,teller] <- 1
-              numcats[gg,teller] <- 2
-              teller <- teller + 1
-            }else{
-              stop("Outcome variables should be either of class 'numeric', 'ordered', or a 2-level 'factor'.")
-            }
-          }else{
-            stop("Outcome variables should be either of class 'numeric', 'ordered', or a 2-level 'factor'.")
-          }
-        }
-      }
-    }
-    ordi[gg,] <- as.double(ordi[gg,])
-    numcats[gg,] <- as.double(numcats[gg,])
-  }
-  if(max(numcats) == 1){
-    stop("One categorical variable is constant.")
-  }
-  #because ordinal variables are not yet supported we set these indicators to '0'
-  #ordi <- numcats <- matrix(0,nrow=numG,ncol=P)
-  cor.type <- lapply(1:numG,function(g){matrix(NA,ncol=P,nrow=P)})
-  for(gg in 1:numG){
-    for(p1 in 2:P){
-      for(p2 in 1:(p1-1)){
-        if(Ylevel[gg,p1]=="numeric" & Ylevel[gg,p2]=="numeric"){
-          cor.type[[gg]][p1,p2]<-"product-moment"
-        }else{
-          if(Ylevel[gg,p1]=="dichotomous" & Ylevel[gg,p2]=="dichotomous"){
-            cor.type[[gg]][p1,p2]<-"tetrachoric"
-          }else{
-            if(Ylevel[gg,p1]=="ordinal" & Ylevel[gg,p2]=="ordinal"){
-              cor.type[[gg]][p1,p2]<-"polychoric"
-            }else{
-              if((Ylevel[gg,p1]=="ordinal" & Ylevel[gg,p2]=="numeric") |
-                 (Ylevel[gg,p1]=="numeric" & Ylevel[gg,p2]=="ordinal")){
-                cor.type[[gg]][p1,p2]<-"polyserial"
-              }else{
-                if((Ylevel[gg,p1]=="ordinal" & Ylevel[gg,p2]=="dichotomous")|
-                   (Ylevel[gg,p1]=="dichotomous" & Ylevel[gg,p2]=="ordinal")){
-                  cor.type[[gg]][p1,p2]<-"tetrachoric"
-                }else{
-                  if((Ylevel[gg,p1]=="numeric" & Ylevel[gg,p2]=="dichotomous")|
-                     (Ylevel[gg,p1]=="dichotomous" & Ylevel[gg,p2]=="numeric")){
-                    cor.type[[gg]][p1,p2]<-"biserial"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-
-  model_matrices <- lapply(seq_len(numG) , function(x) {
-    model.matrix(formula, Y_groups[[x]])
-  })
-
-  correlate <- remove_predictors_helper(Y_groups = Y_groups, formula)
-
-  YXlist <- lapply(1:length(model_matrices),function(g){
-    list(as.matrix(correlate[[g]]),as.matrix(model_matrices[[g]]))
-  })
-
-  K <- ncol(YXlist[[1]][[2]])
-  numcorr <- numG*P*(P-1)/2
-  ngroups <- unlist(lapply(1:numG,function(g){nrow(YXlist[[g]][[1]])}))
-  if(min(ngroups)<2*P+1){
-    stop("sample size in each group must at least be equal to 2*P+1, with P the number of DVs.")
-  }
-  Ntot <- max(ngroups)
-  Ygroups <- array(0,dim=c(numG,Ntot,P))
-  Xgroups <- array(0,dim=c(numG,Ntot,K))
-  XtXi <- array(0,dim=c(numG,K,K))
-  BHat <- array(0,dim=c(numG,K,P))
-  sdHat <- matrix(0,nrow=numG,ncol=P)
-  CHat <- array(0,dim=c(numG,P,P))
-  SumSq <- array(0,dim=c(numG,P,P))
-  SumSqInv <- array(0,dim=c(numG,P,P))
-  sdsd <- matrix(0,nrow=numG,ncol=P)
-
-  for(g in 1:numG){
-    Y_g <- YXlist[[g]][[1]]
-    for(p in 1:P){
-      if(ordi[g,p]==0){
-        Y_g[,p] <- c(scale(Y_g[,p]))
-      }
-    }
-    X_g <- YXlist[[g]][[2]]
-    Ygroups[g,1:ngroups[g],] <- as.double(Y_g)
-    #standardize data to get a more stable sampler for the correlations.
-    tableX <- apply(X_g,2,table)
-    catX <- unlist(lapply(1:length(tableX),function(xcol){
-      length(tableX[[xcol]])
-    }))
-    if(sum(catX>1)){
-      X_g[1:ngroups[g],which(catX>1)] <- apply(as.matrix(X_g[1:ngroups[g],which(catX>1)]),2,scale)
-    }
-    Xgroups[g,1:ngroups[g],] <- as.double(X_g)
-    XtXi[g,,] <- as.double(solve(t(X_g)%*%X_g))
-    BHat[g,,] <- as.double(XtXi[g,,]%*%t(X_g)%*%Y_g)
-    SumSq[g,,] <- t(Y_g - X_g%*%BHat[g,,])%*%(Y_g - X_g%*%BHat[g,,])
-    SumSqInv[g,,] <- solve(SumSq[g,,])
-    Sigma_g <- SumSq[g,,]/ngroups[g]
-    sdHat[g,] <- as.double(sqrt(diag(Sigma_g)))
-    CHat[g,,] <- as.double(diag(1/sdHat[g,])%*%Sigma_g%*%diag(1/sdHat[g,]))
-    #get rough estimate of posterior sd of the standard deviations (used for random walk sd)
-    drawsSigma_g <- rWishart(1e2,df=ngroups[g],Sigma=SumSqInv[g,,])
-    sdsd[g,] <- unlist(lapply(1:P,function(p){
-      as.double(sd(sqrt(drawsSigma_g[p,p,])))
-    }))
-  }
-  samsize0 <- iter
-  gLiuSab <- array(as.double(0),dim=c(samsize0,numG,P))
-  Njs <- matrix(as.double(ngroups),nrow=numG,ncol=1)
-
-  # call Fortran subroutine for Gibbs sampling using noninformative improper priors
-  # for regression coefficients, Jeffreys priors for standard deviations, and a proper
-  # joint uniform prior for the correlation matrices.
-
-  res <- .Fortran("estimate_bct_ordinal",
-                  postZmean=matrix(as.double(0),nrow=numcorr,ncol=1),
-                  postZcov=matrix(as.double(0),nrow=numcorr,ncol=numcorr),
-                  P=as.integer(P),
-                  numcorr=as.integer(numcorr),
-                  K=as.integer(K),
-                  numG=as.integer(numG),
-                  BHat=BHat,
-                  sdHat=sdHat,
-                  CHat=CHat,
-                  XtXi=XtXi,
-                  samsize0=as.integer(samsize0),
-                  burnin=as.integer(burnin),
-                  Ntot=as.integer(Ntot),
-                  Njs_in=Njs,
-                  Xgroups=Xgroups,
-                  Ygroups=Ygroups,
-                  C_quantiles=array(as.double(0),dim=c(numG,P,P,3)),
-                  sigma_quantiles=array(as.double(0),dim=c(numG,P,3)),
-                  B_quantiles=array(as.double(0),dim=c(numG,K,P,3)),
-                  BDrawsStore=array(as.double(0),dim=c(samsize0,numG,K,P)),
-                  sigmaDrawsStore=array(as.double(0),dim=c(samsize0,numG,P)),
-                  CDrawsStore=array(as.double(0),dim=c(samsize0,numG,P,P)),
-                  sdMH=sdsd,
-                  ordinal_in=ordi,
-                  Cat_in=numcats,
-                  maxCat=as.integer(max(numcats)),
-                  gLiuSab=gLiuSab,
-                  nuggetscale=as.double(nugget.scale)
-                  #priorchoice = as.integer(priorchoice)
-                  #,WgroupsStore=array(as.double(0),dim=c(samsize0,numG,Ntot,P)),
-                  #meanMatMeanStore = array(as.double(0),dim=c(samsize0,Ntot,P)),
-                  #SigmaMatDrawStore = array(as.double(0),dim=c(samsize0,P,P)),
-                  #CheckStore = array(as.double(1),dim=c(samsize0,numG,10,P,P))
-  )
-
-  varnames <- lapply(1:numG,function(g){
-    names(correlate[[g]])
-  })
-  corrnames <- lapply(1:numG,function(g){
-    matrix(unlist(lapply(1:P,function(p2){
-      unlist(lapply(1:P,function(p1){
-        if(numG==1){
-          paste0(varnames[[g]][p1],"_with_",varnames[[g]][p2])
-        }else{
-          paste0(varnames[[g]][p1],"_with_",varnames[[g]][p2],"_in_g",as.character(g))
-        }
-      }))
-    })),nrow=P)
-  })
-
-  FmeansCovCorr <- lapply(1:numG,function(g){
-    Fdraws_g <- FisherZ(t(matrix(unlist(lapply(1:samsize0,function(s){
-      res$CDrawsStore[s,g,,][lower.tri(diag(P))]
-    })),ncol=samsize0)))
-    mean_g <- apply(Fdraws_g,2,mean)
-    names(mean_g) <- corrnames[[g]][lower.tri(diag(P))]
-    covm_g <- cov(Fdraws_g)
-    ### DELETE THIS
-    #covm_g <- diag(numcorr/numG)
-    ### DELETE THIS
-    return(list(mean_g,covm_g))
-  })
-
-  meansCovCorr <- lapply(1:numG,function(g){
-    matcor_g <- unlist(lapply(1:(P-1),function(p2){
-      unlist(lapply((p2+1):P,function(p1){
-        mean(res$CDrawsStore[,g,p1,p2])
-      }))
-    }))
-    names(matcor_g) <- corrnames[[g]][lower.tri(diag(P))]
-    return(matcor_g)
-  })
-
-  meanN <- unlist(lapply(1:numG,function(g){
-    FmeansCovCorr[[g]][[1]]
-  }))
-  covmN <- matrix(0,nrow=numcorr,ncol=numcorr)
-  numcorrg <- numcorr/numG
-
-  corrdraws <- lapply(1:numG,function(g){
-    array_g <- res$CDrawsStore[,g,,]
-    dimnames(array_g) <- list(NULL,varnames[[g]],varnames[[g]])
-    return(array_g)
-  })
-
-  for(g in 1:numG){
-    covmN[(g-1)*numcorrg+1:numcorrg,(g-1)*numcorrg+1:numcorrg] <- FmeansCovCorr[[g]][[2]]
-    colnames(cor.type[[g]]) <- row.names(cor.type[[g]]) <- varnames[[g]]
-  }
-
-  # posterior estimates
-  postestimates_correlations <- Reduce(rbind,
-                                       lapply(1:numG,function(g){
-                                         means <- meansCovCorr[[g]]
-                                         medians <- res$C_quantiles[g,,,2][lower.tri(diag(P))]
-                                         lb <- res$C_quantiles[g,,,1][lower.tri(diag(P))]
-                                         ub <- res$C_quantiles[g,,,3][lower.tri(diag(P))]
-                                         return(cbind(means,medians,lb,ub))
-                                       }))
-  colnames(postestimates_correlations) <- c("mean","median","2.5%","97.5%")
-
-  cor_out <- list(meanF=meanN,covmF=covmN,correstimates=postestimates_correlations,
-                  corrdraws=corrdraws,corrnames=corrnames,variables=varnames,
-                  cor.type=cor.type,res=res,prior.cor=prior.cor)
-  class(cor_out) <- "cor_test"
-
-  return(cor_out)
-}
 
 

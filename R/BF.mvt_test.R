@@ -164,6 +164,7 @@ get_estimates.mvt_test <- function(x, ...){
   x_est
 }
 
+#' @importFrom stats as.formula
 #' @method BF mvt_test
 #' @export
 BF.mvt_test <- function(x,

@@ -1,3 +1,7 @@
+# BFpack 1.5.3
+
+* cor_test() now uses LKJ's onion method as default sampler. method argument added.
+
 # BFpack 1.5.2
 
 * Bartlett's test for spericity (all correlations are zero) added.

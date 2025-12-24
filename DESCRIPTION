@@ -1,7 +1,7 @@
 Package: BFpack
 Type: Package
 Title: Flexible Bayes Factor Testing of Scientific Expectations
-Version: 1.5.2
+Version: 1.5.3
 Authors@R: 
     c(person(given = c("Joris"),
              family = "Mulder",
@@ -128,8 +128,6 @@ Imports:
     pracma,
     lme4,
     extraDistr,
-    ergm,
-    Bergm,
     sandwich,
     QRM,
     coda,

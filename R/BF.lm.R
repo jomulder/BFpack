@@ -184,7 +184,7 @@ BF.lm <- function(x,
   }
   # posterior hyperparameters
   dfN <- N-K-P+1
-  ScaleN <- kronecker(S,tXXi)/(N-K-P+1) # off-diagonal elements have no meaning
+  ScaleN <- kronecker(S,tXXi)/(N-K-P+1)
   meanN <- as.matrix(c(BetaHat))
   row.names(meanN) <- row.names(mean0) <- names_coef
 
