@@ -120,11 +120,12 @@ mvt_test <- function(X, Y, null = NULL, paired = FALSE, ...){
         out <- t_test(x=X,y=Y,mu=null,paired=paired)
       }else{
         intercept <- rep(1,N)
-        difference <- c(rep(1,n1),rep(0,n2))
+        difference <- as.factor(c(rep("e",n1),rep("0",n2)))
         varnames <- colnames(X)
-        formu <- as.formula(paste0("cbind(",paste0(varnames,collapse = ","),") ~ -1 + intercept + difference"))
+        formu <- as.formula(paste0("cbind(",paste0(varnames,collapse = ","),") ~ 1 + differenc"))
         df.XY <- as.data.frame(rbind(X,Y))
-        colnames(df.XY) <- varnames
+        df.XY$differenc <- difference
+        colnames(df.XY)[1:p] <- varnames
         out <- lm(formu,data=df.XY)
         out$null <- null
         out$numpop <- 2
