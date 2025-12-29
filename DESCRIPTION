@@ -133,7 +133,9 @@ Imports:
     coda,
     metaBMA,
     methods,
-    berryFunctions
+    berryFunctions,
+    ergm,
+    Bergm
 Suggests: 
     testthat,
     polycor,

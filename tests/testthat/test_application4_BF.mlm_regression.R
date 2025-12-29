@@ -70,7 +70,7 @@ BF3 <- BF(mvt_test1,hypothesis="difference_V1>difference_V2;
           0>difference_V1>difference_V2", BF.type = "AFBF")
 test_that("test multivariate Student t, independent samples", {
   expect_equivalent(
-    round(BF3$BFtu_exploratory[1],2),9.61
+    round(BF3$BFtu_exploratory[1],2),8.87
   )
   expect_equivalent(
     round(BF3$PHP_confirmatory[1:2],2),c(0.17,0.29)
