@@ -213,7 +213,7 @@ BF.lm <- function(x,
   PHP_exploratory <- norm_BF_explo / apply(norm_BF_explo,1,sum)
   colnames(PHP_exploratory) <- c("p(=0)","Pr(<0)","Pr(>0)")
 
-  #compute estimates
+  #compute estimates (test)
   postestimates <- cbind(meanN,meanN,
                          t(matrix(unlist(lapply(1:length(meanN),function(coef){
                            ub <- qt(p=CrI_UB,df=dfN)*sqrt(ScaleN[coef,coef])+meanN[coef,1]
