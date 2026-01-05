@@ -1,6 +1,6 @@
 # BFpack 1.5.3
 
-* Date: 2025-12-29.
+* Date: 2026-01-05.
 * cor_test() now uses LKJ's onion method as default sampler. method argument added.
 * Update as part of publication of a second tutorial paper for the BFpack-JASP module
 * Multiple chains implemented for correlation test, including Gelman-Rubin check.
