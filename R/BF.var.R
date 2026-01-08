@@ -89,9 +89,7 @@ bartlett_test.default <- function(x, g, ...){
 # exists("bartlett.test.default") # false
 # getS3method("bartlett.test", "default")
 
-#' @importFrom stats rgamma
-#' @importFrom stats rchisq
-#' @importFrom extraDistr qinvgamma dinvgamma
+#' @importFrom stats rgamma qgamma rchisq
 #' @method BF bartlett_htest
 #' @export
 BF.bartlett_htest <- function(x,
@@ -120,9 +118,10 @@ BF.bartlett_htest <- function(x,
   names_coef <- names(get_est$estimate)
   scale.post_group <- s2*(n-1)/2
   shape.post_group <- (n-1)/2
-  postestimates <- cbind(NA,qinvgamma(.5,alpha=shape.post_group,beta=scale.post_group),
-                         qinvgamma(CrI_LB,alpha=shape.post_group,beta=scale.post_group),
-                         qinvgamma(CrI_UB,alpha=shape.post_group,beta=scale.post_group))
+  postestimates <- cbind(scale.post_group/(shape.post_group-1) * (shape.post_group > 1),
+                            1/qgamma(.5,      shape=shape.post_group,rate=scale.post_group),
+                            1/qgamma(1-CrI_LB,shape=shape.post_group,rate=scale.post_group),
+                            1/qgamma(1-CrI_UB,shape=shape.post_group,rate=scale.post_group))
   which.means <- which(shape.post_group>1)
   postestimates[which.means,1] <- scale.post_group[which.means]/(shape.post_group[which.means]-1)
   row.names(postestimates) <- names_coef

@@ -127,7 +127,6 @@ Imports:
     mvtnorm,
     pracma,
     lme4,
-    extraDistr,
     sandwich,
     QRM,
     coda,

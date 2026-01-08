@@ -384,7 +384,7 @@ gibbs_unc_prior <- function(yi, vi, tau2_min,
 
   for(i in 1:(burnin+iters)){
     #draw candidate tau2 from truncated normal
-    tau2_star <- rtnorm(1, mean = tau2, sd = sdstep[2], a = tau2_min)
+    tau2_star <- rtnorm_local(1, mean = tau2, sd = sdstep[2], a = tau2_min)
 
     #evaluate Metropolis-Hastings acceptance probability
     can_vars <- vi+tau2_star
@@ -454,7 +454,7 @@ gibbs_unc_prior1 <- function(yi, vi, tau2_min,
 
   #initialization
   mu <- start_mu
-  draws.for.start.logtau2 <- log(rtnorm(1e4,mean=start_tau2,sd=sdstep.tau2,a=tau2_min) - tau2_min)
+  draws.for.start.logtau2 <- log(rtnorm_local(1e4,mean=start_tau2,sd=sdstep.tau2,a=tau2_min) - tau2_min)
   sdstep.logtau2 <- sd(draws.for.start.logtau2)
   logtau2 <- mean(draws.for.start.logtau2)
   # if(start_tau2 > tau2_min){
@@ -546,7 +546,7 @@ gibbs_cond.mu_prior <- function(yi, vi, tau2_min,
   for(i in 1:(burnin+iters)){
     #draw rho
     #draw candidate from truncated normal
-    tau2_star <- rtnorm(1, mean = tau2, sd = sdstep, a = tau2_min)
+    tau2_star <- rtnorm_local(1, mean = tau2, sd = sdstep, a = tau2_min)
 
     #evaluate Metropolis-Hastings acceptance probability
     can_vars <- vi+tau2_star
@@ -601,7 +601,7 @@ gibbs_cond.mu_prior1 <- function(yi, vi, tau2_min,
   }
 
   #initialization
-  draws.for.start.logtau2 <- log(rtnorm(1e4,mean=start_tau2,sd=sdstep.tau2,a=tau2_min) - tau2_min)
+  draws.for.start.logtau2 <- log(rtnorm_local(1e4,mean=start_tau2,sd=sdstep.tau2,a=tau2_min) - tau2_min)
   sdstep.logtau2 <- sd(draws.for.start.logtau2)
   logtau2 <- mean(draws.for.start.logtau2)
   # if(start_tau2 > tau2_min){
@@ -809,10 +809,21 @@ log_marg_like_cond.tau2 <- function(yi, vi, tau2IN,
 
 }
 
+# function to draw from truncated normal using local function
+rtnorm_local <- function(n, mean = 0, sd = 1, a = -Inf, b = Inf) {
+  la <- (a - mean) / sd
+  lb <- (b - mean) / sd
+
+  Fa <- stats::pnorm(la)
+  Fb <- stats::pnorm(lb)
+
+  u <- stats::runif(n, min = Fa, max = Fb)
+  mean + sd * stats::qnorm(u)
+}
+
 
 #' @importFrom metaBMA prior
 #' @importFrom stats dlogis rlnorm dlnorm
-#' @importFrom extraDistr rtnorm
 #' @importFrom MASS fitdistr
 #' @importFrom methods is
 #' @describeIn BF BF S3 method for an object of class 'rma.uni'
