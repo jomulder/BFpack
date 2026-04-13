@@ -252,6 +252,7 @@ BF.bartlett_htest <- function(x,
         logmx[h] <- log(relfit[h] / relcomp[h]) + logmxE[h]
       }
     }
+    active.complement <- TRUE
     if(complement==TRUE){
       #compute marginal likelihood for complement hypothesis
       relfit <- inversegamma_prob_Hc(shape1=(n-1)/2,scale1=s2*(n-1)/(2*n),relmeas=relfit,RrE1=RrE,RrO1=RrO)
@@ -260,6 +261,8 @@ BF.bartlett_htest <- function(x,
         logmxE <- c(logmxE,logmxu)
         logmx <- c(logmx,logmxu + log(relfit[Th+1]/relcomp[Th+1]))
         names(logmx)[Th+1] <- "complement"
+      }else{
+        active.complement <- FALSE
       }
     }
     hypotheses <- names(logmx)
@@ -274,10 +277,19 @@ BF.bartlett_htest <- function(x,
       priorprobs <- rep(1/length(BFtu_confirmatory),length(BFtu_confirmatory))
     }else{
       if(!is.numeric(prior.hyp) || length(prior.hyp)!=length(BFtu_confirmatory)){
-        warning(paste0("Argument 'prior.hyp' should be numeric and of length ",as.character(length(BFtu_confirmatory)),". Equal prior probabilities are used."))
-        priorprobs <- rep(1/length(BFtu_confirmatory),length(BFtu_confirmatory))
+        if(complement == TRUE && active.complement == FALSE && length(prior.hyp)==length(BFtu_confirmatory)+1){
+          # the prior prob for the complement hypothesis is given but it is not used as the constrained hypotheses
+          # cover the entire parameter space
+          priorprobs <- prior.hyp[1:length(BFtu_confirmatory)]
+          priorprobs <- priorprobs / sum(priorprobs)
+        }else{
+          warning(paste0("Argument 'prior.hyp' should be numeric and of length ",as.character(length(BFtu_confirmatory)),
+                         ". Equal prior probabilities are used."))
+          priorprobs <- rep(1/length(BFtu_confirmatory),length(BFtu_confirmatory))
+        }
       }else{
         priorprobs <- prior.hyp
+        priorprobs <- priorprobs / sum(priorprobs)
       }
     }
 

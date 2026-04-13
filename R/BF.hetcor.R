@@ -158,10 +158,12 @@ BF.hetcor <- function(x,
     row.names(relcomp) <- parse_hyp$original_hypothesis
     row.names(relfit) <- parse_hyp$original_hypothesis
     # evaluation of complement hypothesis
+    active.complement <- TRUE
     if(complement == TRUE){
       relfit <- Gaussian_prob_Hc(estimates.F,errcov.F,relfit,RrO)
       relcomp <- Student_prob_Hc(mean1=mean0,scale1=Scale0,df1=df0,relmeas1=relcomp,
                                  constraints=NULL,RrO1=RrO)
+      if(nrow(relfit) == numhyp){active.complement <- FALSE}
     }
     hypothesisshort <- unlist(lapply(1:nrow(relfit),function(h) paste0("H",as.character(h))))
     row.names(relfit) <- row.names(relfit) <- hypothesisshort
@@ -176,10 +178,19 @@ BF.hetcor <- function(x,
       priorprobs <- rep(1/length(BFtu_confirmatory),length(BFtu_confirmatory))
     }else{
       if(!is.numeric(prior.hyp) || length(prior.hyp)!=length(BFtu_confirmatory)){
-        warning(paste0("Argument 'prior.hyp' should be numeric and of length ",as.character(length(BFtu_confirmatory)),". Equal prior probabilities are used."))
-        priorprobs <- rep(1/length(BFtu_confirmatory),length(BFtu_confirmatory))
+        if(complement == TRUE && active.complement == FALSE && length(prior.hyp)==length(BFtu_confirmatory)+1){
+          # the prior prob for the complement hypothesis is given but it is not used as the constrained hypotheses
+          # cover the entire parameter space
+          priorprobs <- prior.hyp[1:length(BFtu_confirmatory)]
+          priorprobs <- priorprobs / sum(priorprobs)
+        }else{
+          warning(paste0("Argument 'prior.hyp' should be numeric and of length ",as.character(length(BFtu_confirmatory)),
+                         ". Equal prior probabilities are used."))
+          priorprobs <- rep(1/length(BFtu_confirmatory),length(BFtu_confirmatory))
+        }
       }else{
         priorprobs <- prior.hyp
+        priorprobs <- priorprobs / sum(priorprobs)
       }
     }
     names(priorprobs) <- names(BFtu_confirmatory)

@@ -551,12 +551,14 @@ BF.lm <- function(x,
       colnames(relcomp) <- c("c_E","c_O")
 
       # Compute relative fit/complexity for the complement hypothesis
+      active.complement <- TRUE
       if(complement==TRUE){
         relfit <- MatrixStudent_prob_Hc(Mean1=BetaHat,Scale1=S,tXXi1=tXXi,df1=N-K-P+1,
                                         relmeas=as.matrix(relfit),RrO1=RrO)
         relcomp <- MatrixStudent_prob_Hc(Mean0,S_b,tXXi_b,1,as.matrix(relcomp),RrO)
         hypothesisshort <- unlist(lapply(1:nrow(relfit),function(h) paste0("H",as.character(h))))
         row.names(relcomp) <- row.names(relfit) <- hypothesisshort
+        if(nrow(relfit) == numhyp){active.complement <- FALSE}
       }
 
     }else{
@@ -590,6 +592,7 @@ BF.lm <- function(x,
       row.names(relcomp)[1:numhyp] <- parse_hyp$original_hypothesis
       row.names(relfit)[1:numhyp] <- parse_hyp$original_hypothesis
 
+      active.complement <- TRUE
       if(complement == TRUE){
         # Compute relative fit/complexity for the complement hypothesis
         relfit <- Student_prob_Hc(mean1=meanN,scale1=ScaleN,df1=dfN,relmeas1=relfit,
@@ -598,6 +601,7 @@ BF.lm <- function(x,
                                    constraints=hypothesis,RrO1=RrO)
         row.names(relcomp)[1:numhyp] <- parse_hyp$original_hypothesis
         row.names(relfit)[1:numhyp] <- parse_hyp$original_hypothesis
+        if(nrow(relfit) == numhyp){active.complement <- FALSE}
       }
     }
 
@@ -609,10 +613,19 @@ BF.lm <- function(x,
       priorprobs <- rep(1/length(BFtu_confirmatory),length(BFtu_confirmatory))
     }else{
       if(!is.numeric(prior.hyp) || length(prior.hyp)!=length(BFtu_confirmatory)){
-        warning(paste0("Argument 'prior.hyp' should be numeric and of length ",as.character(length(BFtu_confirmatory)),". Equal prior probabilities are used."))
-        priorprobs <- rep(1/length(BFtu_confirmatory),length(BFtu_confirmatory))
+        if(complement == TRUE && active.complement == FALSE && length(prior.hyp)==length(BFtu_confirmatory)+1){
+          # the prior prob for the complement hypothesis is given but it is not used as the constrained hypotheses
+          # cover the entire parameter space
+          priorprobs <- prior.hyp[1:length(BFtu_confirmatory)]
+          priorprobs <- priorprobs / sum(priorprobs)
+        }else{
+          warning(paste0("Argument 'prior.hyp' should be numeric and of length ",as.character(length(BFtu_confirmatory)),
+                         ". Equal prior probabilities are used."))
+          priorprobs <- rep(1/length(BFtu_confirmatory),length(BFtu_confirmatory))
+        }
       }else{
         priorprobs <- prior.hyp
+        priorprobs <- priorprobs / sum(priorprobs)
       }
     }
 
@@ -698,7 +711,7 @@ BF.lm <- function(x,
 
 # compute relative meausures (fit or complexity) under a multivariate Student t distribution
 MatrixStudent_measures <- function(Mean1,Scale1,tXXi1,df1,RrE1,RrO1,Names1=NULL,
-                                   constraints1=NULL,MCdraws=1e4){
+                                   constraints1=NULL,MCdraws=1e4,...){
   # constraints1 = parse_hyp$original_hypothesis
   # RrE1 <- matrix(0,nrow=1,ncol=ncol(RrO1))
   # RrE1[1,1:2] <- c(-1,1)
@@ -738,7 +751,7 @@ MatrixStudent_measures <- function(Mean1,Scale1,tXXi1,df1,RrE1,RrO1,Names1=NULL,
           Sigma1 <- solve(rWishart(1,df=df1+P-1,Sigma=Scale1inv)[,,1])
           meanO <- c(RO1%*%mean1)
           covmO <- RO1%*%kronecker(Sigma1,tXXi1)%*%t(RO1)
-          pmvnorm(lower=rO1,upper=Inf,mean=meanO,sigma=covmO)[1]
+          pmvnorm(lower=rO1,upper=Inf,mean=meanO,sigma=covmO,...)[1]
         }))
 
         relO <- mean(relO[relO!="NaN"])
@@ -807,8 +820,8 @@ MatrixStudent_measures <- function(Mean1,Scale1,tXXi1,df1,RrE1,RrO1,Names1=NULL,
                                        min(eigen(temp)$values)>sqrt(.Machine$double.eps) )))
         covm1_OE <- covm1_OE[welk1]
         mean1_OE <- mean1_OE[welk1]
-        relO <- mean(mapply(function(mu_temp,Sigma_temp) pmvnorm(lower=rO1,
-                                                                     upper=rep(Inf,qO1),mean=mu_temp,sigma=Sigma_temp)[1],mean1_OE,covm1_OE))
+        relO <- mean(mapply(function(mu_temp,Sigma_temp)
+          pmvnorm(lower=rO1,upper=rep(Inf,qO1),mean=mu_temp,sigma=Sigma_temp,...)[1],mean1_OE,covm1_OE))
 
         if(relO > 1){relO <- 1}
         if(relO < 0){relO <- 0}
@@ -833,7 +846,7 @@ MatrixStudent_measures <- function(Mean1,Scale1,tXXi1,df1,RrE1,RrO1,Names1=NULL,
 }
 
 # compute relative meausures (fit or complexity) under a multivariate Student t distribution
-Student_measures <- function(mean1,Scale1,df1,RrE1,RrO1,names1=NULL,constraints1=NULL){ # Volgens mij moet je hier ook N meegeven
+Student_measures <- function(mean1,Scale1,df1,RrE1,RrO1,names1=NULL,constraints1=NULL,...){ # Volgens mij moet je hier ook N meegeven
   K <- length(mean1)
   relE <- relO <- log(1)
   if(!is.null(RrE1) && is.null(RrO1)){ #only equality constraints
@@ -862,7 +875,7 @@ Student_measures <- function(mean1,Scale1,df1,RrE1,RrO1,names1=NULL,constraints1
         relO <- pt((rO1-meanO)/sqrt(scaleO[1,1]),df=df1,lower.tail=FALSE,log.p = TRUE)
       }else{
         relO <- pmvt(lower=rO1,upper=Inf,delta=meanO,sigma=scaleO,df=round(df1),
-                     type="shifted")[1]
+                     type="shifted",...)[1]
         if(relO<0){relO <- 0}
         if(relO>1){relO <- 1}
         relO <- log(relO)
@@ -951,7 +964,7 @@ Student_measures <- function(mean1,Scale1,df1,RrE1,RrO1,names1=NULL,constraints1
                    log.p = TRUE)[1]
       } else { # multivariate
         relO <- pmvt(lower = rO1tilde, upper = Inf, delta = delta_trans, sigma = scale1_trans,
-                         df = round(df1+qE1), type = "shifted")[1]
+                     df = round(df1+qE1), type = "shifted",...)[1]
         if(relO<0){relO <- 0}
         if(relO>1){relO <- 1}
         relO <- log(relO)
@@ -997,7 +1010,7 @@ MatrixStudent_prob_Hc <- function(Mean1,Scale1,tXXi1,df1,relmeas,RrO1){
       relmeas[numhyp+1,] <- log(relmeas[numhyp+1,])
       rownames(relmeas)[numhyp+1] <- "complement"
     }else{ # So more than one hypothesis with only order constraints
-      # First we check whether ther is an overlap between the order constrained spaces.
+      # First we check whether there is an overlap between the order constrained spaces.
 
       draws2 <- 1e4
       randomDraws <- rmvnorm(draws2,mean=rep(0,numpara),sigma=diag(numpara))

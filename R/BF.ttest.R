@@ -307,6 +307,7 @@ BF.t_test <- function(x,
         row.names(relfit) <- row.names(relcomp) <- parse_hyp$original_hypothesis
         colnames(relfit) <- c("f=","f>")
         colnames(relcomp) <- c("c=","c>")
+        active.complement <- TRUE
         if(complement == TRUE){
           #add complement to analysis
           if(sum(relcomp[,1]==0)>0){ #then there are order hypotheses
@@ -326,6 +327,8 @@ BF.t_test <- function(x,
                 relfit_c <- log(1-sum(exp(relfit[which.O,2])))
                 relfit <- rbind(relfit,c(0,relfit_c))
                 row.names(relfit) <- row.names(relcomp) <- c(parse_hyp$original_hypothesis,"complement")
+              }else{
+                active.complement <- FALSE
               }
             }
           }else{ #no order constraints
@@ -339,8 +342,15 @@ BF.t_test <- function(x,
           priorprobs <- rep(1/nrow(relcomp),nrow(relcomp))
         }else{
           if(!is.numeric(prior.hyp) || length(prior.hyp)!=nrow(relcomp)){
-            warning(paste0("Argument 'prior.hyp' should be numeric and of length ",as.character(nrow(relcomp)),". Equal prior probabilities are used."))
-            priorprobs <- rep(1/nrow(relcomp),nrow(relcomp))
+            if(complement == TRUE && active.complement == FALSE && length(prior.hyp)==nrow(relcomp)+1){
+              # the prior prob for the complement hypothesis is given but it is not used as the constrained hypotheses
+              # cover the entire parameter space
+              priorprobs <- prior.hyp[1:nrow(relcomp)]
+              priorprobs <- priorprobs / sum(priorprobs)
+            }else{
+              warning(paste0("Argument 'prior.hyp' should be numeric and of length ",as.character(nrow(relcomp)),". Equal prior probabilities are used."))
+              priorprobs <- rep(1/nrow(relcomp),nrow(relcomp))
+            }
           }else{
             priorprobs <- prior.hyp
           }

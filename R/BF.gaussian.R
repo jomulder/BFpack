@@ -185,11 +185,13 @@ Savage.Dickey.Gaussian <- function(prior.mean,
     })),nrow=2))
     row.names(relfit) <- row.names(relcomp) <- parse_hyp$original_hypothesis
 
+    active.complement <- TRUE
     if(complement == TRUE){
       # get relative fit and complexity of complement hypothesis
       #Note that input is a bit strange here, Gaussian_prob_Hc needs fixing
       relcomp <- Gaussian_prob_Hc(mean1 = mean0, Sigma1 = covm0, relmeas = relcomp, RrO = RrO)
       relfit <- Gaussian_prob_Hc(mean1 = meanN, Sigma1 = covmN, relmeas = relfit, RrO = RrO)
+      if(nrow(relfit) == numhyp){active.complement <- FALSE}
     }
     hypothesisshort <- unlist(lapply(1:nrow(relfit),function(h) paste0("H",as.character(h))))
     row.names(relfit) <- row.names(relfit) <- hypothesisshort
@@ -203,10 +205,19 @@ Savage.Dickey.Gaussian <- function(prior.mean,
       priorprobs <- rep(1/length(BFtu_confirmatory),length(BFtu_confirmatory))
     }else{
       if(!is.numeric(prior.hyp) || length(prior.hyp)!=length(BFtu_confirmatory)){
-        warning(paste0("Argument 'prior.hyp' should be numeric and of length ",as.character(length(BFtu_confirmatory)),". Equal prior probabilities are used."))
-        priorprobs <- rep(1/length(BFtu_confirmatory),length(BFtu_confirmatory))
+        if(complement == TRUE && active.complement == FALSE && length(prior.hyp)==length(BFtu_confirmatory)+1){
+          # the prior prob for the complement hypothesis is given but it is not used as the constrained hypotheses
+          # cover the entire parameter space
+          priorprobs <- prior.hyp[1:length(BFtu_confirmatory)]
+          priorprobs <- priorprobs / sum(priorprobs)
+        }else{
+          warning(paste0("Argument 'prior.hyp' should be numeric and of length ",as.character(length(BFtu_confirmatory)),
+                         ". Equal prior probabilities are used."))
+          priorprobs <- rep(1/length(BFtu_confirmatory),length(BFtu_confirmatory))
+        }
       }else{
         priorprobs <- prior.hyp
+        priorprobs <- priorprobs / sum(priorprobs)
       }
     }
     names(priorprobs) <- hypothesisshort
@@ -262,7 +273,7 @@ Savage.Dickey.Gaussian <- function(prior.mean,
 # compute relative meausures (fit or complexity) under a multivariate Gaussian distribution
 #' @importFrom mvtnorm dmvnorm pmvnorm
 #' @importFrom berryFunctions is.error
-Gaussian_measures <- function(mean1,Sigma1,n1=0,RrE1,RrO1,names1=NULL,constraints1=NULL){
+Gaussian_measures <- function(mean1,Sigma1,n1=0,RrE1,RrO1,names1=NULL,constraints1=NULL,...){
   K <- length(mean1)
   relE <- relO <- log(1)
   if(!is.null(RrE1) && is.null(RrO1)){ #only equality constraints
@@ -288,7 +299,7 @@ Gaussian_measures <- function(mean1,Sigma1,n1=0,RrE1,RrO1,names1=NULL,constraint
       meanO <- c(RO1%*%mean1)
       SigmaO <- RO1%*%Sigma1%*%t(RO1)
       #check_vcov(SigmaO)
-      relO <- log(pmvnorm(lower=rO1,upper=Inf,mean=meanO,sigma=SigmaO)[1])
+      relO <- log(pmvnorm(lower=rO1,upper=Inf,mean=meanO,sigma=SigmaO,...)[1])
     }else{ #no linear transformation can be used; pmvt cannot be used. Use bain with a multivariate normal approximation
       names(mean1) <- names1
       mean1vec <- c(mean1)
@@ -347,7 +358,7 @@ Gaussian_measures <- function(mean1,Sigma1,n1=0,RrE1,RrO1,names1=NULL,constraint
       Tmean1OgE <- Tmean1O + TSigma1OE %*% solve(TSigma1EE) %*% (rE1-Tmean1E)
       TSigma1OgE <- TSigma1OO - TSigma1OE %*% solve(TSigma1EE) %*% t(TSigma1OE)
 
-      relO <- log(pmvnorm(lower=rO1,upper=Inf,mean=c(Tmean1OgE),sigma=TSigma1OgE)[1])
+      relO <- log(pmvnorm(lower=rO1,upper=Inf,mean=c(Tmean1OgE),sigma=TSigma1OgE,...)[1])
 
     }else{ #use bain for the computation of the probability
       names(mean1) <- names1
