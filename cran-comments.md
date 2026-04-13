@@ -6,7 +6,7 @@
 * Minor bug fixes.
 
 ## Test environments
-* Local OS X Tahoe 26.2, R 4.5.0, clang-1400.0.29.202, GNU Fortran 12.2.0
+* Local OS X Tahoe 26.2, R 4.5.3, clang-1400.0.29.202, GNU Fortran 12.2.0
 * rhub check: atlas, c23, gcc13, intel, linux (R-devel)
 
 ## R CMD check results

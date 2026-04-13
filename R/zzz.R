@@ -1,6 +1,10 @@
 .onAttach <- function(libname, pkgname) {
-  cli::cli_alert_info("BFpack ({utils::packageVersion('BFpack')}) loaded")
-  cli::cli_text("Citation: https://doi.org/10.18637/jss.v100.i18")
+  packageStartupMessage(
+    sprintf("BFpack (%s) loaded", utils::packageVersion("BFpack"))
+  )
+  packageStartupMessage(
+    "Citation: https://doi.org/10.18637/jss.v100.i18"
+  )
 }
 
 # .onAttach <- function(libname, pkgname) {
