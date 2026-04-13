@@ -377,16 +377,46 @@ In order to test the mean effect under a fixed effects meta-analysis model, this
 ``` r
 res2 <- metafor::rma(yi = yi, vi = vi, method = "EE")
 BFmeta2 <- BF(res2, BF.type = "stand.effect")
+print(BFmeta2)
 ```
 
-For more information about the methodology, we refer the interested reader to [Van Aert and Mulder (2021)](https://link.springer.com/article/10.3758/s13423-021-01918-9) and Mulder and van Aert (in prep.).
+For more information about the methodology, we refer the interested reader to [Van Aert and Mulder (2021)](https://link.springer.com/article/10.3758/s13423-021-01918-9) and [Mulder and van Aert (2025)](https://doi.org/10.1017/rsm.2025.10060).
 
 
 ### Exponential random graph models
-...
 
-### Network autocorrelation models
-...
+`BFpack` can be used for Bayes factor testing of the coefficients in an exponential random graph model (ERGM). As input the `BF()` function requires a fitted ERGM either from the `ergm` package or the `Bergm` package. Bayes factors are then computed using a so-called unit-information prior. For an ERGM, this prior contains the information of single dyad. Moreover, the prior is centered at 0. For Bayes factor testing, this prior is preferred to an arbitrarily vague prior (Mulder, Friel, \& Leifeld, 2024). For this illustration, we use the `florentine` data from the `ergm` package and we fit the following ERGM:
+
+``` r
+library(ergm)
+seed <- 123
+# load florentine data
+data(florentine)
+ergm_fit <- ergm(flomarriage ~ edges +
+  kstar(2) +
+  absdiff("wealth"),
+  control = control.ergm(seed = seed))
+```
+
+A Bayes factor is computed for a traditional two-sided test of whether the absolute difference in wealth between two families affects tie formation.
+
+``` r
+set.seed(123)
+BFergm <- BF(ergm_fit,
+  hypothesis = "absdiff.wealth = 0",
+  main.iters = 500)
+print(BFergm)
+```
+
+The null hypothesis is not supported give the Bayes factor of 9.36 in favor of the two-sided alternative, and given the posterior probability of 0.097 for the null. 
+
+Finally note that one could retrieve the employed unit-information prior from the `BF` object:
+
+``` r
+BFergm$prior.parameters
+```
+
+For more information about the methodology, we refer the interested reader to [Mulder, Friel, and Leifeld (2024)](https://doi.org/10.1016/j.socnet.2023.11.004).
 
 ### Hypothesis testing using normal approximations
 

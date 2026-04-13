@@ -1,3 +1,8 @@
+# BFpack 1.6.0
+
+* Version for JASP tutorial paper 'Going in the Right Direction'.
+* Bug fixes (eg when including the complement when parameter space is fully specified).
+
 # BFpack 1.5.3
 
 * cor_test() now uses LKJ's onion method as default sampler. method argument added.
