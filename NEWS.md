@@ -2,6 +2,7 @@
 
 * Version for JASP tutorial paper 'Going in the Right Direction'.
 * Bug fixes (eg when including the complement when parameter space is fully specified).
+* Vignette added for BF testing under exponential random graph models.
 
 # BFpack 1.5.3
 

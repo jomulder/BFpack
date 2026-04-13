@@ -1,13 +1,9 @@
-# BFpack 1.5.3
+# BFpack 1.6.0
 
-* Date: 2026-01-09.
-* cor_test() now uses LKJ's onion method as default sampler. method argument added.
-* Update as part of publication of a second tutorial paper for the BFpack-JASP module
-* Multiple chains implemented for correlation test, including Gelman-Rubin check.
-* Removed dependency on 'extraDistr' package (orphaned) to avoid CRAN warning.
-* Bugs fixes to interval hypothesis testing.
+* Date: 2026-04-13.
+* Update as part of revision tutorial paper for the BFpack-JASP module 'Going in the Right Direction'
+* Bug fix when including the complement hypothesis when the hypotheses cover entire parameter space.
 * Minor bug fixes.
-* Minor edits.
 
 ## Test environments
 * Local OS X Tahoe 26.2, R 4.5.0, clang-1400.0.29.202, GNU Fortran 12.2.0
