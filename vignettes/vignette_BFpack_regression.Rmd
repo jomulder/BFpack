@@ -1,0 +1,301 @@
+---
+title: "Directly Comparing Constrained Hypotheses in Regression with BFpack"
+author: "Joris Mulder"
+date: "`r Sys.Date()`"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+vignette: >
+  %\VignetteIndexEntry{Directly Comparing Constrained Hypotheses in Regression with BFpack}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+header-includes:
+  - \usepackage{mathrsfs}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  eval = FALSE,        # Code is shown but not run when knitting (keeps the
+  message = FALSE,     # vignette fast for CRAN). The expected results are
+  warning = FALSE,     # reported in the text and tables. Set eval = TRUE, or
+  collapse = TRUE,     # paste the chunks into R, to reproduce them live.
+  comment = "#>"
+)
+```
+
+> **How to use this document.** Every code block below can be pasted into an R
+> session and run in order. To keep the vignette light (and fast to check on
+> CRAN) the chunks are *not* executed while knitting (`eval = FALSE` in the
+> setup chunk); instead the expected results are reported and discussed in the
+> text and tables. To run the analysis live, change `eval = FALSE` to
+> `eval = TRUE`, or simply copy each block into R.
+
+*This vignette is based on "Challenge I" of Mulder, J., & Pfadt, J. M. (2026),
+"Going in the right direction: A tutorial to directional hypothesis testing
+using the BFpack module in JASP," Advances in Methods and Practices in
+Psychological Science. It adapts that example into a hands-on tutorial for the
+`BFpack` R package (the JASP module wraps the same engine). The data and R
+syntax are available on the online supplement, <https://osf.io/7q5pf/>.*
+
+---
+
+# Introduction and learning objectives
+
+Substantive theories rarely predict merely that "some effect is non-zero." They
+predict a *pattern*: which predictors matter, and how their effects are ordered
+relative to one another. The conventional workflow answers such questions
+indirectly — one significance test per coefficient and per contrast, followed by
+a multiplicity correction — and then asks the reader to reassemble the pieces
+into support for a theory. This tutorial shows the direct alternative:
+**translating each competing theory into a single constrained hypothesis and
+comparing them head-to-head with Bayes factors** using `BFpack`.
+
+## The running example
+
+A large literature in social and political psychology argues that perceived
+competition and status threat shape attitudes toward immigrant groups. Within
+**Ethnic Competition Theory** (Scheepers et al., 2002), socioeconomic
+position — social class, education, and income — is positively associated with
+attitudes toward immigrants. Different theoretical accounts, however, predict
+different *orderings* of these three effects. We compare three theory-consistent
+variants plus a complement, using European Values Study (EVS) data from Germany.
+
+We fit a linear regression of `attitude` on `class`, `education`, and `income`,
+with `gender` as a covariate, and test:
+
+$$
+\begin{aligned}
+\mathcal{H}_1 &:\ \beta_{\text{class}} > \beta_{\text{education}} > \beta_{\text{income}} > 0
+   \quad(\text{strict ordering: class matters most}),\\
+\mathcal{H}_2 &:\ \beta_{\text{education}} > (\beta_{\text{class}}, \beta_{\text{income}}) > 0
+   \quad(\text{education largest; class and income unordered}),\\
+\mathcal{H}_3 &:\ \beta_{\text{class}} = \beta_{\text{education}} = \beta_{\text{income}} > 0
+   \quad(\text{three equal positive effects}),\\
+\mathcal{H}_4 &:\ \text{complement (none of } \mathcal{H}_1,\mathcal{H}_2,\mathcal{H}_3).
+\end{aligned}
+$$
+
+A traditional point-null in which all three effects are zero is not of
+substantive interest here and is therefore excluded.
+
+## What you will be able to do
+
+By the end you will be able to:
+
+- fit a linear regression and read the exact coefficient names with
+  `get_estimates()`;
+- encode competing ordering / equality expectations as a `BFpack` hypothesis
+  string using `>`, `=`, `(,)`, and `;`;
+- compute Bayes factors and posterior probabilities with `BF()` and interpret
+  them; and
+- see why the equivalent *classical* route — separate coefficient and contrast
+  tests with a multiplicity correction — gives only fragmented, and sometimes
+  intransitive, evidence.
+
+---
+
+# Setup: packages, data, and model
+
+```{r packages}
+# install.packages("BFpack")   # once, if needed
+library("BFpack")
+```
+
+The data set `regression_EVS_Germany.csv` lives on the OSF project
+<https://osf.io/7q5pf/>. The `osfr` package can pull it directly from that
+project ID in a single call — no manual download, no hard-coded file link:
+
+```{r data}
+install.packages("osfr")   # once, if needed
+library("osfr")            # must be loaded before the download call below
+
+EVS_Germany <- read.csv(osf_download(
+  osf_ls_files(osf_retrieve_node("7q5pf"),
+               pattern = "regression_EVS_Germany.csv"),
+  conflicts = "overwrite")$local_path)
+```
+
+> **Prefer to avoid a dependency?** Download `regression_EVS_Germany.csv`
+> manually from <https://osf.io/7q5pf/> and read it locally with
+> `read.csv("regression_EVS_Germany.csv")`. If you know the file's own OSF
+> short link, `read.csv("https://osf.io/<id>/download")` is an equivalent
+> one-liner.
+
+We drop incomplete cases, **standardize** the continuous variables so that the
+coefficients are on a common scale (essential for the ordering tests — an
+ordering of coefficients is then an ordering of *effect sizes*), and treat
+`gender` as a factor:
+
+```{r prepare}
+EVS_Germany <- EVS_Germany[complete.cases(EVS_Germany), ]
+
+EVS_Germany$attitude  <- c(scale(EVS_Germany$attitude))
+EVS_Germany$education  <- c(scale(EVS_Germany$education))
+EVS_Germany$income     <- c(scale(EVS_Germany$income))
+EVS_Germany$class      <- c(scale(EVS_Germany$class))
+EVS_Germany$gender     <- as.factor(EVS_Germany$gender)
+
+fit1 <- lm(attitude ~ education + income + gender + class, data = EVS_Germany)
+```
+
+---
+
+# The joint directional test in BFpack
+
+## Step 1 — Read the exact parameter names
+
+**This step is essential.** The names used in a hypothesis string are exactly
+the names printed by `get_estimates()`. For this model the three predictors of
+interest appear simply as `class`, `education`, and `income` (the factor
+`gender` appears as `gender1`).
+
+```{r estimates}
+get_estimates(fit1)
+#> Coefficient names include: education, income, gender1, class
+```
+
+## Step 2 — Formulate the hypotheses
+
+Each theory becomes one constrained hypothesis; hypotheses are separated by
+semicolons. `(class, income)` in $\mathcal{H}_2$ means both are larger than 0
+but *unordered* relative to each other. We do **not** write $\mathcal{H}_4$
+explicitly: `complement = TRUE` adds it automatically.
+
+```{r BFtest}
+set.seed(1)   # the equality/order tests use sampling; fix the seed.
+
+BF_App1 <- BF(fit1,
+  hypothesis = "class > education > income > 0;
+                education > (class, income) > 0;
+                class = education = income > 0",
+  complement = TRUE)
+
+print(BF_App1)
+```
+
+By default the four hypotheses receive equal prior probabilities of $1/4$. To
+weight them differently, pass `prior.hyp.conf` (one weight per hypothesis, in
+order, including the complement) — this shifts the posterior probabilities but
+leaves the Bayes factors, which measure the evidence *in the data*, unchanged.
+
+## Results
+
+**Table 1. Bayes factors (rows vs. columns) and posterior probabilities for the
+four hypotheses (equal prior probabilities, seed = 1).**
+
+| Hypothesis | vs $\mathcal{H}_1$ | vs $\mathcal{H}_2$ | vs $\mathcal{H}_3$ | vs $\mathcal{H}_4$ | $P(\mathcal{H}_t\mid\text{Data})$ |
+|---|---:|---:|---:|---:|---:|
+| **$\mathcal{H}_1$:** class > education > income > 0 | 1.000 | 0.312 | 1.059 | 49.53 | 0.193 |
+| **$\mathcal{H}_2$:** education > (class, income) > 0 | 3.207 | 1.000 | 3.397 | 158.8 | **0.620** |
+| **$\mathcal{H}_3$:** class = education = income > 0 | 0.944 | 0.294 | 1.000 | 46.75 | 0.183 |
+| **$\mathcal{H}_4$:** complement | 0.020 | 0.006 | 0.021 | 1.000 | 0.004 |
+
+All three theory-consistent hypotheses receive strong evidence over the
+complement, and $\mathcal{H}_2$ is favored among $\mathcal{H}_1$–$\mathcal{H}_3$
+(though the evidence is mild, with Bayes factors around 3). A possible write-up:
+
+> "The model comparison favored $\mathcal{H}_2$ with a posterior probability of
+> .620, suggesting the largest positive effect for education, followed by class
+> and income. Evidence distinguishing $\mathcal{H}_2$ from $\mathcal{H}_1$ and
+> $\mathcal{H}_3$ was mild (Bayes factors of approximately 3). All three
+> theory-consistent hypotheses strongly outperformed the complement (Bayes
+> factors of 49.5, 159, and 46.7), indicating that parameter configurations
+> inconsistent with Ethnic Competition Theory are unlikely given the data."
+
+Note how a *single* comparison expresses the relative support for each whole
+theory — exactly what the substantive question asks, and exactly what a
+collection of separate tests cannot deliver.
+
+---
+
+# Why not just test each coefficient and contrast separately?
+
+The classical route tests the three coefficients and their three pairwise
+contrasts one at a time, then corrects for multiplicity. Because jointly testing
+coefficients and contrasts is awkward in common GUI software, we implement it in
+R with `multcomp` and `car`. The contrast matrix `K_eq` has one row per null
+hypothesis; its columns follow the model's design-matrix order:
+`(Intercept), education, income, gender1, class`.
+
+```{r posthoc}
+library("multcomp")
+library("car")
+
+K_eq <- rbind(
+  "class - education = 0"  = c(0, -1,  0, 0, 1),
+  "class - income = 0"     = c(0,  0, -1, 0, 1),
+  "education - income = 0" = c(0,  1, -1, 0, 0),
+  "class = 0"              = c(0,  0,  0, 0, 1),
+  "education = 0"          = c(0,  1,  0, 0, 0),
+  "income = 0"             = c(0,  0,  1, 0, 0)
+)
+
+glht_eq <- multcomp::glht(fit1, linfct = K_eq)   # two-sided by default
+ci_eq   <- confint(glht_eq)                        # 95% (unadjusted) CIs
+sm_eq   <- summary(glht_eq, test = adjusted("holm"))  # Holm-adjusted p-values
+
+res <- data.frame(
+  Null_hypothesis = names(sm_eq$test$coefficients),
+  Estimate        = as.numeric(sm_eq$test$coefficients),
+  LB_95           = ci_eq$confint[, "lwr"],
+  UB_95           = ci_eq$confint[, "upr"],
+  t_value         = as.numeric(sm_eq$test$tstat),
+  p_adjusted      = as.numeric(sm_eq$test$pvalues),
+  row.names       = NULL
+)
+print(cbind(Null_hypothesis = res[, 1], round(res[, -1], 3)))
+```
+
+**Table 2. Null hypotheses on individual effects and pairwise contrasts.
+Confidence bounds are unadjusted; $p$-values are Holm-adjusted.**
+
+| Null hypothesis | Estimate | 95%-LB | 95%-UB | $t$ value | Adjusted $p$ |
+|---|---:|---:|---:|---:|---:|
+| $\beta_{\text{class}} - \beta_{\text{education}} = 0$ | −0.055 | −0.178 | 0.067 | −1.124 | 0.522 |
+| $\beta_{\text{class}} - \beta_{\text{income}} = 0$ | 0.081 | −0.022 | 0.184 | 1.962 | 0.150 |
+| $\beta_{\text{education}} - \beta_{\text{income}} = 0$ | 0.137 | 0.031 | 0.242 | 3.230 | 0.005 |
+| $\beta_{\text{class}} = 0$ | 0.106 | 0.034 | 0.178 | 3.672 | 0.001 |
+| $\beta_{\text{education}} = 0$ | 0.161 | 0.090 | 0.233 | 5.599 | 0.000 |
+| $\beta_{\text{income}} = 0$ | 0.025 | −0.039 | 0.089 | 0.960 | 0.522 |
+
+This yields only fragmented evidence about the hypotheses of interest. At
+$\alpha = .05$ the effects of `class` and `education` are significant and
+positive while `income` is not; yet the contrast
+$\beta_{\text{class}} - \beta_{\text{income}}$ is nonsignificant while
+$\beta_{\text{education}} - \beta_{\text{income}}$ is significant. These partly
+conflicting results arise because **statistical significance is not transitive
+across separate tests**: `class` and `education` both differing from zero while
+`income` does not need not imply that every contrast lines up accordingly.
+
+Consequently the separate tests give no coherent ordering of the three effects
+and no way to quantify support for the competing theories. Eyeballing the
+estimates and CIs suggests the data most favor $\mathcal{H}_2$ (largest effect
+for education) — but *how much* more than $\mathcal{H}_1$, $\mathcal{H}_3$, or
+$\mathcal{H}_4$ remains unclear. The joint Bayes-factor test in the previous
+section answers exactly that question with a single set of numbers.
+
+---
+
+# References
+
+Mulder, J. (2016). Bayes factors for testing order-constrained hypotheses on
+correlations. *Journal of Mathematical Psychology.*
+
+Mulder, J., & Pfadt, J. M. (2026). Going in the right direction: A tutorial to
+directional hypothesis testing using the BFpack module in JASP. *Advances in
+Methods and Practices in Psychological Science.*
+
+Mulder, J., et al. (2021). BFpack: Flexible Bayes factor testing of scientific
+expectations in R. *Journal of Statistical Software, 100*(18), 1–63.
+
+Scheepers, P., Gijsberts, M., & Coenders, M. (2002). Ethnic exclusionism in
+European countries. *European Sociological Review, 18*(1), 17–34.
+
+---
+
+```{r session-info, eval=FALSE, echo=FALSE}
+# sessionInfo()   # uncomment when running live to record the environment
+```

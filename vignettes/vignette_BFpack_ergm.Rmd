@@ -1,0 +1,533 @@
+---
+title: "Testing Scientific Expectations under ERGMs with BFpack"
+author: "Joris Mulder"
+date: "`r Sys.Date()`"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+vignette: >
+  %\VignetteIndexEntry{Testing Scientific Expectations under ERGMs with BFpack}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  eval = FALSE,          # Code is shown but not run when knitting.
+  message = FALSE,       # Set eval = TRUE to run everything live
+  warning = FALSE,       # (fitting the Bayesian ERGMs takes a few minutes).
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+> **How to use this document.** Every code block below is ready to paste into an
+> R session and run in order. To keep the handout light, the chunks are *not*
+> executed while knitting (`eval = FALSE` in the setup chunk); instead, the
+> expected results are shown and discussed in the text and tables. To run the
+> analysis live, either change `eval = FALSE` to `eval = TRUE` in the setup
+> chunk, or simply copy each block into R. Fitting the Bayesian ERGMs with
+> `bergm` takes a few minutes per model.
+
+*This vignette is based on Mulder, J., Friel, N., & Leifeld, P. (2024),
+"Bayesian testing of scientific expectations under exponential random graph
+models," Social Networks, 78, 40–53
+(<https://doi.org/10.1016/j.socnet.2023.11.004>). It adapts the analyses and
+results reported in 'Application A' into a hands-on tutorial for the `BFpack` package.*
+
+---
+
+# Introduction and learning objectives
+
+Exponential random graph models (ERGMs) are the workhorse for explaining how
+ties form in social and political networks. The standard workflow fits an ERGM
+by maximum likelihood and then reads off $p$-values to decide which
+predictors "matter". This tutorial teaches a complementary, and in several
+respects more informative, approach: **Bayesian hypothesis testing with Bayes
+factors and posterior probabilities**, as implemented in the R package
+**`BFpack`**.
+
+The methodology, and the running example we use here, come from:
+
+> Mulder, J., Friel, N., & Leifeld, P. (2024). *Bayesian testing of scientific
+> expectations under exponential random graph models.* **Social Networks, 78**,
+> 40–53. <https://doi.org/10.1016/j.socnet.2023.11.004>
+
+The empirical case is the German toxic-chemicals policy network of
+Leifeld & Schneider (2012), distributed as the `chemnet` data in the
+**`btergm`** package.
+
+## Why go beyond the *p*-value?
+
+The paper motivates the Bayesian approach through three concrete limitations of
+significance testing that bite hard in network research:
+
+1. **A *p*-value cannot support a null.** It can only *falsify* a hypothesis. If
+   preference similarity is non-significant after controlling for opportunity
+   structures, we cannot tell whether that is *evidence of absence* (the effect
+   really is ~0) or merely *absence of evidence* (the study is underpowered).
+   Leifeld & Schneider (2012) ran into exactly this: they wanted to argue that
+   preference similarity had *no* additional effect, but a non-significant
+   *p*-value cannot license that claim.
+
+2. **The *p*-value is inconsistent under the null.** Because it is uniform under
+   the null, there is always a fixed probability (typically .05) of rejecting a
+   true null — even as the network grows arbitrarily large. A Bayes factor, by
+   contrast, is *consistent*: evidence for the true hypothesis grows without
+   bound as the network grows.
+
+3. **The *p*-value cannot directly test competing constrained hypotheses.**
+   Scientific expectations are often phrased with order constraints — "effect A
+   is larger than effect B, which is larger than effect C". Testing
+   $\beta_{\text{committee}} > \beta_{\text{influence}} > \beta_{\text{pref.sim}} > 0$
+   against equality or against "none of the above" is natural for a Bayes
+   factor, but awkward or impossible with *p*-values.
+
+Bayes factors address all three: they quantify evidence **for** a null, they are
+**consistent**, and they test **equality and/or order constraints** on ERGM
+coefficients directly.
+
+## What you will be able to do after this session
+
+By the end you will be able to:
+
+- fit an ERGM with `ergm` and inspect the exact coefficient names with
+  `get_estimates()`;
+- translate a substantive expectation into a `BFpack` hypothesis string using
+  equality (`=`) and order (`>`, `<`) constraints;
+- compute Bayes factors and posterior probabilities with `BF()` for
+  (i) a precise null hypothesis and (ii) a set of competing constrained
+  hypotheses;
+- read the **specification table** to understand how a Bayes factor balances
+  *fit* against *complexity* (an Occam's razor); and
+- report and interpret the results the way the paper does.
+
+---
+
+# Setup: packages, seed, and data
+
+```{r packages}
+# Install once, if needed:
+# install.packages(c("statnet", "ergm", "BFpack", "btergm", "sna", "Bergm"))
+
+library("statnet")   # umbrella package: loads network, sna, ergm, ...
+library("ergm")      # fitting ERGMs by MLE
+library("BFpack")    # Bayes factors for constrained hypotheses (v1.2.3+)
+library("btergm")    # ships the chemnet policy-network data
+library("sna")       # network descriptives (e.g. betweenness)
+
+seed <- 1234
+set.seed(seed)
+```
+
+We use a fixed `seed` throughout. Two sources of randomness matter here: the
+MLE search inside `ergm`, and — more importantly — the MCMC sampler inside the
+Bayesian ERGM fit that `BFpack` runs under the hood. Fixing the seed makes the
+workshop reproducible, but note that Bayes-factor values will still wobble a
+little from run to run; the *substantive* conclusions are stable.
+
+```{r data}
+data("chemnet")   # ?chemnet for documentation (Leifeld & Schneider 2012, AJPS)
+```
+
+### The `chemnet` policy network
+
+`chemnet` concerns political information exchange among 30 organizations
+(interest groups, government agencies, scientific bodies, …) involved in
+German toxic-chemicals policy. Loading it makes several objects available:
+
+| Object | Meaning |
+|---|---|
+| `pol` | political/strategic information exchange (the **outcome** network) |
+| `scito`, `scifrom` | reported sending / receiving of scientific information |
+| `intpos` | matrix of actors' positions on policy issues (preferences) |
+| `committee` | actor-by-committee membership matrix |
+| `infrep` | influence attribution (who is named as influential) |
+| `types` | organization type for each actor |
+
+Our analysis explains the **political information network `pol`** using
+covariates built from the other objects, following the paper.
+
+---
+
+# Preparing the network data
+
+The covariates below reproduce Equations (1)–(4) of the paper. Each transforms
+raw data into a dyadic predictor that can enter the ERGM through `edgecov()`.
+
+```{r covariates}
+# (1) Confirmed scientific-information tie: i->j only if i claims sending
+#     AND j claims receiving. Element-wise product of scito and t(scifrom).
+sci <- scito * t(scifrom)                 # Eq. (1)
+
+# (2)-(3) Preference similarity from issue positions: Euclidean distance,
+#     then reversed so that LARGER = MORE similar.
+prefsim <- dist(intpos, method = "euclidean")   # Eq. (2)
+prefsim <- max(prefsim) - prefsim               # Eq. (3): distance -> similarity
+prefsim <- as.matrix(prefsim)
+
+# Standardize preference similarity (needed for the ORDER test, so that
+# effect sizes are comparable on a common scale). We standardize the
+# off-diagonal entries jointly and write them back.
+prefsim_scaled <- c(scale(c(prefsim[lower.tri(prefsim)],
+                            prefsim[upper.tri(prefsim)])))
+prefsim_st <- prefsim
+prefsim_st[lower.tri(prefsim_st)] <- prefsim_scaled[1:(length(prefsim_scaled)/2)]
+prefsim_st[upper.tri(prefsim_st)] <- prefsim_scaled[(length(prefsim_scaled)/2 + 1):length(prefsim_scaled)]
+
+# (4) Shared committee memberships: co-membership count, diagonal set to 0.
+committee <- committee %*% t(committee)   # Eq. (4)
+diag(committee) <- 0                       # self-membership is meaningless
+committee_scaled <- c(scale(c(committee[lower.tri(committee)],
+                              committee[upper.tri(committee)])))
+committee_st <- committee
+committee_st[lower.tri(committee_st)] <- committee_scaled[1:(length(committee_scaled)/2)]
+committee_st[upper.tri(committee_st)] <- committee_scaled[(length(committee_scaled)/2 + 1):length(committee_scaled)]
+
+# Organization type as a vertex attribute (vector form).
+types <- types[, 1]
+
+# Influence attribution, standardized.
+infrep_st <- matrix(c(scale(c(infrep))), nrow = nrow(infrep))
+```
+
+> **Why standardize?** For a test that only asks "is this effect zero?" the
+> scale of a covariate is irrelevant. But for an **order-constrained** test such
+> as `committee > influence > pref.sim`, the coefficients are only comparable
+> if the predictors share a common scale. Standardizing the three edge
+> covariates puts them on the same footing, so the ordering of coefficients is
+> an ordering of *effect sizes*.
+
+### Build the network objects
+
+```{r networks}
+# Outcome: political / strategic information exchange
+nw.pol <- network(pol)
+set.vertex.attribute(nw.pol, "orgtype", types)
+set.vertex.attribute(nw.pol, "betweenness", betweenness(nw.pol))
+
+# Covariate network: confirmed technical / scientific information exchange
+nw.sci <- network(sci)
+set.vertex.attribute(nw.sci, "orgtype", types)
+set.vertex.attribute(nw.sci, "betweenness", betweenness(nw.sci))
+```
+
+---
+
+# A simplified ERGM to learn the workflow
+
+We first fit a compact six-term ERGM. It is not the final published model, but
+it is the fastest way to learn the four-step `BFpack` workflow.
+
+## Step 1 — Fit the model
+
+```{r fit-model1}
+model1 <- ergm(
+  nw.pol ~ edges +
+    mutual +                    # reciprocity
+    edgecov(nw.sci) +           # scientific information exchange
+    edgecov(prefsim_st) +       # preference similarity (standardized)
+    edgecov(committee_st) +     # shared committees (standardized)
+    edgecov(infrep_st),         # influence attribution (standardized)
+  control = control.ergm(seed = seed)
+)
+summary(model1)
+```
+
+## Step 2 — Read the exact parameter names
+
+**This step is essential.** The names `BFpack` expects in a hypothesis string
+are exactly the names printed by `get_estimates()` — not the covariate object
+names. An `edgecov(prefsim_st)` term becomes the parameter
+**`edgecov.prefsim_st`**.
+
+```{r estimates-model1}
+get_estimates(model1)
+#> Coefficient names include, among others:
+#>   edges, mutual, edgecov.nw.sci,
+#>   edgecov.prefsim_st, edgecov.committee_st, edgecov.infrep_st
+```
+
+> **Common pitfall (fixed here).** An earlier draft of this script wrote the
+> hypothesis as `"edgecov.prefsim = 0"`. That name does **not** exist — the
+> term is `edgecov.prefsim_st`, so the test would error or silently mismatch.
+> Always copy names verbatim from `get_estimates()`.
+
+## Step 3 & 4 — Test a precise null: does preference similarity matter?
+
+The central substantive question from Leifeld & Schneider (2012): once
+opportunity structures are controlled for, does preference similarity still
+drive information exchange, or is its effect fully "absorbed"?
+
+```{r test1-model1}
+# Step 3: formulate the hypothesis (note the correct parameter name).
+hypo1 <- "edgecov.prefsim_st = 0"
+
+# Step 4: BF() fits the Bayesian ERGM internally (this is the slow part),
+# then computes the Bayes factor and posterior probabilities. By default the
+# null is tested against its complement (the two-sided alternative).
+BF_model1_test1 <- BF(model1, hypothesis = hypo1, main.iters = 2000)
+print(BF_model1_test1)
+```
+
+`print()` returns the posterior probabilities of the constrained hypothesis
+`H1: beta = 0` and its complement `H2: beta != 0`. The key thing to notice —
+impossible with a *p*-value — is that we can obtain **positive evidence in
+favor of the null**.
+
+```{r test1-summary}
+# Posterior probabilities that EACH coefficient is zero, negative, or positive.
+# BFpack produces this exploratory test for every parameter by default.
+summary(BF_model1_test1)
+```
+
+> **Interpretation.** Suppose the Bayes factor favors the null,
+> $BF_{01} \approx 5$. Read this as: *the observed network is about five
+> times more likely under a model where preference similarity has no effect
+> than under a model where it can take any value.* With equal prior odds this
+> maps to a posterior probability of roughly 0.83 for the null. Compare that to
+> the *p*-value of .136 from the same data: the *p*-value only says "not
+> significant", whereas the Bayes factor says "there is positive evidence the
+> effect is zero — the non-significance is not just low power." (The exact
+> figures under the full published model are reproduced in the section "The full
+> model, reproducing the paper" below.)
+
+*The illustrative numbers above are for orientation; because `model1` is the
+simplified specification and because the Bayes factor rests on MCMC draws, your
+exact values will differ slightly. The published values appear
+under the full model below.*
+
+---
+
+# Testing competing constrained hypotheses
+
+Now the feature that has no clean *p*-value analogue: comparing several
+substantive theories at once, including **order constraints**.
+
+Based on Leifeld & Schneider we can theorize a *ranking* of importance — shared committees
+matter most, then influence attribution, then preference similarity. We encode
+three rival accounts:
+
+- **H1 (ordered):** `committee > influence > pref.sim > 0` — the theorized
+  ranking, all positive.
+- **H2 (equal):** `committee = influence = pref.sim > 0` — the three matter
+  equally and positively.
+- **H3 (null):** `committee = influence = pref.sim = 0` — none of them matters.
+
+By default `BF()` also adds the **complement** (none of H1–H3 holds), so we in
+fact compare four hypotheses.
+
+```{r test2-model1}
+# Steps 1 and 2 are unchanged (same fitted model, same parameter names).
+
+# Step 3: formulate the three hypotheses, separated by semicolons.
+hyp2 <- "edgecov.committee_st > edgecov.infrep_st > edgecov.prefsim_st > 0;
+         edgecov.committee_st = edgecov.infrep_st = edgecov.prefsim_st > 0;
+         edgecov.committee_st = edgecov.infrep_st = edgecov.prefsim_st = 0"
+
+# Step 4: compute BFs and posterior probabilities. The complement is added
+# automatically, so the `complement` argument can be omitted.
+# NOTE: we test under model1 (which contains all three terms). An earlier
+# draft mistakenly passed `model2` here before it was even fitted.
+BF_model1_test2 <- BF(model1, hypothesis = hyp2, main.iters = 2000)
+print(BF_model1_test2)
+
+# The full output, including the Specification Table, is worth studying:
+summary(BF_model1_test2)
+```
+
+### Reading the specification table
+
+`summary()` prints a **specification table** that decomposes each Bayes factor
+into two ingredients:
+
+- **relative fit** — how well the constrained hypothesis matches the posterior
+  (posterior density at an equality value; posterior probability that order
+  constraints hold); and
+- **relative complexity** — the same quantities under the *prior*.
+
+The Bayes factor of a hypothesis against the unconstrained model is
+`fit / complexity`. This is the **Occam's razor**: a hypothesis is rewarded for
+fitting well but penalized for being complex (for carving out a large slice of
+the parameter space a priori). For a pure order constraint on three parameters,
+the prior probability of any one ordering is `1/6`, so a perfectly supported
+ordering earns a Bayes factor up to 6 against the unconstrained model.
+
+### Changing the prior probabilities of hypotheses
+
+Equal prior probabilities are the default. If theory or prior literature makes
+some hypotheses more plausible a priori, supply `prior.hyp.conf` (one weight per
+hypothesis, in order, including the complement):
+
+```{r test2-priors}
+# Example: down-weight H1/H2/H3 and put more prior mass on the complement.
+BF_model1_test3 <- BF(model1, hypothesis = hyp2,
+                      main.iters = 2000,
+                      prior.hyp.conf = c(1, 1, 1, 4))
+print(BF_model1_test3)
+```
+
+The Bayes factors (evidence *in the data*) are unchanged; only the posterior
+probabilities, which combine evidence with prior odds, shift.
+
+---
+
+# The full model, reproducing the paper
+
+We now fit the full specification — Model 2 of Leifeld & Schneider (2012) from the paper. It adds actor-type mixing terms and
+the geometrically weighted shared-partner statistics (GWESP, GWDSP).
+
+```{r fit-model2}
+model2 <- ergm(
+  nw.pol ~ edges +
+    edgecov(prefsim_st) +
+    mutual +
+    nodemix("orgtype", base = -7) +
+    nodeifactor("orgtype", base = -1) +
+    nodeofactor("orgtype", base = -5) +
+    edgecov(committee_st) +
+    edgecov(nw.sci) +
+    edgecov(infrep_st) +
+    gwesp(0.1, fixed = TRUE) +
+    gwdsp(0.1, fixed = TRUE),
+  control = control.ergm(seed = seed)
+)
+summary(model2)
+```
+
+Under this model the paper runs the same two tests we practiced above:
+
+```{r tests-model2}
+# Test 1: is the effect of preference similarity zero?
+hypo1 <- "edgecov.prefsim_st = 0"
+BF_model2_test1 <- BF(model2, hypothesis = hypo1, main.iters = 10000)
+print(BF_model2_test1)
+summary(BF_model2_test1)
+
+# Test 2: the ranking of opportunity-structure effects.
+hyp2 <- "edgecov.committee_st > edgecov.infrep_st > edgecov.prefsim_st > 0;
+         edgecov.committee_st = edgecov.infrep_st = edgecov.prefsim_st > 0;
+         edgecov.committee_st = edgecov.infrep_st = edgecov.prefsim_st = 0"
+BF_model2_test2 <- BF(model2, hypothesis = hyp2, main.iters = 10000)
+print(BF_model2_test2)
+summary(BF_model2_test2)
+```
+
+> **Note on `main.iters`.** For a polished analysis the paper uses
+> `main.iters = 10000` posterior draws for accurate Bayes factors. That is slow.
+> For live exploration in the workshop, keep `main.iters = 2000` (or the
+> `bergm` default) to avoid long waits, then increase it for final results.
+
+## Published results
+
+### Test 1 — no effect of preference similarity
+
+Under Model 2 the posterior and prior density of $\beta_{\text{pref.sim}}$
+at zero are **2.04** and **0.387**, giving
+
+$$BF_{01} = \frac{2.04}{0.387} \approx 5.2,$$
+
+i.e. **positive evidence that preference similarity has no additional effect** on
+information exchange once opportunity structures are controlled. With equal prior
+probabilities the posterior probabilities are
+
+$$P(H_1 \mid Y) = 0.839, \qquad P(H_2 \mid Y) = 0.161.$$
+
+The classical two-sided *p*-value on the same coefficient is **.136** —
+"non-significant", but silent on whether that reflects a true zero or an
+underpowered study. The Bayes factor resolves the ambiguity in favor of a
+genuine null. (For reference, the BIC-based evidence is 13.63 and the AIC-based
+evidence 1.26, bracketing the Bayes factor, since BIC leans toward the simpler
+model and AIC toward the larger one.)
+
+**Table 1. Full coefficient-level results under Model 2 (Application A).**
+Classical estimates, Bayesian estimates under the unit-information prior, and
+posterior probabilities that each coefficient is zero, negative, or positive
+(equal prior probabilities).
+
+| Term | MLE | s.e. | *p* | post. mean | post. sd | $P(\beta{=}0\mid Y)$ | $P(\beta{<}0\mid Y)$ | $P(\beta{>}0\mid Y)$ |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| edges | −4.039 | 1.290 | 0.002 | −2.525 | 0.675 | – | – | – |
+| pref. sim. (st.) | 0.118 | 0.079 | 0.136 | 0.116 | 0.106 | **0.722** | 0.037 | 0.241 |
+| reciprocity | 0.808 | 0.248 | 0.001 | 0.765 | 0.298 | 0.138 | 0.005 | 0.857 |
+| int. group homophily | 1.067 | 0.291 | 0.000 | 1.222 | 0.485 | 0.178 | 0.005 | 0.817 |
+| gov. target | 0.597 | 0.189 | 0.002 | 0.561 | 0.248 | 0.259 | 0.009 | 0.732 |
+| sci. source | 0.072 | 0.218 | 0.742 | 0.063 | 0.269 | 0.822 | 0.072 | 0.106 |
+| common committees (st.) | 0.727 | 0.122 | 0.000 | 0.839 | 0.173 | 0.000 | 0.000 | **1.000** |
+| sci. communication | 2.910 | 0.630 | 0.000 | 2.935 | 1.006 | 0.039 | 0.002 | 0.958 |
+| infl. attr. (st.) | 0.439 | 0.088 | 0.000 | 0.438 | 0.114 | 0.003 | 0.000 | 0.997 |
+| GWESP(0.1) | 2.552 | 1.129 | 0.024 | 1.363 | 0.597 | 0.094 | 0.012 | 0.895 |
+| GWDSP(0.1) | −0.134 | 0.049 | 0.007 | −0.208 | 0.087 | 0.146 | 0.847 | 0.007 |
+
+*(No Bayesian test is reported for `edges`: an improper flat prior is used for
+this nuisance intercept, and flat priors cannot be used for Bayes-factor
+testing.)*
+
+### Test 2 — the ranking of opportunity-structure effects
+
+**Table 2. Bayes factors and posterior probabilities for the three
+constrained hypotheses (equal prior probabilities).**
+
+| Hypothesis | vs H1 | vs H2 | vs H3 | $P(H_t\mid Y)$ |
+|---|---:|---:|---:|---:|
+| **H1:** committee > influence > pref.sim | 1.000 | 74.335 | 97.953 | **.977** |
+| **H2:** committee = influence = pref.sim > 0 | 0.013 | 1.000 | 1.318 | .013 |
+| **H3:** committee = influence = pref.sim = 0 | 0.010 | 0.759 | 1.000 | .010 |
+
+The ordered hypothesis H1 receives about **74×** the evidence of the equality
+hypothesis and about **98×** that of the complement, and carries a posterior
+probability of roughly **98%**. After seeing the data, then, there is strong
+support for the theorized ranking: the (standardized) effect of shared
+committees is largest, followed by influence attribution, followed by preference
+similarity — consistent with the point estimates in Table 1.
+
+---
+
+# Reporting and interpretation checklist
+
+When you write up a `BFpack` ERGM analysis, report:
+
+- the **fitted ERGM specification** and how each covariate was constructed;
+- the exact **hypotheses** in constraint notation, with their substantive
+  meaning;
+- the **Bayes factors** between hypotheses (and/or against the unconstrained
+  model) and the **posterior probabilities**, stating the prior probabilities
+  used;
+- for a contested null, the **posterior/prior density ratio at zero** that
+  produces $BF_{01}$, which mirrors Bayesian estimation; and
+- the number of posterior draws (`main.iters`) and the seed, for
+  reproducibility.
+
+Finally note that posterior probabilities live on a
+**continuous** scale — no dichotomous accept/reject decision is required — and if
+you *do* commit to a hypothesis, $1 - P(H\mid Y)$ is the conditional probability of
+being wrong given this network (e.g. ~16% for the null in Test 1, ~2% for H1 in
+Test 2).
+
+---
+
+# References
+
+Caimo, A., & Friel, N. (2014). Bergm: Bayesian exponential random graphs in R.
+*Journal of Statistical Software, 61*(2), 1–25.
+
+Leifeld, P., & Schneider, V. (2012). Information exchange in policy networks.
+*American Journal of Political Science, 56*(3), 731–744.
+
+Mulder, J., Friel, N., & Leifeld, P. (2024). Bayesian testing of scientific
+expectations under exponential random graph models. *Social Networks, 78*,
+40–53. <https://doi.org/10.1016/j.socnet.2023.11.004>
+
+Mulder, J., et al. (2021). BFpack: Flexible Bayes factor testing of scientific
+expectations in R. *Journal of Statistical Software.*
+
+---
+
+```{r session-info, eval=TRUE, echo=FALSE}
+# Uncomment when running live to record the software environment:
+# sessionInfo()
+```
+

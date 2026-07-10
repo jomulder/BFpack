@@ -56,6 +56,16 @@ get_estimates.polr <- function(x, ...){
   out
 }
 
+#' @method get_estimates remstimate
+#' @export
+get_estimates.remstimate <- function(x, ...){
+  out <- list()
+  out$estimate <- coef(x)
+  out$Sigma <- list(x$vcov)
+  class(out) <- "model_estimates"
+  attr(out, "analysisType") <- "remstimate"
+  out
+}
 
 #' @method get_estimates bartlett_htest
 #' @export

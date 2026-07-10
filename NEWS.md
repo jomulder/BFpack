@@ -1,3 +1,8 @@
+# BFpack 1.6.1
+
+* BF() support for remstimate object.
+* vignettes added on testing under an ERGM, correlation testing, regression.
+
 # BFpack 1.6.0
 
 * Version for JASP tutorial paper 'Going in the Right Direction'.

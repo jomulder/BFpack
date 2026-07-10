@@ -1,7 +1,7 @@
 Package: BFpack
 Type: Package
 Title: Flexible Bayes Factor Testing of Scientific Expectations
-Version: 1.6.0
+Version: 1.6.1
 Authors@R: 
     c(person(given = c("Joris"),
              family = "Mulder",
@@ -140,6 +140,7 @@ Suggests:
     metafor,
     knitr,
     rmarkdown,
-    lmtest
+    lmtest,
+    remstimate
 VignetteBuilder: 
     knitr

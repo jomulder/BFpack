@@ -3,7 +3,10 @@ title: "Introduction to BFpack"
 author: "Mulder, J., Williams, D. R., Gu, X., Tomarken, A., Boeing-Messing, F., Olsson-Collentine, A., Meijerink, M., Menke, J., van Aert, R., Fox, J.-P., Hoijtink, H., Rosseel, Y., Wagenmakers, E.-J., and van Lissa, C."
 date: "`r Sys.Date()`"
 output:
-  rmarkdown::html_vignette
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 3
+    number_sections: true
 vignette: >
   %\VignetteIndexEntry{BFpack_introduction}
   %\VignetteEngine{knitr::rmarkdown}
@@ -31,7 +34,7 @@ Mulder, J., van Lissa, C., Gu, X., Olsson-Collentine, A., Boeing-Messing, F., Wi
 
 ## Usage
 
-`BF(x, hypothesis, prior.hyp = NULL, complement = TRUE, ...)`
+`BF(x, hypothesis, prior.hyp.explo = NULL, prior.hyp.conf = NULL, complement = TRUE, ...)`
 
 
 ## Arguments
@@ -41,7 +44,7 @@ Mulder, J., van Lissa, C., Gu, X., Olsson-Collentine, A., Boeing-Messing, F., Wi
   + `bartlett_test` for testing independent group variances,
   + `aov` for AN(C)OVA testing,
   + `manova` for MAN(C)OVA testing,
-  + `lm` for linear regresssion analysis, 
+  + `lm` for linear regression analysis,
   + `cor_test` for correlation analysis,
   + `lmer` currently for testing intraclass correlations in random intercept models,
   + `glm` for generalized linear models,
@@ -120,7 +123,7 @@ hypothesis <- "mu = 5; mu < 5; mu > 5"
 BF(ttest1, hypothesis = hypothesis)
 ```
 
-In the above test the complement hypothesis is excluded automatically as the formualted hypothesis under the `hypothesis` argument cover the complete parameter space. Furthermore, when testing hypotheses via the `hypothesis` argument, the output also presents an `Evidence matrix` containing the Bayes factors between the hypotheses formulated in the `hypothesis` argument.
+In the above test the complement hypothesis is excluded automatically as the formulated hypothesis under the `hypothesis` argument cover the complete parameter space. Furthermore, when testing hypotheses via the `hypothesis` argument, the output also presents an `Evidence matrix` containing the Bayes factors between the hypotheses formulated in the `hypothesis` argument.
 
 A standard two-sided test around the null value `mu` is executed by setting the hypothesis argument equal to the precise null hypothesis so that the complement hypothesis (which is included by default) corresponds to the hypothesis that assumes that the population mean is anything but the null value
 
@@ -129,13 +132,13 @@ hypothesis <- "mu = 5"
 BF(ttest1, hypothesis = hypothesis)
 ```
 
-The argument `prior.hyp` can be used to specify different prior probabilities
-for the hypotheses. For example, when the left one-tailed hypothesis is not possible
+The argument `prior.hyp.conf` can be used to specify different prior probabilities
+for the hypotheses formulated under the `hypothesis` argument. For example, when the left one-tailed hypothesis is not possible
 based on prior considerations (e.g., see [Mulder et al. (2021, Section 4.1)](https://www.jstatsoft.org/article/view/v100i18)) while the precise (null) hypothesis and the right
-one-tailed hypothesis are equally likely, the argument `prior.hyp` should be a vector
+one-tailed hypothesis are equally likely, the argument `prior.hyp.conf` should be a vector
 specifying the prior probabilities of the respective hypotheses
 ``` r
-BF(ttest1, hypothesis = "mu = 5; mu < 5; mu > 5", prior.hyp = c(.5,0,.5))
+BF(ttest1, hypothesis = "mu = 5; mu < 5; mu > 5", prior.hyp.conf = c(.5,0,.5))
 ```
 
 For more information about the methodology, we refer the interested reader to [Mulder et al. (2021)](https://www.jstatsoft.org/article/view/v100i18) and [Mulder and Gu (2021)](https://doi.org/10.1080/00273171.2021.1904809).
@@ -191,7 +194,7 @@ BF(aov1, hypothesis = constraints2)
 #### Univariate and multivariate multiple regression
 
 For a univariate regression model, by default an exhaustive test is
-executed of whether an effect is zero, negative, or postive.
+executed of whether an effect is zero, negative, or positive.
 
 ``` r
 lm1 <- lm(Superficial ~ Face + Vehicle, data = fmri)
@@ -269,7 +272,7 @@ which presents the results of an exploratory analysis and the results of a confi
 
 The confirmatory test shows that H1 receives strongest support from the data, but H2 and H3 are viable competitors. It appears that even the complement H3 cannot be ruled out entirely given a posterior prob- ability of 0.058. To conclude, the results indicate that TS population are as heterogeneous in their attentional performances as the healthy control population in this specific task, but further research would be required to obtain more conclusive evidence.
 
-For more information about the methodology, we refer the interested reader to [Boing-Messing et al. (2017)](https://www.researchgate.net/publication/317418250_Bayesian_evaluation_of_constrained_hypotheses_on_variances_of_multiple_independent_groups)
+For more information about the methodology, we refer the interested reader to [Boeing-Messing et al. (2017)](https://www.researchgate.net/publication/317418250_Bayesian_evaluation_of_constrained_hypotheses_on_variances_of_multiple_independent_groups)
 
 
 ### Testing correlations
@@ -420,7 +423,9 @@ For more information about the methodology, we refer the interested reader to [M
 
 ### Hypothesis testing using normal approximations
 
-### Running `BF` on a named vector
+For several model classes, Bayes factors are computed using Gaussian (large-sample) approximations of the likelihood and posterior, in the spirit of the classical Wald test. This applies by default to fitted objects of class `glm`, `coxph`, `survreg`, `polr`, and `zeroinfl`, and can also be used directly by supplying a named vector of estimates together with their error covariance matrix and sample size (illustrated below).
+
+#### Running `BF` on a named vector
 
 The input for the `BF` function can also be a named vector containing
 the estimates of the parameters of interest. In this case the error
@@ -450,7 +455,7 @@ BF(fit_glm)
 ```
 
 The names of the regression coefficients on which constrained hypotheses
-can be formualted can be extracted using the `get_estimates` function.
+can be formulated can be extracted using the `get_estimates` function.
 
 ``` r
 get_estimates(fit_glm)
