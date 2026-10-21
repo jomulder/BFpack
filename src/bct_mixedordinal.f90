@@ -605,7 +605,7 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
 !
             Bmean(1:K,1:P) = matmul(matmul(XtXi(g1,:,:),transpose(Xgroups(g1,1:Njs(g1),1:K))), &
                 Wgroups(g1,1:Njs(g1),1:P))
-            call kronecker(K,P,XtXi(g1,:,:),SigmaMatDraw,covBeta)
+            call kronecker(P,K,SigmaMatDraw,XtXi(g1,:,:),covBeta)
 !
             call setgmn(meanO,covBeta,P*K,para)
             call GENMN(para,betaDrawj(1,1:(P*K)),P*K)
@@ -839,7 +839,7 @@ subroutine estimate_bct_ordinal(postZmean, postZcov, P, numcorr, K, numG, BHat, 
 !
             Bmean(1:K,1:P) = matmul(matmul(XtXi(g1,:,:),transpose(Xgroups(g1,1:Njs(g1),1:K))), &
                 Wgroups(g1,1:Njs(g1),1:P))
-            call kronecker(K,P,XtXi(g1,:,:),SigmaMatDraw,covBeta)
+            call kronecker(P,K,SigmaMatDraw,XtXi(g1,:,:),covBeta)
 !
             call setgmn(meanO,covBeta,P*K,para)
             call GENMN(para,betaDrawj(1,1:(P*K)),P*K)

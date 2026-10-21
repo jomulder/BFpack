@@ -1,3 +1,14 @@
+# BFpack 1.6.2
+
+* Fixed a bug in `cor_test()` when covariates are included via `formula`. The
+  posterior draws of the regression coefficients used an incorrectly ordered
+  covariance matrix. This affected the posterior of the correlations and the
+  resulting Bayes factors, and made results depend on the order of the
+  covariates and the dependent variables. The effect is largest when
+  covariates are correlated and strongly related to the dependent variables.
+* Fixed an error in `cor_test()` when a covariate column precedes a
+  dependent variable in the data.
+
 # BFpack 1.6.1
 
 * BF() support for remstimate object.

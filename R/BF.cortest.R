@@ -356,7 +356,8 @@ draw_ju_r <- function(P, samsize=50000, Fisher=1){
 #' control variables in the model (e.g., \code{~ education}).
 #'
 #' @param iter total number of iterations from posterior. The total is split across three chains. By default, the total number of iterations is 10000,
-#' implying a rounded integer of 3333 iterations per chain.
+#' implying a rounded integer of 3333 iterations per chain. Bayes factors and posterior probabilities are subject to Monte Carlo error, which
+#' can be considerable when the evidence against a null value is strong. In that case, increasing \code{iter} is recommended.
 #'
 #' @param burnin number of iterations for burnin (default is 2000).
 #'
@@ -440,6 +441,7 @@ cor_test <- function(..., formula = NULL, iter = 1e4, burnin = 2e3, method = "LK
     methodnum <- 1
   }else{
     warning("argument 'method' ill-specified. Default 'LKJ' method used.")
+    methodnum <- 2
   }
 
   if(!is.numeric(nugget.scale)){stop("'nugget.scale' should be a numerical scalar.")}
@@ -475,11 +477,10 @@ cor_test <- function(..., formula = NULL, iter = 1e4, burnin = 2e3, method = "LK
     teller <- 1
     for(pp in which(whichDV[[gg]])){
       if(class(Y_groups[[gg]][,pp])[1] == "numeric" | class(Y_groups[[gg]][,pp])[1] == "integer"){
+        Ylevel[gg,teller] <- "numeric"                                   # changed (moved up, pp -> teller)
         teller <- teller + 1
-        Ylevel[gg,pp] <- "numeric"
       }else{
         if(class(Y_groups[[gg]][,pp])[1] == "ordered"){
-          #levels(Y_groups[[gg]][,pp]) <- 1:length(levels(Y_groups[[gg]][,pp]))
           old_levels <- sort(as.numeric(unique(Y_groups[[gg]][,pp])))
           for(index_levels_g_p in 1:length(old_levels)){
             Y_groups[[gg]][which(Y_groups[[gg]][,pp] == old_levels[index_levels_g_p]),pp] <- index_levels_g_p
@@ -487,8 +488,8 @@ cor_test <- function(..., formula = NULL, iter = 1e4, burnin = 2e3, method = "LK
           Y_groups[[gg]][,pp] <- as.numeric(Y_groups[[gg]][,pp])
           ordi[gg,teller] <- 1
           numcats[gg,teller] <- max(Y_groups[[gg]][,pp])
-          Ylevel[gg,pp] <- "ordinal"
-          if(numcats[gg,teller]==2){Ylevel[gg,pp] <- "dichotomous"}
+          Ylevel[gg,teller] <- "ordinal"                                 # changed
+          if(numcats[gg,teller]==2){Ylevel[gg,teller] <- "dichotomous"}  # changed
           teller <- teller + 1
           if(max(Y_groups[[gg]][,pp])>11){
             stop("Ordinal variables are not allowed to have more than 11 categories")
@@ -496,7 +497,7 @@ cor_test <- function(..., formula = NULL, iter = 1e4, burnin = 2e3, method = "LK
         }else{
           if(class(Y_groups[[gg]][,pp])[1] == "factor"){
             if(length(levels(Y_groups[[gg]][,pp]))==2){
-              Ylevel[gg,pp] <- "dichotomous"
+              Ylevel[gg,teller] <- "dichotomous"                         # changed
               levels(Y_groups[[gg]][,pp]) <- 1:length(levels(Y_groups[[gg]][,pp]))
               Y_groups[[gg]][,pp] <- as.numeric(Y_groups[[gg]][,pp])
               ordi[gg,teller] <- 1

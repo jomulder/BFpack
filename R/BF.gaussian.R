@@ -153,23 +153,43 @@ Savage.Dickey.Gaussian <- function(prior.mean,
     }
 
     # check if a common boundary exists for prior location under all constrained hypotheses
+    # if(nrow(RrStack) > 1){
+    #   rref_ei <- rref(RrStack)
+    #   nonzero <- rref_ei[,K+1]!=0
+    #   if(max(nonzero)>0){
+    #     row1 <- max(which(nonzero))
+    #     if(sum(abs(rref_ei[row1,1:K]))==0){
+    #       stop("No common boundary point for prior location. Conflicting constraints.")
+    #     }
+    #   }
+    #   #determine fraction via number of independent rows (constraints)
+    #   if(is.matrix(rref_ei[,-(K+1)])){
+    #     numindep <- sum(apply(abs(rref_ei[,-(K+1)]),1,sum)!=0)
+    #   }else{
+    #     numindep <- sum(apply(abs(as.matrix(rref_ei[,-(K+1)])),1,sum)!=0)
+    #   }
+    # } else {
+    #   numindep <- 1
+    # }
+    # check if a common boundary exists for prior location under all constrained hypotheses
+    common.boundary <- TRUE
     if(nrow(RrStack) > 1){
       rref_ei <- rref(RrStack)
       nonzero <- rref_ei[,K+1]!=0
       if(max(nonzero)>0){
         row1 <- max(which(nonzero))
         if(sum(abs(rref_ei[row1,1:K]))==0){
-          stop("No common boundary point for prior location. Conflicting constraints.")
+          common.boundary <- FALSE
         }
       }
-      #determine fraction via number of independent rows (constraints)
-      if(is.matrix(rref_ei[,-(K+1)])){
-        numindep <- sum(apply(abs(rref_ei[,-(K+1)]),1,sum)!=0)
-      }else{
-        numindep <- sum(apply(abs(as.matrix(rref_ei[,-(K+1)])),1,sum)!=0)
-      }
-    } else {
-      numindep <- 1
+    }
+
+    # default prior location: on the common boundary of the constrained hypotheses if it exists
+    if(common.boundary){
+      mean0 <- c(ginv(RStack) %*% rStack)
+    }else{
+      mean0 <- rep(0, K)
+      warning("The constrained hypotheses do not have a common boundary point. The default prior mean is therefore set to 0.")
     }
 
     #get relative fit and complexity of hypotheses

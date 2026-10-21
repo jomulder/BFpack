@@ -21,7 +21,8 @@ for different groups (in case of multiple matrices or data frames).}
 control variables in the model (e.g., \code{~ education}).}
 
 \item{iter}{total number of iterations from posterior. The total is split across three chains. By default, the total number of iterations is 10000,
-implying a rounded integer of 3333 iterations per chain.}
+implying a rounded integer of 3333 iterations per chain. Bayes factors and posterior probabilities are subject to Monte Carlo error, which
+can be considerable when the evidence against a null value is strong. In that case, increasing \code{iter} is recommended.}
 
 \item{burnin}{number of iterations for burnin (default is 2000).}
 
