@@ -26,7 +26,7 @@ in_spray <- structure(c(1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 2L,
                         2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 3L, 3L, 3L, 3L, 3L,
                         3L, 3L, 3L, 3L, 3L, 3L, 3L, 4L, 4L, 4L, 4L, 4L, 4L, 4L, 4L, 4L,
                         4L, 4L, 4L, 5L, 5L, 5L, 5L, 5L, 5L, 5L, 5L, 5L, 5L, 5L, 5L, 6L,
-                        6L, 6L, 6L, 6L, 6L, 6L, 6L, 6L, 6L, 6L, 6L), .Label = c("A",
+                        6L, 6L, 6L, 6L, 6L, 6L, 6L, 6L, 6L, 6L, 6L), levels = c("A",
            "B", "C", "D", "E", "F"), class = "factor")
 
 res_standard <- bartlett.test(in_count, in_spray)

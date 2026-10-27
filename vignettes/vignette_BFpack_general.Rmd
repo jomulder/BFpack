@@ -28,7 +28,7 @@ Alternatively, when the model of interest is not of a class that is currently su
 
 The key references for the package are
 
-Mulder, J., Williams, D. R., Gu, X., Tomarken, A., Boeing-Messing, F., Olsson-Collentine, A., Meijerink, M., Menke, J., van Aert, R., Fox, J.-P., Hoijtink, H., Rosseel, Y., Wagenmakers, E.-J., and van Lissa, C. (2021). BFpack: Flexible Bayes Factor Testing of Scientific Theories in R. *Journal of Statistical Software*. <https://www.jstatsoft.org/article/view/v100i18>
+Mulder, J., Williams, D. R., Gu, X., Tomarken, A., Boeing-Messing, F., Olsson-Collentine, A., Meijerink, M., Menke, J., van Aert, R., Fox, J.-P., Hoijtink, H., Rosseel, Y., Wagenmakers, E.-J., and van Lissa, C. (2021). BFpack: Flexible Bayes Factor Testing of Scientific Theories in R. *Journal of Statistical Software*. <https://doi.org/10.18637/jss.v100.i18>
 
 Mulder, J., van Lissa, C., Gu, X., Olsson-Collentine, A., Boeing-Messing, F., Williams, D. R., Fox, J.-P., Menke, J., et al. (2021). BFpack: Flexible Bayes Factor Testing of Scientific Expectations. (Version 0.3.2) <https://CRAN.R-project.org/package=BFpack>
 
@@ -81,7 +81,7 @@ The output is of class `BF`. By running the `print` function on the `BF` object,
 
 ### Normal linear models (t-testing, linear regression, (M)AN(C)OVA)
 
-For an object of class `t_test` (t testing), `lm` (linear regression), `lml` (multivariate linear regression), `aov` (AN(C)OVA), `manova` (MAN(C)OVA), the evidence and posterior probabilities are computed using the fractional Bayes factor (FBF) methodology [O'Hagan (1995) ](https://rss.onlinelibrary.wiley.com/doi/abs/10.1111/j.2517-6161.1995.tb02017.x). Manual prior specification is avoided by using a minimal fraction of the data to construct a default (fractional) prior while the remaining fraction is used for hypothesis testing. For a simple t-test, there are 2 unknown parameters (the normal mean and the variance), and therefore at least 2 observations are required to identify the model, yielding a minimal fraction of `2/n`, where `n` is the sample size. In this case, the default prior follows a Cauchy distribution. In the case of grouping variables, i.e., variables of class `factor` in R, it is recommended that the minimal fractions depend on the respective group sizes [De Santis and Spezzaferri (2001)](https://doi.org/10.1016/S0378-3758(00)00240-8). For instance, in case of an ANOVA with 2 groups (equivalent to a 2-sample t test with equal variances), there are 3 unknown parameters (the two normal means and the within-groups variance), and thus, at least 3 observations are required to identify the model. Therefore, the minimal fraction for the observations in group 1 and 2 are equal to `1.5/n_1` and `1.5/n_2`, where `n_1` and `n_2` are the sample sizes in group 1 and 2, respectively. In the resulting `BF` object, the element `fraction_groupID_observations` contains the group IDs, which are based on all combinations of the levels of the factors in the linear model. If no grouping variables (`factor`) are included as predictors, the same minimal fraction is used for all observations. Moreover, besides regular fractional Bayes factors (which is the current default), adjusted fractional Bayes factors (AFBF) can also be computed by setting the argument `BF.type = AFBF`. In the AFBF, the default prior is shifted to the null value ([Mulder, 2014](https://doi.org/10.1016/j.csda.2013.07.017); [Mulder and Olsson-Collentine, 2019](https://doi.org/10.3758/s13428-018-01196-9)). The AFBF was specifically designed for testing hypotheses with only one-sided or order constraints. The general methodology for the multivariate linear model is discussed in [Mulder et al. (2021) ](https://www.jstatsoft.org/article/view/v100i18) and [Mulder and Gu (2021)](https://doi.org/10.1080/00273171.2021.1904809). 
+For an object of class `t_test` (t testing), `lm` (linear regression), `lml` (multivariate linear regression), `aov` (AN(C)OVA), `manova` (MAN(C)OVA), the evidence and posterior probabilities are computed using the fractional Bayes factor (FBF) methodology [O'Hagan (1995) ](https://rss.onlinelibrary.wiley.com/doi/abs/10.1111/j.2517-6161.1995.tb02017.x). Manual prior specification is avoided by using a minimal fraction of the data to construct a default (fractional) prior while the remaining fraction is used for hypothesis testing. For a simple t-test, there are 2 unknown parameters (the normal mean and the variance), and therefore at least 2 observations are required to identify the model, yielding a minimal fraction of `2/n`, where `n` is the sample size. In this case, the default prior follows a Cauchy distribution. In the case of grouping variables, i.e., variables of class `factor` in R, it is recommended that the minimal fractions depend on the respective group sizes [De Santis and Spezzaferri (2001)](https://doi.org/10.1016/S0378-3758(00)00240-8). For instance, in case of an ANOVA with 2 groups (equivalent to a 2-sample t test with equal variances), there are 3 unknown parameters (the two normal means and the within-groups variance), and thus, at least 3 observations are required to identify the model. Therefore, the minimal fraction for the observations in group 1 and 2 are equal to `1.5/n_1` and `1.5/n_2`, where `n_1` and `n_2` are the sample sizes in group 1 and 2, respectively. In the resulting `BF` object, the element `fraction_groupID_observations` contains the group IDs, which are based on all combinations of the levels of the factors in the linear model. If no grouping variables (`factor`) are included as predictors, the same minimal fraction is used for all observations. Moreover, besides regular fractional Bayes factors (which is the current default), adjusted fractional Bayes factors (AFBF) can also be computed by setting the argument `BF.type = AFBF`. In the AFBF, the default prior is shifted to the null value ([Mulder, 2014](https://doi.org/10.1016/j.csda.2013.07.017); [Mulder and Olsson-Collentine, 2019](https://doi.org/10.3758/s13428-018-01196-9)). The AFBF was specifically designed for testing hypotheses with only one-sided or order constraints. The general methodology for the multivariate linear model is discussed in [Mulder et al. (2021) ](https://doi.org/10.18637/jss.v100.i18) and [Mulder and Gu (2021)](https://doi.org/10.1080/00273171.2021.1904809). 
 
 #### Univariate t testing
 
@@ -134,14 +134,14 @@ BF(ttest1, hypothesis = hypothesis)
 
 The argument `prior.hyp.conf` can be used to specify different prior probabilities
 for the hypotheses formulated under the `hypothesis` argument. For example, when the left one-tailed hypothesis is not possible
-based on prior considerations (e.g., see [Mulder et al. (2021, Section 4.1)](https://www.jstatsoft.org/article/view/v100i18)) while the precise (null) hypothesis and the right
+based on prior considerations (e.g., see [Mulder et al. (2021, Section 4.1)](https://doi.org/10.18637/jss.v100.i18)) while the precise (null) hypothesis and the right
 one-tailed hypothesis are equally likely, the argument `prior.hyp.conf` should be a vector
 specifying the prior probabilities of the respective hypotheses
 ``` r
 BF(ttest1, hypothesis = "mu = 5; mu < 5; mu > 5", prior.hyp.conf = c(.5,0,.5))
 ```
 
-For more information about the methodology, we refer the interested reader to [Mulder et al. (2021)](https://www.jstatsoft.org/article/view/v100i18) and [Mulder and Gu (2021)](https://doi.org/10.1080/00273171.2021.1904809).
+For more information about the methodology, we refer the interested reader to [Mulder et al. (2021)](https://doi.org/10.18637/jss.v100.i18) and [Mulder and Gu (2021)](https://doi.org/10.1080/00273171.2021.1904809).
 
 
 #### Multivariate t testing
@@ -171,7 +171,7 @@ aov1 <- aov(price ~ anchor * motivation, data = tvprices)
 
 Next a Bayesian test can be performed on the fitted object. By default
 exploratory tests are executed of whether the individual main and interaction effects
-are zero or not (corresponding to the full model) (see [Mulder et al. (2021, Section 4.2)](https://www.jstatsoft.org/article/view/v100i18))
+are zero or not (corresponding to the full model) (see [Mulder et al. (2021, Section 4.2)](https://doi.org/10.18637/jss.v100.i18))
 
 ``` r
 BF(aov1)
@@ -179,7 +179,7 @@ BF(aov1)
 
 One can also test for specific equal/order hypotheses based on scientific expectations
 such as whether `anchorrounded` is positive, `motivationlow` is negative, and the interaction
-effect `anchorrounded:motivationlow` is negative (see [Mulder et al. (2021, Section 4.2)](https://www.jstatsoft.org/article/view/v100i18)) versus null hypothesis versus the complement hypothesis
+effect `anchorrounded:motivationlow` is negative (see [Mulder et al. (2021, Section 4.2)](https://doi.org/10.18637/jss.v100.i18)) versus null hypothesis versus the complement hypothesis
 (which assumes that the constraints of neither two hypotheses hold). This test can be executed
 as follows:
 ``` r
@@ -461,7 +461,7 @@ can be formulated can be extracted using the `get_estimates` function.
 get_estimates(fit_glm)
 ```
 Two different hypotheses are formulated with competing equality and/or
-order constraints on the regression coefficients of interest [Mulder et al. (2021, Section 4.4) ](https://www.jstatsoft.org/article/view/v100i18)
+order constraints on the regression coefficients of interest [Mulder et al. (2021, Section 4.4) ](https://doi.org/10.18637/jss.v100.i18)
 
 ``` r
 BF_glm <- BF(fit_glm, hypothesis = "ztrust > (zfWHR, zAfro) > 0;
@@ -480,7 +480,7 @@ the hypotheses of interest. In the above example, the complement
 hypothesis covers the parameter space where neither `"ztrust > (zfWHR,
 zAfro) > 0"` holds, nor where `"ztrust > zfWHR = zAfro = 0"` holds.
 
-For more information about the methodology, we refer the interested reader to [Gu et al. (2018)](https://bpspsychub.onlinelibrary.wiley.com/doi/full/10.1111/bmsp.12110?casa_token=tjWwoVqLI7QAAAAA%3Ac84DWKNw8pf23ybOgZTs1pzgyZMuCc-BeTaPFj8vnfnTytzHd0gr-D9ymVxYbKj_MTO1ITGFW8tGBZ1J) and [Mulder et al. (2021)](https://www.jstatsoft.org/article/view/v100i18)
+For more information about the methodology, we refer the interested reader to [Gu et al. (2018)](https://bpspsychub.onlinelibrary.wiley.com/doi/full/10.1111/bmsp.12110?casa_token=tjWwoVqLI7QAAAAA%3Ac84DWKNw8pf23ybOgZTs1pzgyZMuCc-BeTaPFj8vnfnTytzHd0gr-D9ymVxYbKj_MTO1ITGFW8tGBZ1J) and [Mulder et al. (2021)](https://doi.org/10.18637/jss.v100.i18)
 
 
 #### Poisson regression
