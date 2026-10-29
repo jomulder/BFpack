@@ -1410,7 +1410,15 @@ SUBROUTINE setgmn(meanv,covm,p,parm)
 !     .. Local Scalars ..
       INTEGER(rint) i,icount,info,j
 !
-      external :: dpotrf
+      interface
+        subroutine dpotrf(uplo, n, a, lda, info)
+          import :: rdp
+          character(len=1), intent(in) :: uplo
+          integer, intent(in) :: n, lda
+          integer, intent(out) :: info
+          real(rdp), intent(inout) :: a(lda,*)
+        end subroutine dpotrf
+      end interface
 !
 !
 !     TEST THE INPUT
@@ -1683,7 +1691,7 @@ subroutine inverse_prob_sampling(condMean,condVar,LB,UB,condDraw)
     integer(rint)                          teller
     logical                           :: uppie
 
-    parameter(pi=3.141592653)
+    parameter(pi=3.141592653589793_rdp)
     uppie = .false.
 !
     machPres = 1e-6

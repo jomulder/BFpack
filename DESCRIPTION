@@ -1,7 +1,7 @@
 Package: BFpack
 Type: Package
 Title: Flexible Bayes Factor Testing of Scientific Expectations
-Version: 1.6.2
+Version: 1.6.3
 Authors@R: 
     c(person(given = c("Joris"),
              family = "Mulder",

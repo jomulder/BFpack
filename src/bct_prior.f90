@@ -193,7 +193,7 @@ FUNCTION random_beta(aa, bb, first) RESULT(fn_val)
     REAL ( kind = rdp )   :: fn_val
 
     !     Local variables
-    REAL(rdp), PARAMETER  :: aln4 = 1.3862944, one=1.0, two=2.0, &
+    REAL(rdp), PARAMETER  :: aln4 = 1.3862943611198906_rdp, one=1.0_rdp, two=2.0_rdp, &
                              vlarge = HUGE(1.0), vsmall = TINY(1.0), zero = 0.0
     REAL ( kind = rdp ) :: a, b, g, r, s, x, y, z
     REAL ( kind = rdp ), SAVE        :: d, f, h, t, c
