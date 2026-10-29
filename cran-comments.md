@@ -2,8 +2,9 @@
 
 * Date: 2026-10-29.
 
-This is a resubmission/update in response to the email from Prof. Ripley
-(flang warnings on r-devel-linux-x86_64-fedora-clang, deadline 2026-11-19).
+This is a resubmission/update shortly after 1.6.2 in response to the email
+from Prof. Ripley (flang warnings on r-devel-linux-x86_64-fedora-clang,
+deadline 2026-11-19).
 
 Changes:
 - Replaced the implicit 'external :: dpotrf' with an explicit interface
