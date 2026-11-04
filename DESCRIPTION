@@ -116,7 +116,7 @@ NeedsCompilation: yes
 RoxygenNote: 7.3.3
 Depends: 
     R (>= 3.0.0),
-    bain
+    bain (>= 0.2.12)
 Imports: 
     stats,
     utils,
