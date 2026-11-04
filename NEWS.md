@@ -1,3 +1,9 @@
+# BFpack 1.6.3
+
+* Corrections of declarations of constants in Fortran code (such as pi)
+* Prior in BF.default is now centered at boundary value instead 0.
+* requirement of bain >= 0.2.12 added to avoid bug.
+
 # BFpack 1.6.2
 
 * Fixed a bug in `cor_test()` when covariates are included via `formula`. The
